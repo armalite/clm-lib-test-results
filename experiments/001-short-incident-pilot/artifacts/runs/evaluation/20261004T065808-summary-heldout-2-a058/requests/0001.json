@@ -1,0 +1,81 @@
+{
+ "meta": {
+  "kind": "action",
+  "step": 1,
+  "attempt": 0,
+  "est_input_tokens": 1437,
+  "input_token_bound": 6945,
+  "reserved_usd": 0.075685,
+  "context_revision": 0,
+  "context_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "pressure": false,
+  "recovery": false
+ },
+ "sha256": "6d947ea1571490b8379d15a4fc149ddb7ee1d6db85eb7e5a4becd62f95c19b32",
+ "payload": {
+  "model": "claude-opus-5-5",
+  "max_tokens": 2048,
+  "system": "You are an investigation agent working through a strict JSON protocol.\n\nEach request contains three sections:\n- <task>: the fixed task. It is never edited and always present.\n- <runtime_status>: limits and budget occupancy computed by the runtime.\n- <working_context>: your transcript so far, one JSON object per line with id, role, body.\n  This is the only memory you have between steps (apart from files you write).\n\nReply with exactly one JSON object and nothing else:\n  {\"action\": \"execute\", \"thought\": \"<optional, one or two sentences>\", \"code\": \"<python source>\"}\n  {\"action\": \"final\", \"answer\": {\"root_cause\": \"...\", \"required_value\": \"...\", \"remedy\": \"...\",\n                                 \"evidence_refs\": [\"path:line\", ...]}}\n\n\"execute\" runs your code as a new Python 3.12 process (standard library only) in a sandbox with\nno network and a 30s time limit. The working directory /task/workspace is writable and\npersists between steps; task files are read-only under /task/fixtures. Only stdout and stderr\ncome back, truncated to 6000 characters per stream, as an observation entry. Print only\nwhat you need: search and filter (with line numbers) instead of printing whole files.\n\"final\" ends the task; you get one final answer.\n\nCONTEXT MANAGEMENT (automatic):\n- When the request grows past 70% of the budget, the runtime asks a summariser to\n  replace older working-context entries with a summary, keeping the newest 4 entries verbatim.\n- You may write ordinary files in /task/workspace (for example notes or helper scripts) and read\n  them back in later steps; they are not shown to you unless you print them.\n",
+  "messages": [
+   {
+    "role": "user",
+    "content": "<task>\nProduction incident: the edge gateway started returning errors for one service.\nFind the root cause using the read-only files under /task/fixtures:\n  config/payments-api.yaml (14 lines)\n  deploy/changes.log (16 lines)\n  logs/front-proxy.log (676 lines)\n  logs/payments-api.log (1530 lines)\n  metrics/pricing-core-latency.csv (129 lines)\n  ops/oncall-notes.md (7 lines)\n\nRules of evidence:\n- Records marked APPLIED in change or audit logs are authoritative. They supersede repository\n  config files, snapshots and earlier notes. If two authoritative records conflict, the later wins.\n- PROPOSED records were not applied. On-call notes are informal and may be out of date.\n\nAnswer fields (all required):\n- root_cause: start with exactly one cause code, then a colon and a one-sentence explanation.\n- required_value: the exact effective configuration value or identifier at the centre of the\n  root cause (for example a setting's effective value, a certificate serial, or a flag id),\n  copied exactly as it appears in the authoritative evidence.\n- remedy: start with exactly one remedy code, then a colon and a concrete action.\n- evidence_refs: list of \"path:line\" or \"path:start-end\" references (paths relative to\n  /task/fixtures, 1-based line numbers, ranges of at most 20 lines) supporting both the\n  cause and the required value.\n\nCause codes:\n  DB_POOL_EXHAUSTED: database connection pool too small for load\n  TLS_CERT_EXPIRED: an expired TLS certificate is being served or presented\n  CLIENT_TIMEOUT_TOO_LOW: a client timeout is lower than the upstream's normal latency\n  FEATURE_FLAG_REGRESSION: a feature flag rollout enabled faulty code\n  DISK_FULL: a volume ran out of space\n  DNS_RESOLUTION_FAILURE: service discovery / DNS records are wrong or failing\n  MEMORY_LIMIT_OOM: processes are killed for exceeding memory limits\n  UPSTREAM_RATE_LIMITED: an upstream is rejecting calls due to rate limits\nRemedy codes:\n  RAISE_DB_POOL_LIMIT: raise the connection pool limit to cover demand\n  ROTATE_CERTIFICATE: deploy a valid, unexpired certificate\n  RAISE_CLIENT_TIMEOUT: raise the client timeout above upstream latency\n  DISABLE_FEATURE_FLAG: turn the faulty feature flag off\n  EXPAND_VOLUME: free or expand the full volume\n  FIX_DNS_RECORD: correct the DNS / discovery record\n  RAISE_MEMORY_LIMIT: raise the memory limit or fix the leak\n  REQUEST_RATE_LIMIT_INCREASE: reduce call rate or obtain a higher quota\n</task>\n\n<runtime_status>\nstep 1; model calls used 0/20\nrequest size ~1435 tokens of 8000 budget (17%); pressure threshold 70%; hard limit 7000 tokens\nworking context: 0 entries, 0 chars (~3.00 chars/token)\n</runtime_status>\n\n<working_context>\n\n</working_context>\n"
+   }
+  ],
+  "output_config": {
+   "effort": "low",
+   "format": {
+    "type": "json_schema",
+    "schema": {
+     "type": "object",
+     "properties": {
+      "action": {
+       "type": "string",
+       "enum": [
+        "execute",
+        "final"
+       ]
+      },
+      "thought": {
+       "type": "string"
+      },
+      "code": {
+       "type": "string"
+      },
+      "answer": {
+       "type": "object",
+       "properties": {
+        "root_cause": {
+         "type": "string"
+        },
+        "required_value": {
+         "type": "string"
+        },
+        "remedy": {
+         "type": "string"
+        },
+        "evidence_refs": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        }
+       },
+       "required": [
+        "root_cause",
+        "required_value",
+        "remedy",
+        "evidence_refs"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "required": [
+      "action"
+     ],
+     "additionalProperties": false
+    }
+   }
+  }
+ }
+}

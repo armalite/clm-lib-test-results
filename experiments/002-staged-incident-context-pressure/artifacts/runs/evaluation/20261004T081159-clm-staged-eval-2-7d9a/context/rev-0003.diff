@@ -1,0 +1,24 @@
+--- rev-2
++++ rev-3
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "Stage1: deploy payments-api 5.36.1-f33d at 08:18:43 (stage-1/deploy/deploys.log:4). Release notes stage-1/deploy/release-notes-5.36.1-f33d.md:13 risk-score timeout 2500->800; :16 db.pool.max_size 60->14. config yaml: timeout 2500 (line7), pool 60 (line11). ingress-a 503 upstream timeout from line 91 (08:20). oncall suspects risk-score timeout (informal)."
++  },
++  {
++   "id": "s2.act",
++   "role": "assistant",
++   "body": "[step 2] execute\nthought: Compact context, then look at payments-api.log error kinds.\ncode:\nimport json,collections\nctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: deploy payments-api 5.36.1-f33d at 08:18:43 (stage-1/deploy/deploys.log:4). Release notes stage-1/deploy/release-notes-5.36.1-f33d.md:13 risk-score timeout 2500->800; :16 db.pool.max_size 60->14. config yaml: timeout 2500 (line7), pool 60 (line11). ingress-a 503 upstream timeout from line 91 (08:20). oncall suspects risk-score timeout (informal).'}]}\njson.dump(ctx,open('/task/workspace/context.json','w'))\nb='/task/fixtures/stage-1/logs/payments-api.log'\nc=collections.Counter();first={}\nimport re\nfor i,l in enumerate(open(b),1):\n  p=l.split()\n  if len(p)<3 or 'INFO' in l:continue\n  k=re.sub(r'\\d+','N',' '.join(p[2:])[:80])\n  c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(15):print(v,first[k],k)"
++  },
++  {
++   "id": "s2.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n41 179 payments-api [payments-api-dN] upstream call risk-score timed out after Nms (\n29 191 payments-api [payments-api-eN] upstream call risk-score timed out after Nms (\n27 1 payments-api [payments-api-dN] runtime gc pause Nms (young)\n25 222 payments-api [payments-api-aN] upstream call risk-score timed out after Nms (\n23 10 payments-api [payments-api-eN] runtime gc pause Nms (young)\n23 20 payments-api [payments-api-aN] runtime gc pause Nms (young)\n16 38 payments-api [payments-api-aN] tls certificate for payments-api.internal expire\n10 8 payments-api [payments-api-dN] tls certificate for payments-api.internal expire\n10 130 payments-api [payments-api-dN] disk usage /var/data at N%\n9 7 payments-api [payments-api-aN] dns cache refresh retry succeeded\n8 156 payments-api [payments-api-eN] dns cache refresh retry succeeded\n7 51 payments-api [payments-api-aN] disk usage /var/data at N%\n6 24 payments-api [payments-api-eN] tls certificate for payments-api.internal expire\n6 207 payments-api [payments-api-dN] dns cache refresh retry succeeded\n5 25 payments-api [payments-api-eN] disk usage /var/data at N%\n"
++  },
++  {
++   "id": "s2.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 6692 -> 356; removed [s1.act, s1.obs]; added [n1]; rewritten []"
+   }
+  ]
+ }

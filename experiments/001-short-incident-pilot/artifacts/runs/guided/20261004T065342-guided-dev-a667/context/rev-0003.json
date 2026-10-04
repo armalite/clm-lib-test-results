@@ -1,0 +1,29 @@
+{
+ "number": 3,
+ "parent": 2,
+ "source": "runtime",
+ "step": 2,
+ "sha256": "2d2f32e16765a0ba44b5b57994f9c60366543a6a3240ebb7c13f817b0a439caf",
+ "entries": [
+  {
+   "id": "notes",
+   "role": "note",
+   "body": "Notes: changes.log:14 CHG-4162 APPLIED shipping-api db.pool.max_size=12 (was 40) 08:28:20; :15 PROPOSED 56 not applied. config yaml:10 max_size 40 (superseded). oncall notes:5 stale. Hypothesis DB_POOL_EXHAUSTED."
+  },
+  {
+   "id": "s2.act",
+   "role": "assistant",
+   "body": "[step 2] execute\nthought: Compact context with helper, then grep logs for pool evidence.\ncode:\nimport sys;sys.path.insert(0,'/task/workspace')\nfrom helpers import ctx\nctx.compact('Notes: changes.log:14 CHG-4162 APPLIED shipping-api db.pool.max_size=12 (was 40) 08:28:20; :15 PROPOSED 56 not applied. config yaml:10 max_size 40 (superseded). oncall notes:5 stale. Hypothesis DB_POOL_EXHAUSTED.')\nimport re\nfor f in ['logs/shipping-api.log','logs/ingress-a.log']:\n    n=0\n    for i,l in enumerate(open('/task/fixtures/'+f),1):\n        if re.search(r'pool|exhaust|ERROR|503',l,re.I):\n            n+=1\n            if n<=6: print(f,i,l.rstrip()[:160])\n    print(f,'count',n)"
+  },
+  {
+   "id": "s2.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.0s\n--- stdout ---\nlogs/shipping-api.log 5 2031-04-21T07:30:23.411Z INFO  shipping-api [shipping-api-e37] db pool stats in_use=4 idle=3\nlogs/shipping-api.log 62 2031-04-21T07:35:53.215Z INFO  shipping-api [shipping-api-e37] db pool stats in_use=8 idle=2\nlogs/shipping-api.log 65 2031-04-21T07:36:04.867Z INFO  shipping-api [shipping-api-e38] db pool stats in_use=5 idle=3\nlogs/shipping-api.log 74 2031-04-21T07:37:08.843Z INFO  shipping-api [shipping-api-a94] db pool stats in_use=4 idle=2\nlogs/shipping-api.log 106 2031-04-21T07:40:03.645Z INFO  shipping-api [shipping-api-e37] db pool stats in_use=4 idle=1\nlogs/shipping-api.log 155 2031-04-21T07:45:03.668Z INFO  shipping-api [shipping-api-e38] db pool stats in_use=7 idle=2\nlogs/shipping-api.log count 166\nlogs/ingress-a.log 272 2031-04-21T08:31:58.596Z ingress-a access upstream=shipping-api method=GET path=/v1/cart status=503 rt=5.316s upstream_error=\"upstream timeout\"\nlogs/ingress-a.log 275 2031-04-21T08:32:22.028Z ingress-a access upstream=shipping-api method=GET path=/v1/account status=503 rt=3.769s upstream_error=\"upstream timeout\"\nlogs/ingress-a.log 276 2031-04-21T08:32:36.295Z ingress-a access upstream=shipping-api method=GET path=/v1/account status=503 rt=0.842s upstream_error=\"upstream timeout\"\nlogs/ingress-a.log 282 2031-04-21T08:33:35.549Z ingress-a access upstream=shipping-api method=GET path=/v1/items status=503 rt=5.140s upstream_error=\"upstream timeout\"\nlogs/ingress-a.log 285 2031-04-21T08:34:08.500Z ingress-a access upstream=shipping-api method=GET path=/v1/search status=503 rt=3.597s upstream_error=\"upstream timeout\"\nlogs/ingress-a.log 287 2031-04-21T08:34:10.448Z ingress-a access upstream=shipping-api method=GET path=/v1/account status=503 rt=4.537s upstream_error=\"upstream timeout\"\nlogs/ingress-a.log count 91\n"
+  },
+  {
+   "id": "s2.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 3435 -> 212; removed [s1.act, s1.obs]; added [notes]; rewritten []"
+  }
+ ]
+}

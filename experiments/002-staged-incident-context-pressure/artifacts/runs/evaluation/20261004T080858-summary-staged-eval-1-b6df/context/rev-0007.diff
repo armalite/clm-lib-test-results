@@ -1,0 +1,19 @@
+--- rev-6
++++ rev-7
+@@ -25,6 +25,16 @@
+    "id": "s4.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.8s\n--- stdout ---\ndeploy/changes.log 1 2031-05-22T09:35:32Z CHG-5117 APPLIED  quotes-api override clients.risk-score.timeout_ms=3500 (was 800 from build 8.19.0-ff7b) by m.lindqvist; mitigation\ndeploy/changes.log 2 2031-05-22T09:55:09Z CHG-5118 REVERTED catalog-api override cache.ttl_s=30 (back to 120) by m.lindqvist\ndeploy/changes.log 3 2031-05-22T10:05:51Z CHG-5119 PROPOSED profile-svc override http.max_body_kb=512 (pending review; not applied)\nops/oncall-notes.md 1 # On-call notes - quotes-api incident 2031-05-22\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:45 risk-score timeouts stopped after the mitigation, but api-gateway still shows 503s for quotes-api.\nops/oncall-notes.md 6 - 09:55 New errors look like db pool exhaustion, but config/quotes-api.yaml says max_size 60, so the pool should have plenty of room?\n2 2031-05-22T09:30:07.394Z ERROR quotes-api [quotes-api-b24] upstream call risk-score timed out after 800ms (attempt 1/1) req=6bbb9caf93\n8 2031-05-22T09:30:21.026Z ERROR quotes-api [quotes-api-c10] upstream call risk-score timed out after 800ms (attempt 1/1) req=9f6ae75ae2\n17 2031-05-22T09:30:41.139Z ERROR quotes-api [quotes-api-e13] upstream call risk-score timed out after 800ms (attempt 1/1) req=dd42948407\n136 2031-05-22T09:37:50.344Z ERROR quotes-api [quotes-api-c10] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=b882ad4408\n143 2031-05-22T09:38:28.037Z ERROR quotes-api [quotes-api-b24] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=0191730db8\n158 2031-05-22T09:40:06.229Z ERROR quotes-api [quotes-api-e13] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=8d443a916d\nCounter({'i [quotes-api-bN] db pool exhausted: N/N connections in use, waited Nm': 41, 'i [quotes-api-cN] db pool exhausted: N/N connections in use, waited Nm': 38, 'i [quotes-api-eN] db pool exhausted: N/N connections in use, waited Nm': 31, 'i [quotes-api-eN] upstream call risk-score timed out after Nms (attemp': 17, 'i [quotes-api-cN] upstream call risk-score timed out after Nms (attemp': 14, 'i [quotes-api-bN] upstream call risk-score timed out after Nms (attemp': 9})\n"
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: Save notes on stage 2, then check metrics briefly.\ncode:\nopen('/task/workspace/notes.md','a').write('S2: changes.log:1 CHG-5117 APPLIED timeout 3500 09:35. New errors db pool exhausted 14/14 first quotes-api.log:136 (09:37:50). pool 14 from release-notes:15. Hypothesis DB_POOL_EXHAUSTED.\\n')\nb='/task/fixtures/stage-2/'\nL=open(b+'metrics/quotes-api.csv').readlines()\nprint(L[0].strip());[print(i,L[i-1].strip()) for i in (30,40,50,61)]"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.1s\n--- stdout ---\nminute,rps,p99_ms,db_pool_in_use\n30 09:58,230,3611,14\n40 10:08,206,3579,14\n50 10:18,235,4495,14\n61 10:29,258,2664,14\n"
+   }
+  ]
+ }

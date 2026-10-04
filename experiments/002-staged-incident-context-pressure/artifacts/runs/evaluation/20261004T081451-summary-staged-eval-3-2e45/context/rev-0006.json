@@ -1,0 +1,44 @@
+{
+ "number": 6,
+ "parent": 5,
+ "source": "runtime",
+ "step": 5,
+ "sha256": "f2f7f444cb01f4678715afdf2dc68486b816f1ef9e8bf3b4c0c7c4703a2c0e45",
+ "entries": [
+  {
+   "id": "sum1",
+   "role": "summary",
+   "body": "Summary of progress so far (stage 1 only; stages 2 and 3 not yet released):\n\nStage 1 files read:\n- stage-1/UPDATE.md: covers 08:00-09:30 UTC. edge-gw began returning 5xx for returns-svc shortly after a deploy.\n- stage-1/config/returns-svc.yaml: repository defaults, which are overridden by release notes and APPLIED records.\n  - line 7: clients.tax-engine.timeout_ms: 2500\n  - line 11: database.pool.max_size: 48\n  - line 12: acquire_timeout_ms: 5000\n  - line 14: cache.ttl_s: 120\n- stage-1/deploy/deploys.log:3: 2031-04-19T08:16:14Z DEPLOY returns-svc build 6.33.4-cb27 (previous 6.32.5), rollout 100%. Other deploys are unrelated: catalog-api, fulfil-svc, billing-svc x2, inventory-svc, orders-api.\n- stage-1/deploy/release-notes-6.33.4-cb27.md:\n  - line 5: clients.tax-engine.timeout_ms default lowered 2500 -> 750 (\"fail fast\")\n  - line 19: db.pool.max_size default lowered 48 -> 10 \"to fit the shared-db connection quota\"\n  - line 21: ff-legacy-export removed (was 0%)\n  - line 20: TLS session tickets rotated hourly\n- stage-1/ops/oncall-notes.md: informal and possibly stale.\n  - line 5: at 08:31, many tax-engine timeouts.\n  - line 6: at 08:41, suspects the tax-engine timeout change.\n\nLog findings:\n- stage-1/logs/returns-svc.log:\n  - Dominant error is \"upstream call tax-engine timed out after 750ms (attempt 1/1)\". First at line 161 (08:17:17Z, returns-svc-b92); also lines 164 and 256. Roughly 95+ occurrences across pods b92, a70 and e79.\n  - Also \"db pool wait ...ms (in_use 10/10)\" WARNs at lines 193 (08:20:25Z, 1082ms), 201 (1906ms) and 614 (09:04:39Z). This is a secondary symptom.\n  - Noise, ruled out: gc pauses, disk /var/data at 70%, dns cache refresh retry succeeded, tls cert for returns-svc.internal expires in 34 days (not expired).\n- stage-1/logs/edge-gw.log: no ERROR/WARN lines matched. It may use different level tokens; not yet inspected for 5xx line numbers.\n\nCurrent hypothesis (stage 1):\n- Leading: CLIENT_TIMEOUT_TOO_LOW. The tax-engine timeout of 750ms (release-notes line 5) is below normal tax-engine latency.\n- Competitor: DB_POOL_EXHAUSTED from pool 48->10 (line 19).\n- Effective values now: timeout 750, pool 10.\n- Ruled out: DISK_FULL, DNS, TLS, FEATURE_FLAG (only a removed 0% flag).\n\nWorkspace:\n- /task/workspace/notes.txt written with the stage-1 key refs.\n\nNext steps:\n- Grep edge-gw.log for 5xx/502/504 line numbers to use as the symptom ref.\n- Check tax-engine normal latency, if logged.\n- Then advance to stage 2. Watch for APPLIED/PROPOSED change records that alter timeout_ms or pool max_size, as the latest APPLIED value wins. Also watch for a shift in the dominant symptom.\n- Final evidence_refs need: the symptom lines, the record setting the current value, and the original change (release-notes line 5 or 19)."
+  },
+  {
+   "id": "s3.act",
+   "role": "assistant",
+   "body": "[step 3] advance\nthought: "
+  },
+  {
+   "id": "s3.obs",
+   "role": "observation",
+   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The tax-engine timeouts stopped,\nbut edge-gw still returns 503s for returns-svc with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (2 lines)\n  stage-2/logs/edge-gw.log (420 lines)\n  stage-2/logs/returns-svc.log (910 lines)\n  stage-2/metrics/returns-svc.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Read stage-2 change log, notes, and error patterns.\ncode:\nimport re\nb='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md']:\n print('##',f)\n for i,l in enumerate(open(b+f),1):print(i,l.rstrip())\nc={}\nfor i,l in enumerate(open(b+'logs/returns-svc.log'),1):\n if 'ERROR' in l:\n  k=re.sub(r'\\d+','N',l[50:100])\n  if k not in c:c[k]=i;print(i,l.rstrip()[:150])\nopen('/task/workspace/notes.txt','a').write('s2 released\\n')"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n## deploy/changes.log\n1 2031-04-19T09:44:12Z CHG-5395 APPLIED  returns-svc override clients.tax-engine.timeout_ms=4000 (was 750 from build 6.33.4-cb27) by j.moreau; mitigation\n2 2031-04-19T10:18:49Z CHG-5396 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\n## ops/oncall-notes.md\n1 # On-call notes - returns-svc incident 2031-04-19\n2 \n3 Informal running notes. Not reviewed; may be out of date.\n4 \n5 - 09:54 tax-engine timeouts stopped after the mitigation, but edge-gw still shows 503s for returns-svc.\n6 - 10:04 New errors look like db pool exhaustion, but config/returns-svc.yaml says max_size 48, so the pool should have plenty of room?\n3 2031-04-19T09:30:19.360Z ERROR returns-svc [returns-svc-a70] upstream call tax-engine timed out after 750ms (attempt 1/1) req=f39ec3e8f7\n4 2031-04-19T09:30:21.044Z ERROR returns-svc [returns-svc-b92] upstream call tax-engine timed out after 750ms (attempt 1/1) req=03943155ca\n14 2031-04-19T09:31:16.306Z ERROR returns-svc [returns-svc-e79] upstream call tax-engine timed out after 750ms (attempt 1/1) req=92c0523b95\n235 2031-04-19T09:47:04.675Z ERROR returns-svc [returns-svc-a70] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=7a2a151c\n236 2031-04-19T09:47:05.410Z ERROR returns-svc [returns-svc-b92] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=59143030\n251 2031-04-19T09:48:02.626Z ERROR returns-svc [returns-svc-e79] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=6e43e4c5\n"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: Stage 2 shifts to DB pool exhaustion (10/10). Advance to stage 3."
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (6 lines)\n  stage-3/logs/edge-gw.log (366 lines)\n  stage-3/logs/returns-svc.log (830 lines)\n  stage-3/metrics/returns-svc.csv (61 lines)"
+  }
+ ]
+}

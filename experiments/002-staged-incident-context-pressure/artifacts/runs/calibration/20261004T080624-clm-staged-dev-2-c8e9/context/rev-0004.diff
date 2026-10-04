@@ -1,0 +1,40 @@
+--- rev-3
++++ rev-4
+@@ -2,34 +2,9 @@
+  "format": "clm-context/v1",
+  "entries": [
+   {
+-   "id": "s1.act",
+-   "role": "assistant",
+-   "body": "[step 1] execute\nthought: \ncode:\nimport os\nb='/task/fixtures/stage-1/'\nfor f in ['UPDATE.md','config/catalog-api.yaml','deploy/deploys.log','deploy/release-notes-8.26.3-35fd.md','ops/oncall-notes.md']:\n  print('==',f)\n  for i,l in enumerate(open(b+f),1):print(i,l.rstrip())\nimport collections\nfor f in ['logs/catalog-api.log','logs/edge-gw.log']:\n  L=open(b+f).readlines()\n  c=collections.Counter(' '.join(l.split()[2:4]) for l in L);print(f,c.most_common(8))\n  for i,l in enumerate(L,1):\n    if 'ERROR' in l or 'WARN' in l:print(i,l.rstrip()[:200]);break"
+-  },
+-  {
+-   "id": "s1.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.8s\n--- stdout ---\n== UPDATE.md\n1 # Stage 1 of 3 (08:00-09:30 UTC)\n2 \n3 edge-gw began returning 5xx for catalog-api shortly after a deploy. Investigate the files below.\n4 More evidence will be released in later stages.\n== config/catalog-api.yaml\n1 # Repository default configuration for catalog-api.\n2 # Build release notes and APPLIED change records override these values.\n3 service: catalog-api\n4 clients:\n5   ledger-api:\n6     base_url: http://ledger-api.internal\n7     timeout_ms: 2500\n8 database:\n9   host: catalog-api-db.internal\n10   pool:\n11     max_size: 60\n12     acquire_timeout_ms: 5000\n13 cache:\n14   ttl_s: 120\n== deploy/deploys.log\n1 2031-05-17T07:11:49Z DEPLOY inventory-svc build 8.7.1 rollout 100% by deploy-bot\n2 2031-05-17T07:26:25Z DEPLOY fulfil-svc build 8.11.0 rollout 100% by deploy-bot\n3 2031-05-17T08:01:05Z DEPLOY payments-api build 5.8.1 rollout 100% by deploy-bot\n4 2031-05-17T08:10:10Z DEPLOY orders-api build 7.20.1 rollout 100% by deploy-bot\n5 2031-05-17T08:14:47Z DEPLOY catalog-api build 8.26.3-35fd (previous 8.25.7) rollout 100% by deploy-bot; release notes: stage-1/deploy/release-notes-8.26.3-35fd.md\n6 2031-05-17T08:16:53Z DEPLOY fulfil-svc build 4.20.3 rollout 100% by deploy-bot\n7 2031-05-17T08:40:57Z DEPLOY returns-svc build 8.7.4 rollout 100% by deploy-bot\n== deploy/release-notes-8.26.3-35fd.md\n1 # Release notes: catalog-api build 8.26.3-35fd\n2 \n3 Previous build: 8.25.7. Defaults below override repository config files.\n4 \n5 - security: TLS session tickets rotated hourly\n6 - deps: http client library upgraded to a patch release\n7 - cache: default `cache.ttl_s` unchanged (120)\n8 - deps: json serializer upgraded\n9 - feature flags: `ff-legacy-export` removed (was 0%)\n10 - metrics: new histogram for cache hit latency\n11 - clients: default `clients.ledger-api.timeout_ms` lowered from 2500 to 800 (fail fast)\n12 - retry: idempotent GETs retried once on connect errors\n13 - logging: structured request ids added to access logs\n14 - scheduler: cron jitter added to cleanup job\n15 - db: default connection pool `db.pool.max_size` lowered from 60 to 10 to fit the shared-db connection quota\n16 - config: `log.level` default remains info\n17 - tracing: sampling rate default 1% (unchanged)\n18 - health: readiness probe timeout 2s (unchanged)\n19 - locale: currency formatting fixes\n20 - api: `/v1/status` returns build id\n== ops/oncall-notes.md\n1 # On-call notes - catalog-api incident 2031-05-17\n2 \n3 Informal running notes. Not reviewed; may be out of date.\n4 \n5 - 08:29 edge-gw 5xx for catalog-api since build 8.26.3-35fd rolled out. Many ledger-api timeouts.\n6 - 08:39 Suspect the ledger-api timeout default change in 8.26.3-35fd; asking for a mitigation.\nlogs/catalog-api.log [('catalog-api [catalog-api-f56]', 298), ('catalog-api [catalog-api-b72]', 282), ('catalog-api [catalog-api-f14]', 282)]\n15 2031-05-17T08:01:17.727Z WARN  catalog-api [catalog-api-f14] runtime gc pause 121ms (young)\nlogs/edge-gw.log [('access upstream=catalog-api', 380), ('health-check upstream=catalog-api', 53)]\n"
+-  },
+-  {
+-   "id": "s2.act",
+-   "role": "assistant",
+-   "body": "[step 2] execute\nthought: \ncode:\nimport collections,re\nb='/task/fixtures/stage-1/logs/catalog-api.log'\nL=open(b).readlines()\nc=collections.Counter(re.sub(r'\\d+','N',' '.join(l.split()[1:2]+l.split()[4:9])) for l in L if 'ERROR' in l)\nprint(c.most_common(8))\nfor i,l in enumerate(L,1):\n  if 'ERROR' in l and i>100:print(i,l.rstrip()[:180]);break"
+-  },
+-  {
+-   "id": "s2.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n[('ERROR upstream call ledger-api timed out', 95)]\n144 2031-05-17T08:15:58.340Z ERROR catalog-api [catalog-api-f56] upstream call ledger-api timed out after 800ms (attempt 1/1) req=4207dfea84\n"
+-  },
+-  {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] advance\nthought: "
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The ledger-api timeouts stopped,\nbut edge-gw still returns 503s for catalog-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (4 lines)\n  stage-2/logs/catalog-api.log (910 lines)\n  stage-2/logs/edge-gw.log (420 lines)\n  stage-2/metrics/catalog-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
++   "id": "n1",
++   "role": "note",
++   "body": "Stage1: deploy catalog-api 8.26.3-35fd at stage-1/deploy/deploys.log:5. Release notes stage-1/deploy/release-notes-8.26.3-35fd.md:11 ledger timeout 2500->800; :15 db.pool.max_size 60->10. config yaml pool 60 (line 11). stage1 log ledger timeouts 800ms e.g. stage-1/logs/catalog-api.log:144. Stage 2 released; reading it now."
+   }
+  ]
+ }

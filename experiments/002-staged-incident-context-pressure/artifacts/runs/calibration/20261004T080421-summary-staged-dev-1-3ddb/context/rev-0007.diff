@@ -1,0 +1,19 @@
+--- rev-6
++++ rev-7
+@@ -25,6 +25,16 @@
+    "id": "s4.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.8s\n--- stdout ---\ndeploy/changes.log 1 2031-03-16T09:02:30Z CHG-5160 APPLIED  fulfil-svc image fulfil-svc:3.5 rollout complete by deploy-bot\ndeploy/changes.log 2 2031-03-16T09:44:36Z CHG-5161 APPLIED  shipping-api override clients.pricing-core.timeout_ms=4000 (was 750 from build 7.25.4-e1b3) by r.okafor; mitigation\nops/oncall-notes.md 1 # On-call notes - shipping-api incident 2031-03-16\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:54 pricing-core timeouts stopped after the mitigation, but ingress-a still shows 503s for shipping-api.\nops/oncall-notes.md 6 - 10:04 New errors look like db pool exhaustion, but config/shipping-api.yaml says max_size 48, so the pool should have plenty of room?\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The pricing-core timeouts stopped,\nUPDATE.md 4 but ingress-a still returns 503s for shipping-api with a different error. New files below.\n254 46  ERROR shipping-api [shipping-api-fN] db pool exhausted: N/N connections in use, waited Nm\n257 38  ERROR shipping-api [shipping-api-cN] db pool exhausted: N/N connections in use, waited Nm\n32 28  WARN  shipping-api [shipping-api-cN] runtime gc pause Nms (young)\n\n268 26  ERROR shipping-api [shipping-api-bN] db pool exhausted: N/N connections in use, waited Nm\n6 21  WARN  shipping-api [shipping-api-bN] runtime gc pause Nms (young)\n\n10 19  ERROR shipping-api [shipping-api-cN] upstream call pricing-core timed out after Nms (atte\n['minute,rps,p99_ms,db_pool_in_use\\n', '09:30,207,911,12\\n']\n"
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: Get exact db pool error lines and metrics, then save notes.\ncode:\nb='/task/fixtures/stage-2/'\nL=open(b+'logs/shipping-api.log').readlines()\nfor i in [254,257,268]:print(i,L[i-1].rstrip()[:160])\nI=open(b+'logs/ingress-a.log').readlines()\nn=[i for i,l in enumerate(I,1) if ' 503' in l or 'status=503' in l]\nprint(len(n),n[:3]);print(I[n[0]-1][:200] if n else '')\nopen('/task/workspace/notes.txt','a').write('\\nstage2: changes.log:2 CHG-5161 APPLIED timeout 4000; db pool exhausted errors shipping-api.log:254; pool 12 from release-notes:13; candidate DB_POOL_EXHAUSTED value 12\\n')"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n254 2031-03-16T09:47:10.040Z ERROR shipping-api [shipping-api-f35] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=2ad9bcbe87\n257 2031-03-16T09:47:20.086Z ERROR shipping-api [shipping-api-c56] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=ade1ea417d\n268 2031-03-16T09:48:04.014Z ERROR shipping-api [shipping-api-b85] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=464873b648\n70 [110, 125, 130]\n2031-03-16T09:47:04.149Z ingress-a access upstream=shipping-api method=GET path=/v1/account status=503 rt=1.759s upstream_error=\"upstream returned 503\"\n\n"
+   }
+  ]
+ }

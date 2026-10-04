@@ -1,0 +1,19 @@
+--- rev-4
++++ rev-5
+@@ -25,6 +25,16 @@
+    "id": "s3.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=0.9s\n--- stdout ---\nlogs/payments-api.log 179 95 upstream call risk-score timed out after Nms (attempt N/N)\n"
++  },
++  {
++   "id": "s4.act",
++   "role": "assistant",
++   "body": "[step 4] execute\nthought: Check actual timeout value in logs, any risk-score latency, and ingress lines.\ncode:\nb='/task/fixtures/stage-1/'\nL=open(b+'logs/payments-api.log').readlines()\nfor i in (179,180,181):print(i,L[i-1].rstrip()[:170])\nimport re\nn=0\nfor i,l in enumerate(L,1):\n  if ('pool' in l or 'latency' in l or 'p99' in l) and n<5:print(i,l.rstrip()[:160]);n+=1\nI=open(b+'logs/ingress-a.log').readlines()\nn=0\nfor i,l in enumerate(I,1):\n  if (' 5' in l and ('502' in l or '503' in l or '504' in l)) and n<3:print('ing',i,l.rstrip()[:160]);n+=1\nprint(len([l for l in I if ' 50' in l]))"
++  },
++  {
++   "id": "s4.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.2s\n--- stdout ---\n179 2031-04-14T08:21:45.653Z ERROR payments-api [payments-api-d82] upstream call risk-score timed out after 800ms (attempt 1/1) req=63037a02ff\n180 2031-04-14T08:21:49.459Z INFO  payments-api [payments-api-e54] req=31e0ad104e route=/v1/account status=200 dur_ms=40\n181 2031-04-14T08:21:50.344Z INFO  payments-api [payments-api-d82] req=e3dc7fdfe7 route=/v1/search status=200 dur_ms=102\n206 2031-04-14T08:23:46.082Z WARN  payments-api [payments-api-a76] db pool wait 2397ms (in_use 14/14)\n287 2031-04-14T08:32:18.386Z WARN  payments-api [payments-api-d82] db pool wait 1093ms (in_use 14/14)\n360 2031-04-14T08:38:27.150Z WARN  payments-api [payments-api-e54] db pool wait 1744ms (in_use 14/14)\n378 2031-04-14T08:40:13.904Z WARN  payments-api [payments-api-a76] db pool wait 1040ms (in_use 14/14)\n410 2031-04-14T08:43:12.643Z WARN  payments-api [payments-api-d82] db pool wait 1247ms (in_use 14/14)\n0\n"
+   }
+  ]
+ }

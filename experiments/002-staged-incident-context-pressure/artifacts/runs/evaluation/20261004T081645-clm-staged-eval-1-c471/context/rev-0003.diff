@@ -1,0 +1,19 @@
+--- rev-2
++++ rev-3
+@@ -20,6 +20,16 @@
+    "id": "s2.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.6s\n--- stdout ---\nlogs/api-gateway.log\n62 NZ api-gateway access upstream=quotes-api method=GET path=/vN/items status=N rt=N.Ns\n53 NZ api-gateway health-check upstream=quotes-api ok\n\n49 NZ api-gateway access upstream=quotes-api method=GET path=/vN/account status=N rt=N.N\n47 NZ api-gateway access upstream=quotes-api method=GET path=/vN/quote status=N rt=N.Ns\n47 NZ api-gateway access upstream=quotes-api method=GET path=/vN/search status=N rt=N.N\n44 NZ api-gateway access upstream=quotes-api method=GET path=/vN/history status=N rt=N.N\n43 NZ api-gateway access upstream=quotes-api method=GET path=/vN/cart status=N rt=N.Ns\n\n42 NZ api-gateway access upstream=quotes-api method=GET path=/vN/orders status=N rt=N.N\n93 2031-05-22T08:22:45.065Z api-gateway access upstream=quotes-api method=GET path=/v1/account status=503 rt=2.751s upstream_error=\"upstream timeout\"\nlogs/quotes-api.log\n70 NZ INFO  quotes-api [quotes-api-eN] heartbeat ok build=N.N.N\n\n63 NZ INFO  quotes-api [quotes-api-bN] heartbeat ok build=N.N.N\n\n50 NZ INFO  quotes-api [quotes-api-cN] heartbeat ok build=N.N.N\n\n46 NZ ERROR quotes-api [quotes-api-bN] upstream call risk-score timed out after Nms (att\n36 NZ WARN  quotes-api [quotes-api-cN] runtime gc pause Nms (young)\n\n27 NZ WARN  quotes-api [quotes-api-eN] runtime gc pause Nms (young)\n\n27 NZ ERROR quotes-api [quotes-api-cN] upstream call risk-score timed out after Nms (att\n25 NZ WARN  quotes-api [quotes-api-bN] runtime gc pause Nms (young)\n\n206 2031-05-22T08:22:58.313Z ERROR quotes-api [quotes-api-b24] upstream call risk-score timed out after 800ms (attempt 1/1) req=2fa0314268\n"
++  },
++  {
++   "id": "s3.act",
++   "role": "assistant",
++   "body": "[step 3] execute\nthought: Check for db pool errors in quotes log too, briefly.\ncode:\nimport re\nb='/task/fixtures/stage-1/logs/quotes-api.log'\nn=0\nfor i,l in enumerate(open(b),1):\n if re.search(r'pool|exhaust|risk-score latency|p99',l,re.I):\n  n+=1\n  if n<6:print(i,l.rstrip()[:150])\nprint(n)"
++  },
++  {
++   "id": "s3.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n419 2031-05-22T08:42:22.847Z WARN  quotes-api [quotes-api-e13] db pool wait 1380ms (in_use 14/14)\n525 2031-05-22T08:53:30.842Z WARN  quotes-api [quotes-api-c10] db pool wait 1138ms (in_use 14/14)\n542 2031-05-22T08:55:09.447Z WARN  quotes-api [quotes-api-b24] db pool wait 1356ms (in_use 14/14)\n594 2031-05-22T09:01:51.174Z WARN  quotes-api [quotes-api-c10] db pool wait 1862ms (in_use 14/14)\n614 2031-05-22T09:03:56.434Z WARN  quotes-api [quotes-api-c10] db pool wait 1095ms (in_use 14/14)\n7\n"
+   }
+  ]
+ }

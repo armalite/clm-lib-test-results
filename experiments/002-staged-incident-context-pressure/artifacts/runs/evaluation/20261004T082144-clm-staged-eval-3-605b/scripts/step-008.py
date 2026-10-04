@@ -1,0 +1,4 @@
+import json
+n="Stage1: deploys.log:3 returns-svc 6.33.4-cb27 at 08:16:14. release-notes-6.33.4-cb27.md:19 db.pool.max_size 48->10 (also :5 timeout 2500->750). config yaml:11 pool 48 (overridden). Stage2: changes.log:1 CHG-5395 APPLIED timeout=4000 fixed timeouts. Now stage-2/logs/returns-svc.log:235 first db pool exhausted 10/10 (110 lines, 235-244). Hypothesis DB_POOL_EXHAUSTED value 10. Next: advance to stage3, check changes.log for pool overrides."
+json.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))
+print('ok')

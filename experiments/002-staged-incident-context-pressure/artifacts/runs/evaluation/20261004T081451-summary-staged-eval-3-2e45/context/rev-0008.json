@@ -1,0 +1,34 @@
+{
+ "number": 8,
+ "parent": 7,
+ "source": "summary",
+ "step": 7,
+ "sha256": "9530220f825e773980e7750cdc78a51c253f7be561822e31bdd6d0981af1dc53",
+ "entries": [
+  {
+   "id": "sum2",
+   "role": "summary",
+   "body": "Summary of progress so far (stages 1-2 released; stage 3 not yet released)\n\nStage 1 key facts:\n- stage-1/config/returns-svc.yaml holds repo defaults. These are overridden by release notes and APPLIED records.\n  - line 7: clients.tax-engine.timeout_ms: 2500\n  - line 11: database.pool.max_size: 48\n  - line 12: acquire_timeout_ms: 5000\n  - line 14: cache.ttl_s: 120\n- stage-1/deploy/deploys.log:3: 2031-04-19T08:16:14Z DEPLOY returns-svc build 6.33.4-cb27 (previous 6.32.5), rollout 100%. Other deploys are unrelated.\n- stage-1/deploy/release-notes-6.33.4-cb27.md:\n  - line 5: tax-engine timeout_ms default 2500 -> 750\n  - line 19: db.pool.max_size default 48 -> 10 \"to fit the shared-db connection quota\"\n  - line 20: TLS session tickets rotated hourly\n  - line 21: ff-legacy-export removed (was 0%)\n- stage-1/logs/returns-svc.log:\n  - \"tax-engine timed out after 750ms\" starts at line 161 (08:17:17Z), also lines 164 and 256.\n  - \"db pool wait (in_use 10/10)\" WARNs at lines 193, 201 and 614.\n- Ruled out as noise: disk at 70%, dns retry succeeded, TLS cert has 34 days left (not expired), gc pauses.\n- Not yet done: stage-1/logs/edge-gw.log has no ERROR/WARN tokens and has not been grepped for 5xx.\n\nStage 2 (09:30-10:30 UTC):\n- stage-2/UPDATE.md: a mitigation stopped the tax-engine timeouts, but edge-gw still returns 503s for returns-svc with a different error.\n- stage-2/deploy/changes.log:\n  - line 1: 2031-04-19T09:44:12Z CHG-5395 APPLIED returns-svc override clients.tax-engine.timeout_ms=4000 (was 750 from build 6.33.4-cb27) by j.moreau; mitigation.\n  - line 2: CHG-5396 PROPOSED fulfil-svc http.max_body_kb=512. Not applied and irrelevant.\n- stage-2/ops/oncall-notes.md (informal):\n  - line 5: 09:54 timeouts stopped, but 503s continue.\n  - line 6: 10:04 suspects db pool exhaustion, but cites yaml max_size 48. That is stale: the build default is 10 (release-notes:19).\n- stage-2/logs/returns-svc.log:\n  - Old 750ms timeout errors appear only before the mitigation (lines 3, 4, 14 at ~09:30-09:31).\n  - New dominant ERROR from line 235 (09:47:04.675Z, a70): \"db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout)\". Also line 236 (b92) and line 251 (e79).\n\nCurrent hypothesis:\n- DB_POOL_EXHAUSTED is now leading.\n- CLIENT_TIMEOUT_TOO_LOW was the original cause but is now mitigated by CHG-5395.\n- Effective values: pool max_size 10 (release-notes line 19; no APPLIED override yet), timeout 4000.\n- Tentative answer:\n  - root_cause: DB_POOL_EXHAUSTED\n  - required_value: 10\n  - remedy: RAISE_DB_POOL_LIMIT (back to 48 or higher)\n  - refs:\n    - symptom: stage-2/logs/returns-svc.log:235-251\n    - current value and original change: stage-1/deploy/release-notes-6.33.4-cb27.md:19\n\nNext steps:\n- Not yet read: stage-2/metrics/returns-svc.csv (pool in_use/latency) and stage-2/logs/edge-gw.log (find 503 line numbers for the symptom ref).\n- Then advance to stage 3. Watch for APPLIED changes to db.pool.max_size or other settings (the latest APPLIED wins, PROPOSED is ignored) and for a shift in the dominant symptom.\n\nWorkspace: /task/workspace/notes.txt contains stage-1 refs plus \"s2 released\"."
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: Stage 2 shifts to DB pool exhaustion (10/10). Advance to stage 3."
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (6 lines)\n  stage-3/logs/edge-gw.log (366 lines)\n  stage-3/logs/returns-svc.log (830 lines)\n  stage-3/metrics/returns-svc.csv (61 lines)"
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Read stage-3 changes and error patterns.\ncode:\nimport re\nb='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(b+'deploy/changes.log'),1):print(i,l.rstrip())\nc={}\nfor i,l in enumerate(open(b+'logs/returns-svc.log'),1):\n if 'ERROR' in l:\n  k=re.sub(r'\\d+','N',l[50:100])\n  c.setdefault(k,[]).append(i)\nfor k,v in c.items():print(len(v),v[:3],k)\nfor i,l in enumerate(open(b+'logs/edge-gw.log'),1):\n if ' 503' in l or '503 ' in l:print(i,l.rstrip()[:140]);break"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.7s\n--- stdout ---\n1 2031-04-19T09:47:00Z CHG-5705 REVERTED fulfil-svc override cache.ttl_s=30 (back to 120) by a.tanaka\n2 2031-04-19T10:02:53Z CHG-5706 PROPOSED quotes-api override http.max_body_kb=512 (pending review; not applied)\n3 2031-04-19T10:13:49Z CHG-5707 APPLIED  shipping-api scale replicas 4 -> 5 by autoscaler\n4 2031-04-19T10:44:27Z CHG-5708 APPLIED  returns-svc override db.pool.max_size=16 (was 10, the build 6.33.4-cb27 default) by s.patel; partial mitigation\n5 2031-04-19T11:03:00Z CHG-5709 PROPOSED returns-svc override db.pool.max_size=32 (pending review; not applied)\n6 2031-04-19T11:24:44Z CHG-5710 APPLIED  fulfil-svc image fulfil-svc:2.0 rollout complete by deploy-bot\n40 [6, 8, 19] s-svc-aN] db pool exhausted: N/N connections in\n47 [14, 16, 20] s-svc-eN] db pool exhausted: N/N connections in\n43 [34, 35, 36] s-svc-bN] db pool exhausted: N/N connections in\n101 2031-04-19T10:46:56.842Z edge-gw access upstream=returns-svc method=GET path=/v1/history status=503 rt=4.164s upstream_error=\"upstream retur\n"
+  }
+ ]
+}

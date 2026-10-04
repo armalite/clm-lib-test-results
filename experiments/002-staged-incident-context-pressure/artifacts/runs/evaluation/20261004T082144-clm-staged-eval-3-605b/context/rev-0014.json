@@ -1,0 +1,49 @@
+{
+ "number": 14,
+ "parent": 13,
+ "source": "runtime",
+ "step": 10,
+ "sha256": "bede3a2d6d42699dd06204bc5e2eb2f6c4e9e7d9a3a388630d330722732b73d9",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1: deploys.log:3 returns-svc 6.33.4-cb27 at 08:16:14. release-notes-6.33.4-cb27.md:19 db.pool.max_size 48->10 (also :5 timeout 2500->750). config yaml:11 pool 48 (overridden). Stage2: changes.log:1 CHG-5395 APPLIED timeout=4000 fixed timeouts. Now stage-2/logs/returns-svc.log:235 first db pool exhausted 10/10 (110 lines, 235-244). Hypothesis DB_POOL_EXHAUSTED value 10. Next: advance to stage3, check changes.log for pool overrides."
+  },
+  {
+   "id": "s8.act",
+   "role": "assistant",
+   "body": "[step 8] execute\nthought: Compress context with proper quoting.\ncode:\nimport json\nn=\"Stage1: deploys.log:3 returns-svc 6.33.4-cb27 at 08:16:14. release-notes-6.33.4-cb27.md:19 db.pool.max_size 48->10 (also :5 timeout 2500->750). config yaml:11 pool 48 (overridden). Stage2: changes.log:1 CHG-5395 APPLIED timeout=4000 fixed timeouts. Now stage-2/logs/returns-svc.log:235 first db pool exhausted 10/10 (110 lines, 235-244). Hypothesis DB_POOL_EXHAUSTED value 10. Next: advance to stage3, check changes.log for pool overrides.\"\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))\nprint('ok')"
+  },
+  {
+   "id": "s8.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s8.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 8: revision 10 -> 11; entries 10 -> 1; body chars 6325 -> 439; removed [s4.act, s4.obs, s4.rcpt, s5.act, s5.obs, s6.act, s6.obs, s7.act, s7.obs]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s9.act",
+   "role": "assistant",
+   "body": "[step 9] advance\nthought: "
+  },
+  {
+   "id": "s9.obs",
+   "role": "observation",
+   "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (6 lines)\n  stage-3/logs/edge-gw.log (366 lines)\n  stage-3/logs/returns-svc.log (830 lines)\n  stage-3/metrics/returns-svc.csv (61 lines)"
+  },
+  {
+   "id": "s10.act",
+   "role": "assistant",
+   "body": "[step 10] execute\nthought: \ncode:\nimport re\nb='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(b+'deploy/changes.log'),1):print(i,l.rstrip())\nn=0\nfor i,l in enumerate(open(b+'logs/returns-svc.log'),1):\n  if re.search('pool|ERROR',l,re.I):\n    n+=1\n    if n<6:print(i,l.rstrip())\nprint(n)\nprint(open(b+'metrics/returns-svc.csv').readlines()[:3])"
+  },
+  {
+   "id": "s10.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n1 2031-04-19T09:47:00Z CHG-5705 REVERTED fulfil-svc override cache.ttl_s=30 (back to 120) by a.tanaka\n2 2031-04-19T10:02:53Z CHG-5706 PROPOSED quotes-api override http.max_body_kb=512 (pending review; not applied)\n3 2031-04-19T10:13:49Z CHG-5707 APPLIED  shipping-api scale replicas 4 -> 5 by autoscaler\n4 2031-04-19T10:44:27Z CHG-5708 APPLIED  returns-svc override db.pool.max_size=16 (was 10, the build 6.33.4-cb27 default) by s.patel; partial mitigation\n5 2031-04-19T11:03:00Z CHG-5709 PROPOSED returns-svc override db.pool.max_size=32 (pending review; not applied)\n6 2031-04-19T11:24:44Z CHG-5710 APPLIED  fulfil-svc image fulfil-svc:2.0 rollout complete by deploy-bot\n6 2031-04-19T10:30:13.459Z ERROR returns-svc [returns-svc-a70] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=9aed8b6f7d\n8 2031-04-19T10:30:18.538Z ERROR returns-svc [returns-svc-a70] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=17b335c961\n14 2031-04-19T10:30:48.030Z ERROR returns-svc [returns-svc-e79] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=bb9fee3289\n16 2031-04-19T10:31:04.722Z ERROR returns-svc [returns-svc-e79] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=fdedc12a62\n19 2031-04-19T10:31:16.228Z ERROR returns-svc [returns-svc-a70] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=2de2c8c0b5\n130\n['minute,rps,p99_ms,db_pool_in_use\\n', '10:30,230,3415,10\\n', '10:31,192,2397,10\\n']\n"
+  }
+ ]
+}

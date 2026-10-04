@@ -1,0 +1,29 @@
+{
+ "number": 2,
+ "parent": 1,
+ "source": "runtime",
+ "step": 2,
+ "sha256": "c15b2c2d8c52c9f8c895c1500a7d6249ad2397606ae7ddba9a3483d99f53af03",
+ "entries": [
+  {
+   "id": "s1.act",
+   "role": "assistant",
+   "body": "[step 1] execute\nthought: \ncode:\nimport os\nb='/task/fixtures/stage-1/'\nfor f in ['UPDATE.md','config/returns-svc.yaml','deploy/deploys.log','deploy/release-notes-6.33.4-cb27.md','ops/oncall-notes.md']:\n print('##',f)\n for i,l in enumerate(open(b+f),1):print(i,l.rstrip())\nimport collections\nfor f in ['logs/edge-gw.log','logs/returns-svc.log']:\n c=collections.Counter()\n L=open(b+f).readlines()\n for i,l in enumerate(L,1):\n  if 'ERROR' in l or 'WARN' in l:\n   c[l[20:90]]+=1\n print(f,len(L));[print(k,v) for k,v in c.most_common(6)]"
+  },
+  {
+   "id": "s1.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n## UPDATE.md\n1 # Stage 1 of 3 (08:00-09:30 UTC)\n2 \n3 edge-gw began returning 5xx for returns-svc shortly after a deploy. Investigate the files below.\n4 More evidence will be released in later stages.\n## config/returns-svc.yaml\n1 # Repository default configuration for returns-svc.\n2 # Build release notes and APPLIED change records override these values.\n3 service: returns-svc\n4 clients:\n5   tax-engine:\n6     base_url: http://tax-engine.internal\n7     timeout_ms: 2500\n8 database:\n9   host: returns-svc-db.internal\n10   pool:\n11     max_size: 48\n12     acquire_timeout_ms: 5000\n13 cache:\n14   ttl_s: 120\n## deploy/deploys.log\n1 2031-04-19T07:27:34Z DEPLOY catalog-api build 5.28.3 rollout 100% by deploy-bot\n2 2031-04-19T07:45:18Z DEPLOY fulfil-svc build 7.27.6 rollout 100% by deploy-bot\n3 2031-04-19T08:16:14Z DEPLOY returns-svc build 6.33.4-cb27 (previous 6.32.5) rollout 100% by deploy-bot; release notes: stage-1/deploy/release-notes-6.33.4-cb27.md\n4 2031-04-19T08:20:34Z DEPLOY billing-svc build 6.20.7 rollout 100% by deploy-bot\n5 2031-04-19T08:40:59Z DEPLOY billing-svc build 2.10.2 rollout 100% by deploy-bot\n6 2031-04-19T08:43:30Z DEPLOY inventory-svc build 7.22.7 rollout 100% by deploy-bot\n7 2031-04-19T08:57:13Z DEPLOY orders-api build 8.20.6 rollout 100% by deploy-bot\n## deploy/release-notes-6.33.4-cb27.md\n1 # Release notes: returns-svc build 6.33.4-cb27\n2 \n3 Previous build: 6.32.5. Defaults below override repository config files.\n4 \n5 - clients: default `clients.tax-engine.timeout_ms` lowered from 2500 to 750 (fail fast)\n6 - cache: default `cache.ttl_s` unchanged (120)\n7 - build: container base image refreshed\n8 - metrics: db pool gauges renamed to `db_pool_*`\n9 - tracing: sampling rate default 1% (unchanged)\n10 - retry: idempotent GETs retried once on connect errors\n11 - config: `log.level` default remains info\n12 - deps: http client library upgraded to a patch release\n13 - metrics: new histogram for cache hit latency\n14 - logging: structured request ids added to access logs\n15 - api: `/v1/status` returns build id\n16 - locale: currency formatting fixes\n17 - deps: json serializer upgraded\n18 - docs: runbook links updated\n19 - db: default connection pool `db.pool.max_size` lowered from 48 to 10 to fit the shared-db connection quota\n20 - security: TLS session tickets rotated hourly\n21 - feature flags: `ff-legacy-export` removed (was 0%)\n## ops/oncall-notes.md\n1 # On-call notes - returns-svc incident 2031-04-19\n2 \n3 Informal running notes. Not reviewed; may be out of date.\n4 \n5 - 08:31 edge-gw 5xx for returns-svc since build 6.33.4-cb27 rolled out. Many tax-engine timeouts.\n6 - 08:41 Suspect the tax-engine timeout default change in 6.33.4-cb27; asking for a mitigation.\nlogs/edge-gw.log 433\nlogs/returns-svc.log 862\n127Z ERROR returns-svc [returns-svc-e79] upstream call tax-engine time 2\n661Z WARN  returns-svc [returns-svc-b92] runtime gc pause 164ms (young 1\n110Z WARN  returns-svc [returns-svc-a70] runtime gc pause 198ms (young 1\n334Z WARN  returns-svc [returns-svc-b92] disk usage /var/data at 70%\n 1\n656Z WARN  returns-svc [returns-svc-e79] runtime gc pause 254ms (young 1\n498Z WARN  returns-svc [returns-svc-a70] dns cache refresh retry succe 1\n"
+  },
+  {
+   "id": "s2.act",
+   "role": "assistant",
+   "body": "[step 2] execute\nthought: \ncode:\nimport re,collections\nb='/task/fixtures/stage-1/logs/'\nfor f in ['returns-svc.log','edge-gw.log']:\n c=collections.Counter();first={}\n for i,l in enumerate(open(b+f),1):\n  if 'ERROR' in l:\n   k=re.sub(r'\\d+','N',l[40:])[:90];c[k]+=1;first.setdefault(k,i)\n for k,v in c.most_common(5):print(f,first[k],v,k)\nL=open(b+'returns-svc.log').readlines()\nfor i,l in enumerate(L,1):\n if 'pool' in l and 'ERROR' in l:print(i,l.strip());break\nfor i,l in enumerate(L,1):\n if 'tax-engine' in l and 'ERROR' in l:print(i,l.strip());break"
+  },
+  {
+   "id": "s2.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nreturns-svc.log 420 2 vc [returns-svc-eN] upstream call tax-engine timed out after Nms (attempt N/N) req=NeN\n\nreturns-svc.log 161 1 vc [returns-svc-bN] upstream call tax-engine timed out after Nms (attempt N/N) req=dcNcNdN\nreturns-svc.log 164 1 vc [returns-svc-eN] upstream call tax-engine timed out after Nms (attempt N/N) req=NcNeNdN\nreturns-svc.log 166 1 vc [returns-svc-bN] upstream call tax-engine timed out after Nms (attempt N/N) req=dNbNdb\n\nreturns-svc.log 171 1 vc [returns-svc-eN] upstream call tax-engine timed out after Nms (attempt N/N) req=NdefNfe\n161 2031-04-19T08:17:17.084Z ERROR returns-svc [returns-svc-b92] upstream call tax-engine timed out after 750ms (attempt 1/1) req=dc3c16d400\n"
+  }
+ ]
+}

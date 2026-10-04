@@ -1,0 +1,49 @@
+{
+ "number": 16,
+ "parent": 15,
+ "source": "runtime",
+ "step": 10,
+ "sha256": "1877ddce205b445e207c11e0d1ff78a41d38dc6cd001ceb682d980d8bf19312a",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1: release notes stage-1/deploy/release-notes-8.19.0-ff7b.md:9 risk-score timeout 2500->800; :15 db.pool.max_size 60->14. deploy stage-1/deploy/deploys.log:4 quotes-api 8.19.0-ff7b 08:21:06. config yaml:11 pool 60, :7 timeout 2500. gateway 503 upstream timeout from line 93 on. quotes-api.log:206 first ERROR risk-score timed out after 800ms (95 such errors). oncall suspects risk-score timeout (informal). quotes-api.log:419 db pool wait in_use 14/14 (7 warns). Stage2 released. Stage2: changes.log:1 CHG-5117 APPLIED risk-score timeout 3500 (mitigated). oncall says db pool exhaustion now. stage-2 gateway 503 line 58. stage-2 quotes-api.log:136 db pool exhausted 14/14 (110 pool lines). changes.log:2 CHG-5118 REVERTED catalog-api; :3 CHG-5119 PROPOSED profile-svc (irrelevant). Next: advance to stage3."
+  },
+  {
+   "id": "s8.act",
+   "role": "assistant",
+   "body": "[step 8] execute\nthought: Compact context then advance next step. Check stage-2 metrics briefly.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']+=' changes.log:2 CHG-5118 REVERTED catalog-api; :3 CHG-5119 PROPOSED profile-svc (irrelevant). Next: advance to stage3.'\njson.dump(c,open('/task/workspace/context.json','w'))\nprint(open('/task/fixtures/stage-2/metrics/quotes-api.csv').read()[:500])"
+  },
+  {
+   "id": "s8.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nminute,rps,p99_ms,db_pool_in_use\n09:30,250,1284,14\n09:31,251,904,10\n09:32,183,1103,10\n09:33,194,1101,13\n09:34,183,1022,11\n09:35,227,1519,10\n09:36,251,1225,13\n09:37,227,1183,12\n09:38,181,5129,14\n09:39,219,4960,14\n09:40,227,3912,14\n09:41,210,4997,14\n09:42,200,3143,14\n09:43,216,4951,14\n09:44,229,3702,14\n09:45,249,3133,14\n09:46,183,2685,14\n09:47,240,2600,14\n09:48,223,3187,14\n09:49,205,3160,14\n09:50,219,2683,14\n09:51,255,4210,14\n09:52,180,3873,14\n09:53,203,5162,14\n09:54,240,4433,14\n09:55,189,3127,14\n\n"
+  },
+  {
+   "id": "s8.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 8: revision 12 -> 13; entries 4 -> 1; body chars 2658 -> 811; removed [s7.act, s7.obs, s7.rcpt]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s9.act",
+   "role": "assistant",
+   "body": "[step 9] advance\nthought: "
+  },
+  {
+   "id": "s9.obs",
+   "role": "observation",
+   "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (6 lines)\n  stage-3/logs/api-gateway.log (366 lines)\n  stage-3/logs/quotes-api.log (830 lines)\n  stage-3/metrics/quotes-api.csv (61 lines)"
+  },
+  {
+   "id": "s10.act",
+   "role": "assistant",
+   "body": "[step 10] execute\nthought: Review stage-3 changes and log patterns.\ncode:\nimport re\nprint(open('/task/fixtures/stage-3/deploy/changes.log').read())\nL=open('/task/fixtures/stage-3/logs/quotes-api.log').read().splitlines()\nfrom collections import Counter\nc=Counter();first={}\nfor i,l in enumerate(L,1):\n  if 'ERROR' in l or 'WARN' in l:\n    k=re.sub(r'\\d+','N',l[20:120]);c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(8):print(v,first[k],k)\nG=open('/task/fixtures/stage-3/logs/api-gateway.log').read().splitlines()\nfor i,l in enumerate(G,1):\n  if ' 503' in l or 'ERROR' in l:print(i,l);break"
+  },
+  {
+   "id": "s10.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.8s\n--- stdout ---\n2031-05-22T09:38:29Z CHG-5853 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\n2031-05-22T10:30:46Z CHG-5854 PROPOSED orders-api override http.max_body_kb=512 (pending review; not applied)\n2031-05-22T10:47:19Z CHG-5855 APPLIED  quotes-api override db.pool.max_size=24 (was 14, the build 8.19.0-ff7b default) by s.patel; partial mitigation\n2031-05-22T10:55:06Z CHG-5856 APPLIED  catalog-api scale replicas 3 -> 8 by autoscaler\n2031-05-22T11:03:52Z CHG-5857 PROPOSED quotes-api override db.pool.max_size=40 (pending review; not applied)\n2031-05-22T11:20:08Z CHG-5858 REVERTED orders-api override cache.ttl_s=30 (back to 120) by j.moreau\n\n56 1 NZ ERROR quotes-api [quotes-api-eN] db pool exhausted: N/N connections in use, waited Nms (a\n43 5 NZ ERROR quotes-api [quotes-api-bN] db pool exhausted: N/N connections in use, waited Nms (a\n31 9 NZ ERROR quotes-api [quotes-api-cN] db pool exhausted: N/N connections in use, waited Nms (a\n26 2 NZ WARN  quotes-api [quotes-api-bN] runtime gc pause Nms (young)\n22 21 NZ WARN  quotes-api [quotes-api-cN] runtime gc pause Nms (young)\n21 100 NZ WARN  quotes-api [quotes-api-eN] runtime gc pause Nms (young)\n12 6 NZ WARN  quotes-api [quotes-api-bN] tls certificate for quotes-api.internal expires in N days\n10 131 NZ WARN  quotes-api [quotes-api-cN] dns cache refresh retry succeeded\n108 2031-05-22T10:48:28.423Z api-gateway access upstream=quotes-api method=GET path=/v1/orders status=503 rt=2.375s upstream_error=\"upstream returned 503\"\n"
+  }
+ ]
+}

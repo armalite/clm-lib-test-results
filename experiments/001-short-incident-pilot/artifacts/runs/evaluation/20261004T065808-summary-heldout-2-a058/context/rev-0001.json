@@ -1,0 +1,19 @@
+{
+ "number": 1,
+ "parent": 0,
+ "source": "runtime",
+ "step": 1,
+ "sha256": "cd01e4d8a5a7918c9410bcc3e2cb7878eca8815f83929a7b5f072fb5c28f7b82",
+ "entries": [
+  {
+   "id": "s1.act",
+   "role": "assistant",
+   "body": "[step 1] execute\nthought: \ncode:\nimport os\nfor f in ['config/payments-api.yaml','deploy/changes.log','ops/oncall-notes.md']:\n  print('==',f)\n  for i,l in enumerate(open('/task/fixtures/'+f),1): print(i,l.rstrip())"
+  },
+  {
+   "id": "s1.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.0s\n--- stdout ---\n== config/payments-api.yaml\n1 # Repository default configuration for payments-api (build 2.33.5).\n2 # Deploy-time overrides are recorded in deploy/changes.log.\n3 service: payments-api\n4 listen_port: 8080\n5 log:\n6   level: info\n7 clients:\n8   pricing-core:\n9     base_url: http://pricing-core.internal\n10     timeout_ms: 2500\n11     retries: 0\n12 cache:\n13   ttl_s: 120\n14   max_entries: 20000\n== deploy/changes.log\n1 2031-06-15T03:28:12Z CHG-4376 APPLIED  returns-svc override log.level=info (was debug) by r.okafor\n2 2031-06-15T04:51:40Z CHG-4377 APPLIED  returns-svc image returns-svc:8.15 rollout complete by deploy-bot\n3 2031-06-15T04:59:49Z CHG-4378 PROPOSED quotes-api override http.max_body_kb=512 (pending review; not applied)\n4 2031-06-15T06:13:01Z CHG-4379 APPLIED  inventory-svc override log.level=info (was debug) by a.tanaka\n5 2031-06-15T06:38:09Z CHG-4380 REVERTED shipping-api override cache.ttl_s=30 (back to 120) by m.lindqvist\n6 2031-06-15T06:46:18Z CHG-4381 PROPOSED inventory-svc override http.max_body_kb=512 (pending review; not applied)\n7 2031-06-15T07:10:51Z CHG-4382 APPLIED  shipping-api scale replicas 3 -> 5 by autoscaler\n8 2031-06-15T07:20:39Z CHG-4383 PROPOSED returns-svc override http.max_body_kb=512 (pending review; not applied)\n9 2031-06-15T07:47:27Z CHG-4384 PROPOSED returns-svc override http.max_body_kb=512 (pending review; not applied)\n10 2031-06-15T07:49:04Z CHG-4385 REVERTED returns-svc override cache.ttl_s=30 (back to 120) by s.patel\n11 2031-06-15T08:09:09Z CHG-4386 APPLIED  inventory-svc scale replicas 4 -> 8 by autoscaler\n12 2031-06-15T08:12:42Z CHG-4387 APPLIED  inventory-svc override log.level=info (was debug) by j.moreau\n13 2031-06-15T08:17:50Z CHG-4388 APPLIED  payments-api hotfix override clients.pricing-core.timeout_ms=750 (was 2500) by k.novak; reason: fail fast during retry storm\n14 2031-06-15T08:18:41Z CHG-4389 PROPOSED shipping-api override http.max_body_kb=512 (pending review; not applied)\n15 2031-06-15T08:43:35Z CHG-4390 REVERTED quotes-api override cache.ttl_s=30 (back to 120) by r.okafor\n16 2031-06-15T08:47:57Z CHG-4391 PROPOSED catalog-api override http.max_body_kb=512 (pending review; not applied)\n== ops/oncall-notes.md\n1 # On-call notes - payments-api incident 2031-06-15\n2 \n3 Informal running notes. Not reviewed; may be out of date.\n4 \n5 - 07:51 pricing-core timeout is 2500ms per config/payments-api.yaml; upstream p99 is ~1.1s so timeouts are not a risk.\n6 - 08:25 front-proxy reporting 503s from payments-api. Checking db pool.\n7 - 08:33 db pool fine. Rate-limit headroom on pricing-core also fine.\n"
+  }
+ ]
+}

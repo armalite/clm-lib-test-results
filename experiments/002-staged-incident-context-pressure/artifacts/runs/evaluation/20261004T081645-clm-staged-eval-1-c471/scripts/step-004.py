@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'sum1','role':'summary','body':'Stage1 facts: deploys.log:4 quotes-api 8.19.0-ff7b at 08:21:06. release-notes-8.19.0-ff7b.md:9 risk-score timeout_ms 2500->800; :15 db.pool.max_size 60->14. config yaml:7 timeout 2500, :11 pool 60. quotes-api.log:206 risk-score timed out after 800ms (~73 such errors); db pool wait in_use 14/14 at lines 419,525,542,594,614 (7 total, minor). gateway log:93 503 upstream timeout. oncall notes:5-6 suspect risk-score timeout. Leading hypothesis: CLIENT_TIMEOUT_TOO_LOW, value 800. Next: advance to stage 2.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

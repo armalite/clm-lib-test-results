@@ -1,0 +1,29 @@
+{
+ "number": 7,
+ "parent": 6,
+ "source": "runtime",
+ "step": 4,
+ "sha256": "a28f96ed7616ccbe898cf70fee97511cbb186a07660d49364ecf9850a7e040ef",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1: deploys.log:3 returns-svc 6.33.4-cb27 at 08:16:14. release-notes-6.33.4-cb27.md:5 tax-engine timeout_ms 2500->750; :19 db.pool.max_size 48->10. config yaml:7 timeout 2500, :11 pool 48. Symptom returns-svc.log:161-179 tax-engine timed out after 750ms (many). pool waits only 7 lines (e.g. :193 in_use 10/10). Noise: gc, disk, dns, tls."
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Count timeouts vs pool waits to judge dominant symptom, then compress.\ncode:\nimport json\nb='/task/fixtures/stage-1/'\nL=open(b+'logs/returns-svc.log').read().splitlines()\nt=[i for i,l in enumerate(L,1) if 'timed out' in l]\np=[i for i,l in enumerate(L,1) if 'pool' in l.lower()]\nprint(len(t),t[:3],t[-3:]);print(p)\nprint(open(b+'UPDATE.md').read());print(open(b+'ops/oncall-notes.md').read())\nn='Stage1: deploys.log:3 returns-svc 6.33.4-cb27 at 08:16:14. release-notes-6.33.4-cb27.md:5 tax-engine timeout_ms 2500->750; :19 db.pool.max_size 48->10. config yaml:7 timeout 2500, :11 pool 48. Symptom returns-svc.log:161-179 tax-engine timed out after 750ms (many). pool waits only 7 lines (e.g. :193 in_use 10/10). Noise: gc, disk, dns, tls.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=3.1s\n--- stdout ---\n95 [161, 164, 166] [846, 850, 858]\n[193, 201, 523, 614, 643, 719, 782]\n# Stage 1 of 3 (08:00-09:30 UTC)\n\nedge-gw began returning 5xx for returns-svc shortly after a deploy. Investigate the files below.\nMore evidence will be released in later stages.\n\n# On-call notes - returns-svc incident 2031-04-19\n\nInformal running notes. Not reviewed; may be out of date.\n\n- 08:31 edge-gw 5xx for returns-svc since build 6.33.4-cb27 rolled out. Many tax-engine timeouts.\n- 08:41 Suspect the tax-engine timeout default change in 6.33.4-cb27; asking for a mitigation.\n\n"
+  },
+  {
+   "id": "s4.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 4: revision 5 -> 6; entries 4 -> 1; body chars 1634 -> 342; removed [s3.act, s3.obs, s3.rcpt]; added []; rewritten [n1]"
+  }
+ ]
+}

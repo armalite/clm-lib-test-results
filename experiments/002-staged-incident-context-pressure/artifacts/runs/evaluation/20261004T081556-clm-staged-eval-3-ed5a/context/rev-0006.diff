@@ -1,0 +1,19 @@
+--- rev-5
++++ rev-6
+@@ -30,6 +30,16 @@
+    "id": "s4.obs",
+    "role": "observation",
+    "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The tax-engine timeouts stopped,\nbut edge-gw still returns 503s for returns-svc with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (2 lines)\n  stage-2/logs/edge-gw.log (420 lines)\n  stage-2/logs/returns-svc.log (910 lines)\n  stage-2/metrics/returns-svc.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: Inspect stage 2 changes and errors.\ncode:\nimport re,collections\nb='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md','UPDATE.md']:\n for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nc=collections.Counter();first={}\nfor i,l in enumerate(open(b+'logs/returns-svc.log'),1):\n if 'ERROR' in l or 'WARN' in l:\n  k=re.sub(r'\\d+','N',l[40:])[:90];c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(5):print(v,first[k],k)\nfor i,l in enumerate(open(b+'logs/edge-gw.log'),1):\n if ' 503' in l:print(i,l[:160]);break\nprint(open(b+'metrics/returns-svc.csv').readlines()[:2])"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\ndeploy/changes.log 1 2031-04-19T09:44:12Z CHG-5395 APPLIED  returns-svc override clients.tax-engine.timeout_ms=4000 (was 750 from build 6.33.4-cb27) by j.moreau; mitigation\ndeploy/changes.log 2 2031-04-19T10:18:49Z CHG-5396 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\nops/oncall-notes.md 1 # On-call notes - returns-svc incident 2031-04-19\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:54 tax-engine timeouts stopped after the mitigation, but edge-gw still shows 503s for returns-svc.\nops/oncall-notes.md 6 - 10:04 New errors look like db pool exhaustion, but config/returns-svc.yaml says max_size 48, so the pool should have plenty of room?\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The tax-engine timeouts stopped,\nUPDATE.md 4 but edge-gw still returns 503s for returns-svc with a different error. New files below.\n41 235 vc [returns-svc-aN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout\n37 236 vc [returns-svc-bN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout\n35 55 vc [returns-svc-aN] runtime gc pause Nms (young)\n\n32 251 vc [returns-svc-eN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout\n31 15 vc [returns-svc-bN] runtime gc pause Nms (young)\n\n94 2031-04-19T09:46:32.224Z edge-gw access upstream=returns-svc method=GET path=/v1/cart status=503 rt=3.014s upstream_error=\"upstream returned 503\"\n\n['minute,rps,p99_ms,db_pool_in_use\\n', '09:30,240,1251,9\\n']\n"
+   }
+  ]
+ }

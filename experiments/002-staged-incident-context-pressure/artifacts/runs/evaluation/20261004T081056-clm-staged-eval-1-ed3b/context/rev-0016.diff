@@ -1,0 +1,19 @@
+--- rev-15
++++ rev-16
+@@ -30,6 +30,16 @@
+    "id": "s9.obs",
+    "role": "observation",
+    "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (6 lines)\n  stage-3/logs/api-gateway.log (366 lines)\n  stage-3/logs/quotes-api.log (830 lines)\n  stage-3/metrics/quotes-api.csv (61 lines)"
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Review stage-3 changes and log patterns.\ncode:\nimport re\nprint(open('/task/fixtures/stage-3/deploy/changes.log').read())\nL=open('/task/fixtures/stage-3/logs/quotes-api.log').read().splitlines()\nfrom collections import Counter\nc=Counter();first={}\nfor i,l in enumerate(L,1):\n  if 'ERROR' in l or 'WARN' in l:\n    k=re.sub(r'\\d+','N',l[20:120]);c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(8):print(v,first[k],k)\nG=open('/task/fixtures/stage-3/logs/api-gateway.log').read().splitlines()\nfor i,l in enumerate(G,1):\n  if ' 503' in l or 'ERROR' in l:print(i,l);break"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.8s\n--- stdout ---\n2031-05-22T09:38:29Z CHG-5853 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\n2031-05-22T10:30:46Z CHG-5854 PROPOSED orders-api override http.max_body_kb=512 (pending review; not applied)\n2031-05-22T10:47:19Z CHG-5855 APPLIED  quotes-api override db.pool.max_size=24 (was 14, the build 8.19.0-ff7b default) by s.patel; partial mitigation\n2031-05-22T10:55:06Z CHG-5856 APPLIED  catalog-api scale replicas 3 -> 8 by autoscaler\n2031-05-22T11:03:52Z CHG-5857 PROPOSED quotes-api override db.pool.max_size=40 (pending review; not applied)\n2031-05-22T11:20:08Z CHG-5858 REVERTED orders-api override cache.ttl_s=30 (back to 120) by j.moreau\n\n56 1 NZ ERROR quotes-api [quotes-api-eN] db pool exhausted: N/N connections in use, waited Nms (a\n43 5 NZ ERROR quotes-api [quotes-api-bN] db pool exhausted: N/N connections in use, waited Nms (a\n31 9 NZ ERROR quotes-api [quotes-api-cN] db pool exhausted: N/N connections in use, waited Nms (a\n26 2 NZ WARN  quotes-api [quotes-api-bN] runtime gc pause Nms (young)\n22 21 NZ WARN  quotes-api [quotes-api-cN] runtime gc pause Nms (young)\n21 100 NZ WARN  quotes-api [quotes-api-eN] runtime gc pause Nms (young)\n12 6 NZ WARN  quotes-api [quotes-api-bN] tls certificate for quotes-api.internal expires in N days\n10 131 NZ WARN  quotes-api [quotes-api-cN] dns cache refresh retry succeeded\n108 2031-05-22T10:48:28.423Z api-gateway access upstream=quotes-api method=GET path=/v1/orders status=503 rt=2.375s upstream_error=\"upstream returned 503\"\n"
+   }
+  ]
+ }

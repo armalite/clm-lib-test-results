@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -40,6 +40,16 @@
+    "id": "s6.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.7s\n--- stdout ---\ndeploy/changes.log 1 2031-04-19T09:44:12Z CHG-5395 APPLIED  returns-svc override clients.tax-engine.timeout_ms=4000 (was 750 from build 6.33.4-cb27) by j.moreau; mitigation\ndeploy/changes.log 2 2031-04-19T10:18:49Z CHG-5396 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\nops/oncall-notes.md 1 # On-call notes - returns-svc incident 2031-04-19\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:54 tax-engine timeouts stopped after the mitigation, but edge-gw still shows 503s for returns-svc.\nops/oncall-notes.md 6 - 10:04 New errors look like db pool exhaustion, but config/returns-svc.yaml says max_size 48, so the pool should have plenty of room?\n[('[returns-svc-a70] db pool exhausted: 10/10 connections in us', 41), ('[returns-svc-b92] db pool exhausted: 10/10 connections in us', 37), ('[returns-svc-e79] db pool exhausted: 10/10 connections in us', 32), ('[returns-svc-b92] upstream call tax-engine timed out after 7', 18), ('[returns-svc-e79] upstream call tax-engine timed out after 7', 12), ('returns-svc [returns-svc-b92] tls certificate for returns-sv', 11), ('returns-svc [returns-svc-a70] disk usage /var/data at 70%', 10), ('[returns-svc-a70] upstream call tax-engine timed out after 7', 10)]\n110 [235, 236, 239, 242, 244]\n2031-04-19T09:47:04.675Z ERROR returns-svc [returns-svc-a70] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=7a2a151cbb\n['minute,rps,p99_ms,db_pool_in_use', '09:30,240,1251,9', '09:31,225,1238,6']\n"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: Compress context, then advance next step.\ncode:\nimport json\nn='Stage1: deploys.log:3 returns-svc 6.33.4-cb27 at 08:16:14. release-notes-6.33.4-cb27.md:19 db.pool.max_size 48->10 (also :5 timeout 2500->750). config yaml:11 pool 48 (overridden). Stage2: changes.log:1 CHG-5395 APPLIED timeout=4000 fixed timeouts. Now stage-2/logs/returns-svc.log:235 first 'db pool exhausted: 10/10' (110 lines, 235-244 range). Hypothesis DB_POOL_EXHAUSTED, value 10. Next: advance to stage3, check changes.log for pool overrides.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=1 duration=0.9s\n--- stderr ---\nTraceback (most recent call last):\n  File \"<string>\", line 80, in <module>\n  File \"<model-code>\", line 2\n    n='Stage1: deploys.log:3 returns-svc 6.33.4-cb27 at 08:16:14. release-notes-6.33.4-cb27.md:19 db.pool.max_size 48->10 (also :5 timeout 2500->750). config yaml:11 pool 48 (overridden). Stage2: changes.log:1 CHG-5395 APPLIED timeout=4000 fixed timeouts. Now stage-2/logs/returns-svc.log:235 first 'db pool exhausted: 10/10' (110 lines, 235-244 range). Hypothesis DB_POOL_EXHAUSTED, value 10. Next: advance to stage3, check changes.log for pool overrides.'\n                                                                                                                                                                                                                                                                                                            ^^\nSyntaxError: invalid syntax\n"
+   }
+  ]
+ }

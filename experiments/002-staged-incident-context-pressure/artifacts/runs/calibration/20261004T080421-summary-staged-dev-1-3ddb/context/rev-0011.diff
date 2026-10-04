@@ -1,0 +1,19 @@
+--- rev-10
++++ rev-11
+@@ -25,6 +25,16 @@
+    "id": "s6.obs",
+    "role": "observation",
+    "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (5 lines)\n  stage-3/logs/ingress-a.log (366 lines)\n  stage-3/logs/shipping-api.log (830 lines)\n  stage-3/metrics/shipping-api.csv (61 lines)"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: \ncode:\nb='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(b+'deploy/changes.log'),1):print(i,l.rstrip()[:220])\nL=open(b+'logs/shipping-api.log').readlines()\nn=[i for i,l in enumerate(L,1) if 'pool exhausted' in l]\nprint(len(n),n[:3]);print(L[n[0]-1][:170] if n else '')\nn2=[i for i,l in enumerate(L,1) if 'timed out' in l];print(len(n2),n2[:3])"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.6s\n--- stdout ---\n1 2031-03-16T10:09:53Z CHG-5774 APPLIED  catalog-api scale replicas 3 -> 5 by autoscaler\n2 2031-03-16T10:45:01Z CHG-5775 APPLIED  payments-api scale replicas 4 -> 8 by autoscaler\n3 2031-03-16T10:53:46Z CHG-5776 APPLIED  shipping-api override db.pool.max_size=20 (was 12, the build 7.25.4-e1b3 default) by j.moreau; partial mitigation\n4 2031-03-16T10:59:28Z CHG-5777 APPLIED  quotes-api image quotes-api:8.1 rollout complete by deploy-bot\n5 2031-03-16T11:08:08Z CHG-5778 PROPOSED shipping-api override db.pool.max_size=36 (pending review; not applied)\n130 [4, 13, 20]\n2031-03-16T10:30:12.543Z ERROR shipping-api [shipping-api-f35] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=e46fb95e60\n\n0 []\n"
+   }
+  ]
+ }

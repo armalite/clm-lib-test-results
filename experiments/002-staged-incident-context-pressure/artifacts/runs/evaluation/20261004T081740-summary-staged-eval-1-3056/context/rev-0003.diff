@@ -1,0 +1,19 @@
+--- rev-2
++++ rev-3
+@@ -20,6 +20,16 @@
+    "id": "s2.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.7s\n--- stdout ---\n88 runtime gc pause Nms (young)\n25 dns cache refresh retry succeeded\n23 tls certificate for quotes-api.internal expires in N days\n20 disk usage /var/data at N%\n9 upstream call risk-score timed out after Nms (attempt N/N) req=N\n7 db pool wait Nms (in_use N/N)\n4 upstream call risk-score timed out after Nms (attempt N/N) req=NdN\n3 upstream call risk-score timed out after Nms (attempt N/N) req=NeN\n206 2031-05-22T08:22:58.313Z ERROR quotes-api [quotes-api-b24] upstream call risk-score timed out after 800ms (attempt 1/1) req=2fa0314268\n"
++  },
++  {
++   "id": "s3.act",
++   "role": "assistant",
++   "body": "[step 3] execute\nthought: Check db pool errors and gateway 5xx counts briefly, save notes.\ncode:\nimport re\nL=open('/task/fixtures/stage-1/logs/quotes-api.log').readlines()\nfor i,l in enumerate(L):\n  if 'db pool' in l: print(i+1,l.strip()[:160])\nG=open('/task/fixtures/stage-1/logs/api-gateway.log').readlines()\nn=[i+1 for i,l in enumerate(G) if re.search(r'status=5\\d\\d',l)]\nprint(len(n),n[:5]);print(G[n[0]-1].strip()[:200] if n else '')\nopen('/task/workspace/notes.txt','w').write('s1: RN line9 risk timeout 800 (from 2500); RN line15 pool 14. qlog 206 first risk timeout ERROR\\n')"
++  },
++  {
++   "id": "s3.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.8s\n--- stdout ---\n419 2031-05-22T08:42:22.847Z WARN  quotes-api [quotes-api-e13] db pool wait 1380ms (in_use 14/14)\n525 2031-05-22T08:53:30.842Z WARN  quotes-api [quotes-api-c10] db pool wait 1138ms (in_use 14/14)\n542 2031-05-22T08:55:09.447Z WARN  quotes-api [quotes-api-b24] db pool wait 1356ms (in_use 14/14)\n594 2031-05-22T09:01:51.174Z WARN  quotes-api [quotes-api-c10] db pool wait 1862ms (in_use 14/14)\n614 2031-05-22T09:03:56.434Z WARN  quotes-api [quotes-api-c10] db pool wait 1095ms (in_use 14/14)\n742 2031-05-22T09:17:13.782Z WARN  quotes-api [quotes-api-b24] db pool wait 2344ms (in_use 14/14)\n851 2031-05-22T09:28:54.357Z WARN  quotes-api [quotes-api-c10] db pool wait 962ms (in_use 14/14)\n60 [93, 99, 107, 110, 113]\n2031-05-22T08:22:45.065Z api-gateway access upstream=quotes-api method=GET path=/v1/account status=503 rt=2.751s upstream_error=\"upstream timeout\"\n"
+   }
+  ]
+ }

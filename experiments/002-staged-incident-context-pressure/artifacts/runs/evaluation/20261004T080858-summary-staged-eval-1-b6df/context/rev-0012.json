@@ -1,0 +1,34 @@
+{
+ "number": 12,
+ "parent": 11,
+ "source": "summary",
+ "step": 8,
+ "sha256": "ef50c8b7ad65acfd4d9adf499bc91949e65a6cb001d294a742a77a83c39c91eb",
+ "entries": [
+  {
+   "id": "sum5",
+   "role": "summary",
+   "body": "Progress summary (stage 1 fully read, stage 2 mostly read, stage 3 not yet released)\n\nStage 1 facts (paths under /task/fixtures/stage-1/):\n- UPDATE.md:1-4: incident window 08:00-09:30 UTC. api-gateway returned 5xx for quotes-api after a deploy.\n- deploy/deploys.log:4: 2031-05-22T08:21:06Z DEPLOY quotes-api build 8.19.0-ff7b (previous 8.18.6), rollout 100% by deploy-bot.\n- config/quotes-api.yaml is the repo config and is overridden by the release notes:\n  - line 6: risk-score base_url http://risk-score.internal\n  - line 7: timeout_ms 2500\n  - line 11: database.pool.max_size 60\n  - line 12: acquire_timeout_ms 5000\n  - line 14: cache.ttl_s 120\n- deploy/release-notes-8.19.0-ff7b.md:\n  - line 9: risk-score timeout_ms default 2500 -> 800 (\"fail fast\")\n  - line 15: db.pool.max_size default 60 -> 14 \"to fit the shared-db connection quota\"\n  - line 16: ff-legacy-export removed (was 0%)\n- ops/oncall-notes.md (informal): lines 5 (08:36) and 6 (08:46) suspect the timeout change.\n- logs/quotes-api.log: 95 errors, all \"upstream call risk-score timed out after 800ms (attempt 1/1)\". First at line 206, 08:22:58.313Z, b24, req=2fa0314268.\n- Ruled out as noise:\n  - TLS cert expires in 32 days\n  - disk at 71%\n  - DNS retry succeeded\n  - GC pauses of 120-250ms\n\nStage 2 facts (paths under /task/fixtures/stage-2/, window 09:30-10:30):\n- deploy/changes.log:\n  - line 1: 2031-05-22T09:35:32Z CHG-5117 APPLIED quotes-api clients.risk-score.timeout_ms=3500 (was 800) by m.lindqvist, as mitigation. This supersedes CLIENT_TIMEOUT_TOO_LOW.\n  - line 2: CHG-5118 REVERTED catalog-api cache.ttl_s=30 back to 120. Irrelevant.\n  - line 3: CHG-5119 PROPOSED profile-svc http.max_body_kb=512. Not applied, irrelevant.\n- ops/oncall-notes.md:\n  - line 5 (09:45): timeouts stopped, but 503s continue.\n  - line 6 (09:55): claims pool max_size is 60 per the yaml. This is stale and wrong; the effective value is 14.\n- logs/quotes-api.log:\n  - Residual 800ms timeouts at lines 2, 8 and 17 (09:30:07-09:30:41), before CHG-5117; 40 total.\n  - New error: \"db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout)\", 110 total.\n  - First at line 136, 09:37:50.344Z, c10, req=b882ad4408; also at lines 143 and 158.\n- metrics/quotes-api.csv (header: minute,rps,p99_ms,db_pool_in_use): db_pool_in_use is pinned at 14.\n  - line 30: 09:58, rps 230, p99 3611\n  - line 40: 10:08, rps 206, p99 3579\n  - line 50: 10:18, rps 235, p99 4495\n  - line 61: 10:29, rps 258, p99 2664\n- Not read: stage-2 UPDATE.md and logs/api-gateway.log (420 lines). Optional.\n- Notes for stage 2 have been appended to /task/workspace/notes.md.\n\nCurrent diagnosis: DB_POOL_EXHAUSTED.\n- Effective max_size is 14, from release-notes line 15. No APPLIED pool override exists yet.\n\nNext steps:\n1. Reply {\"action\": \"advance\"} to release stage 3.\n2. Read stage 3's UPDATE, changes.log, logs and metrics. Look for any APPLIED pool max_size change (the later record wins) or a new symptom that changes the cause.\n3. Answer plan:\n   - root_cause: DB_POOL_EXHAUSTED (unless stage 3 changes it)\n   - required_value: the latest APPLIED max_size, otherwise 14\n   - remedy: RAISE_DB_POOL_LIMIT\n   - evidence_refs:\n     - pool-exhausted log lines from the final stage (e.g. stage-2/logs/quotes-api.log:136-155 or the stage-3 equivalent)\n     - the record setting the current value (stage-1/deploy/release-notes-8.19.0-ff7b.md:15, or a stage-3 APPLIED line)\n     - the originating change: stage-1/deploy/release-notes-8.19.0-ff7b.md:15"
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] advance\nthought: "
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (6 lines)\n  stage-3/logs/api-gateway.log (366 lines)\n  stage-3/logs/quotes-api.log (830 lines)\n  stage-3/metrics/quotes-api.csv (61 lines)"
+  },
+  {
+   "id": "s7.act",
+   "role": "assistant",
+   "body": "[step 7] execute\nthought: Read stage-3 changes.log and grep errors.\ncode:\nb='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(b+'deploy/changes.log'),1):print(i,l.rstrip())\nimport collections\nc=collections.Counter();f={}\nfor i,l in enumerate(open(b+'logs/quotes-api.log'),1):\n  if 'ERROR' in l or 'exhausted' in l or 'timed out' in l:\n    k=l.split(' ',3)[-1][:70];c[k]+=1;f.setdefault(k,(i,l.strip()[:200]))\nfor k,v in c.most_common(6):print(v,f[k])"
+  },
+  {
+   "id": "s7.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.9s\n--- stdout ---\n1 2031-05-22T09:38:29Z CHG-5853 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\n2 2031-05-22T10:30:46Z CHG-5854 PROPOSED orders-api override http.max_body_kb=512 (pending review; not applied)\n3 2031-05-22T10:47:19Z CHG-5855 APPLIED  quotes-api override db.pool.max_size=24 (was 14, the build 8.19.0-ff7b default) by s.patel; partial mitigation\n4 2031-05-22T10:55:06Z CHG-5856 APPLIED  catalog-api scale replicas 3 -> 8 by autoscaler\n5 2031-05-22T11:03:52Z CHG-5857 PROPOSED quotes-api override db.pool.max_size=40 (pending review; not applied)\n6 2031-05-22T11:20:08Z CHG-5858 REVERTED orders-api override cache.ttl_s=30 (back to 120) by j.moreau\n29 (1, '2031-05-22T10:30:01.464Z ERROR quotes-api [quotes-api-e13] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=1522a7d2c3')\n27 (323, '2031-05-22T10:51:38.135Z ERROR quotes-api [quotes-api-e13] db pool exhausted: 24/24 connections in use, waited 5000ms (acquire_timeout) req=aa8063c0e6')\n26 (285, '2031-05-22T10:48:40.029Z ERROR quotes-api [quotes-api-b24] db pool exhausted: 24/24 connections in use, waited 5000ms (acquire_timeout) req=61c88df4d2')\n17 (5, '2031-05-22T10:30:07.010Z ERROR quotes-api [quotes-api-b24] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=2d92ba2ce4')\n17 (286, '2031-05-22T10:48:41.819Z ERROR quotes-api [quotes-api-c10] db pool exhausted: 24/24 connections in use, waited 5000ms (acquire_timeout) req=aec5112e51')\n14 (9, '2031-05-22T10:30:16.643Z ERROR quotes-api [quotes-api-c10] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=400b279219')\n"
+  }
+ ]
+}

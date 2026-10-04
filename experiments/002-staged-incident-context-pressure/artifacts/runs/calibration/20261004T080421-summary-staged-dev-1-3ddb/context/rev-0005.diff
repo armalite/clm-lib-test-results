@@ -1,0 +1,19 @@
+--- rev-4
++++ rev-5
+@@ -25,6 +25,16 @@
+    "id": "s3.obs",
+    "role": "observation",
+    "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The pricing-core timeouts stopped,\nbut ingress-a still returns 503s for shipping-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (2 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/shipping-api.log (910 lines)\n  stage-2/metrics/shipping-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
++  },
++  {
++   "id": "s4.act",
++   "role": "assistant",
++   "body": "[step 4] execute\nthought: Read stage-2 changes, notes, and error categories.\ncode:\nb='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md','UPDATE.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip()[:220])\nimport collections,re\nc=collections.Counter();first={}\nfor i,l in enumerate(open(b+'logs/shipping-api.log'),1):\n  if 'ERROR' in l or 'WARN' in l:\n    k=re.sub(r'\\d+','N',l[24:])[:90];c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(6):print(first[k],v,k)\nprint(open(b+'metrics/shipping-api.csv').readlines()[:2])"
++  },
++  {
++   "id": "s4.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.8s\n--- stdout ---\ndeploy/changes.log 1 2031-03-16T09:02:30Z CHG-5160 APPLIED  fulfil-svc image fulfil-svc:3.5 rollout complete by deploy-bot\ndeploy/changes.log 2 2031-03-16T09:44:36Z CHG-5161 APPLIED  shipping-api override clients.pricing-core.timeout_ms=4000 (was 750 from build 7.25.4-e1b3) by r.okafor; mitigation\nops/oncall-notes.md 1 # On-call notes - shipping-api incident 2031-03-16\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:54 pricing-core timeouts stopped after the mitigation, but ingress-a still shows 503s for shipping-api.\nops/oncall-notes.md 6 - 10:04 New errors look like db pool exhaustion, but config/shipping-api.yaml says max_size 48, so the pool should have plenty of room?\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The pricing-core timeouts stopped,\nUPDATE.md 4 but ingress-a still returns 503s for shipping-api with a different error. New files below.\n254 46  ERROR shipping-api [shipping-api-fN] db pool exhausted: N/N connections in use, waited Nm\n257 38  ERROR shipping-api [shipping-api-cN] db pool exhausted: N/N connections in use, waited Nm\n32 28  WARN  shipping-api [shipping-api-cN] runtime gc pause Nms (young)\n\n268 26  ERROR shipping-api [shipping-api-bN] db pool exhausted: N/N connections in use, waited Nm\n6 21  WARN  shipping-api [shipping-api-bN] runtime gc pause Nms (young)\n\n10 19  ERROR shipping-api [shipping-api-cN] upstream call pricing-core timed out after Nms (atte\n['minute,rps,p99_ms,db_pool_in_use\\n', '09:30,207,911,12\\n']\n"
+   }
+  ]
+ }

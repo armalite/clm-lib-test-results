@@ -1,0 +1,19 @@
+--- rev-6
++++ rev-7
+@@ -25,6 +25,16 @@
+    "id": "s4.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=2.8s\n--- stdout ---\ndeploy/changes.log 1 2031-04-14T09:07:53Z CHG-5340 APPLIED  inventory-svc override log.level=info (was debug) by r.okafor\ndeploy/changes.log 2 2031-04-14T09:39:04Z CHG-5341 APPLIED  payments-api override clients.risk-score.timeout_ms=4000 (was 800 from build 5.36.1-f33d) by k.novak; mitigation\nops/oncall-notes.md 1 # On-call notes - payments-api incident 2031-04-14\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:49 risk-score timeouts stopped after the mitigation, but ingress-a still shows 503s for payments-api.\nops/oncall-notes.md 6 - 09:59 New errors look like db pool exhaustion, but config/payments-api.yaml says max_size 60, so the pool should have plenty of room?\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The risk-score timeouts stopped,\nUPDATE.md 4 but ingress-a still returns 503s for payments-api with a different error. New files below.\n187 44  ERROR payments-api [payments-api-dN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) \n193 35  ERROR payments-api [payments-api-aN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) \n194 31  ERROR payments-api [payments-api-eN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) \n1 1  ERROR payments-api [payments-api-aN] upstream call risk-score timed out after Nms (attempt N/N) req=fNcNcNbN\n\n3 1  ERROR payments-api [payments-api-aN] upstream call risk-score timed out after Nms (attempt N/N) req=NdNcNdN\n\nminute,rps,p99_ms,db_pool_in_use\n 09:30,231,1312,13\n 09:59,205,4647,14\n 10:29,204,5005,14\n\n"
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] advance\nthought: Stage 2 shows DB pool exhaustion at 14 (release notes line 16). Advance to stage 3."
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (5 lines)\n  stage-3/logs/ingress-a.log (366 lines)\n  stage-3/logs/payments-api.log (830 lines)\n  stage-3/metrics/payments-api.csv (61 lines)"
+   }
+  ]
+ }

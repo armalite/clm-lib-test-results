@@ -1,0 +1,19 @@
+--- rev-6
++++ rev-7
+@@ -30,6 +30,16 @@
+    "id": "s4.obs",
+    "role": "observation",
+    "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The risk-score timeouts stopped,\nbut ingress-a still returns 503s for payments-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (2 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/payments-api.log (910 lines)\n  stage-2/metrics/payments-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: Inspect stage 2 changes and errors.\ncode:\nimport collections\nb='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md']:\n print(f);[print(i,l.rstrip()) for i,l in enumerate(open(b+f),1)]\nL=open(b+'logs/payments-api.log').readlines()\nc=collections.Counter(' '.join(l.split()[4:7]) for l in L if ' ERROR ' in l or ' WARN ' in l);print(c.most_common(6))\nfor i,l in enumerate(L,1):\n if ' ERROR ' in l:print(i,l.strip()[:170]);break\nprint(open(b+'metrics/payments-api.csv').readlines()[:2])"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=3.1s\n--- stdout ---\ndeploy/changes.log\n1 2031-04-14T09:07:53Z CHG-5340 APPLIED  inventory-svc override log.level=info (was debug) by r.okafor\n2 2031-04-14T09:39:04Z CHG-5341 APPLIED  payments-api override clients.risk-score.timeout_ms=4000 (was 800 from build 5.36.1-f33d) by k.novak; mitigation\nops/oncall-notes.md\n1 # On-call notes - payments-api incident 2031-04-14\n2 \n3 Informal running notes. Not reviewed; may be out of date.\n4 \n5 - 09:49 risk-score timeouts stopped after the mitigation, but ingress-a still shows 503s for payments-api.\n6 - 09:59 New errors look like db pool exhaustion, but config/payments-api.yaml says max_size 60, so the pool should have plenty of room?\n[('db pool exhausted:', 110), ('runtime gc pause', 70), ('upstream call risk-score', 40), ('dns cache refresh', 36), ('disk usage /var/data', 28), ('tls certificate for', 28)]\n1 2031-04-14T09:30:01.308Z ERROR payments-api [payments-api-a76] upstream call risk-score timed out after 800ms (attempt 1/1) req=f2c131c6b0\n['minute,rps,p99_ms,db_pool_in_use\\n', '09:30,231,1312,13\\n']\n"
+   }
+  ]
+ }

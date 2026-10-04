@@ -1,0 +1,44 @@
+{
+ "number": 5,
+ "parent": 4,
+ "source": "runtime",
+ "step": 4,
+ "sha256": "f80e5456415f20222fccab3b4476f0633ff3e873180836c9fed38f1001e8de31",
+ "entries": [
+  {
+   "id": "sum1",
+   "role": "summary",
+   "body": "Summary of work so far (stage 1 of 3 released; stages 2 and 3 not yet advanced):\n\nStage 1 files read (all under /task/fixtures/stage-1/):\n- UPDATE.md:1-4. Stage 1 covers 08:00-09:30 UTC. ingress-a began returning 5xx for shipping-api shortly after a deploy.\n- config/shipping-api.yaml. This is the repo default and is lowest precedence.\n  - pricing-core: line 7 timeout_ms 2500 (base_url http://pricing-core.internal).\n  - DB host shipping-api-db.internal.\n  - db pool: line 11 max_size 48, line 12 acquire_timeout_ms 5000.\n  - cache ttl_s 120.\n- deploy/deploys.log:4. 2031-03-16T08:13:27Z DEPLOY shipping-api build 7.25.4-e1b3 (previous 7.24.0), rollout 100% by deploy-bot. The other deploys are for other services (billing-svc, fulfil-svc, profile-svc, catalog-api) and are irrelevant.\n- deploy/release-notes-7.25.4-e1b3.md. These are build defaults and override the yaml.\n  - line 5: `clients.pricing-core.timeout_ms` lowered from 2500 to 750 (\"fail fast\").\n  - line 13: `db.pool.max_size` lowered from 48 to 12 \"to fit the shared-db connection quota\".\n  - line 16: ff-legacy-export removed (was 0%).\n  - Other lines are benign.\n- ops/oncall-notes.md. Informal, may be stale.\n  - line 5 (08:28): 5xx since 7.25.4-e1b3, many pricing-core timeouts.\n  - line 6 (08:38): suspects the pricing-core timeout default change and is asking for a mitigation.\n\nLog findings from logs/shipping-api.log:\n- From line 143 (08:16:15.876Z) onward: ERROR \"upstream call pricing-core timed out after 750ms (attempt 1/1)\". Further examples at lines 153, 158, 159, 163, 166.\n- Line 184 (08:20:45.932Z): WARN \"db pool wait 1612ms (in_use 12/12)\". This is a secondary signal that pool size 12 may also matter.\n- Noise, considered irrelevant:\n  - gc pauses\n  - \"dns cache refresh retry succeeded\"\n  - \"tls certificate for shipping-api.internal expires in 30 days\" (not expired)\n  - \"disk usage /var/data at 71%\"\n- The output was truncated after line ~194. ingress-a.log was not yet examined in detail.\n\nCurrent leading hypothesis:\n- CLIENT_TIMEOUT_TOO_LOW. The pricing-core timeout of 750ms was introduced by release-notes line 5, and the effective value is currently 750.\n- Remedy candidate: RAISE_CLIENT_TIMEOUT.\n\nAlternative to watch:\n- DB_POOL_EXHAUSTED. db.pool.max_size is 12 per release-notes line 13, and log line 184 shows the pool at 12/12.\n- Later stages may shift the cause to this, or contain APPLIED or PROPOSED changes to either setting.\n- Later APPLIED records win. PROPOSED records were not applied.\n\nPlanned next steps:\n1. Inspect the rest of shipping-api.log (counts of timeout vs db pool errors over time) and the ingress-a.log 5xx lines, to get line refs for the symptom.\n2. Advance to stage 2, then stage 3, checking for APPLIED change records that alter timeout_ms or pool max_size.\n3. Determine the final effective value and gather evidence refs: the symptom, the record setting the current value, and the originating change (likely release-notes-7.25.4-e1b3.md:5 or :13)."
+  },
+  {
+   "id": "s2.act",
+   "role": "assistant",
+   "body": "[step 2] execute\nthought: Save notes, check error categories counts and ingress.\ncode:\nopen('/task/workspace/notes.txt','w').write('s1: RN 7.25.4 line5 timeout 2500->750, line13 pool 48->12. deploy line4 08:13:27. log143 timeouts 750ms, log184 pool wait 12/12\\n')\nimport collections,re\nb='/task/fixtures/stage-1/logs/'\nfor f in ['shipping-api.log','ingress-a.log']:\n  c=collections.Counter();first={}\n  for i,l in enumerate(open(b+f),1):\n    if 'ERROR' in l or ' 5' in l[60:]:\n      k=re.sub(r'[0-9a-f]{6,}|\\d+','N',l[24:])[:70]\n      c[k]+=1;first.setdefault(k,i)\n  for k,v in c.most_common(8):print(f,first[k],v,k)"
+  },
+  {
+   "id": "s2.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nshipping-api.log 153 33  ERROR shipping-api [shipping-api-cN] upstream call pricing-core timed\nshipping-api.log 143 32  ERROR shipping-api [shipping-api-bN] upstream call pricing-core timed\nshipping-api.log 159 30  ERROR shipping-api [shipping-api-fN] upstream call pricing-core timed\n"
+  },
+  {
+   "id": "s3.act",
+   "role": "assistant",
+   "body": "[step 3] advance\nthought: "
+  },
+  {
+   "id": "s3.obs",
+   "role": "observation",
+   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The pricing-core timeouts stopped,\nbut ingress-a still returns 503s for shipping-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (2 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/shipping-api.log (910 lines)\n  stage-2/metrics/shipping-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Read stage-2 changes, notes, and error categories.\ncode:\nb='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md','UPDATE.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip()[:220])\nimport collections,re\nc=collections.Counter();first={}\nfor i,l in enumerate(open(b+'logs/shipping-api.log'),1):\n  if 'ERROR' in l or 'WARN' in l:\n    k=re.sub(r'\\d+','N',l[24:])[:90];c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(6):print(first[k],v,k)\nprint(open(b+'metrics/shipping-api.csv').readlines()[:2])"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.8s\n--- stdout ---\ndeploy/changes.log 1 2031-03-16T09:02:30Z CHG-5160 APPLIED  fulfil-svc image fulfil-svc:3.5 rollout complete by deploy-bot\ndeploy/changes.log 2 2031-03-16T09:44:36Z CHG-5161 APPLIED  shipping-api override clients.pricing-core.timeout_ms=4000 (was 750 from build 7.25.4-e1b3) by r.okafor; mitigation\nops/oncall-notes.md 1 # On-call notes - shipping-api incident 2031-03-16\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:54 pricing-core timeouts stopped after the mitigation, but ingress-a still shows 503s for shipping-api.\nops/oncall-notes.md 6 - 10:04 New errors look like db pool exhaustion, but config/shipping-api.yaml says max_size 48, so the pool should have plenty of room?\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The pricing-core timeouts stopped,\nUPDATE.md 4 but ingress-a still returns 503s for shipping-api with a different error. New files below.\n254 46  ERROR shipping-api [shipping-api-fN] db pool exhausted: N/N connections in use, waited Nm\n257 38  ERROR shipping-api [shipping-api-cN] db pool exhausted: N/N connections in use, waited Nm\n32 28  WARN  shipping-api [shipping-api-cN] runtime gc pause Nms (young)\n\n268 26  ERROR shipping-api [shipping-api-bN] db pool exhausted: N/N connections in use, waited Nm\n6 21  WARN  shipping-api [shipping-api-bN] runtime gc pause Nms (young)\n\n10 19  ERROR shipping-api [shipping-api-cN] upstream call pricing-core timed out after Nms (atte\n['minute,rps,p99_ms,db_pool_in_use\\n', '09:30,207,911,12\\n']\n"
+  }
+ ]
+}

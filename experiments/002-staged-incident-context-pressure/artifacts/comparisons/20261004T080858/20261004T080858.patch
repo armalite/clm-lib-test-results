@@ -1,0 +1,1843 @@
+diff --git a/src/clm_lib/cli.py b/src/clm_lib/cli.py
+index 8cdcfdc..f3800f6 100644
+--- a/src/clm_lib/cli.py
++++ b/src/clm_lib/cli.py
+@@ -3,6 +3,7 @@
+ from __future__ import annotations
+ 
+ import argparse
++import hashlib
+ import json
+ import os
+ import sys
+@@ -400,6 +401,25 @@ COMPARE_HALT = {
+ }
+ 
+ 
++def source_patch() -> str:
++    """Uncommitted tracked changes plus untracked files under src/configs/tests, as one patch."""
++    import subprocess
++
++    def git(*a: str) -> str:
++        try:
++            return subprocess.run(
++                ["git", *a], cwd=REPO_ROOT, capture_output=True, text=True, timeout=30
++            ).stdout
++        except (OSError, subprocess.TimeoutExpired):
++            return ""
++
++    paths = ["src", "configs", "tests", "pyproject.toml"]
++    out = git("diff", "HEAD", "--", *paths)
++    for f in git("ls-files", "--others", "--exclude-standard", "--", *paths).split():
++        out += git("diff", "--no-index", "--", "/dev/null", f)
++    return out
++
++
+ def code_state() -> dict[str, Any]:
+     """Git HEAD plus a hash of uncommitted changes, to freeze the evaluated code."""
+     import hashlib
+@@ -429,7 +449,12 @@ def run_matrix(
+     from .prompts import PROMPT_VERSION
+     from .tasks import GENERATOR_VERSION
+ 
++    patch = source_patch()
++    if patch:
++        out.with_suffix(".patch").write_text(patch)
+     frozen = {
++        "source_patch": out.with_suffix(".patch").name if patch else None,
++        "source_patch_sha256": hashlib.sha256(patch.encode()).hexdigest() if patch else None,
+         "model": runner.provider.model,
+         "provider": runner.provider.describe(),
+         "prompt_version": PROMPT_VERSION,
+@@ -528,6 +553,21 @@ def cmd_report(args: argparse.Namespace) -> int:
+     return 0
+ 
+ 
++def cmd_export(args: argparse.Namespace) -> int:
++    from .export import ExportConflict, export_experiment
++
++    cfg = _config(args)
++    try:
++        log = export_experiment(
++            Path(args.experiment), _runs_dir(cfg), _resolve(cfg.budget.ledger), Path(args.dest)
++        )
++    except ExportConflict as exc:
++        print(f"export refused: {exc}")
++        return 5
++    print(json.dumps(log, indent=1))
++    return 0
++
++
+ def cmd_budget(args: argparse.Namespace) -> int:
+     cfg = _config(args)
+     print(json.dumps(_ledger(cfg, None).summary(), indent=1))
+@@ -584,6 +624,13 @@ def build_parser() -> argparse.ArgumentParser:
+     rp.add_argument("--out", default="")
+     rp.set_defaults(func=cmd_report)
+ 
++    ex = sub.add_parser("export", help="copy an experiment's evidence into a results repository")
++    ex.add_argument(
++        "experiment", help="experiment directory, e.g. experiments/001-short-incident-pilot"
++    )
++    ex.add_argument("--dest", required=True, help="results repository root")
++    ex.set_defaults(func=cmd_export)
++
+     b = sub.add_parser("budget", help="show the persistent spend ledger")
+     b.set_defaults(func=cmd_budget)
+     return ap
+diff --git a/src/clm_lib/provider.py b/src/clm_lib/provider.py
+index 9e946a5..ea1e904 100644
+--- a/src/clm_lib/provider.py
++++ b/src/clm_lib/provider.py
+@@ -35,6 +35,17 @@ ACTION_SCHEMA: dict[str, Any] = {
+ }
+ 
+ 
++# Staged tasks add an "advance" action (release the next evidence stage); other tasks keep
++# ACTION_SCHEMA unchanged so earlier experiments' requests stay reproducible.
++STAGED_ACTION_SCHEMA: dict[str, Any] = {
++    **ACTION_SCHEMA,
++    "properties": {
++        **ACTION_SCHEMA["properties"],
++        "action": {"type": "string", "enum": ["execute", "final", "advance"]},
++    },
++}
++
++
+ @dataclass
+ class ModelRequest:
+     system: str
+diff --git a/src/clm_lib/report.py b/src/clm_lib/report.py
+index 6db0527..d29a487 100644
+--- a/src/clm_lib/report.py
++++ b/src/clm_lib/report.py
+@@ -171,19 +171,67 @@ def edit_evidence(run_dir: Path) -> list[dict[str, Any]]:
+     return out
+ 
+ 
+-def build_report(runs_dir: Path, ledger_path: Path) -> str:
++def rescore(run_dir: Path) -> dict[str, Any] | None:
++    """Re-score a run's recorded final answer with the current scorer (never overwrites)."""
++    from .tasks import SCORER_VERSION, Truth, score_answer
++
++    answer = next((e["answer"] for e in _events(run_dir) if e.get("event") == "final_answer"), None)
++    truth_path = run_dir / "evaluator" / "truth.json"
++    if answer is None or not truth_path.exists():
++        return None
++    t = _load(truth_path)
++    truth = Truth(
++        cause=t["cause"],
++        remedies=t["remedies"],
++        value_variants=t["value_variants"],
++        stale_variants=t["stale_variants"],
++        evidence_groups={k: [tuple(x) for x in v] for k, v in t["evidence_groups"].items()},
++        stale_causes=t.get("stale_causes", []),
++    )
++    fx = run_dir / "fixtures"
++    files = {
++        str(p.relative_to(fx)): p.read_text(encoding="utf-8") for p in fx.rglob("*") if p.is_file()
++    }
++    sc = score_answer(answer, truth, files)
++    return {"scorer_version": SCORER_VERSION, **sc.to_dict()}
++
++
++def bound_checks(run_dir: Path) -> tuple[int, int]:
++    """(responses with bound_held recorded, of which held)."""
++    rs = [e for e in _events(run_dir) if e.get("event") == "response" and "bound_held" in e]
++    return len(rs), sum(1 for e in rs if e["bound_held"])
++
++
++def build_report(
++    runs_dir: Path,
++    ledger_path: Path,
++    run_dirs: list[Path] | None = None,
++    comparisons: list[Path] | None = None,
++    title: str = "clm-lib run report",
++) -> str:
++    """Markdown report. By default covers every run under ``runs_dir``; ``run_dirs`` and
++    ``comparisons`` restrict it (ledger entries are then filtered to those run ids)."""
+     runs = []
+-    for summary in sorted(runs_dir.glob("*/summary.json")):
+-        runs.append((summary.parent, _load(summary)))
++    dirs = (
++        run_dirs
++        if run_dirs is not None
++        else [p.parent for p in sorted(runs_dir.glob("*/summary.json"))]
++    )
++    for d in dirs:
++        if (d / "summary.json").exists():
++            runs.append((d, _load(d / "summary.json")))
+     lines = [
+-        "# clm-lib run report",
++        f"# {title}",
+         "",
+-        "Generated from `runs/*/summary.json`, events and the ledger.",
++        "Generated by `clm-lib report` from run summaries, events and the ledger.",
+         "",
+     ]
+     if ledger_path.exists():
+         led = _load(ledger_path)
+         entries = led.get("entries", [])
++        if run_dirs is not None:
++            wanted = {d.name for d in run_dirs}
++            entries = [e for e in entries if e["run_id"] in wanted]
+         spent = sum(e["charged_usd"] for e in entries)
+         assumed = sum(e["charged_usd"] for e in entries if e["cost_basis"] == "reservation_assumed")
+         by_kind: dict[str, float] = {}
+@@ -200,20 +248,36 @@ def build_report(runs_dir: Path, ledger_path: Path) -> str:
+     lines += [
+         "## Runs",
+         "",
+-        "| run | label | mode | task | status | outcome | strict | cause/remedy/value/evidence | calls (act/rep/sum/retry) | exec | edits ok/unch/rej | summaries | peak req tok (rep) | cost $ |",
+-        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
++        "Outcome columns: recorded at run time (score/1) and re-scored from the same answer with "
++        "the current scorer (score/2, post-hoc `setting=value` correction).",
++        "",
++        "| run | label | mode | task | status | outcome score/1 | outcome score/2 | strict score/2 | cause/remedy/value/evidence | calls (act/rep/sum/retry) | exec | edits ok/unch/rej | summaries | pressure steps | in/out tokens | peak req tok (rep) | bound held | cost $ | elapsed s |",
++        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+     ]
+-    for _, m in runs:
+-        c, s = m["counts"], m["score"]
+-        comp = s["components"]
++    rescored: dict[str, dict[str, Any] | None] = {}
++    for run_dir, m in runs:
++        c, sc = m["counts"], m["score"]
++        rs = rescore(run_dir)
++        rescored[m["run_id"]] = rs
++        comp = rs and {
++            "cause": float(rs["cause_ok"]),
++            "remedy": float(rs["remedy_ok"]),
++            "value": float(rs["value_status"] == "exact"),
++            "evidence": sum(rs["groups_covered"].values()) / max(1, len(rs["groups_covered"])),
++        }
++        comp = comp or sc["components"]
++        u = m["usage_provider_reported"]
++        n, held = bound_checks(run_dir)
+         lines.append(
+             f"| {m['run_id']} | {m.get('label', '')} | {m['mode']} | {m['task']} | {m['status']} | "
+-            f"{s['outcome']} | {s['strict_success']} | {comp['cause']:.0f}/{comp['remedy']:.0f}/"
++            f"{sc['outcome']} | {rs['outcome'] if rs else 'no answer'} | "
++            f"{rs['strict_success'] if rs else False} | {comp['cause']:.0f}/{comp['remedy']:.0f}/"
+             f"{comp['value']:.0f}/{comp['evidence']:.2f} | {c['provider_calls']} ({c['action_calls']}/"
+             f"{c['repair_calls']}/{c['summary_calls']}/{c['api_retries']}) | {c['executions']} | "
+             f"{c['edits_accepted_changed']}/{c['edits_unchanged_write']}/{c['edits_rejected']} | "
+-            f"{c['summaries_applied']} | {m['peak_request_input_tokens_reported']} | "
+-            f"{m['cost']['incurred_usd']:.4f} |"
++            f"{c['summaries_applied']} | {c['pressure_steps']} | {u['input_tokens_uncached']}/"
++            f"{u['output_tokens']} | {m['peak_request_input_tokens_reported']} | {held}/{n} | "
++            f"{m['cost']['incurred_usd']:.4f} | {m['elapsed_s']} |"
+         )
+     lines += ["", "## Context-edit evidence (CLM and guided runs)", ""]
+     for run_dir, m in runs:
+@@ -231,19 +295,48 @@ def build_report(runs_dir: Path, ledger_path: Path) -> str:
+         for rec in ev:
+             lines.append(f"  - step {rec['step']}: {json.dumps(rec)}")
+     comps = (
+-        sorted((runs_dir / "comparisons").glob("*.json"))
++        comparisons
++        if comparisons is not None
++        else sorted((runs_dir / "comparisons").glob("*.json"))
+         if (runs_dir / "comparisons").exists()
+         else []
+     )
++    summaries = {m["run_id"]: m for _, m in runs}
+     for comp_path in comps:
+         comp = _load(comp_path)
++        missing = [
++            c["run_id"] for c in comp["cells"] if c.get("run_id") and c["run_id"] not in summaries
++        ]
++        for rid in missing:  # comparison runs outside the selected set
++            if (runs_dir / rid / "summary.json").exists():
++                summaries[rid] = _load(runs_dir / rid / "summary.json")
+         lines += [
+             "",
+             f"## Comparison {comp['comparison']} (prompt {comp.get('frozen_prompt_version')})",
+             "",
+         ]
++        for arm in ("summary", "clm"):
++            ms = [
++                (summaries[c["run_id"]], rescored.get(c["run_id"]))
++                for c in comp["cells"]
++                if c["mode"] == arm and c.get("run_id")
++            ]
++            if not ms:
++                continue
++            k = len(ms)
++            lines.append(
++                f"- {arm}: {k} runs; strict success score/1 "
++                f"{sum(m['score']['strict_success'] for m, _ in ms)}/{k}, score/2 "
++                f"{sum(bool(r and r['strict_success']) for _, r in ms)}/{k}; mean cost "
++                f"${sum(m['cost']['incurred_usd'] for m, _ in ms) / k:.4f}; mean calls "
++                f"{sum(m['counts']['provider_calls'] for m, _ in ms) / k:.2f}; edits "
++                f"{sum(m['counts']['edits_accepted_changed'] for m, _ in ms)}; summaries "
++                f"{sum(m['counts']['summaries_applied'] for m, _ in ms)}; mean input tokens "
++                f"{sum(m['usage_provider_reported']['input_tokens_uncached'] for m, _ in ms) / k:.0f}"
++            )
++        lines.append("")
+         lines += [
+-            "| pair | task | rep | mode | status | outcome | strict | cost $ | run |",
++            "| pair | task | rep | mode | status | outcome score/1 | strict score/1 | cost $ | run |",
+             "|---|---|---|---|---|---|---|---|---|",
+         ]
+         for cell in comp["cells"]:
+diff --git a/src/clm_lib/runner.py b/src/clm_lib/runner.py
+index c8bb1ba..629ad4b 100644
+--- a/src/clm_lib/runner.py
++++ b/src/clm_lib/runner.py
+@@ -41,8 +41,21 @@ from .context import (
+ )
+ from .executor import ExecResult, Executor, ExecutorUnavailable
+ from .prompts import PROMPT_VERSION, render_user, system_prompt
+-from .provider import ACTION_SCHEMA, ModelRequest, ModelResponse, Provider, ProviderError
+-from .tasks import GENERATOR_VERSION, Score, TaskInstance, no_answer_score, score_answer
++from .provider import (
++    ACTION_SCHEMA,
++    STAGED_ACTION_SCHEMA,
++    ModelRequest,
++    ModelResponse,
++    Provider,
++    ProviderError,
++)
++from .tasks import (
++    SCORER_VERSION,
++    Score,
++    TaskInstance,
++    no_answer_score,
++    score_answer,
++)
+ from .tracing import RunTrace, now_iso, sha256_text, snapshot_files
+ 
+ MODES = ("summary", "clm", "guided")
+@@ -91,6 +104,7 @@ class _Counters:
+     edits_rejected: int = 0
+     pressure_steps: int = 0
+     recovery_requests: int = 0
++    premature_finals: int = 0
+ 
+ 
+ @dataclass
+@@ -107,7 +121,9 @@ class _Usage:
+     assumed_cost_usd: float = 0.0
+ 
+ 
+-def parse_action(text: str, max_code_chars: int) -> tuple[dict[str, Any] | None, str]:
++def parse_action(
++    text: str, max_code_chars: int, allow_advance: bool = False
++) -> tuple[dict[str, Any] | None, str]:
+     """Return (action, error). Only a whole-response JSON object is accepted."""
+     raw = text.strip()
+     fence = re.fullmatch(r"```(?:json)?\s*\n(.*)\n```", raw, flags=re.S)
+@@ -120,6 +136,8 @@ def parse_action(text: str, max_code_chars: int) -> tuple[dict[str, Any] | None,
+     if not isinstance(obj, dict):
+         return None, "response JSON must be an object"
+     kind = obj.get("action")
++    if kind == "advance" and allow_advance:
++        return obj, ""
+     if kind == "execute":
+         code = obj.get("code")
+         if not isinstance(code, str) or not code.strip():
+@@ -219,6 +237,12 @@ class _Run:
+         self.step = 0
+         self.summary_index = 0
+         self.recovery_active = False
++        self.stage = 1
++        self.pressure_seen = False
++        self.timeline: list[dict[str, Any]] = []
++        self.last_reported_input = 0
++        # step at which each management event first affected a request
++        self.mgmt: dict[str, list[int]] = {"edit": [], "summary": [], "spill": [], "recovery": []}
+         self.peak_req_est = 0
+         self.peak_req_reported = 0
+         self.peak_ctx_chars = 0
+@@ -429,6 +453,7 @@ class _Run:
+             self.u.thinking_reported = True
+         self.u.cost_usd += cost
+         reported = u.input_tokens + u.cache_read_input_tokens + u.cache_creation_input_tokens
++        self.last_reported_input = reported
+         self.peak_req_reported = max(self.peak_req_reported, reported)
+         if resp.usage_source == "provider" and reported > 0 and req.purpose == "action":
+             observed = (len(req.system) + len(req.user)) / reported
+@@ -460,6 +485,7 @@ class _Run:
+                 self.summary_index += 1
+                 self.store.commit(candidate, "summary", self.step)
+                 self.c.summaries_applied += 1
++                self.mgmt["summary"].append(self.step)
+                 self.trace.event(
+                     "summary_applied",
+                     step=self.step,
+@@ -503,6 +529,7 @@ class _Run:
+         )
+         self.store.commit(entries, "spill", self.step)
+         self.c.spills += 1
++        self.mgmt["spill"].append(self.step)
+         self.trace.event(
+             "spill", step=self.step, entry=last.id, chars=len(last.body), file=f"spill/{name}"
+         )
+@@ -532,6 +559,7 @@ class _Run:
+         hard = b - self.lim.recovery_reserve_tokens
+         user, est = self.assemble()
+         pressure = est >= self.lim.pressure_ratio * b
++        self.pressure_seen = pressure  # before any management relieves it
+         if pressure:
+             self.c.pressure_steps += 1
+             self.trace.event("pressure", step=self.step, est_request_tokens=est)
+@@ -554,6 +582,7 @@ class _Run:
+                     )
+                 recovery = True
+                 self.c.recovery_requests += 1
++                self.mgmt["recovery"].append(self.step)
+         self.recovery_active = recovery
+         user, est = self.assemble(pressure=pressure, recovery=recovery)
+         if est > (b if recovery else hard):
+@@ -787,6 +816,7 @@ class _Run:
+             )
+         assert out.before and out.after
+         self.c.edits_accepted_changed += 1
++        self.mgmt["edit"].append(self.step + 1)  # first affects the next request
+         b_ids = [e.id for e in out.before.entries]
+         a_ids = [e.id for e in out.after.entries]
+         removed = [i for i in b_ids if i not in a_ids]
+@@ -822,14 +852,25 @@ class _Run:
+ 
+     # --------------------------------------------------------------- loop
+     def loop(self) -> tuple[str, str]:
++        schema = STAGED_ACTION_SCHEMA if self.task.staged else ACTION_SCHEMA
++        staged = self.task.staged
+         while True:
+             self.step += 1
+-            user, _est, pressure, recovery = self.prepare_request()
+-            req = ModelRequest(
+-                self.system, user, self.lim.max_output_tokens, "action", ACTION_SCHEMA
++            user, est, pressure, recovery = self.prepare_request()
++            self.timeline.append(
++                {
++                    "step": self.step,
++                    "stage": self.stage,
++                    "est_request_tokens": est,
++                    "pressure_before_management": self.pressure_seen,
++                    "pressure": pressure,
++                    "recovery": recovery,
++                }
+             )
++            req = ModelRequest(self.system, user, self.lim.max_output_tokens, "action", schema)
+             resp = self.call(req, "action", {"pressure": pressure, "recovery": recovery})
+-            action, err = parse_action(resp.text, self.lim.max_code_chars)
++            self.timeline[-1]["reported_input_tokens"] = self.last_reported_input
++            action, err = parse_action(resp.text, self.lim.max_code_chars, staged)
+             if action is None:
+                 self.trace.event(
+                     "invalid_action", step=self.step, error=err, stop_reason=resp.stop_reason
+@@ -840,21 +881,85 @@ class _Run:
+                     "Reply again with exactly one JSON object; keep code short.\n</runtime_status>\n"
+                 )
+                 repair = ModelRequest(
+-                    self.system, user + note, self.lim.max_output_tokens, "repair", ACTION_SCHEMA
++                    self.system, user + note, self.lim.max_output_tokens, "repair", schema
+                 )
+                 resp = self.call(repair, "repair", {"error": err})
+-                action, err = parse_action(resp.text, self.lim.max_code_chars)
++                action, err = parse_action(resp.text, self.lim.max_code_chars, staged)
+                 if action is None:
+                     self.trace.event("invalid_action", step=self.step, error=err, after_repair=True)
+                     return "failed_protocol", f"invalid response after repair: {err}"
++            self.timeline[-1]["action"] = action["action"]
++            if action["action"] == "advance":
++                self.advance_step(action)
++                continue
+             if action["action"] == "final":
++                if staged and self.stage < self.task.n_stages:
++                    self.premature_final_step(action)
++                    continue
+                 self.answer = action["answer"]
+                 self.trace.event("final_answer", step=self.step, answer=self.answer)
+                 return "completed", "final answer"
+             self.execute_step(action)
+ 
++    def advance_step(self, action: dict[str, Any]) -> None:
++        """Release the next evidence stage (staged tasks only)."""
++        thought = str(action.get("thought", ""))[:1000]
++        if self.stage < self.task.n_stages:
++            self.stage += 1
++            self.task.write_fixtures(self.fx, self.stage)
++            released = self.task.stages[self.stage - 1]
++            listing = "\n".join(
++                f"  {p} ({t.count(chr(10))} lines)" for p, t in sorted(released.items())
++            )
++            obs = (
++                f"Stage {self.stage} of {self.task.n_stages} released.\n"
++                f"{self.task.stage_updates[self.stage - 1].strip()}\n\nNew files:\n{listing}"
++            )
++            self.trace.event(
++                "stage_released", step=self.step, stage=self.stage, files=sorted(released)
++            )
++        else:
++            obs = f"No further evidence: all {self.task.n_stages} stages are already released."
++            self.trace.event("advance_noop", step=self.step)
++        self.store.append(
++            [
++                Entry(
++                    f"s{self.step}.act",
++                    "assistant",
++                    f"[step {self.step}] advance\nthought: {thought}",
++                ),
++                Entry(f"s{self.step}.obs", "observation", obs),
++            ],
++            "runtime",
++            self.step,
++        )
++        self._save_revision()
++
++    def premature_final_step(self, action: dict[str, Any]) -> None:
++        self.c.premature_finals += 1
++        self.trace.event(
++            "premature_final", step=self.step, stage=self.stage, answer=action.get("answer")
++        )
++        obs = (
++            f"Final answer not accepted: {self.stage} of {self.task.n_stages} evidence stages "
++            "released. Use advance to release the remaining stages."
++        )
++        self.store.append(
++            [
++                Entry(
++                    f"s{self.step}.act",
++                    "assistant",
++                    f"[step {self.step}] final (not accepted)\n{json.dumps(action.get('answer'))[:2000]}",
++                ),
++                Entry(f"s{self.step}.obs", "observation", obs),
++            ],
++            "runtime",
++            self.step,
++        )
++        self._save_revision()
++
+     def execute(self) -> RunResult:
+-        self.task.write_fixtures(self.fx)
++        self.task.write_fixtures(self.fx, 1 if self.task.staged else None)
+         (self.ws / "helpers").mkdir()
+         run_meta = {
+             "run_id": self.run_id,
+@@ -866,9 +971,11 @@ class _Run:
+             "scenario_hidden_from_model": True,
+             "fixture_seed": self.task.spec.seed,
+             "fixture_sha256": self.task.fixture_sha256,
+-            "generator_version": GENERATOR_VERSION,
++            "generator_version": self.task.generator_version,
++            "stages": self.task.n_stages,
+             "prompt_version": PROMPT_VERSION,
+             "system_prompt_sha256": sha256_text(self.system),
++            "task_prompt_sha256": sha256_text(self.task.prompt),
+             "provider": self.r.provider.describe(),
+             "price": self.r.price.__dict__ if self.r.price else None,
+             "executor": self.r.executor.describe(),
+@@ -909,6 +1016,36 @@ class _Run:
+             raise KeyboardInterrupt
+         return result
+ 
++    def management_summary(self) -> dict[str, Any]:
++        """When context management first affected a request, and how much work followed."""
++        tl = self.timeline
++        pressure = [t for t in tl if t["pressure_before_management"]]
++        managed = sorted(s for k in ("edit", "summary") for s in self.mgmt[k])
++        first = managed[0] if managed else None
++        after = [t for t in tl if first is not None and t["step"] >= first]
++        stage_of = {t["step"]: t["stage"] for t in tl}
++        return {
++            "stages_total": self.task.n_stages,
++            "stages_released": self.stage,
++            "first_pressure_step": pressure[0]["step"] if pressure else None,
++            "first_pressure_stage": pressure[0]["stage"] if pressure else None,
++            "edit_effective_steps": self.mgmt["edit"],
++            "summary_steps": self.mgmt["summary"],
++            "spill_steps": self.mgmt["spill"],
++            "recovery_steps": self.mgmt["recovery"],
++            "first_management_step": first,
++            "first_management_stage": stage_of.get(first) if first is not None else None,
++            "action_steps_after_first_management": len(after),
++            "executions_after_first_management": sum(
++                1 for t in after if t.get("action") == "execute"
++            ),
++            "advances_after_first_management": sum(
++                1 for t in after if t.get("action") == "advance"
++            ),
++            "premature_finals": self.c.premature_finals,
++            "timeline": tl,
++        }
++
+     def finish(self, status: str, reason: str, human: str) -> RunResult:
+         # Ground truth is written only now, outside the sandbox mounts.
+         truth = self.task.truth
+@@ -919,7 +1056,8 @@ class _Run:
+         )
+         self.trace.write_json("evaluator/truth.json", truth.to_dict())
+         self.trace.write_json(
+-            "evaluator/score.json", {**score.to_dict(), "components": score.components}
++            "evaluator/score.json",
++            {**score.to_dict(), "components": score.components, "scorer_version": SCORER_VERSION},
+         )
+         elapsed = time.monotonic() - self.t_start
+         u = self.u
+@@ -967,6 +1105,7 @@ class _Run:
+             "peak_working_context_chars": self.peak_ctx_chars,
+             "context_revisions": len(self.store.revisions) - 1,
+             "helpers": self.helper_summary(),
++            "management": self.management_summary(),
+             "score": {**score.to_dict(), "components": score.components},
+         }
+         self.trace.write_json("summary.json", metrics)
+diff --git a/src/clm_lib/tasks.py b/src/clm_lib/tasks.py
+index 072767f..261d402 100644
+--- a/src/clm_lib/tasks.py
++++ b/src/clm_lib/tasks.py
+@@ -17,6 +17,11 @@ from pathlib import Path
+ from typing import Any
+ 
+ GENERATOR_VERSION = "incident-gen/1"
++# score/1: exact normalised match of required_value.
++# score/2 (post-hoc correction, 2026-10-04): also accepts "<setting>=<value>", the form in
++# which values appear in the authoritative change records. Applied uniformly to all runs;
++# score/1 results are kept in each run's evaluator/score.json.
++SCORER_VERSION = "score/2"
+ 
+ CAUSE_CODES: dict[str, str] = {
+     "DB_POOL_EXHAUSTED": "database connection pool too small for load",
+@@ -54,8 +59,17 @@ INSTANCES: dict[str, InstanceSpec] = {
+     "heldout-1": InstanceSpec("heldout-1", 201, "tls_cert", "heldout"),
+     "heldout-2": InstanceSpec("heldout-2", 202, "client_timeout", "heldout"),
+     "heldout-3": InstanceSpec("heldout-3", 203, "feature_flag", "heldout"),
++    # Experiment 002: staged evidence (see staged.py). Dev instances are for calibration only;
++    # eval instances are not run until the comparison is frozen.
++    "staged-dev-1": InstanceSpec("staged-dev-1", 3101, "staged_pool", "staged-dev"),
++    "staged-dev-2": InstanceSpec("staged-dev-2", 3102, "staged_pool", "staged-dev"),
++    "staged-dev-3": InstanceSpec("staged-dev-3", 3103, "staged_pool", "staged-dev"),
++    "staged-eval-1": InstanceSpec("staged-eval-1", 3201, "staged_pool", "staged-eval"),
++    "staged-eval-2": InstanceSpec("staged-eval-2", 3202, "staged_pool", "staged-eval"),
++    "staged-eval-3": InstanceSpec("staged-eval-3", 3203, "staged_pool", "staged-eval"),
+ }
+ HELDOUT = ("heldout-1", "heldout-2", "heldout-3")
++STAGED_EVAL = ("staged-eval-1", "staged-eval-2", "staged-eval-3")
+ 
+ 
+ @dataclass
+@@ -67,6 +81,8 @@ class Truth:
+     # group name -> list of [file, line]
+     evidence_groups: dict[str, list[tuple[str, int]]]
+     notes: str = ""
++    # Cause codes of superseded hypotheses (e.g. an earlier, mitigated cause).
++    stale_causes: list[str] = field(default_factory=list)
+ 
+     def to_dict(self) -> dict[str, Any]:
+         return {
+@@ -74,6 +90,7 @@ class Truth:
+             "remedies": self.remedies,
+             "value_variants": self.value_variants,
+             "stale_variants": self.stale_variants,
++            "stale_causes": self.stale_causes,
+             "evidence_groups": {k: [list(x) for x in v] for k, v in self.evidence_groups.items()},
+             "notes": self.notes,
+         }
+@@ -85,19 +102,49 @@ class TaskInstance:
+     prompt: str
+     files: dict[str, str]
+     truth: Truth = field(repr=False)
++    # Staged tasks: stages[k] holds the files released at stage k+1 (union == files) and
++    # stage_updates[k] the update message shown when that stage is released.
++    stages: list[dict[str, str]] = field(default_factory=list)
++    stage_updates: list[str] = field(default_factory=list)
++    generator_version: str = GENERATOR_VERSION
+ 
+     @property
+-    def fixture_sha256(self) -> str:
++    def staged(self) -> bool:
++        return bool(self.stages)
++
++    @property
++    def n_stages(self) -> int:
++        return len(self.stages) or 1
++
++    def files_upto(self, stage: int | None = None) -> dict[str, str]:
++        if not self.staged or stage is None:
++            return self.files
++        out: dict[str, str] = {}
++        for files in self.stages[:stage]:
++            out.update(files)
++        return out
++
++    @staticmethod
++    def _sha(files: dict[str, str]) -> str:
+         h = hashlib.sha256()
+-        for path in sorted(self.files):
++        for path in sorted(files):
+             h.update(path.encode())
+             h.update(b"\0")
+-            h.update(self.files[path].encode())
++            h.update(files[path].encode())
+             h.update(b"\0")
+         return h.hexdigest()
+ 
+-    def write_fixtures(self, root: Path) -> None:
+-        for rel, text in self.files.items():
++    @property
++    def fixture_sha256(self) -> str:
++        return self._sha(self.files)
++
++    def sha_upto(self, stage: int | None) -> str:
++        return self._sha(self.files_upto(stage))
++
++    def write_fixtures(self, root: Path, stage: int | None = None) -> None:
++        """Write all files, or for staged tasks only stage ``stage`` (1-based) itself."""
++        files = self.files if not self.staged or stage is None else self.stages[stage - 1]
++        for rel, text in files.items():
+             p = root / rel
+             p.parent.mkdir(parents=True, exist_ok=True)
+             p.write_text(text, encoding="utf-8")
+@@ -796,6 +843,10 @@ Remedy codes:
+ 
+ def generate(name: str) -> TaskInstance:
+     spec = INSTANCES[name]
++    if spec.scenario.startswith("staged"):
++        from .staged import generate_staged
++
++        return generate_staged(spec)
+     files, truth = _GENERATORS[spec.scenario](spec)
+     return TaskInstance(spec=spec, prompt=task_prompt(files), files=files, truth=truth)
+ 
+@@ -864,7 +915,15 @@ def no_answer_score(truth: Truth) -> Score:
+     )
+ 
+ 
+-def score_answer(answer: dict[str, Any] | None, truth: Truth, files: dict[str, str]) -> Score:
++SETTING_RE = re.compile(r"^[a-z_][\w.\-]*\s*=\s*(\S.*)$")
++
++
++def score_answer(
++    answer: dict[str, Any] | None,
++    truth: Truth,
++    files: dict[str, str],
++    version: str = SCORER_VERSION,
++) -> Score:
+     if not answer:
+         return no_answer_score(truth)
+     root = str(answer.get("root_cause", ""))
+@@ -872,11 +931,16 @@ def score_answer(answer: dict[str, Any] | None, truth: Truth, files: dict[str, s
+     value = _norm(str(answer.get("required_value", "")))
+     cause_code = _first_code(root, CAUSE_CODES)
+     remedy_code = _first_code(remedy, REMEDY_CODES)
++    candidates = {value}
++    if version != "score/1":
++        m = SETTING_RE.match(value)
++        if m:
++            candidates.add(_norm(m.group(1)))
+     if not value:
+         value_status = "missing"
+-    elif value in {_norm(v) for v in truth.value_variants}:
++    elif candidates & {_norm(v) for v in truth.value_variants}:
+         value_status = "exact"
+-    elif value in {_norm(v) for v in truth.stale_variants}:
++    elif candidates & {_norm(v) for v in truth.stale_variants}:
+         value_status = "stale"
+     else:
+         value_status = "wrong"
+@@ -914,6 +978,8 @@ def score_answer(answer: dict[str, Any] | None, truth: Truth, files: dict[str, s
+         outcome = "correct"
+     elif value_status == "stale":
+         outcome = "stale_value"
++    elif cause_code in truth.stale_causes:
++        outcome = "stale_hypothesis"
+     elif cause_ok and remedy_ok and value_status == "exact":
+         outcome = "unsupported"
+     else:
+diff --git a/tests/test_tasks.py b/tests/test_tasks.py
+index 8363da4..be67c6f 100644
+--- a/tests/test_tasks.py
++++ b/tests/test_tasks.py
+@@ -6,6 +6,9 @@ from typing import Any
+ 
+ from clm_lib.tasks import HELDOUT, INSTANCES, TaskInstance, generate, score_answer
+ 
++# Experiment 001 task family; the staged family (experiment 002) is tested in test_staged.py.
++SINGLE = [n for n in INSTANCES if not n.startswith("staged-")]
++
+ 
+ def refs(inst: TaskInstance) -> list[str]:
+     g = inst.truth.evidence_groups
+@@ -25,19 +28,19 @@ def answer(inst: TaskInstance, **over: Any) -> dict[str, Any]:
+ 
+ def test_generation_is_deterministic_and_heldout_differs() -> None:
+     hashes = {}
+-    for name in INSTANCES:
++    for name in SINGLE:
+         a, b = generate(name), generate(name)
+         assert a.fixture_sha256 == b.fixture_sha256
+         hashes[name] = a.fixture_sha256
+-    assert len(set(hashes.values())) == len(INSTANCES)
++    assert len(set(hashes.values())) == len(SINGLE)
+     scenarios = {generate(n).spec.scenario for n in HELDOUT}
+     assert generate("dev").spec.scenario not in scenarios
+-    values = {generate(n).truth.value_variants[0] for n in INSTANCES}
+-    assert len(values) == len(INSTANCES)
++    values = {generate(n).truth.value_variants[0] for n in SINGLE}
++    assert len(values) == len(SINGLE)
+ 
+ 
+ def test_fixtures_exceed_budget_but_lines_fit_output_cap() -> None:
+-    for name in INSTANCES:
++    for name in SINGLE:
+         inst = generate(name)
+         assert sum(len(t) for t in inst.files.values()) > 8000 * 3 * 5
+         assert max(len(line) for t in inst.files.values() for line in t.splitlines()) < 400
+@@ -48,7 +51,7 @@ def test_fixtures_exceed_budget_but_lines_fit_output_cap() -> None:
+ 
+ 
+ def test_scorer_outcomes() -> None:
+-    for name in INSTANCES:
++    for name in SINGLE:
+         inst = generate(name)
+         t, f = inst.truth, inst.files
+         ok = score_answer(answer(inst), t, f)
+@@ -90,3 +93,18 @@ def test_value_normalisation_variants() -> None:
+         answer(inst, required_value=f"`{serial.lower().replace(':', '')}`"), inst.truth, inst.files
+     )
+     assert s.value_status == "exact"
++
++
++def test_setting_equals_value_form_is_accepted_by_score_v2_only() -> None:
++    inst = generate("heldout-2")
++    v, stale = inst.truth.value_variants[0], inst.truth.stale_variants[0]
++    ans = answer(inst, required_value=f"clients.pricing-core.timeout_ms={v}")
++    assert score_answer(ans, inst.truth, inst.files, version="score/1").value_status == "wrong"
++    assert score_answer(ans, inst.truth, inst.files).value_status == "exact"
++    stale_ans = answer(inst, required_value=f"clients.x.timeout_ms={stale}")
++    assert score_answer(stale_ans, inst.truth, inst.files).value_status == "stale"
++    serial = generate("heldout-1").truth.value_variants[0]  # colon-separated serials unaffected
++    h1 = generate("heldout-1")
++    assert (
++        score_answer(answer(h1, required_value=serial), h1.truth, h1.files).value_status == "exact"
++    )
+diff --git a/src/clm_lib/export.py b/src/clm_lib/export.py
+new file mode 100644
+index 0000000..b9924a4
+--- /dev/null
++++ b/src/clm_lib/export.py
+@@ -0,0 +1,387 @@
++"""Copy experiment evidence into a results repository (read-only on the source).
++
++An experiment is described by ``experiments/<id>/experiment.json`` in this repository
++(run ids, roles, provenance notes) plus hand-written ``README.md`` and ``protocol.md``.
++``export_experiment`` writes::
++
++    <dest>/README.md                         index of all exported experiments
++    <dest>/ledger-snapshots/ledger-<sha12>.json   historical ledger copies
++    <dest>/experiments/<id>/
++        README.md, protocol.md               copied from this repository
++        manifest.json                        runs, roles, settings, provenance, checksums
++        report.md                            generated by clm_lib.report
++        metrics.json, metrics.csv            per-run machine-readable metrics
++        SHA256SUMS                           every file in the experiment directory
++        artifacts/runs/<role>/<run_id>/      run evidence (fixtures exported separately)
++        artifacts/fixtures/<task>/           task files, verified against each run's copy
++        artifacts/comparisons/               comparison records (+ frozen-source patches)
++        artifacts/source/                    source patches named in experiment.json
++
++Run evidence is never silently replaced: if a run directory already exists in the
++destination with different content, the export stops with ``ExportConflict``.
++Raw runs, the active ledger and the source tree are only read.
++"""
++
++from __future__ import annotations
++
++import csv
++import hashlib
++import io
++import json
++import os
++import stat
++from pathlib import Path
++from typing import Any
++
++from . import __version__
++from .report import build_report, rescore
++from .tasks import SCORER_VERSION, generate
++
++EXPORT_FORMAT = "clm-results-export/1"
++ROLES = ("evaluation", "guided", "calibration", "smoke", "access-failure")
++REDACTIONS = [
++    {
++        "file": "run.json",
++        "field": "executor.user",
++        "replacement": "<host uid:gid> (non-root)",
++        "reason": "local account id; not needed to interpret the run",
++    }
++]
++SKIP_NAMES = {".context.json.host-tmp"}
++
++
++class ExportConflict(RuntimeError):
++    """Destination already holds different evidence under the same name."""
++
++
++def _sha(data: bytes) -> str:
++    return hashlib.sha256(data).hexdigest()
++
++
++def _redact(rel: str, data: bytes) -> bytes:
++    if rel != "run.json":
++        return data
++    doc = json.loads(data)
++    if isinstance(doc.get("executor"), dict) and "user" in doc["executor"]:
++        doc["executor"]["user"] = REDACTIONS[0]["replacement"]
++    return (json.dumps(doc, indent=1, ensure_ascii=False) + "\n").encode()
++
++
++def collect(src: Path, skip_top: frozenset[str] = frozenset()) -> dict[str, bytes]:
++    """Regular files under src (relative path -> bytes), refusing symlinks."""
++    out: dict[str, bytes] = {}
++    for dirpath, dirnames, filenames in os.walk(src, followlinks=False):
++        rel_dir = os.path.relpath(dirpath, src)
++        if rel_dir == ".":
++            dirnames[:] = sorted(d for d in dirnames if d not in skip_top)
++        else:
++            dirnames.sort()
++        for name in sorted(filenames):
++            full = Path(dirpath, name)
++            st = os.lstat(full)
++            if stat.S_ISLNK(st.st_mode):
++                raise ExportConflict(f"refusing to export symlink {full}")
++            if name in SKIP_NAMES or not stat.S_ISREG(st.st_mode):
++                continue
++            rel = os.path.relpath(full, src)
++            out[rel] = _redact(rel, full.read_bytes())
++    return out
++
++
++def sums_text(files: dict[str, bytes]) -> str:
++    return "".join(f"{_sha(files[k])}  {k}\n" for k in sorted(files))
++
++
++def write_tree(dest: Path, files: dict[str, bytes]) -> str:
++    """Write files plus SHA256SUMS; 'written' / 'unchanged'; conflict if different."""
++    text = sums_text(files)
++    marker = dest / "SHA256SUMS"
++    if dest.exists():
++        if marker.exists() and marker.read_text() == text:
++            return "unchanged"
++        raise ExportConflict(
++            f"{dest} exists with different content; refusing to overwrite evidence"
++        )
++    for rel, data in files.items():
++        p = dest / rel
++        p.parent.mkdir(parents=True, exist_ok=True)
++        p.write_bytes(data)
++    marker.write_text(text)
++    return "written"
++
++
++def fixture_dir_sha(root: Path) -> str:
++    """Same algorithm as TaskInstance.fixture_sha256, over files on disk."""
++    h = hashlib.sha256()
++    files = sorted(
++        str(p.relative_to(root)) for p in root.rglob("*") if p.is_file() and not p.is_symlink()
++    )
++    for rel in files:
++        h.update(rel.encode())
++        h.update(b"\0")
++        h.update((root / rel).read_bytes())
++        h.update(b"\0")
++    return h.hexdigest()
++
++
++def _load(p: Path) -> Any:
++    return json.loads(p.read_text(encoding="utf-8"))
++
++
++def _write_if_changed(path: Path, text: str) -> str:
++    path.parent.mkdir(parents=True, exist_ok=True)
++    if path.exists() and path.read_text(encoding="utf-8") == text:
++        return "unchanged"
++    status = "updated" if path.exists() else "written"
++    path.write_text(text, encoding="utf-8")
++    return status
++
++
++def _metrics_row(run_id: str, role: str, src: Path, charged: float) -> dict[str, Any]:
++    row: dict[str, Any] = {"run_id": run_id, "role": role, "ledger_charged_usd": round(charged, 6)}
++    if not (src / "summary.json").exists():
++        return row
++    m = _load(src / "summary.json")
++    c, s = m["counts"], m["score"]
++    rs = rescore(src)
++    row.update(
++        mode=m["mode"],
++        task=m["task"],
++        status=m["status"],
++        valid_for_comparison=m["valid_for_comparison"],
++        outcome_recorded=s["outcome"],
++        strict_recorded=s["strict_success"],
++        scorer_recorded=_load(src / "evaluator" / "score.json").get("scorer_version", "score/1"),
++        outcome_current=rs["outcome"] if rs else "no_answer",
++        strict_current=bool(rs and rs["strict_success"]),
++        scorer_current=SCORER_VERSION,
++        cause_ok=bool(rs and rs["cause_ok"]),
++        remedy_ok=bool(rs and rs["remedy_ok"]),
++        value_status=rs["value_status"] if rs else "missing",
++        evidence_groups=json.dumps(rs["groups_covered"] if rs else {}),
++        provider_calls=c["provider_calls"],
++        action_calls=c["action_calls"],
++        repair_calls=c["repair_calls"],
++        summary_calls=c["summary_calls"],
++        api_retries=c["api_retries"],
++        executions=c["executions"],
++        edit_attempts=c["edit_attempts"],
++        edits_accepted_changed=c["edits_accepted_changed"],
++        edits_rejected=c["edits_rejected"],
++        summaries_applied=c["summaries_applied"],
++        recovery_requests=c["recovery_requests"],
++        pressure_steps=c["pressure_steps"],
++        input_tokens=m["usage_provider_reported"]["input_tokens_uncached"],
++        output_tokens=m["usage_provider_reported"]["output_tokens"],
++        peak_request_input_tokens=m["peak_request_input_tokens_reported"],
++        cost_usd=m["cost"]["incurred_usd"],
++        elapsed_s=m["elapsed_s"],
++        prompt_version=m.get("prompt_version"),
++        fixture_sha256=m.get("fixture_sha256"),
++    )
++    for k, v in (m.get("management") or {}).items():
++        row[f"mgmt_{k}"] = json.dumps(v) if isinstance(v, (dict, list)) else v
++    return row
++
++
++def export_experiment(
++    exp_dir: Path, runs_root: Path, ledger_path: Path, dest_root: Path
++) -> dict[str, Any]:
++    spec = _load(exp_dir / "experiment.json")
++    exp_id = spec["id"]
++    out = dest_root / "experiments" / exp_id
++    art = out / "artifacts"
++    log: dict[str, Any] = {"experiment": exp_id, "runs": {}, "fixtures": {}, "derived": {}}
++
++    ledger = _load(ledger_path)
++    ledger_text = json.dumps(ledger, indent=1, ensure_ascii=False) + "\n"
++    ledger_sha = _sha(ledger_text.encode())
++    snap_rel = f"ledger-snapshots/ledger-{ledger_sha[:12]}.json"
++    snap = dest_root / snap_rel
++    if not snap.exists():
++        snap.parent.mkdir(parents=True, exist_ok=True)
++        snap.write_text(ledger_text, encoding="utf-8")
++    charged: dict[str, float] = {}
++    for e in ledger["entries"]:
++        charged[e["run_id"]] = charged.get(e["run_id"], 0.0) + float(e["charged_usd"])
++
++    runs_meta = []
++    rows = []
++    tasks: dict[str, str] = {}
++    for r in spec["runs"]:
++        rid, role = r["run_id"], r["role"]
++        if role not in ROLES:
++            raise ValueError(f"unknown role {role!r} for {rid}")
++        src = runs_root / rid
++        files = collect(src, skip_top=frozenset({"fixtures"}))
++        status = write_tree(art / "runs" / role / rid, files)
++        log["runs"][rid] = status
++        meta: dict[str, Any] = {
++            "run_id": rid,
++            "role": role,
++            "note": r.get("note", ""),
++            "artifact_path": f"artifacts/runs/{role}/{rid}",
++            "sha256sums_sha256": _sha(sums_text(files).encode()),
++            "files": len(files),
++            "ledger_charged_usd": round(charged.get(rid, 0.0), 6),
++        }
++        if (src / "run.json").exists():
++            rj = _load(src / "run.json")
++            meta.update(
++                mode=rj["mode"],
++                task=rj["task"],
++                prompt_version=rj["prompt_version"],
++                generator_version=rj["generator_version"],
++                fixture_seed=rj["fixture_seed"],
++                fixture_sha256=rj["fixture_sha256"],
++                model=rj["provider"]["model"],
++                effort=rj["provider"].get("effort"),
++                started=rj["started"],
++            )
++            if (src / "fixtures").exists():
++                on_disk = fixture_dir_sha(src / "fixtures")
++                inst = generate(rj["task"])
++                released = None
++                if inst.staged and (src / "summary.json").exists():
++                    released = _load(src / "summary.json")["management"]["stages_released"]
++                    meta["stages_released"] = released
++                meta["fixtures_on_disk_sha256"] = on_disk
++                meta["fixtures_match_generator"] = on_disk == inst.sha_upto(released)
++                tasks[rj["task"]] = rj["fixture_sha256"]
++        runs_meta.append(meta)
++        rows.append(_metrics_row(rid, role, src, charged.get(rid, 0.0)))
++
++    for task, expected in sorted(tasks.items()):
++        inst = generate(task)
++        if inst.fixture_sha256 != expected:
++            raise ExportConflict(f"generator output for {task} no longer matches recorded fixtures")
++        files = {k: v.encode() for k, v in inst.files.items()}
++        log["fixtures"][task] = write_tree(art / "fixtures" / task, files)
++
++    comps_meta = []
++    for name in spec.get("comparisons", []):
++        files = {}
++        for suffix in (".json", ".patch"):
++            p = runs_root / "comparisons" / f"{name}{suffix}"
++            if p.exists():
++                files[p.name] = p.read_bytes()
++        log["derived"][f"comparison {name}"] = write_tree(art / "comparisons" / name, files)
++        comp = _load(runs_root / "comparisons" / f"{name}.json")
++        comps_meta.append(
++            {
++                "comparison": name,
++                "artifact_path": f"artifacts/comparisons/{name}",
++                "frozen": comp.get("frozen"),
++                "halted": comp.get("halted"),
++                "cells": len(comp["cells"]),
++                "missing": sum(1 for c in comp["cells"] if c["status"] == "missing"),
++            }
++        )
++
++    if spec.get("source_patches"):
++        files = {Path(p).name: (exp_dir / p).read_bytes() for p in spec["source_patches"]}
++        log["derived"]["source patches"] = write_tree(art / "source", files)
++
++    for doc in ("README.md", "protocol.md"):
++        log["derived"][doc] = _write_if_changed(
++            out / doc, (exp_dir / doc).read_text(encoding="utf-8")
++        )
++
++    report = build_report(
++        runs_root,
++        ledger_path,
++        run_dirs=[runs_root / r["run_id"] for r in spec["runs"]],
++        comparisons=[runs_root / "comparisons" / f"{n}.json" for n in spec.get("comparisons", [])],
++        title=f"{exp_id}: generated report",
++    )
++    log["derived"]["report.md"] = _write_if_changed(out / "report.md", report)
++    log["derived"]["metrics.json"] = _write_if_changed(
++        out / "metrics.json", json.dumps(rows, indent=1, ensure_ascii=False) + "\n"
++    )
++    keys: list[str] = []
++    for row in rows:
++        keys += [k for k in row if k not in keys]
++    buf = io.StringIO()
++    writer = csv.DictWriter(buf, fieldnames=keys, lineterminator="\n")
++    writer.writeheader()
++    writer.writerows(rows)
++    log["derived"]["metrics.csv"] = _write_if_changed(out / "metrics.csv", buf.getvalue())
++
++    manifest = {
++        "format": EXPORT_FORMAT,
++        "experiment": exp_id,
++        "title": spec["title"],
++        "status": spec.get("status", ""),
++        "exported_with": {"clm_lib_version": __version__, "current_scorer": SCORER_VERSION},
++        "provenance": spec.get("provenance", {}),
++        "settings": spec.get("settings", {}),
++        "runs": runs_meta,
++        "comparisons": comps_meta,
++        "fixtures": {t: {"sha256": s, "path": f"artifacts/fixtures/{t}"} for t, s in sorted(tasks.items())},
++        "ledger_snapshot": {"path": f"../../{snap_rel}", "sha256": ledger_sha,
++                            "note": "historical copy; the active ledger stays in the clm-lib repo"},
++        "redactions": REDACTIONS,
++        "excluded": [
++            "credential files and environment (never present in run artifacts)",
++            "request headers (never recorded)",
++            "per-run fixtures/ copies (exported once per task under artifacts/fixtures, hash-verified)",
++        ],
++    }  # fmt: skip
++    log["derived"]["manifest.json"] = _write_if_changed(
++        out / "manifest.json", json.dumps(manifest, indent=1, ensure_ascii=False) + "\n"
++    )
++    every = {
++        str(p.relative_to(out)): p.read_bytes()
++        for p in sorted(out.rglob("*"))
++        if p.is_file() and p != out / "SHA256SUMS"
++    }
++    (out / "SHA256SUMS").write_text(sums_text(every))
++    write_index(dest_root)
++    return log
++
++
++def write_index(dest_root: Path) -> None:
++    rows = []
++    for m in sorted((dest_root / "experiments").glob("*/manifest.json")):
++        man = _load(m)
++        rows.append(
++            f"| [{man['experiment']}](experiments/{man['experiment']}/README.md) | {man['title']} | {man['status']} |"
++        )
++    text = INDEX_TEMPLATE.replace("{rows}", "\n".join(rows))
++    _write_if_changed(dest_root / "README.md", text)
++
++
++INDEX_TEMPLATE = """# clm-lib test results
++
++Evidence from experiments run with [clm-lib](https://github.com/armalite/clm-lib), an experimental
++library where a model edits its own working context through code ("context as a file", inspired by
++Context Language Models).
++
++This repository is generated by `clm-lib export` and hand-written experiment notes. Raw run
++directories are copied unchanged except for the redactions listed in each manifest.
++
++## Experiments
++
++| Experiment | Question | Status |
++| --- | --- | --- |
++{rows}
++
++## How to navigate an experiment
++
++- `README.md`: the question, setup, outcome and limitations, in plain language.
++- `protocol.md`: what was planned before running, and what changed afterwards.
++- `report.md`: generated tables (per-run results, context-edit evidence, comparison aggregates).
++- `metrics.json` / `metrics.csv`: one row per run, machine-readable.
++- `manifest.json`: run ids and roles, settings, source provenance, fixture and ledger checksums.
++- `artifacts/runs/<role>/<run_id>/`: the evidence for one run. Roles: `evaluation` (comparison
++  runs), `guided` (explicitly prompted demonstrations), `calibration` (development runs used to
++  choose settings), `smoke` and `access-failure` (connectivity checks).
++  - `run.json`: configuration; `events.jsonl`: chronological event log; `requests/`: exact
++    model requests (no headers); `context/`: accepted context revisions and diffs;
++    `scripts/`: model-written code, saved before it ran; `files/`: workspace files (helpers)
++    before/after each step; `workspace/`: final sandbox workspace; `evaluator/`: ground truth
++    and score (written after the run); `summary.json`: metrics.
++- `artifacts/fixtures/<task>/`: the task files the agent investigated.
++- `SHA256SUMS`: checksums of every file in the experiment directory.
++- `ledger-snapshots/`: historical copies of the spend ledger (the active one lives in clm-lib).
++"""
+diff --git a/src/clm_lib/staged.py b/src/clm_lib/staged.py
+new file mode 100644
+index 0000000..7e41221
+--- /dev/null
++++ b/src/clm_lib/staged.py
+@@ -0,0 +1,381 @@
++"""Experiment 002 task family: a staged incident whose evidence arrives in three stages.
++
++Storyline (entities, values, times and arrangement vary by seed):
++
++- Stage 1 (08:00-09:30): a build is deployed; upstream timeouts start. Its release notes,
++  among many routine items, lower both a client timeout and the DB pool default. Sparse pool
++  waits are an early hint. The obvious hypothesis is CLIENT_TIMEOUT_TOO_LOW.
++- Stage 2 (09:30-10:30): an APPLIED change raises the timeout (supersedes stage 1); timeouts
++  stop and DB pool exhaustion takes over. A note repeats a stale pool value from the repo config.
++- Stage 3 (10:30-11:30): an APPLIED change raises the pool part-way (supersedes the build
++  default); exhaustion persists at the new size. A PROPOSED larger value is not applied.
++
++Final truth: DB_POOL_EXHAUSTED, current effective pool size from stage 3, RAISE_DB_POOL_LIMIT,
++with evidence for the symptom (stage 2/3 logs), the current value (stage 3 change record) and
++the origin (the stage 1 release-note line, an exact early fact).
++
++Stage files are written under ``stage-N/`` and never change after release, so earlier evidence
++can always be re-read and line references stay valid.
++"""
++
++from __future__ import annotations
++
++import random
++from dataclasses import replace
++
++from .tasks import (
++    CAUSE_CODES,
++    PEOPLE,
++    REMEDY_CODES,
++    SERVICES,
++    InstanceSpec,
++    TaskInstance,
++    Truth,
++    _base_ctx,
++    _Ctx,
++    _edge_503s,
++    _Line,
++    _metrics,
++    _noise_edge_log,
++    _noise_service_log,
++    _notes,
++    _other_changes,
++    _render,
++    _renumber_changes,
++)
++
++STAGED_GENERATOR_VERSION = "staged-incident-gen/1"
++N_STAGES = 3
++
++ROUTINE_NOTES = [
++    "logging: structured request ids added to access logs",
++    "metrics: new histogram for cache hit latency",
++    "deps: http client library upgraded to a patch release",
++    "cache: default `cache.ttl_s` unchanged (120)",
++    "build: container base image refreshed",
++    "api: `/v1/status` returns build id",
++    "tracing: sampling rate default 1% (unchanged)",
++    "config: `log.level` default remains info",
++    "security: TLS session tickets rotated hourly",
++    "deps: json serializer upgraded",
++    "feature flags: `ff-legacy-export` removed (was 0%)",
++    "retry: idempotent GETs retried once on connect errors",
++    "metrics: db pool gauges renamed to `db_pool_*`",
++    "docs: runbook links updated",
++    "health: readiness probe timeout 2s (unchanged)",
++    "batching: max batch size default 200 (unchanged)",
++    "scheduler: cron jitter added to cleanup job",
++    "locale: currency formatting fixes",
++]
++
++
++def _window(c: _Ctx, start_h: float, end_h: float, incident_h: float) -> _Ctx:
++    return replace(c, t0=start_h * 3600, t1=end_h * 3600, incident=incident_h * 3600)
++
++
++def _stage_listing(files: dict[str, str]) -> str:
++    return "\n".join(f"  {p} ({t.count(chr(10))} lines)" for p, t in sorted(files.items()))
++
++
++def generate_staged(spec: InstanceSpec) -> TaskInstance:
++    base = _base_ctx(spec)
++    rng: random.Random = base.rng
++    svc, edge, up = base.svc, base.edge, base.upstream
++    maj, mn = rng.randrange(5, 9), rng.randrange(10, 40)
++    b0 = f"{maj}.{mn}.{rng.randrange(0, 9)}"
++    b1 = f"{maj}.{mn + 1}.{rng.randrange(0, 5)}-{rng.getrandbits(16):04x}"
++    cfg_default = rng.choice([40, 48, 60])
++    v1 = rng.choice([10, 12, 14])
++    v2 = v1 + rng.choice([6, 8, 10])
++    v3 = v2 + 16
++    t1 = rng.choice([600, 750, 800])
++    t2 = rng.choice([3000, 3500, 4000])
++    t_deploy = 8 * 3600 + rng.randrange(12, 25) * 60 + rng.randrange(0, 59)
++    t_mitig = 9 * 3600 + rng.randrange(35, 46) * 60 + rng.randrange(0, 59)
++    t_pool = 10 * 3600 + rng.randrange(44, 56) * 60 + rng.randrange(0, 59)
++    clock = base.clock
++    rel_notes_path = f"stage-1/deploy/release-notes-{b1}.md"
++
++    # ---------------- stage 1
++    c1 = _window(base, 8.0, 9.5, t_deploy / 3600 + 1 / 60)
++    distract1 = [
++        f"tls certificate for {svc}.internal expires in {rng.randrange(18, 40)} days",
++        f"disk usage /var/data at {rng.randrange(60, 72)}%",
++        "dns cache refresh retry succeeded",
++    ]
++    lines = _noise_service_log(c1, 760, distract1)
++    for _ in range(95):
++        t = rng.uniform(c1.incident, c1.t1)
++        lines.append(
++            _Line(
++                t,
++                f"{clock.ts(t)} ERROR {svc} [{rng.choice(base.pods)}] upstream call {up} timed out after {t1}ms (attempt 1/1) req={rng.getrandbits(40):010x}",
++            )
++        )
++    for _ in range(7):
++        t = rng.uniform(c1.incident, c1.t1)
++        lines.append(
++            _Line(
++                t,
++                f"{clock.ts(t)} WARN  {svc} [{rng.choice(base.pods)}] db pool wait {rng.randrange(900, 2400)}ms (in_use {v1}/{v1})",
++            )
++        )
++    s1_log, _ = _render(lines)
++    s1_edge, _ = _render(_noise_edge_log(c1, 320) + _edge_503s(c1, 60, "upstream timeout"))
++    items = list(ROUTINE_NOTES)
++    rng.shuffle(items)
++    items = items[: rng.randrange(13, 18)]
++    pool_item = f"db: default connection pool `db.pool.max_size` lowered from {cfg_default} to {v1} to fit the shared-db connection quota"
++    timeout_item = (
++        f"clients: default `clients.{up}.timeout_ms` lowered from 2500 to {t1} (fail fast)"
++    )
++    items.insert(rng.randrange(len(items) // 2, len(items)), pool_item)
++    items.insert(rng.randrange(0, len(items) // 2), timeout_item)
++    notes_head = [
++        f"# Release notes: {svc} build {b1}",
++        "",
++        f"Previous build: {b0}. Defaults below override repository config files.",
++        "",
++    ]
++    rel_lines = notes_head + [f"- {x}" for x in items]
++    rel_notes = "\n".join(rel_lines) + "\n"
++    origin_line = rel_lines.index(f"- {pool_item}") + 1
++    deploys = []
++    for _ in range(6):
++        t = rng.uniform(7 * 3600, 9.5 * 3600)
++        o = rng.choice([x for x in SERVICES if x != svc])
++        deploys.append(
++            _Line(
++                t,
++                f"{clock.ts(t, ms=False)} DEPLOY {o} build {rng.randrange(2, 9)}.{rng.randrange(0, 30)}.{rng.randrange(0, 9)} rollout 100% by deploy-bot",
++            )
++        )
++    deploys.append(
++        _Line(
++            t_deploy,
++            f"{clock.ts(t_deploy, ms=False)} DEPLOY {svc} build {b1} (previous {b0}) rollout 100% by deploy-bot; release notes: {rel_notes_path}",
++        )
++    )
++    s1_deploys, _ = _render(deploys)
++    config = (
++        f"# Repository default configuration for {svc}.\n"
++        f"# Build release notes and APPLIED change records override these values.\n"
++        f"service: {svc}\nclients:\n  {up}:\n    base_url: http://{up}.internal\n    timeout_ms: 2500\n"
++        f"database:\n  host: {svc}-db.internal\n  pool:\n    max_size: {cfg_default}\n    acquire_timeout_ms: 5000\n"
++        f"cache:\n  ttl_s: 120\n"
++    )
++    notes1 = _notes(
++        c1,
++        [
++            (
++                t_deploy + 900,
++                f"{edge} 5xx for {svc} since build {b1} rolled out. Many {up} timeouts.",
++            ),
++            (
++                t_deploy + 1500,
++                f"Suspect the {up} timeout default change in {b1}; asking for a mitigation.",
++            ),
++        ],
++    )
++    stage1 = {
++        "stage-1/UPDATE.md": (
++            f"# Stage 1 of {N_STAGES} (08:00-09:30 UTC)\n\n"
++            f"{edge} began returning 5xx for {svc} shortly after a deploy. Investigate the files below.\n"
++            f"More evidence will be released in later stages.\n"
++        ),
++        f"stage-1/logs/{svc}.log": s1_log,
++        f"stage-1/logs/{edge}.log": s1_edge,
++        "stage-1/deploy/deploys.log": s1_deploys,
++        rel_notes_path: rel_notes,
++        f"stage-1/config/{svc}.yaml": config,
++        "stage-1/ops/oncall-notes.md": notes1,
++    }
++
++    # ---------------- stage 2
++    c2 = _window(base, 9.5, 10.5, t_mitig / 3600 + 2 / 60)
++    lines = _noise_service_log(c2, 760, distract1)
++    for _ in range(40):
++        t = rng.uniform(c2.t0, t_mitig)
++        lines.append(
++            _Line(
++                t,
++                f"{clock.ts(t)} ERROR {svc} [{rng.choice(base.pods)}] upstream call {up} timed out after {t1}ms (attempt 1/1) req={rng.getrandbits(40):010x}",
++            )
++        )
++    for _ in range(110):
++        t = rng.uniform(c2.incident, c2.t1)
++        lines.append(
++            _Line(
++                t,
++                f"{clock.ts(t)} ERROR {svc} [{rng.choice(base.pods)}] db pool exhausted: {v1}/{v1} connections in use, waited 5000ms (acquire_timeout) req={rng.getrandbits(40):010x}",
++                "cause",
++            )
++        )
++    s2_log, s2_tags = _render(lines)
++    s2_edge, _ = _render(_noise_edge_log(c2, 300) + _edge_503s(c2, 70, "upstream returned 503"))
++    chg = [x for x in _other_changes(c2, 10, 0) if x.t >= c2.t0 - 3600]
++    chg.append(
++        _Line(
++            t_mitig,
++            f"{clock.ts(t_mitig, ms=False)} CHG-X APPLIED  {svc} override clients.{up}.timeout_ms={t2} (was {t1} from build {b1}) by {rng.choice(PEOPLE)}; mitigation",
++        )
++    )
++    s2_changes, _ = _render(_renumber_changes(chg, rng.randrange(5100, 5500)))
++
++    def row2(t: float) -> str:
++        on = t >= c2.incident
++        return f"{rng.randrange(180, 260)},{rng.randrange(2600, 5200) if on else rng.randrange(900, 1600)},{v1 if on else rng.randrange(v1 - 4, v1 + 1)}"
++
++    notes2 = _notes(
++        c2,
++        [
++            (
++                t_mitig + 600,
++                f"{up} timeouts stopped after the mitigation, but {edge} still shows 503s for {svc}.",
++            ),
++            (
++                t_mitig + 1200,
++                f"New errors look like db pool exhaustion, but config/{svc}.yaml says max_size {cfg_default}, so the pool should have plenty of room?",
++            ),
++        ],
++    )
++    stage2 = {
++        "stage-2/UPDATE.md": (
++            f"# Stage 2 of {N_STAGES} (09:30-10:30 UTC)\n\n"
++            f"On-call applied a mitigation (see stage-2/deploy/changes.log). The {up} timeouts stopped,\n"
++            f"but {edge} still returns 503s for {svc} with a different error. New files below.\n"
++        ),
++        f"stage-2/logs/{svc}.log": s2_log,
++        f"stage-2/logs/{edge}.log": s2_edge,
++        "stage-2/deploy/changes.log": s2_changes,
++        f"stage-2/metrics/{svc}.csv": _metrics(c2, "minute,rps,p99_ms,db_pool_in_use", row2),
++        "stage-2/ops/oncall-notes.md": notes2,
++    }
++
++    # ---------------- stage 3
++    c3 = _window(base, 10.5, 11.5, t_pool / 3600)
++    lines = _noise_service_log(c3, 700, distract1)
++    for _ in range(60):
++        t = rng.uniform(c3.t0, t_pool)
++        lines.append(
++            _Line(
++                t,
++                f"{clock.ts(t)} ERROR {svc} [{rng.choice(base.pods)}] db pool exhausted: {v1}/{v1} connections in use, waited 5000ms (acquire_timeout) req={rng.getrandbits(40):010x}",
++                "cause",
++            )
++        )
++    for _ in range(70):
++        t = rng.uniform(t_pool + 60, c3.t1)
++        lines.append(
++            _Line(
++                t,
++                f"{clock.ts(t)} ERROR {svc} [{rng.choice(base.pods)}] db pool exhausted: {v2}/{v2} connections in use, waited 5000ms (acquire_timeout) req={rng.getrandbits(40):010x}",
++                "cause",
++            )
++        )
++    s3_log, s3_tags = _render(lines)
++    s3_edge, _ = _render(_noise_edge_log(c3, 280) + _edge_503s(c3, 40, "upstream returned 503"))
++    chg = [x for x in _other_changes(c3, 9, 0) if x.t >= c3.t0 - 3600]
++    chg.append(
++        _Line(
++            t_pool,
++            f"{clock.ts(t_pool, ms=False)} CHG-X APPLIED  {svc} override db.pool.max_size={v2} (was {v1}, the build {b1} default) by {rng.choice(PEOPLE)}; partial mitigation",
++            "value",
++        )
++    )
++    tp = t_pool + rng.randrange(600, 1500)
++    chg.append(
++        _Line(
++            tp,
++            f"{clock.ts(tp, ms=False)} CHG-X PROPOSED {svc} override db.pool.max_size={v3} (pending review; not applied)",
++        )
++    )
++    s3_changes, s3_chg_tags = _render(_renumber_changes(chg, rng.randrange(5600, 5900)))
++
++    def row3(t: float) -> str:
++        cur = v1 if t < t_pool else v2
++        return f"{rng.randrange(180, 260)},{rng.randrange(1800, 4200)},{cur}"
++
++    stage3 = {
++        "stage-3/UPDATE.md": (
++            f"# Stage 3 of {N_STAGES} (10:30-11:30 UTC)\n\n"
++            f"Another change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\n"
++            f"This is the final evidence stage. Give your final diagnosis once you have reviewed it.\n"
++        ),
++        f"stage-3/logs/{svc}.log": s3_log,
++        f"stage-3/logs/{edge}.log": s3_edge,
++        "stage-3/deploy/changes.log": s3_changes,
++        f"stage-3/metrics/{svc}.csv": _metrics(c3, "minute,rps,p99_ms,db_pool_in_use", row3),
++    }
++
++    stages = [stage1, stage2, stage3]
++    files: dict[str, str] = {}
++    for st in stages:
++        files.update(st)
++    truth = Truth(
++        cause="DB_POOL_EXHAUSTED",
++        remedies=["RAISE_DB_POOL_LIMIT"],
++        value_variants=[str(v2)],
++        stale_variants=[str(v1), str(cfg_default)],
++        evidence_groups={
++            "cause": [(f"stage-2/logs/{svc}.log", n) for n in s2_tags["cause"]]
++            + [(f"stage-3/logs/{svc}.log", n) for n in s3_tags["cause"]],
++            "value": [("stage-3/deploy/changes.log", n) for n in s3_chg_tags["value"]],
++            "origin": [(rel_notes_path, origin_line)],
++        },
++        notes=(f"build {b1} lowered pool default {cfg_default}->{v1}; CHG raised to {v2}; "
++               f"proposed {v3} not applied; timeout ({t1}->{t2}) was the superseded hypothesis"),
++        stale_causes=["CLIENT_TIMEOUT_TOO_LOW"],
++    )  # fmt: skip
++    updates = [
++        stage1["stage-1/UPDATE.md"],
++        stage2["stage-2/UPDATE.md"],
++        stage3["stage-3/UPDATE.md"],
++    ]
++    return TaskInstance(
++        spec=spec,
++        prompt=staged_task_prompt(stage1),
++        files=files,
++        truth=truth,
++        stages=stages,
++        stage_updates=updates,
++        generator_version=STAGED_GENERATOR_VERSION,
++    )
++
++
++def staged_task_prompt(stage1: dict[str, str]) -> str:
++    causes = "\n".join(f"  {k}: {v}" for k, v in CAUSE_CODES.items())
++    remedies = "\n".join(f"  {k}: {v}" for k, v in REMEDY_CODES.items())
++    return f"""Production incident with evidence released in {N_STAGES} stages over time.
++Read-only files are under /task/fixtures. Stage 1 is available now:
++{_stage_listing(stage1)}
++
++Staged evidence:
++- Reply {{"action": "advance"}} to release the next stage when you are ready. Its files appear
++  under /task/fixtures/stage-N/ and an update message is added to your working context.
++  Released files never change and stay readable for the rest of the task.
++- A final answer is accepted only after all {N_STAGES} stages are released.
++
++Rules of evidence:
++- Build release notes describe defaults shipped in a build; they override repository config files.
++- Records marked APPLIED in change logs are authoritative and supersede release-note defaults,
++  config files and earlier notes. If two authoritative records conflict, the later wins.
++- PROPOSED records were not applied. On-call notes are informal and may be out of date.
++- Earlier hypotheses may be superseded by later evidence; diagnose the incident as it stands at
++  the end of the final stage.
++
++Answer fields (all required):
++- root_cause: start with exactly one cause code, then a colon and a one-sentence explanation.
++- required_value: the exact current effective value of the setting at the centre of the root
++  cause at the end of the final stage.
++- remedy: start with exactly one remedy code, then a colon and a concrete action.
++- evidence_refs: list of "path:line" or "path:start-end" references (paths relative to
++  /task/fixtures, 1-based, ranges of at most 20 lines) supporting (1) the current symptom,
++  (2) the record that sets the current effective value, and (3) the record of the change that
++  originally introduced the problem.
++
++Cause codes:
++{causes}
++Remedy codes:
++{remedies}
++"""
+diff --git a/tests/test_export.py b/tests/test_export.py
+new file mode 100644
+index 0000000..b3c5916
+--- /dev/null
++++ b/tests/test_export.py
+@@ -0,0 +1,76 @@
++"""Results export: repeatable, checksum-verified, never overwrites different evidence."""
++
++from __future__ import annotations
++
++import json
++import shutil
++from pathlib import Path
++from typing import Any
++
++import pytest
++
++from clm_lib.export import ExportConflict, export_experiment
++
++from .conftest import FINAL, FakeExecutor, execute
++
++
++def make_experiment(tmp_path: Path, run_ids: list[str]) -> Path:
++    exp = tmp_path / "exp"
++    exp.mkdir()
++    (exp / "README.md").write_text("# test\n")
++    (exp / "protocol.md").write_text("# protocol\n")
++    spec = {
++        "id": "999-test",
++        "title": "test",
++        "runs": [{"run_id": r, "role": "evaluation"} for r in run_ids],
++        "comparisons": [],
++    }
++    (exp / "experiment.json").write_text(json.dumps(spec))
++    return exp
++
++
++def test_export_is_repeatable_redacted_and_refuses_conflicts(
++    make_runner: Any, tmp_path: Path
++) -> None:
++    runner, _ = make_runner([execute("a"), FINAL], executor=FakeExecutor())
++    from clm_lib.tasks import generate
++
++    res = runner.run(generate("dev"), "clm")
++    runs_root = res.run_dir.parent
++    before = {p: p.read_bytes() for p in res.run_dir.rglob("*") if p.is_file()}
++    exp = make_experiment(tmp_path, [res.run_id])
++    dest = tmp_path / "results"
++    log = export_experiment(exp, runs_root, tmp_path / "ledger.json", dest)
++    assert log["runs"][res.run_id] == "written"
++    out = dest / "experiments" / "999-test"
++    run_out = out / "artifacts" / "runs" / "evaluation" / res.run_id
++    assert "fixtures" not in {p.name for p in run_out.iterdir()}
++    assert json.loads((run_out / "run.json").read_text())["executor"]["kind"] == "fake-test-double"
++    manifest = json.loads((out / "manifest.json").read_text())
++    assert manifest["runs"][0]["fixtures_match_generator"] is True
++    assert (out / "artifacts" / "fixtures" / "dev").is_dir()
++    assert (dest / "README.md").read_text().count("999-test") >= 1
++    # Repeat: identical evidence is left alone.
++    log2 = export_experiment(exp, runs_root, tmp_path / "ledger.json", dest)
++    assert log2["runs"][res.run_id] == "unchanged" and log2["fixtures"]["dev"] == "unchanged"
++    # Raw run untouched.
++    assert before == {p: p.read_bytes() for p in res.run_dir.rglob("*") if p.is_file()}
++    # Different evidence under the same run id is refused.
++    (run_out / "summary.json").write_text("{}")
++    shutil.copy(run_out / "SHA256SUMS", tmp_path / "sums")
++    (run_out / "SHA256SUMS").write_text("tampered\n")
++    with pytest.raises(ExportConflict):
++        export_experiment(exp, runs_root, tmp_path / "ledger.json", dest)
++
++
++def test_export_redacts_local_uid(tmp_path: Path) -> None:
++    from clm_lib.export import collect
++
++    run = tmp_path / "r"
++    run.mkdir()
++    (run / "run.json").write_text(json.dumps({"executor": {"user": "1000:1000 (non-root)"}}))
++    (run / "fixtures").mkdir()
++    (run / "fixtures" / "x").write_text("x")
++    files = collect(run, skip_top=frozenset({"fixtures"}))
++    assert set(files) == {"run.json"}
++    assert "1000:1000" not in files["run.json"].decode()
+diff --git a/tests/test_staged.py b/tests/test_staged.py
+new file mode 100644
+index 0000000..dfeb134
+--- /dev/null
++++ b/tests/test_staged.py
+@@ -0,0 +1,160 @@
++"""Experiment 002: staged task progression, evidence visibility, scoring and timing."""
++
++from __future__ import annotations
++
++import json
++from dataclasses import replace
++from typing import Any
++
++import pytest
++
++from clm_lib.config import Config
++from clm_lib.tasks import INSTANCES, STAGED_EVAL, generate, score_answer
++
++from .conftest import FakeExecutor, execute, working_block
++
++STAGED = [n for n in INSTANCES if n.startswith("staged-")]
++ADVANCE = {"action": "advance"}
++
++
++def staged_final(inst: Any, **over: Any) -> dict[str, Any]:
++    g = inst.truth.evidence_groups
++    ans = {
++        "root_cause": "DB_POOL_EXHAUSTED: pool too small",
++        "required_value": inst.truth.value_variants[0],
++        "remedy": "RAISE_DB_POOL_LIMIT: raise it",
++        "evidence_refs": [f"{p}:{n}" for p, n in (g["cause"][0], g["value"][0], g["origin"][0])],
++    }
++    ans.update(over)
++    return {"action": "final", "answer": ans}
++
++
++def test_stages_are_disjoint_deterministic_and_evidence_is_staged() -> None:
++    hashes = set()
++    for name in STAGED:
++        a, b = generate(name), generate(name)
++        assert a.fixture_sha256 == b.fixture_sha256 and a.n_stages == 3
++        hashes.add(a.fixture_sha256)
++        for k, files in enumerate(a.stages, start=1):
++            assert all(p.startswith(f"stage-{k}/") for p in files)
++        union: dict[str, str] = {}
++        for files in a.stages:
++            union.update(files)
++        assert union == a.files
++        g = a.truth.evidence_groups
++        assert g["origin"][0][0].startswith("stage-1/") and g["value"][0][0].startswith("stage-3/")
++        assert all(p.startswith(("stage-2/", "stage-3/")) for p, _ in g["cause"])
++        origin_text = a.files[g["origin"][0][0]].splitlines()[g["origin"][0][1] - 1]
++        assert "db.pool.max_size" in origin_text and a.truth.stale_variants[0] in origin_text
++        assert f"max_size={a.truth.value_variants[0]}" not in a.prompt
++        # Stage-1 files alone contain neither the final value record nor the later updates.
++        stage1 = "".join(a.stages[0].values())
++        value_line = a.files[g["value"][0][0]].splitlines()[g["value"][0][1] - 1]
++        assert value_line not in stage1 and "Stage 2 of 3" not in stage1
++    assert len(hashes) == len(STAGED)
++    assert len({generate(n).truth.value_variants[0] for n in STAGED_EVAL} | {"x"}) >= 2
++
++
++def test_staged_scoring_outcomes() -> None:
++    inst = generate("staged-dev-1")
++    t, f = inst.truth, inst.files
++    ok = score_answer(staged_final(inst)["answer"], t, f)
++    assert ok.strict_success and ok.groups_covered == {"cause": True, "value": True, "origin": True}
++    for stale in t.stale_variants:  # build default and repo config default
++        assert (
++            score_answer(staged_final(inst, required_value=stale)["answer"], t, f).outcome
++            == "stale_value"
++        )
++    hyp = score_answer(
++        staged_final(inst, root_cause="CLIENT_TIMEOUT_TOO_LOW: timeouts")["answer"], t, f
++    )
++    assert hyp.outcome == "stale_hypothesis" and not hyp.cause_ok
++    g = t.evidence_groups
++    no_origin = staged_final(
++        inst, evidence_refs=[f"{p}:{n}" for p, n in (g["cause"][0], g["value"][0])]
++    )
++    s = score_answer(no_origin["answer"], t, f)
++    assert s.outcome == "unsupported" and s.groups_covered["origin"] is False
++
++
++@pytest.mark.docker
++def test_future_stages_and_truth_are_not_visible_early(make_runner: Any) -> None:
++    inst = generate("staged-dev-1")
++    g = inst.truth.evidence_groups
++    value_line = inst.files[g["value"][0][0]].splitlines()[g["value"][0][1] - 1]
++    probe = (
++        "import os\n"
++        "print('dirs', sorted(os.listdir('/task/fixtures')))\n"
++        "blob = ''.join(open(os.path.join(r, f)).read() for r, _, fs in os.walk('/task/fixtures') for f in fs)\n"
++        f"print('value_record_visible', {value_line!r} in blob)\n"
++        "print('truth_files', [f for r, _, fs in os.walk('/task') for f in fs if 'truth' in f])\n"
++    )
++    script = [
++        execute(probe),
++        staged_final(inst),  # premature: must not be accepted at stage 1
++        ADVANCE,
++        execute(probe),
++        ADVANCE,
++        execute(probe),
++        ADVANCE,  # no-op: everything already released
++        staged_final(inst),
++    ]
++    runner, prov = make_runner(script)
++    res = runner.run(inst, "clm")
++    assert res.status == "completed" and res.score.strict_success
++    obs = [r.user for r in prov.requests]
++    assert "dirs ['stage-1']" in obs[1] and "value_record_visible False" in obs[1]
++    assert "Final answer not accepted: 1 of 3" in obs[2]
++    assert "Stage 2 of 3 released" in obs[3] and "Stage 2 of 3 (09:30" in obs[3]
++    assert "dirs ['stage-1', 'stage-2']" in obs[4] and "value_record_visible False" in obs[4]
++    assert (
++        "dirs ['stage-1', 'stage-2', 'stage-3']" in obs[6] and "value_record_visible True" in obs[6]
++    )
++    assert "No further evidence" in obs[7]
++    assert all("truth_files []" in o for o in (obs[1], obs[4], obs[6]))
++    m = res.metrics["management"]
++    assert m["stages_released"] == 3 and m["premature_finals"] == 1
++    assert [t["stage"] for t in m["timeline"]] == [1, 1, 1, 2, 2, 3, 3, 3]
++    # Earlier stage files are unchanged after later releases.
++    for rel, text in inst.stages[0].items():
++        assert (res.run_dir / "fixtures" / rel).read_text() == text
++
++
++def test_advance_is_rejected_for_unstaged_tasks(make_runner: Any) -> None:
++    runner, _ = make_runner([ADVANCE, ADVANCE], executor=FakeExecutor())
++    res = runner.run(generate("dev"), "clm")
++    assert res.status == "failed_protocol"
++
++
++def test_management_timing_is_recorded(make_runner: Any, cfg: Config) -> None:
++    inst = generate("staged-dev-2")
++    small = replace(cfg, limits=replace(cfg.limits, context_budget_tokens=4200, max_calls=30))
++
++    class Responder:
++        def __init__(self) -> None:
++            self.actions = [execute("a"), execute("b"), ADVANCE, execute("c"), execute("d"),
++                            ADVANCE, execute("e"), ADVANCE, staged_final(inst)]  # fmt: skip
++
++        def __call__(self, req: Any) -> Any:
++            return (
++                "SUMMARY: pool facts at stage-1 release notes"
++                if req.purpose == "summary"
++                else self.actions.pop(0)
++            )
++
++    resp = Responder()
++    ex = FakeExecutor(outputs=["z" * 700 for _ in range(10)])
++    runner, prov = make_runner([resp] * 40, executor=ex, config=small)
++    res = runner.run(inst, "summary")
++    m = res.metrics["management"]
++    assert res.status == "completed", res.stop_reason
++    assert m["summary_steps"], "expected at least one summary under the small budget"
++    first = m["first_management_step"]
++    assert first == m["summary_steps"][0]
++    assert m["action_steps_after_first_management"] == sum(
++        1 for t in m["timeline"] if t["step"] >= first
++    )
++    assert m["first_pressure_step"] is not None and m["first_pressure_step"] <= first
++    assert m["first_management_stage"] in (1, 2, 3)
++    assert json.dumps(m)  # serialisable
++    assert "SUMMARY: pool facts" in working_block(prov.requests[-1].user)

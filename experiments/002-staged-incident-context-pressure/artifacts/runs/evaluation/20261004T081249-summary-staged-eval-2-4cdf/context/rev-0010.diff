@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -25,6 +25,16 @@
+    "id": "s6.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.2s\n--- stdout ---\ndeploy/changes.log 1 2031-04-14T09:07:53Z CHG-5340 APPLIED  inventory-svc override log.level=info (was debug) by r.okafor\ndeploy/changes.log 2 2031-04-14T09:39:04Z CHG-5341 APPLIED  payments-api override clients.risk-score.timeout_ms=4000 (was 800 from build 5.36.1-f33d) by k.novak; mitigation\nops/oncall-notes.md 1 # On-call notes - payments-api incident 2031-04-14\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:49 risk-score timeouts stopped after the mitigation, but ingress-a still shows 503s for payments-api.\nops/oncall-notes.md 6 - 09:59 New errors look like db pool exhaustion, but config/payments-api.yaml says max_size 60, so the pool should have plenty of room?\n187 44 ERROR payments-api [payments-api-dN] db pool exhausted: N/N connections in use, waited Nm\n193 35 ERROR payments-api [payments-api-aN] db pool exhausted: N/N connections in use, waited Nm\n194 31 ERROR payments-api [payments-api-eN] db pool exhausted: N/N connections in use, waited Nm\n29 27 WARN  payments-api [payments-api-aN] runtime gc pause Nms (young)\n25 24 WARN  payments-api [payments-api-eN] runtime gc pause Nms (young)\n"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: Get exact pool error line and record note, then advance.\ncode:\nb='/task/fixtures/stage-2/'\nL=open(b+'logs/payments-api.log').readlines()\nprint(187,L[186].strip()[:160])\nopen('/task/workspace/notes.txt','a').write('S2: CHG-5341 APPLIED timeout=4000 changes.log:2; pool exhausted ERROR stage-2 payments-api.log:187 (14/14?). Next: advance stage3.\\n')"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n187 2031-04-14T09:41:09.731Z ERROR payments-api [payments-api-d82] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=295b973e33\n"
+   }
+  ]
+ }

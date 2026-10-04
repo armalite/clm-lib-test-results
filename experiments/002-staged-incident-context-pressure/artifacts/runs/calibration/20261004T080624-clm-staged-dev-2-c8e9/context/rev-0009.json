@@ -1,0 +1,49 @@
+{
+ "number": 9,
+ "parent": 8,
+ "source": "runtime",
+ "step": 7,
+ "sha256": "e4ab32786d8b75a1402feb66add2b0d66bf2b32a9c6817eadc6cdb3aed8f6f85",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1: deploy 8.26.3-35fd stage-1/deploy/deploys.log:5. Release notes stage-1/deploy/release-notes-8.26.3-35fd.md:15 db.pool.max_size 60->10 (:11 ledger timeout 800). Stage2: stage-2/deploy/changes.log:2 CHG-5204 APPLIED ledger timeout 3500 (fixed). Now db pool exhausted 10/10 e.g. stage-2/logs/catalog-api.log:224. Hypothesis DB_POOL_EXHAUSTED value 10. Next: advance to stage 3."
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] execute\nthought: Compact context, then advance next step.\ncode:\nimport json\np='/task/workspace/context.json'\nd={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: deploy 8.26.3-35fd stage-1/deploy/deploys.log:5. Release notes stage-1/deploy/release-notes-8.26.3-35fd.md:15 db.pool.max_size 60->10 (:11 ledger timeout 800). Stage2: stage-2/deploy/changes.log:2 CHG-5204 APPLIED ledger timeout 3500 (fixed). Now db pool exhausted 10/10 e.g. stage-2/logs/catalog-api.log:224. Hypothesis DB_POOL_EXHAUSTED value 10. Next: advance to stage 3.'}]}\njson.dump(d,open(p,'w'))"
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s"
+  },
+  {
+   "id": "s5.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 5: revision 5 -> 6; entries 4 -> 1; body chars 2787 -> 382; removed [s4.act, s4.obs, s4.rcpt]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] advance\nthought: "
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (4 lines)\n  stage-3/logs/catalog-api.log (830 lines)\n  stage-3/logs/edge-gw.log (366 lines)\n  stage-3/metrics/catalog-api.csv (61 lines)"
+  },
+  {
+   "id": "s7.act",
+   "role": "assistant",
+   "body": "[step 7] execute\nthought: \ncode:\nimport re\nprint(open('/task/fixtures/stage-3/deploy/changes.log').read())\nL=open('/task/fixtures/stage-3/logs/catalog-api.log').read().splitlines()\nc=0\nfor i,l in enumerate(L,1):\n  if re.search('ERROR|pool|exhaust',l):\n    c+=1\n    if c<6: print(i,l)\nprint(c)\nprint(open('/task/fixtures/stage-3/metrics/catalog-api.csv').read()[:600])"
+  },
+  {
+   "id": "s7.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n2031-05-17T09:46:34Z CHG-5662 APPLIED  shipping-api override log.level=info (was debug) by m.lindqvist\n2031-05-17T10:33:19Z CHG-5663 APPLIED  fulfil-svc override log.level=info (was debug) by m.lindqvist\n2031-05-17T10:52:06Z CHG-5664 APPLIED  catalog-api override db.pool.max_size=16 (was 10, the build 8.26.3-35fd default) by m.lindqvist; partial mitigation\n2031-05-17T11:04:31Z CHG-5665 PROPOSED catalog-api override db.pool.max_size=32 (pending review; not applied)\n\n1 2031-05-17T10:30:04.987Z ERROR catalog-api [catalog-api-f56] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=a5bcf37866\n6 2031-05-17T10:30:19.867Z ERROR catalog-api [catalog-api-f14] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=9e46ee77b1\n12 2031-05-17T10:30:36.900Z ERROR catalog-api [catalog-api-b72] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=334f4efa61\n15 2031-05-17T10:30:57.678Z ERROR catalog-api [catalog-api-f14] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=26bdc24b0a\n18 2031-05-17T10:31:06.182Z ERROR catalog-api [catalog-api-f14] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=7236d2f30c\n130\nminute,rps,p99_ms,db_pool_in_use\n10:30,231,2900,10\n10:31,249,4012,10\n10:32,256,3362,10\n10:33,181,2773,10\n10:34,192,4159,10\n10:35,196,3413,10\n10:36,250,1855,10\n10:37,252,1878,10\n10:38,254,3089,10\n10:39,250,2993,10\n10:40,240,2192,10\n10:41,246,2563,10\n10:42,227,3873,10\n10:43,197,3906,10\n10:44,240,2952,10\n10:45,186,4098,10\n10:46,249,3439,10\n10:47,211,2947,10\n10:48,253,4193,10\n10:49,213,3508,10\n10:50,253,2989,10\n10:51,201,2591,10\n10:52,206,1944,10\n10:53,229,3137,16\n10:54,235,1879,16\n10:55,223,4177,16\n10:56,248,4063,16\n10:57,233,2204,16\n10:58,237,3710,16\n10:59,228,2520,16\n11:00,187,2857,16\n11:01,200\n"
+  }
+ ]
+}

@@ -1,0 +1,19 @@
+--- rev-4
++++ rev-5
+@@ -25,6 +25,16 @@
+    "id": "s3.obs",
+    "role": "observation",
+    "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The risk-score timeouts stopped,\nbut ingress-a still returns 503s for payments-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (2 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/payments-api.log (910 lines)\n  stage-2/metrics/payments-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
++  },
++  {
++   "id": "s4.act",
++   "role": "assistant",
++   "body": "[step 4] execute\nthought: Read stage-2 changes, notes, and error summary.\ncode:\nimport collections,re\nb='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md','UPDATE.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip()[:220])\nc=collections.Counter();first={}\nfor i,l in enumerate(open(b+'logs/payments-api.log'),1):\n  if 'ERROR' in l:\n    k=re.sub(r'\\d+','N',l[24:])[:110];c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(5):print(first[k],v,k)\nL=open(b+'metrics/payments-api.csv').readlines();print(L[0],L[1],L[30],L[-1])\nopen('/task/workspace/notes.txt','a').write('s1 symptom: stage-1/logs/payments-api.log:179 risk-score timeouts\\n')"
++  },
++  {
++   "id": "s4.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.8s\n--- stdout ---\ndeploy/changes.log 1 2031-04-14T09:07:53Z CHG-5340 APPLIED  inventory-svc override log.level=info (was debug) by r.okafor\ndeploy/changes.log 2 2031-04-14T09:39:04Z CHG-5341 APPLIED  payments-api override clients.risk-score.timeout_ms=4000 (was 800 from build 5.36.1-f33d) by k.novak; mitigation\nops/oncall-notes.md 1 # On-call notes - payments-api incident 2031-04-14\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:49 risk-score timeouts stopped after the mitigation, but ingress-a still shows 503s for payments-api.\nops/oncall-notes.md 6 - 09:59 New errors look like db pool exhaustion, but config/payments-api.yaml says max_size 60, so the pool should have plenty of room?\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The risk-score timeouts stopped,\nUPDATE.md 4 but ingress-a still returns 503s for payments-api with a different error. New files below.\n187 44  ERROR payments-api [payments-api-dN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) \n193 35  ERROR payments-api [payments-api-aN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) \n194 31  ERROR payments-api [payments-api-eN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) \n1 1  ERROR payments-api [payments-api-aN] upstream call risk-score timed out after Nms (attempt N/N) req=fNcNcNbN\n\n3 1  ERROR payments-api [payments-api-aN] upstream call risk-score timed out after Nms (attempt N/N) req=NdNcNdN\n\nminute,rps,p99_ms,db_pool_in_use\n 09:30,231,1312,13\n 09:59,205,4647,14\n 10:29,204,5005,14\n\n"
+   }
+  ]
+ }

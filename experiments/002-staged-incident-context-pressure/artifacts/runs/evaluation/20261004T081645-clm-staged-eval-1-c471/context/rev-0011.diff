@@ -1,0 +1,19 @@
+--- rev-10
++++ rev-11
+@@ -30,6 +30,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (6 lines)\n  stage-3/logs/api-gateway.log (366 lines)\n  stage-3/logs/quotes-api.log (830 lines)\n  stage-3/metrics/quotes-api.csv (61 lines)"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Review stage 3 changes and pool errors.\ncode:\nb='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(b+'deploy/changes.log'),1):print(i,l.rstrip())\nL=open(b+'logs/quotes-api.log').readlines()\nn=[i for i,l in enumerate(L,1) if 'pool exhausted' in l];print(len(n),n[:5]);\nif n:print(L[n[0]-1][:170])\nG=open(b+'logs/api-gateway.log').readlines()\ng=[i for i,l in enumerate(G,1) if 'status=5' in l];print(len(g),g[:5])\nm=open(b+'metrics/quotes-api.csv').readlines();print(m[0],m[30],m[-1])"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n1 2031-05-22T09:38:29Z CHG-5853 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\n2 2031-05-22T10:30:46Z CHG-5854 PROPOSED orders-api override http.max_body_kb=512 (pending review; not applied)\n3 2031-05-22T10:47:19Z CHG-5855 APPLIED  quotes-api override db.pool.max_size=24 (was 14, the build 8.19.0-ff7b default) by s.patel; partial mitigation\n4 2031-05-22T10:55:06Z CHG-5856 APPLIED  catalog-api scale replicas 3 -> 8 by autoscaler\n5 2031-05-22T11:03:52Z CHG-5857 PROPOSED quotes-api override db.pool.max_size=40 (pending review; not applied)\n6 2031-05-22T11:20:08Z CHG-5858 REVERTED orders-api override cache.ttl_s=30 (back to 120) by j.moreau\n130 [1, 3, 5, 7, 9]\n2031-05-22T10:30:01.464Z ERROR quotes-api [quotes-api-e13] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=1522a7d2c3\n\n40 [108, 113, 116, 121, 126]\nminute,rps,p99_ms,db_pool_in_use\n 10:59,200,2865,24\n 11:29,188,2623,24\n\n"
+   }
+  ]
+ }

@@ -1,0 +1,46 @@
+--- rev-7
++++ rev-8
+@@ -4,42 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Stage1: deploy payments-api 5.36.1-f33d at 08:18:43 (stage-1/deploy/deploys.log:4). Release notes stage-1/deploy/release-notes-5.36.1-f33d.md:13 risk-score timeout 2500->800; :16 db.pool.max_size 60->14. config yaml: timeout 2500 (line7), pool 60 (line11). ingress-a 503 upstream timeout from line 91 (08:20). payments-api.log: risk-score timed out errors start line 179 (95 total); noise: gc, tls expire warnings, disk, dns retry ok."
+-  },
+-  {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] execute\nthought: Check timeout lines detail and db pool mentions; compact context.\ncode:\nimport json,re\nb='/task/fixtures/stage-1/logs/payments-api.log'\nL=open(b).read().splitlines()\nfor i in (179,191,222):print(i,L[i-1][:200])\nprint(sum('pool' in l for l in L))\nctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: deploy payments-api 5.36.1-f33d at 08:18:43 (stage-1/deploy/deploys.log:4). Release notes stage-1/deploy/release-notes-5.36.1-f33d.md:13 risk-score timeout 2500->800; :16 db.pool.max_size 60->14. config yaml: timeout 2500 (line7), pool 60 (line11). ingress-a 503 upstream timeout from line 91 (08:20). payments-api.log: risk-score timed out errors start line 179 (95 total); noise: gc, tls expire warnings, disk, dns retry ok.'}]}\njson.dump(ctx,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n179 2031-04-14T08:21:45.653Z ERROR payments-api [payments-api-d82] upstream call risk-score timed out after 800ms (attempt 1/1) req=63037a02ff\n191 2031-04-14T08:22:27.876Z ERROR payments-api [payments-api-e54] upstream call risk-score timed out after 800ms (attempt 1/1) req=74006141b5\n222 2031-04-14T08:24:54.428Z ERROR payments-api [payments-api-a76] upstream call risk-score timed out after 800ms (attempt 1/1) req=153be75cbd\n7\n"
+-  },
+-  {
+-   "id": "s3.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 3: revision 3 -> 4; entries 4 -> 1; body chars 2561 -> 434; removed [s2.act, s2.obs, s2.rcpt]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] advance\nthought: "
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The risk-score timeouts stopped,\nbut ingress-a still returns 503s for payments-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (2 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/payments-api.log (910 lines)\n  stage-2/metrics/payments-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Inspect stage 2 changes and errors.\ncode:\nimport collections,re\nb='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','UPDATE.md','ops/oncall-notes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip()[:220])\nL=open(b+'logs/payments-api.log').read().splitlines()\nc=collections.Counter()\nfirst={}\nfor i,l in enumerate(L,1):\n  if 'ERROR' in l:\n    k=re.sub(r'[0-9a-f]{6,}|\\d+','N',l.split('ERROR',1)[1])[:120];c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(6):print(v,first[k],k)\nprint(open(b+'metrics/payments-api.csv').read().splitlines()[:3])"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=0.9s\n--- stdout ---\ndeploy/changes.log 1 2031-04-14T09:07:53Z CHG-5340 APPLIED  inventory-svc override log.level=info (was debug) by r.okafor\ndeploy/changes.log 2 2031-04-14T09:39:04Z CHG-5341 APPLIED  payments-api override clients.risk-score.timeout_ms=4000 (was 800 from build 5.36.1-f33d) by k.novak; mitigation\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The risk-score timeouts stopped,\nUPDATE.md 4 but ingress-a still returns 503s for payments-api with a different error. New files below.\nops/oncall-notes.md 1 # On-call notes - payments-api incident 2031-04-14\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:49 risk-score timeouts stopped after the mitigation, but ingress-a still shows 503s for payments-api.\nops/oncall-notes.md 6 - 09:59 New errors look like db pool exhaustion, but config/payments-api.yaml says max_size 60, so the pool should have plenty of room?\n44 187  payments-api [payments-api-dN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) req=N\n35 193  payments-api [payments-api-aN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) req=N\n31 194  payments-api [payments-api-eN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) req=N\n15 1  payments-api [payments-api-aN] upstream call risk-score timed out after Nms (attempt N/N) req=N\n14 24  payments-api [payments-api-dN] upstream call risk-score timed out after Nms (attempt N/N) req=N\n11 22  payments-api [payments-api-eN] upstream call risk-score timed out after Nms (attempt N/N) req=N\n['minute,rps,p99_ms,db_pool_in_use', '09:30,231,1312,13', '09:31,199,1446,13']\n"
++   "body": "Stage1: deploy payments-api 5.36.1-f33d (stage-1/deploy/deploys.log:4). Release notes stage-1/deploy/release-notes-5.36.1-f33d.md:13 risk timeout 2500->800; :16 db.pool.max_size 60->14. yaml pool 60 (line11). Stage2: stage-2/deploy/changes.log:2 CHG-5341 APPLIED timeout=4000 fixed timeouts. Now db pool exhausted errors stage-2/logs/payments-api.log from line 187; metrics pool in_use 13-14. Next: advance to stage 3, check pool changes."
+   }
+  ]
+ }

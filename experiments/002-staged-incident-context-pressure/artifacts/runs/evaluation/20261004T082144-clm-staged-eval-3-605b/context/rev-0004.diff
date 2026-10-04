@@ -1,0 +1,26 @@
+--- rev-3
++++ rev-4
+@@ -4,22 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Stage1: deploys.log:3 returns-svc 6.33.4-cb27 at 08:16:14. release-notes-6.33.4-cb27.md:5 tax-engine timeout_ms 2500->750; :19 db.pool.max_size 48->10. config yaml:7 timeout 2500, :11 pool 48. oncall suspects tax-engine timeout (informal). Noise: gc pauses, disk 70%, dns retry ok, tls expires 34d."
+-  },
+-  {
+-   "id": "s2.act",
+-   "role": "assistant",
+-   "body": "[step 2] execute\nthought: Compress context and look at ERROR patterns after deploy.\ncode:\nimport json,re,collections\nb='/task/fixtures/stage-1/'\nc=collections.Counter();first={}\nfor f in ['logs/edge-gw.log','logs/returns-svc.log']:\n  for i,l in enumerate(open(b+f),1):\n    if 'ERROR' in l:\n      k=f+' '+re.sub(r'\\d+','N',l[50:140])\n      c[k]+=1\n      first.setdefault(k,(i,l.strip()[:220]))\nfor k,v in c.most_common(12):print(v,first[k])\nctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: deploys.log:3 returns-svc 6.33.4-cb27 at 08:16:14. release-notes-6.33.4-cb27.md:5 tax-engine timeout_ms 2500->750; :19 db.pool.max_size 48->10. config yaml:7 timeout 2500, :11 pool 48. oncall suspects tax-engine timeout (informal). Noise: gc pauses, disk 70%, dns retry ok, tls expires 34d.'}]}\njson.dump(ctx,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s2.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n2 (420, '2031-04-19T08:44:53.437Z ERROR returns-svc [returns-svc-e79] upstream call tax-engine timed out after 750ms (attempt 1/1) req=6314990e98')\n1 (161, '2031-04-19T08:17:17.084Z ERROR returns-svc [returns-svc-b92] upstream call tax-engine timed out after 750ms (attempt 1/1) req=dc3c16d400')\n1 (164, '2031-04-19T08:17:36.169Z ERROR returns-svc [returns-svc-e79] upstream call tax-engine timed out after 750ms (attempt 1/1) req=65c7e9d1a8')\n1 (166, '2031-04-19T08:17:41.416Z ERROR returns-svc [returns-svc-b92] upstream call tax-engine timed out after 750ms (attempt 1/1) req=d30b9400db')\n1 (171, '2031-04-19T08:18:04.181Z ERROR returns-svc [returns-svc-e79] upstream call tax-engine timed out after 750ms (attempt 1/1) req=91def468fe')\n1 (179, '2031-04-19T08:18:51.479Z ERROR returns-svc [returns-svc-b92] upstream call tax-engine timed out after 750ms (attempt 1/1) req=9a99eea602')\n1 (203, '2031-04-19T08:21:19.612Z ERROR returns-svc [returns-svc-e79] upstream call tax-engine timed out after 750ms (attempt 1/1) req=b408a849b6')\n1 (225, '2031-04-19T08:23:48.024Z ERROR returns-svc [returns-svc-e79] upstream call tax-engine timed out after 750ms (attempt 1/1) req=d3dfb1a075')\n1 (232, '2031-04-19T08:24:12.127Z ERROR returns-svc [returns-svc-e79] upstream call tax-engine timed out after 750ms (attempt 1/1) req=eb285c4470')\n1 (239, '2031-04-19T08:24:48.906Z ERROR returns-svc [returns-svc-b92] upstream call tax-engine timed out after 750ms (attempt 1/1) req=db6bdf581d')\n1 (241, '2031-04-19T08:24:56.432Z ERROR returns-svc [returns-svc-e79] upstream call tax-engine timed out after 750ms (attempt 1/1) req=983609e25d')\n1 (256, '2031-04-19T08:26:32.601Z ERROR returns-svc [returns-svc-a70] upstream call tax-engine timed out after 750ms (attempt 1/1) req=ac802e358c')\n"
+-  },
+-  {
+-   "id": "s2.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 6623 -> 298; removed [s1.act, s1.obs]; added [n1]; rewritten []"
++   "body": "Stage1: deploys.log:3 returns-svc 6.33.4-cb27 at 08:16:14. release-notes-6.33.4-cb27.md:5 tax-engine timeout_ms 2500->750; :19 db.pool.max_size 48->10. config yaml:7 timeout 2500, :11 pool 48. Symptom returns-svc.log:161-179 tax-engine timed out after 750ms (many). Noise: gc, disk, dns, tls."
+   }
+  ]
+ }

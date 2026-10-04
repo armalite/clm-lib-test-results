@@ -1,0 +1,26 @@
+--- rev-8
++++ rev-9
+@@ -4,22 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Stage1: release notes stage-1/deploy/release-notes-8.19.0-ff7b.md:9 risk-score timeout 2500->800; :15 db.pool.max_size 60->14. deploy stage-1/deploy/deploys.log:4 quotes-api 8.19.0-ff7b 08:21:06. config yaml:11 pool 60, :7 timeout 2500. gateway 503 upstream timeout from line 93 on. quotes-api.log:206 first ERROR risk-score timed out after 800ms (95 such errors). oncall suspects risk-score timeout (informal). quotes-api.log:419 db pool wait in_use 14/14 (7 warns). Stage2 released."
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Read stage-2 changes and key errors; compact context.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']+=' quotes-api.log:419 db pool wait in_use 14/14 (7 warns). Stage2 released.'\njson.dump(c,open('/task/workspace/context.json','w'))\nb='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md','UPDATE.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip()[:200])\nn=0\nfor i,l in enumerate(open(b+'logs/quotes-api.log'),1):\n  if 'ERROR' in l:\n    n+=1\n    if n<4:print(i,l.strip()[:180])\nprint(n)\nfor i,l in enumerate(open(b+'logs/api-gateway.log'),1):\n  if '503' in l:print(i,l.strip()[:180]);break"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=0.9s\n--- stdout ---\ndeploy/changes.log 1 2031-05-22T09:35:32Z CHG-5117 APPLIED  quotes-api override clients.risk-score.timeout_ms=3500 (was 800 from build 8.19.0-ff7b) by m.lindqvist; mitigation\ndeploy/changes.log 2 2031-05-22T09:55:09Z CHG-5118 REVERTED catalog-api override cache.ttl_s=30 (back to 120) by m.lindqvist\ndeploy/changes.log 3 2031-05-22T10:05:51Z CHG-5119 PROPOSED profile-svc override http.max_body_kb=512 (pending review; not applied)\nops/oncall-notes.md 1 # On-call notes - quotes-api incident 2031-05-22\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:45 risk-score timeouts stopped after the mitigation, but api-gateway still shows 503s for quotes-api.\nops/oncall-notes.md 6 - 09:55 New errors look like db pool exhaustion, but config/quotes-api.yaml says max_size 60, so the pool should have plenty of room?\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The risk-score timeouts stopped,\nUPDATE.md 4 but api-gateway still returns 503s for quotes-api with a different error. New files below.\n2 2031-05-22T09:30:07.394Z ERROR quotes-api [quotes-api-b24] upstream call risk-score timed out after 800ms (attempt 1/1) req=6bbb9caf93\n4 2031-05-22T09:30:10.053Z ERROR quotes-api [quotes-api-b24] upstream call risk-score timed out after 800ms (attempt 1/1) req=d60c34e729\n8 2031-05-22T09:30:21.026Z ERROR quotes-api [quotes-api-c10] upstream call risk-score timed out after 800ms (attempt 1/1) req=9f6ae75ae2\n150\n58 2031-05-22T09:39:44.157Z api-gateway access upstream=quotes-api method=GET path=/v1/cart status=503 rt=1.253s upstream_error=\"upstream returned 503\"\n"
+-  },
+-  {
+-   "id": "s5.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 5: revision 6 -> 7; entries 6 -> 1; body chars 2684 -> 484; removed [s3.act, s3.obs, s3.rcpt, s4.act, s4.obs]; added []; rewritten [n1]"
++   "body": "Stage1: release notes stage-1/deploy/release-notes-8.19.0-ff7b.md:9 risk-score timeout 2500->800; :15 db.pool.max_size 60->14. deploy stage-1/deploy/deploys.log:4 quotes-api 8.19.0-ff7b 08:21:06. config yaml:11 pool 60, :7 timeout 2500. gateway 503 upstream timeout from line 93 on. quotes-api.log:206 first ERROR risk-score timed out after 800ms (95 such errors). oncall suspects risk-score timeout (informal). quotes-api.log:419 db pool wait in_use 14/14 (7 warns). Stage2 released. Stage2: changes.log:1 CHG-5117 APPLIED risk-score timeout 3500 (mitigated). oncall says db pool exhaustion now. stage-2 gateway 503 line 58."
+   }
+  ]
+ }

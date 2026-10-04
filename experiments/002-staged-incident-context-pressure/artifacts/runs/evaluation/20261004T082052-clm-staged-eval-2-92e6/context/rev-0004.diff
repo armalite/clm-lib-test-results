@@ -1,0 +1,26 @@
+--- rev-3
++++ rev-4
+@@ -4,22 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Stage1: RN 5.36.1-f33d line13 risk timeout 2500->800; line16 db pool 60->14. deploy deploys.log:4 08:18:43. payments-api.log:179 risk timeout 800ms; :206 db pool wait 14/14. config yaml:7 timeout 2500, :11 pool 60. oncall suspects timeout."
+-  },
+-  {
+-   "id": "s2.act",
+-   "role": "assistant",
+-   "body": "[step 2] execute\nthought: Save notes compactly, check counts of errors and db pool errors.\ncode:\nimport json,collections\nb='/task/fixtures/stage-1/logs/'\nL=open(b+'payments-api.log').readlines()\nc=collections.Counter()\nfor i,l in enumerate(L,1):\n if 'ERROR' in l:\n  k=l.split(']')[1][:50];c[k]+=1\n  if c[k]<2:print(i,l.strip()[:180])\nprint(c)\nI=open(b+'ingress-a.log').readlines()\nprint(I[200].strip()[:200]);print(collections.Counter(l.split()[1] for l in I))\nctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: RN 5.36.1-f33d line13 risk timeout 2500->800; line16 db pool 60->14. deploy deploys.log:4 08:18:43. payments-api.log:179 risk timeout 800ms; :206 db pool wait 14/14. config yaml:7 timeout 2500, :11 pool 60. oncall suspects timeout.'}]}\njson.dump(ctx,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s2.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n179 2031-04-14T08:21:45.653Z ERROR payments-api [payments-api-d82] upstream call risk-score timed out after 800ms (attempt 1/1) req=63037a02ff\nCounter({' upstream call risk-score timed out after 800ms (a': 95})\n2031-04-14T08:41:32.676Z ingress-a access upstream=payments-api method=GET path=/v1/items status=200 rt=0.183s\nCounter({'ingress-a': 433})\n"
+-  },
+-  {
+-   "id": "s2.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 5815 -> 239; removed [s1.act, s1.obs]; added [n1]; rewritten []"
++   "body": "Stage1: RN 5.36.1-f33d line13 risk timeout 2500->800; line16 db pool 60->14. deploy deploys.log:4 08:18:43. payments-api.log:179 first ERROR risk timeout 800ms (95 such errors, only ERROR type); :206 db pool wait 14/14. config yaml:7 timeout 2500, :11 pool 60. oncall suspects timeout."
+   }
+  ]
+ }

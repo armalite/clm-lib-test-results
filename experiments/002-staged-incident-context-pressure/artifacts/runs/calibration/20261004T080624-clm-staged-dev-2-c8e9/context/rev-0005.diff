@@ -1,0 +1,24 @@
+--- rev-4
++++ rev-5
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "Stage1: deploy catalog-api 8.26.3-35fd at stage-1/deploy/deploys.log:5. Release notes stage-1/deploy/release-notes-8.26.3-35fd.md:11 ledger timeout 2500->800; :15 db.pool.max_size 60->10. config yaml pool 60 (line 11). stage1 log ledger timeouts 800ms e.g. stage-1/logs/catalog-api.log:144. Stage 2 released; reading it now."
++  },
++  {
++   "id": "s4.act",
++   "role": "assistant",
++   "body": "[step 4] execute\nthought: Read stage 2 files and compact context.\ncode:\nimport json,collections,re\nb='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md']:\n  print('==',f)\n  for i,l in enumerate(open(b+f),1):print(i,l.rstrip())\nL=open(b+'logs/catalog-api.log').readlines()\nc=collections.Counter(re.sub(r'\\d+','N',' '.join(l.split()[4:10])) for l in L if 'ERROR' in l)\nprint(c.most_common(5))\nfor i,l in enumerate(L,1):\n  if 'ERROR' in l and 'ledger' not in l:print(i,l.rstrip()[:200]);break\nM=open(b+'metrics/catalog-api.csv').readlines();print(M[0].strip(),M[-1].strip())\np='/task/workspace/context.json'\nd={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: deploy catalog-api 8.26.3-35fd at stage-1/deploy/deploys.log:5. Release notes stage-1/deploy/release-notes-8.26.3-35fd.md:11 ledger timeout 2500->800; :15 db.pool.max_size 60->10. config yaml pool 60 (line 11). stage1 log ledger timeouts 800ms e.g. stage-1/logs/catalog-api.log:144. Stage 2 released; reading it now.'}]}\njson.dump(d,open(p,'w'))"
++  },
++  {
++   "id": "s4.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n== deploy/changes.log\n1 2031-05-17T08:53:52Z CHG-5203 PROPOSED quotes-api override http.max_body_kb=512 (pending review; not applied)\n2 2031-05-17T09:43:29Z CHG-5204 APPLIED  catalog-api override clients.ledger-api.timeout_ms=3500 (was 800 from build 8.26.3-35fd) by r.okafor; mitigation\n3 2031-05-17T10:21:02Z CHG-5205 REVERTED payments-api override cache.ttl_s=30 (back to 120) by k.novak\n4 2031-05-17T10:28:08Z CHG-5206 APPLIED  quotes-api image quotes-api:8.11 rollout complete by deploy-bot\n== ops/oncall-notes.md\n1 # On-call notes - catalog-api incident 2031-05-17\n2 \n3 Informal running notes. Not reviewed; may be out of date.\n4 \n5 - 09:53 ledger-api timeouts stopped after the mitigation, but edge-gw still shows 503s for catalog-api.\n6 - 10:03 New errors look like db pool exhaustion, but config/catalog-api.yaml says max_size 60, so the pool should have plenty of room?\n[('db pool exhausted: N/N connections in', 110), ('upstream call ledger-api timed out after', 40)]\n224 2031-05-17T09:45:29.492Z ERROR catalog-api [catalog-api-f14] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=0c84fa8a93\nminute,rps,p99_ms,db_pool_in_use 10:29,209,4650,10\n"
++  },
++  {
++   "id": "s4.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 4: revision 3 -> 4; entries 6 -> 1; body chars 4705 -> 324; removed [s1.act, s1.obs, s2.act, s2.obs, s3.act, s3.obs]; added [n1]; rewritten []"
+   }
+  ]
+ }

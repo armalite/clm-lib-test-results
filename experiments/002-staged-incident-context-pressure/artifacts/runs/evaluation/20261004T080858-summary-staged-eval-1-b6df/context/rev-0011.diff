@@ -1,0 +1,19 @@
+--- rev-10
++++ rev-11
+@@ -25,6 +25,16 @@
+    "id": "s6.obs",
+    "role": "observation",
+    "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (6 lines)\n  stage-3/logs/api-gateway.log (366 lines)\n  stage-3/logs/quotes-api.log (830 lines)\n  stage-3/metrics/quotes-api.csv (61 lines)"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: Read stage-3 changes.log and grep errors.\ncode:\nb='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(b+'deploy/changes.log'),1):print(i,l.rstrip())\nimport collections\nc=collections.Counter();f={}\nfor i,l in enumerate(open(b+'logs/quotes-api.log'),1):\n  if 'ERROR' in l or 'exhausted' in l or 'timed out' in l:\n    k=l.split(' ',3)[-1][:70];c[k]+=1;f.setdefault(k,(i,l.strip()[:200]))\nfor k,v in c.most_common(6):print(v,f[k])"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.9s\n--- stdout ---\n1 2031-05-22T09:38:29Z CHG-5853 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\n2 2031-05-22T10:30:46Z CHG-5854 PROPOSED orders-api override http.max_body_kb=512 (pending review; not applied)\n3 2031-05-22T10:47:19Z CHG-5855 APPLIED  quotes-api override db.pool.max_size=24 (was 14, the build 8.19.0-ff7b default) by s.patel; partial mitigation\n4 2031-05-22T10:55:06Z CHG-5856 APPLIED  catalog-api scale replicas 3 -> 8 by autoscaler\n5 2031-05-22T11:03:52Z CHG-5857 PROPOSED quotes-api override db.pool.max_size=40 (pending review; not applied)\n6 2031-05-22T11:20:08Z CHG-5858 REVERTED orders-api override cache.ttl_s=30 (back to 120) by j.moreau\n29 (1, '2031-05-22T10:30:01.464Z ERROR quotes-api [quotes-api-e13] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=1522a7d2c3')\n27 (323, '2031-05-22T10:51:38.135Z ERROR quotes-api [quotes-api-e13] db pool exhausted: 24/24 connections in use, waited 5000ms (acquire_timeout) req=aa8063c0e6')\n26 (285, '2031-05-22T10:48:40.029Z ERROR quotes-api [quotes-api-b24] db pool exhausted: 24/24 connections in use, waited 5000ms (acquire_timeout) req=61c88df4d2')\n17 (5, '2031-05-22T10:30:07.010Z ERROR quotes-api [quotes-api-b24] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=2d92ba2ce4')\n17 (286, '2031-05-22T10:48:41.819Z ERROR quotes-api [quotes-api-c10] db pool exhausted: 24/24 connections in use, waited 5000ms (acquire_timeout) req=aec5112e51')\n14 (9, '2031-05-22T10:30:16.643Z ERROR quotes-api [quotes-api-c10] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=400b279219')\n"
+   }
+  ]
+ }

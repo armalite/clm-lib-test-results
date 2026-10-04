@@ -1,0 +1,24 @@
+--- rev-4
++++ rev-5
+@@ -5,6 +5,21 @@
+    "id": "notes",
+    "role": "note",
+    "body": "Notes: changes.log:14 CHG-4162 APPLIED shipping-api db.pool.max_size=12 (was 40) 08:28:20; :15 PROPOSED 56 not applied. config yaml:10 max_size 40 (superseded). oncall notes:5 stale. ingress-a.log:272-287 503 upstream timeout from 08:31. Hypothesis DB_POOL_EXHAUSTED."
++  },
++  {
++   "id": "s3.act",
++   "role": "assistant",
++   "body": "[step 3] execute\nthought: Find pool exhaustion errors in shipping-api log after 08:28 and metrics; compact context using helper again.\ncode:\nimport sys;sys.path.insert(0,'/task/workspace')\nfrom helpers import ctx\nctx.compact('Notes: changes.log:14 CHG-4162 APPLIED shipping-api db.pool.max_size=12 (was 40) 08:28:20; :15 PROPOSED 56 not applied. config yaml:10 max_size 40 (superseded). oncall notes:5 stale. ingress-a.log:272-287 503 upstream timeout from 08:31. Hypothesis DB_POOL_EXHAUSTED.')\nimport re\nn=0\nfor i,l in enumerate(open('/task/fixtures/logs/shipping-api.log'),1):\n    if re.search(r'WARN|ERROR',l) and re.search(r'pool|connection',l,re.I):\n        n+=1\n        if n<=4: print(i,l.rstrip()[:200])\nprint('count',n)\nfor i,l in enumerate(open('/task/fixtures/metrics/shipping-api.csv'),1):\n    if i==1 or i in (60,70,80): print(i,l.rstrip())"
++  },
++  {
++   "id": "s3.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n683 2031-04-21T08:32:13.604Z ERROR shipping-api [shipping-api-a94] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=ce32af795a\n686 2031-04-21T08:32:36.424Z ERROR shipping-api [shipping-api-e38] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=1ff24b799d\n696 2031-04-21T08:33:37.137Z ERROR shipping-api [shipping-api-e38] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=b79532856d\n698 2031-04-21T08:33:45.736Z ERROR shipping-api [shipping-api-e37] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=25417d9ff7\ncount 140\n1 minute,rps,p99_ms,db_pool_in_use,cpu_pct\n60 08:28,189,115,4,53\n70 08:38,252,4551,12,53\n80 08:48,234,3306,12,45\n"
++  },
++  {
++   "id": "s3.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 3: revision 3 -> 4; entries 4 -> 1; body chars 2853 -> 267; removed [s2.act, s2.obs, s2.rcpt]; added []; rewritten [notes]"
+   }
+  ]
+ }

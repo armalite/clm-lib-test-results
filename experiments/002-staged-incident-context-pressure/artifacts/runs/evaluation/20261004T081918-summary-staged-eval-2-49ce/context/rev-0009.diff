@@ -1,0 +1,19 @@
+--- rev-8
++++ rev-9
+@@ -25,6 +25,16 @@
+    "id": "s5.obs",
+    "role": "observation",
+    "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (5 lines)\n  stage-3/logs/ingress-a.log (366 lines)\n  stage-3/logs/payments-api.log (830 lines)\n  stage-3/metrics/payments-api.csv (61 lines)"
++  },
++  {
++   "id": "s6.act",
++   "role": "assistant",
++   "body": "[step 6] execute\nthought: Read stage-3 changes and errors.\ncode:\nimport collections,re\nb='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(b+'deploy/changes.log'),1):print(i,l.rstrip()[:200])\nc=collections.Counter();first={}\nfor i,l in enumerate(open(b+'logs/payments-api.log'),1):\n  if 'ERROR' in l:\n    k=re.sub(r'\\d+','N',l[24:])[:90];c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(4):print(first[k],v,k)\nL=open(b+'metrics/payments-api.csv').readlines();print(L[1],L[-1])\nfor i,l in enumerate(open(b+'logs/payments-api.log'),1):\n  if 'pool exhausted' in l:print(i,l.rstrip()[:160]);break"
++  },
++  {
++   "id": "s6.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.6s\n--- stdout ---\n1 2031-04-14T09:40:21Z CHG-5822 PROPOSED returns-svc override http.max_body_kb=512 (pending review; not applied)\n2 2031-04-14T10:41:21Z CHG-5823 PROPOSED returns-svc override http.max_body_kb=512 (pending review; not applied)\n3 2031-04-14T10:45:38Z CHG-5824 APPLIED  payments-api override db.pool.max_size=20 (was 14, the build 5.36.1-f33d default) by a.tanaka; partial mitigation\n4 2031-04-14T10:57:26Z CHG-5825 PROPOSED profile-svc override http.max_body_kb=512 (pending review; not applied)\n5 2031-04-14T11:10:35Z CHG-5826 PROPOSED payments-api override db.pool.max_size=36 (pending review; not applied)\n1 46  ERROR payments-api [payments-api-eN] db pool exhausted: N/N connections in use, waited Nm\n24 46  ERROR payments-api [payments-api-dN] db pool exhausted: N/N connections in use, waited Nm\n6 38  ERROR payments-api [payments-api-aN] db pool exhausted: N/N connections in use, waited Nm\n10:30,256,4093,14\n 11:29,219,2368,20\n\n1 2031-04-14T10:30:00.053Z ERROR payments-api [payments-api-e54] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=0081ab28d7\n"
+   }
+  ]
+ }

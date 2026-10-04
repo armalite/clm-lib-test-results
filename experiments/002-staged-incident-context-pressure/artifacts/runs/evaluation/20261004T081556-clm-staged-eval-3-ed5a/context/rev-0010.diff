@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -35,6 +35,16 @@
+    "id": "s7.obs",
+    "role": "observation",
+    "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (6 lines)\n  stage-3/logs/edge-gw.log (366 lines)\n  stage-3/logs/returns-svc.log (830 lines)\n  stage-3/metrics/returns-svc.csv (61 lines)"
++  },
++  {
++   "id": "s8.act",
++   "role": "assistant",
++   "body": "[step 8] execute\nthought: \ncode:\nimport re\nb='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(b+'deploy/changes.log'),1):print(i,l.rstrip()[:300])\nL=open(b+'logs/returns-svc.log').readlines()\nimport collections\nc=collections.Counter()\nfirst={}\nfor i,l in enumerate(L,1):\n  if 'ERROR' in l:\n    k=re.sub(r'\\d+','N',l.split(']')[1][:60]);c[k]+=1;first.setdefault(k,i)\nfor k,v in c.items():print(v,first[k],k)\nprint(L[first[list(c)[0]]-1][:200] if c else '')\nfor i,l in enumerate(open(b+'metrics/returns-svc.csv'),1):\n  if i<3:print(i,l.strip())"
++  },
++  {
++   "id": "s8.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n1 2031-04-19T09:47:00Z CHG-5705 REVERTED fulfil-svc override cache.ttl_s=30 (back to 120) by a.tanaka\n2 2031-04-19T10:02:53Z CHG-5706 PROPOSED quotes-api override http.max_body_kb=512 (pending review; not applied)\n3 2031-04-19T10:13:49Z CHG-5707 APPLIED  shipping-api scale replicas 4 -> 5 by autoscaler\n4 2031-04-19T10:44:27Z CHG-5708 APPLIED  returns-svc override db.pool.max_size=16 (was 10, the build 6.33.4-cb27 default) by s.patel; partial mitigation\n5 2031-04-19T11:03:00Z CHG-5709 PROPOSED returns-svc override db.pool.max_size=32 (pending review; not applied)\n6 2031-04-19T11:24:44Z CHG-5710 APPLIED  fulfil-svc image fulfil-svc:2.0 rollout complete by deploy-bot\n130 6  db pool exhausted: N/N connections in use, waited Nms \n2031-04-19T10:30:13.459Z ERROR returns-svc [returns-svc-a70] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=9aed8b6f7d\n\n1 minute,rps,p99_ms,db_pool_in_use\n2 10:30,230,3415,10\n"
+   }
+  ]
+ }

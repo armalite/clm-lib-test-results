@@ -1,0 +1,49 @@
+{
+ "number": 11,
+ "parent": 10,
+ "source": "runtime",
+ "step": 8,
+ "sha256": "e07396c53ad1ab9d76ffb8e11e2be33d98a215ffbf7f72cd7b7b9bbce06cd056",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1: deploy payments-api 5.36.1-f33d (stage-1/deploy/deploys.log:4). Release notes stage-1/deploy/release-notes-5.36.1-f33d.md:13 risk timeout 2500->800; :16 db.pool.max_size 60->14. yaml pool 60 (line11). Stage2: stage-2/deploy/changes.log:2 CHG-5341 APPLIED timeout=4000 fixed timeouts. Now db pool exhausted errors stage-2/logs/payments-api.log from line 187; metrics pool in_use 13-14. Next: advance to stage 3, check pool changes."
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Get a db pool line and compact context.\ncode:\nimport json\nb='/task/fixtures/stage-2/logs/payments-api.log'\nL=open(b).read().splitlines()\nprint(187,L[186][:200])\nctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: deploy payments-api 5.36.1-f33d (stage-1/deploy/deploys.log:4). Release notes stage-1/deploy/release-notes-5.36.1-f33d.md:13 risk timeout 2500->800; :16 db.pool.max_size 60->14. yaml pool 60 (line11). Stage2: stage-2/deploy/changes.log:2 CHG-5341 APPLIED timeout=4000 fixed timeouts. Now db pool exhausted errors stage-2/logs/payments-api.log from line 187; metrics pool in_use 13-14. Next: advance to stage 3, check pool changes.'}]}\njson.dump(ctx,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n187 2031-04-14T09:41:09.731Z ERROR payments-api [payments-api-d82] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=295b973e33\n"
+  },
+  {
+   "id": "s6.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 6: revision 7 -> 8; entries 8 -> 1; body chars 4842 -> 438; removed [s3.act, s3.obs, s3.rcpt, s4.act, s4.obs, s5.act, s5.obs]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s7.act",
+   "role": "assistant",
+   "body": "[step 7] advance\nthought: "
+  },
+  {
+   "id": "s7.obs",
+   "role": "observation",
+   "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (5 lines)\n  stage-3/logs/ingress-a.log (366 lines)\n  stage-3/logs/payments-api.log (830 lines)\n  stage-3/metrics/payments-api.csv (61 lines)"
+  },
+  {
+   "id": "s8.act",
+   "role": "assistant",
+   "body": "[step 8] execute\nthought: \ncode:\nimport re\nb='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(b+'deploy/changes.log'),1):print(i,l.rstrip()[:250])\nL=open(b+'logs/payments-api.log').read().splitlines()\nn=0\nfor i,l in enumerate(L,1):\n  if 'ERROR' in l:\n    n+=1\n    if n<4:print(i,l[:200])\nprint('errs',n)\nM=open(b+'metrics/payments-api.csv').read().splitlines()\nprint(M[0]);print(M[30])"
+  },
+  {
+   "id": "s8.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n1 2031-04-14T09:40:21Z CHG-5822 PROPOSED returns-svc override http.max_body_kb=512 (pending review; not applied)\n2 2031-04-14T10:41:21Z CHG-5823 PROPOSED returns-svc override http.max_body_kb=512 (pending review; not applied)\n3 2031-04-14T10:45:38Z CHG-5824 APPLIED  payments-api override db.pool.max_size=20 (was 14, the build 5.36.1-f33d default) by a.tanaka; partial mitigation\n4 2031-04-14T10:57:26Z CHG-5825 PROPOSED profile-svc override http.max_body_kb=512 (pending review; not applied)\n5 2031-04-14T11:10:35Z CHG-5826 PROPOSED payments-api override db.pool.max_size=36 (pending review; not applied)\n1 2031-04-14T10:30:00.053Z ERROR payments-api [payments-api-e54] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=0081ab28d7\n3 2031-04-14T10:30:06.494Z ERROR payments-api [payments-api-e54] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=5af6ba4cc0\n6 2031-04-14T10:30:08.682Z ERROR payments-api [payments-api-a76] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=d86fbdb5ac\nerrs 130\nminute,rps,p99_ms,db_pool_in_use\n10:59,193,4147,20\n"
+  }
+ ]
+}

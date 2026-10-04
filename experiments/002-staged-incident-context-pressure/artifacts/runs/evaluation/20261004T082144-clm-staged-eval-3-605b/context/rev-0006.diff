@@ -1,0 +1,26 @@
+--- rev-5
++++ rev-6
+@@ -4,22 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Stage1: deploys.log:3 returns-svc 6.33.4-cb27 at 08:16:14. release-notes-6.33.4-cb27.md:5 tax-engine timeout_ms 2500->750; :19 db.pool.max_size 48->10. config yaml:7 timeout 2500, :11 pool 48. Symptom returns-svc.log:161-179 tax-engine timed out after 750ms (many). Noise: gc, disk, dns, tls."
+-  },
+-  {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] execute\nthought: Check tax-engine latency and pool errors quickly, then compress.\ncode:\nimport json,re\nb='/task/fixtures/stage-1/'\nL=open(b+'logs/returns-svc.log').read().splitlines()\nlat=[int(m.group(1)) for l in L for m in [re.search(r'tax-engine.*?latency[^0-9]*(\\d+)',l)] if m]\nprint(len(lat),sorted(lat)[len(lat)//2] if lat else None)\nfor i,l in enumerate(L,1):\n  if 'pool' in l.lower() and i<900: print(i,l[:160]);break\nprint(sum('pool' in l.lower() for l in L))\nprint(L[300][:200])\nctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: deploys.log:3 returns-svc 6.33.4-cb27 at 08:16:14. release-notes-6.33.4-cb27.md:5 tax-engine timeout_ms 2500->750; :19 db.pool.max_size 48->10. config yaml:7 timeout 2500, :11 pool 48. Symptom returns-svc.log:161-179 tax-engine timed out after 750ms (many). Noise: gc, disk, dns, tls.'}]}\njson.dump(ctx,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n0 None\n193 2031-04-19T08:20:25.213Z WARN  returns-svc [returns-svc-b92] db pool wait 1082ms (in_use 10/10)\n7\n2031-04-19T08:31:21.414Z INFO  returns-svc [returns-svc-e79] req=a485c88a55 route=/v1/items status=200 dur_ms=88\n"
+-  },
+-  {
+-   "id": "s3.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 3: revision 3 -> 4; entries 4 -> 1; body chars 3133 -> 292; removed [s2.act, s2.obs, s2.rcpt]; added []; rewritten [n1]"
++   "body": "Stage1: deploys.log:3 returns-svc 6.33.4-cb27 at 08:16:14. release-notes-6.33.4-cb27.md:5 tax-engine timeout_ms 2500->750; :19 db.pool.max_size 48->10. config yaml:7 timeout 2500, :11 pool 48. Symptom returns-svc.log:161-179 tax-engine timed out after 750ms (many). pool waits only 7 lines (e.g. :193 in_use 10/10). Noise: gc, disk, dns, tls."
+   }
+  ]
+ }
