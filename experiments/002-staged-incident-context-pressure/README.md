@@ -1,90 +1,111 @@
-# 002 – Staged incident under sustained context pressure
+# 002 – Staged incident under context pressure
 
-## Question
+## What problem did we test?
 
-When evidence arrives over time and the working context must be managed while the investigation continues, does letting the model edit its own context (CLM arm) change task quality or cost compared with automatic summarisation (summary arm)?
+An AI agent investigates a simulated production outage where **new evidence arrives over time**, in three stages, as it would during a real incident. The agent asks for the next stage when it is ready.
 
-Experiment 001 could not answer this: its tasks were solved in 3–4 calls and neither arm ever managed context.
+- **Stage 1:** a new software build is deployed and requests start timing out. The build's release notes contain about 15 routine items. One of them quietly lowers the database connection-pool size; that is an easy-to-miss **early fact**.
+- **Stage 2:** an on-call engineer fixes the timeout, so the obvious first theory is now **out of date**. Errors continue, now from the database pool running out of connections.
+- **Stage 3:** someone raises the pool size part-way, which **supersedes** the earlier value. Errors persist. A proposal to raise it further was never applied, which is a distractor.
 
-## Setup
+To succeed, the agent must:
+- keep track of what still matters while its context fills up;
+- diagnose the incident as it stands at the end (the database pool, not the timeout);
+- report the **current** pool size;
+- give a remedy;
+- cite three pieces of evidence: the current symptom, the record that set the current value, and the stage-1 release-note line that started the problem.
 
-- **Task family** `staged-incident-gen/1`: a fictional service incident with evidence released in 3 stages. The agent sends an `advance` action to receive the next stage.
-  - **Stage 1:** a deploy and upstream timeouts. Among about 15 routine items, the build's release notes lower both a client timeout and the DB pool default. That pool line is the exact early fact.
-  - **Stage 2:** an APPLIED change fixes the timeout, superseding the stage-1 hypothesis, and DB pool exhaustion appears. A note repeats a stale pool value from the repo config.
-  - **Stage 3:** an APPLIED change raises the pool part-way (the new current value) and exhaustion persists. A PROPOSED larger value is a distractor.
-  - **Final answer:** cause, current value, remedy, and `path:line` evidence for the symptom, the current-value record and the stage-1 origin line.
-- **Fairness:**
-  - Both arms get the same model and settings, evidence schedule, task text, tools, scratch files and limits.
-  - Future stages and the evaluator truth are not on disk until released (truth only after the run). Released files never change, and both arms can re-read every earlier file.
-  - CLM receives ordinary capability instructions and pressure reminders. Edits and helpers were never requested.
-  - The baseline is the unchanged summary policy: summarise at 70% of the budget, keep the newest 4 entries verbatim, one bounded retry, then an explicit overflow.
-- **Settings:** identical to experiment 001. `claude-opus-5-5`, effort `low`, 20 calls, 2,048 output tokens per call, 8,000-token request budget, 70% pressure, 1,000-token recovery reserve.
-- **Calibration:** 2 runs on fresh development instances, one per arm. Both managed context during stage 2 with meaningful work remaining, so no adjustment was made (see `protocol.md`).
-- **Evaluation:** frozen comparison `20261004T080858`. 3 fresh instances (`staged-eval-1..3`) × 2 modes × 2 repetitions, sequential, with mode order alternating per pair. All 12 cells ran; none were missing or invalid.
+Earlier files stay readable throughout, and future stages are not visible until released.
 
-## Results (measured)
+The question: when useful information has to survive sustained context pressure, does letting the model **edit its own context** (CLM) change results or cost compared with **automatic summarisation**?
 
-| arm | strict success | completed | mean cost | total cost | mean calls (action + summary) | mean executions | mean input / output tokens | mean peak request | mean elapsed |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| summary | **4/6** | 5/6 | $0.372 | $2.229 | 12.0 (8.2 + 3.8) | 5.5 | 56,000 / 7,377 | 6,346 | 99 s |
-| clm | **6/6** | 6/6 | $0.231 | $1.386 | 10.2 (10.2 + 0) | 7.2 | 44,060 / 2,741 | 6,005 | 56 s |
+## How did the comparison work?
 
-Per-component results:
-- **Diagnosis and remedy:** CLM 6/6. Summary 5/6; the overflow run gave no answer.
-- **Current value:** CLM 6/6. Summary 5/6, same reason.
-- **Stale values and stale hypothesis:** none in either arm.
-- **Evidence groups:**
-  - CLM: all three groups covered in 6/6.
-  - Summary: origin and value covered in 5/6, symptom in 4/6.
+- **Summary baseline (our implemented policy):** when a model request reaches about 70% of its 8,000-token budget, Claude is asked, in a separate call, to summarise the older working-context entries, and the summary replaces them. The 4 most recent entries are kept unchanged. If the summary still doesn't fit, it gets one retry, then the run stops with an explicit "context overflow".
+- **CLM:** the same model, budget, tasks, evidence schedule and tools. The model may rewrite its working-context file with code it writes, whenever it chooses, and receives a reminder at the same 70% point.
+  - Editing was **optional**. Creating reusable helpers was **not requested**.
+  - An edit made during one step takes effect in the **next** model request.
+- **Setup, the same for both:**
+  - `claude-opus-5-5` at effort `low`;
+  - an 8,000-token budget for each model request (instructions, task and working context together);
+  - at most 20 model calls per run.
+- **Runs:** 3 instances of one synthetic task family × 2 repetitions × 2 approaches = **12 comparison runs**, one after another, alternating which approach ran first.
+  - Settings, task instances and code were frozen before the comparison.
+  - Two earlier calibration runs used different instances, to confirm both methods would actually activate.
+- **Scoring:** a run is a **strict success** only if it gets the diagnosis, remedy and exact current value right **and** cites all three evidence types, with each citation within the allowed range of at most 20 lines.
 
-Management actually happened during continuing work:
-- **CLM:** 20 accepted edits, 0 rejected; every run made 2–6 edits. The first edit took effect at stage 1 in all 6 runs (steps 3–5), usually **before** any pressure reminder; 4 of 6 runs never reached the pressure threshold. Between 6 and 10 action steps followed the first edit.
-- **Summary:** 20 summaries; every run summarised 2–5 times. The first summary came at stage 1 or 2 (steps 4–5), followed by 2–8 action steps.
-- **Recoveries:** none in either arm.
+## What happened?
 
-Paired results, every pair of the same instance and repetition:
+**Both context-management methods were active in every run.**
+- Every CLM run edited its context: 2–6 accepted edits per run, 20 in total, none rejected. The first edits were made during stage 1, at steps 2–4, and took effect in the next request.
+- Every baseline run summarised. 23 summary calls produced 20 accepted summaries; the other 3 attempts were too large to fit, all in the run that overflowed.
+- No reusable helper was created in any run.
 
-| instance | rep | summary | clm | clm − summary cost |
+**Outcomes**, 6 runs per approach:
+
+| | Summary baseline | CLM |
+| --- | --- | --- |
+| **Completion:** reached a final answer | 5 of 6 | 6 of 6 |
+| **Strict success:** met every requirement | 4 of 6 | 6 of 6 |
+| **Factual correctness** (of completed answers): diagnosis, remedy and current value all correct | 5 of 5 | 6 of 6 |
+| Cited the stage-1 early fact (of completed answers) | 5 of 5 | 6 of 6 |
+
+**Efficiency**, per-run averages (totals for all 6 runs in brackets):
+
+| | Summary baseline | CLM |
+| --- | --- | --- |
+| Cost per run (USD) | 0.372 (total 2.229) | 0.231 (total 1.386) |
+| Elapsed time per run | 99 s (total 595 s) | 56 s (total 338 s) |
+| Model calls per run | 12.0: 8.2 task + 3.8 summary (total 72) | 10.2, all task (total 61) |
+| Cumulative input tokens per run* | 56,000 | 44,060 |
+| Cumulative output tokens per run | 7,377 | 2,741 |
+| Largest single request (input tokens) | 6,346 | 6,005 |
+
+\* Cumulative input tokens add up the input of **every** model call in a run. Most of the context is re-sent on each call, so this is much larger than any single request; it is not the size of one context window. The last row shows the largest single request, which stayed under the 8,000-token budget in every run. The runtime makes its budget decisions using its own calibrated token estimate. Its internal hard limit (7,000 tokens, which keeps 1,000 in reserve) is therefore applied to that estimate, and one provider-reported request reached 7,280 tokens.
+
+**The two baseline failures, plainly:**
+1. **Context overflow** (`staged-eval-1`, repetition 2). One recent observation of 6,105 characters sat among the four entries the baseline always keeps unchanged. Even after summarising everything older (and one retry), the request couldn't fit the budget, so the run stopped without an answer. The policy behaved as designed.
+2. **Citation outside the allowed range** (`staged-eval-2`, repetition 2). The answer was correct: the right diagnosis, remedy and current value, and a correct citation of the stage-1 fact. But its symptom citation covered 24 lines where the task allows at most 20. The range did contain the right lines. The rule was the same for both approaches and was not relaxed afterwards.
+
+**Matched pairs**, same instance and repetition:
+
+| Instance | Repetition | Summary baseline | CLM | CLM cost minus baseline cost (USD) |
 | --- | --- | --- | --- | --- |
-| staged-eval-1 | 1 | correct, $0.434 | correct, $0.247 | −$0.187 |
-| staged-eval-1 | 2 | **context_overflow (no answer)**, $0.344 | correct, $0.231 | −$0.113 |
-| staged-eval-2 | 1 | correct, $0.470 | correct, $0.223 | −$0.247 |
-| staged-eval-2 | 2 | **unsupported**, $0.350 | correct, $0.196 | −$0.154 |
-| staged-eval-3 | 1 | correct, $0.256 | correct, $0.205 | −$0.051 |
-| staged-eval-3 | 2 | correct, $0.375 | correct, $0.284 | −$0.092 |
+| staged-eval-1 | 1 | success, 0.434 | success, 0.247 | −0.187 |
+| staged-eval-1 | 2 | context overflow, 0.344 | success, 0.231 | −0.113 |
+| staged-eval-2 | 1 | success, 0.470 | success, 0.223 | −0.247 |
+| staged-eval-2 | 2 | citation out of range, 0.350 | success, 0.196 | −0.154 |
+| staged-eval-3 | 1 | success, 0.256 | success, 0.205 | −0.051 |
+| staged-eval-3 | 2 | success, 0.375 | success, 0.284 | −0.092 |
 
-## What explains the differences
+**Example of an edit and the next request** (run `20261004T081056-clm-staged-eval-1-ed3b`):
+- During step 2, still in stage 1, the model's code replaced its first action and a 6,106-character observation (6,606 characters together) with one 329-character note. The note kept the exact early fact, starting: `Stage1: release notes stage-1/deploy/release-notes-8.19.0-ff7b.md:9 risk-score timeout 2500->800; :15 db.pool.max_size 60->14 …`.
+- The step-3 request began with exactly that note, and its size fell from 6,017 to 4,017 input tokens.
+- The model kept rewriting the note as new stages arrived. Its final answer cited `release-notes-8.19.0-ff7b.md:15` and the current value 24.
 
-These explanations are supported by traces unless marked otherwise.
+## What do the results tell us?
 
-- **Cost.** The summary arm spent $1.026 of its $2.229 (46%) on summary calls. Each regenerated summary was about 2–3K characters, and summaries came almost every step once pressure began. Excluding them, CLM spent *more* on its own actions ($1.39 vs $1.20): it took more action steps (10.2 vs 8.2) and more executions (7.2 vs 5.5). CLM's lower total comes from avoiding summary calls, not from doing less investigation.
-- **Overflow** (summary, `staged-eval-1` rep 2). At step 7 the verbatim 4-entry tail contained a 6,105-character observation from step 5. Summarising the older section, even after the bounded retry, could not bring the request under the hard limit, so the run ended with the specified explicit overflow. This is the declared baseline behaving as specified, not a harness bug. A token-bounded tail might avoid it, but that is untested.
-- **Unsupported** (summary, `staged-eval-2` rep 2). Cause, remedy, value and the origin reference were all correct. The only symptom reference was a 24-line range, but the task text (identical for both arms) allows ranges of at most 20 lines. The range does contain symptom lines. The scorer applied the published rule, and it was **not** corrected after the fact.
-- **The early exact fact survived in both arms.** In all 11 completed runs, the final answer cited the stage-1 release-note line `…release-notes-<build>.md:<line>`.
-  - In 10 of them, the final request still held that reference: in a model-written note (5 CLM runs) or in a summary (5 summary runs).
-  - In the remaining CLM run (`staged-eval-1` rep 2) it was absent from the final request. That run's step-7 code referred to the release-notes file again; this is inferred from the code text, not a verified re-read.
-  - So the quality gap is not explained by one arm losing the early fact.
-- **An edit followed by the next request** (CLM, `staged-eval-1` rep 1, run `20261004T081056-clm-staged-eval-1-ed3b`):
-  - At step 2 (stage 1), the model's code replaced `s1.act` and `s1.obs` (6,606 chars) with one 329-char note: `Stage1: release notes stage-1/deploy/release-notes-8.19.0-ff7b.md:9 risk-score timeout 2500->800; :15 db.pool.max_size 60->14. deploy stage-1/deploy/deploys.log:4 ... config yaml:11 pool 60 ...`.
-  - The next request (`requests/0003.json`) begins exactly with that note, followed by `s2.act`, `s2.obs` and `s2.rcpt`. Reported input fell from 6,017 to 4,017 tokens.
-  - The model then rewrote the same note at 5 more steps as stages arrived. Its final answer cited `stage-1/deploy/release-notes-8.19.0-ff7b.md:15`, plus the stage-3 change record for the current value 24.
+These are promising results from a **small synthetic pilot against this particular baseline**:
+- CLM completed and strictly succeeded in every run.
+- It cost about **38% less** on average, took about **43% less** time, and was cheaper in every matched pair.
+- **Where the saving came from:** mostly from not needing separate summarisation calls, which made up 46% of the baseline's cost. CLM actually made *more* task calls and code executions than the baseline.
+- **Where the quality gap came from:** the baseline's two failures were mechanical, an overflow and an over-wide citation. Every completed answer, in both approaches, had the correct diagnosis, remedy and current value, and cited the early fact.
 
-## What this does and does not show
+So **better factual reasoning or memory retention was not demonstrated.** What the pilot does suggest is that, on this kind of task, letting the model manage its own context avoided this baseline's summarisation overhead and its overflow failure mode.
 
-- **Measured:** on these 3 instances and 2 repetitions, the CLM arm completed all runs with strict success, at about 38% lower mean cost and about 43% lower mean elapsed time than the summary baseline. CLM was cheaper in every matched pair.
-- **Inferred:** the cost advantage comes from avoiding repeated summary calls. The quality advantage comes from two specific baseline failure modes (verbatim-tail overflow and an over-long reference range), not from systematically better reasoning.
-- **Not shown or untested:**
-  - statistical significance (n = 6 per arm);
-  - other task families;
-  - a stronger baseline (token-bounded tail, cheaper summariser, incremental summaries);
-  - other models or efforts;
-  - whether CLM's advantage survives when the baseline does not need to summarise on every step.
+## What remains untested?
 
-## Limitations
+- **Statistical confidence:** there are only 6 runs per approach, with 3 instances of one synthetic task family repeated twice.
+- **Stronger baselines:** for example, a token-limited recent tail, incremental summaries or a cheaper summarising model.
+- **Other conditions:** other task families, models and effort levels.
+- **Helpers:** whether CLM's behaviour includes helper creation when not prompted. It was neither required nor observed here.
 
-- One synthetic task family and generator. The evaluation instances vary entities, values, timings and arrangement, but share the storyline.
-- Two calibration runs on different instances, one per arm: enough to confirm management happens, not to tune anything.
-- The removed-text "reappearance" check reports false positives when the model re-types its own note text in new code.
-- Helper creation was not requested and did not occur.
+## Where is the evidence?
 
-See `protocol.md` for planned versus actual procedure, `report.md` and `metrics.*` for every number, and `artifacts/` for the raw evidence.
+- `protocol.md`: the plan written before the runs, the two calibration runs, and confirmation that nothing changed after the comparison.
+- `report.md` and `metrics.json` / `metrics.csv`: every run's numbers.
+- `manifest.json`: run roles, settings, source commit, the saved source patch and checksums.
+- `artifacts/runs/evaluation/`: the 12 comparison runs, with requests, context revisions, model-written code and scores.
+- `artifacts/runs/calibration/`: the 2 calibration runs.
+- `artifacts/comparisons/20261004T080858/`: the comparison record, with its frozen settings and the exact source patch used.
+- `artifacts/fixtures/`: the task files, all three stages.
