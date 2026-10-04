@@ -114,6 +114,7 @@ The question: **does model-controlled context editing help an agent implement ch
 - `protocol.md`: the design written before the runs, the calibration record, the frozen settings and post-comparison notes.
 - `report.md` and `metrics.json` / `metrics.csv`: every run's numbers, including per-category check results.
 - `manifest.json`: run roles, settings, source commit, the saved source patch and checksums.
+  - **Metadata note:** its `exported_with.current_scorer` field reads `score/2`, the incident scorer's label, and the comparison record's frozen `scorer_version` also reads `score/2`. Both are recording errors. The coding runs were scored by `invoice-checks/1`, as each run's `evaluator/score.json` and the `scorer_current` column in `metrics.*` show. Scores are unaffected.
 - `artifacts/runs/evaluation/`: the 24 comparison runs. Each `evaluator/` folder holds the hidden checks (`truth.json`), the recorded submission (`submission/`), the evaluator output and the score.
 - `artifacts/runs/calibration/`: the 4 calibration runs.
 - `artifacts/comparisons/20261004T111345/`: the comparison record with frozen settings and the exact source patch.

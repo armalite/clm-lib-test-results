@@ -63,7 +63,12 @@ Both experiments compared two context-management approaches. The model was the s
 
 ## Planned experiments
 
-None at the moment.
+These are draft plans only: nothing has been run, and their settings, sample sizes and budgets are not agreed.
+
+| Experiment | Question | Status |
+| --- | --- | --- |
+| [005](experiments/005-harder-coding-accuracy/README.md) | Does CLM affect correctness when changing requirements create a more demanding coding task? | draft plan; not implemented |
+| [006](experiments/006-prompt-caching-comparison/README.md) | Does CLM's efficiency advantage persist with ordinary provider prompt caching? | draft plan; not implemented |
 
 ## Navigating the raw evidence
 
