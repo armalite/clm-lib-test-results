@@ -1,0 +1,29 @@
+{
+ "number": 3,
+ "parent": 2,
+ "source": "runtime",
+ "step": 2,
+ "sha256": "9f58b71f100cd9084e01a6c004f2a17ac1b79f80648d8c514bc511ec8c22b4d2",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "S1 facts: release-notes-8.15.4-7744.md:11 ledger timeout 2500->600; :17 db pool 48->14. deploys.log:5 profile-svc 8.15.4-7744 at 08:13:01. config yaml:7 timeout 2500, :11 pool 48. profile-svc.log:131 ledger timed out 600ms; :132 db pool wait in_use 14/14. oncall suspects ledger timeout (informal)."
+  },
+  {
+   "id": "s2.act",
+   "role": "assistant",
+   "body": "[step 2] execute\nthought: Compact context and count key error types in logs.\ncode:\nimport json,re,collections\nb='/task/fixtures/stage-1/'\nnote='''S1 facts: release-notes-8.15.4-7744.md:11 ledger timeout 2500->600; :17 db pool 48->14. deploys.log:5 profile-svc 8.15.4-7744 at 08:13:01. config yaml:7 timeout 2500, :11 pool 48. profile-svc.log:131 ledger timed out 600ms; :132 db pool wait in_use 14/14. oncall suspects ledger timeout (informal).'''\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':note}]},open('/task/workspace/context.json','w'))\nfor f in ['logs/profile-svc.log','logs/api-gateway.log']:\n  c=collections.Counter();first={}\n  for i,l in enumerate(open(b+f),1):\n    if 'ERROR' in l or 'pool' in l or 'ledger' in l:\n      k=re.sub(r'\\d+','N',l[60:140]);c[k]+=1;first.setdefault(k,i)\n  for k,v in c.most_common(8):print(f,first[k],v,k)"
+  },
+  {
+   "id": "s2.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.8s\n--- stdout ---\nlogs/profile-svc.log 132 7  db pool wait Nms (in_use N/N)\n\nlogs/profile-svc.log 274 3  upstream call ledger-api timed out after Nms (attempt N/N) req=NfN\n\nlogs/profile-svc.log 140 2  upstream call ledger-api timed out after Nms (attempt N/N) req=fNaN\n\nlogs/profile-svc.log 450 2  upstream call ledger-api timed out after Nms (attempt N/N) req=NfNbN\n\nlogs/profile-svc.log 131 1  upstream call ledger-api timed out after Nms (attempt N/N) req=NbNeaN\n\nlogs/profile-svc.log 136 1  upstream call ledger-api timed out after Nms (attempt N/N) req=NcfeNdN\n\nlogs/profile-svc.log 150 1  upstream call ledger-api timed out after Nms (attempt N/N) req=NcNfNcdba\n\nlogs/profile-svc.log 154 1  upstream call ledger-api timed out after Nms (attempt N/N) req=bNceNaNd\n\n"
+  },
+  {
+   "id": "s2.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 6658 -> 298; removed [s1.act, s1.obs]; added [n1]; rewritten []"
+  }
+ ]
+}

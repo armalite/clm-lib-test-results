@@ -1,0 +1,34 @@
+{
+ "number": 5,
+ "parent": 4,
+ "source": "summary",
+ "step": 5,
+ "sha256": "c2c381cacd7db2e16c4006d27f825ef3796750ae1b21e1ee858753e7f329a1c6",
+ "entries": [
+  {
+   "id": "sum1",
+   "role": "summary",
+   "body": "Stage 1 of 3 has been read; stages 2 and 3 are not yet released.\n\nStage 1 files (paths under /task/fixtures):\n- stage-1/UPDATE.md: front-proxy returns 5xx for billing-svc shortly after a deploy. Window 08:00-09:30 UTC.\n- stage-1/deploy/deploys.log:5 records the deploy at 2031-04-19T08:15:41Z: billing-svc build 6.24.0-4314 (previous 6.23.4).\n- stage-1/config/billing-svc.yaml has the repo defaults, which are overridden by release notes:\n  - clients.pricing-core.timeout_ms is 2500 (line 7).\n  - database.pool.max_size is 48 (line 11).\n  - acquire_timeout_ms is 5000; cache.ttl_s is 120.\n- stage-1/deploy/release-notes-6.24.0-4314.md:\n  - Line 9 lowers clients.pricing-core.timeout_ms from 2500 to 800 (\"fail fast\").\n  - Line 18 lowers db.pool.max_size from 48 to 10 (shared-db quota). This is a possible later twist.\n- stage-1/ops/oncall-notes.md:5-6 (informal): many pricing-core timeouts; on-call suspects the timeout default change.\n- stage-1/logs/billing-svc.log:\n  - Errors start at line 152 (08:16:57Z): \"upstream call pricing-core timed out after 800ms (attempt 1/1)\".\n  - Further examples at lines 156, 175, 185, 197, 220.\n  - About 95 such errors across pods a58, e83 and f75.\n  - No DB pool errors seen so far.\n  - Line 3 is a WARN for a gc pause, which is noise.\n- stage-1/logs/front-proxy.log: 380 access lines and 53 health-check lines; the 5xx lines have not been inspected yet.\n\nCurrent hypothesis: CLIENT_TIMEOUT_TOO_LOW. The pricing-core timeout is now 800ms against the old 2500ms. Remedy would be RAISE_CLIENT_TIMEOUT. The current value is 800 per release notes line 9.\n\nUnresolved:\n- pricing-core's normal latency has not been confirmed.\n- The DB pool change to 10 needs watching in case it becomes the real cause.\n\nNext steps:\n- Optionally grep front-proxy.log for 5xx line ranges.\n- Reply {\"action\": \"advance\"} to release stage 2, then stage 3.\n- Look for APPLIED or PROPOSED change records that alter timeout_ms or pool.max_size; a later APPLIED record wins."
+  },
+  {
+   "id": "s3.act",
+   "role": "assistant",
+   "body": "[step 3] execute\nthought: Save notes, check for DB pool errors and pricing-core latency.\ncode:\nimport re\nopen('/task/workspace/notes.md','w').write('S1: release-notes-6.24.0-4314.md:9 timeout 2500->800; :18 pool 48->10. billing log ERROR pricing-core timed out after 800ms lines 152-220 (95 errors). deploys.log:5.\\n')\nL=open('/task/fixtures/stage-1/logs/billing-svc.log').read().splitlines()\nn=0\nfor i,l in enumerate(L,1):\n  if re.search(r'pool|pricing-core.*ok|latency',l,re.I):\n    n+=1\n    if n<6:print(i,l[:180])\nprint(n)"
+  },
+  {
+   "id": "s3.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n248 2031-04-19T08:27:45.205Z WARN  billing-svc [billing-svc-f75] db pool wait 2069ms (in_use 10/10)\n387 2031-04-19T08:41:40.488Z WARN  billing-svc [billing-svc-a58] db pool wait 1271ms (in_use 10/10)\n402 2031-04-19T08:43:26.479Z WARN  billing-svc [billing-svc-a58] db pool wait 1710ms (in_use 10/10)\n432 2031-04-19T08:46:25.757Z WARN  billing-svc [billing-svc-e83] db pool wait 1315ms (in_use 10/10)\n647 2031-04-19T09:08:48.657Z WARN  billing-svc [billing-svc-f75] db pool wait 1586ms (in_use 10/10)\n7\n"
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] advance\nthought: "
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The pricing-core timeouts stopped,\nbut front-proxy still returns 503s for billing-svc with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/billing-svc.log (910 lines)\n  stage-2/logs/front-proxy.log (420 lines)\n  stage-2/metrics/billing-svc.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
+  }
+ ]
+}

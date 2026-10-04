@@ -1,0 +1,19 @@
+--- rev-6
++++ rev-7
+@@ -30,6 +30,16 @@
+    "id": "s4.obs",
+    "role": "observation",
+    "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The tax-engine timeouts stopped,\nbut ingress-a still returns 503s for payments-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/payments-api.log (910 lines)\n  stage-2/metrics/payments-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: Inspect stage 2 changes and errors.\ncode:\nimport re\nb='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip()[:200])\nL=open(b+'logs/payments-api.log').read().splitlines()\nc={}\nfor i,l in enumerate(L,1):\n  if 'ERROR' in l:\n    k=re.sub(r'\\d+','N',l[60:140]);c.setdefault(k,[0,i]);c[k][0]+=1\nfor k,v in sorted(c.items(),key=lambda x:-x[1][0])[:6]:print(v,k)\nL=open(b+'metrics/payments-api.csv').read().splitlines();print(L[0]);print(L[30])"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\ndeploy/changes.log 1 2031-03-06T09:35:24Z CHG-5266 APPLIED  payments-api override clients.tax-engine.timeout_ms=4000 (was 800 from build 6.25.3-646f) by s.patel; mitigation\ndeploy/changes.log 2 2031-03-06T09:53:29Z CHG-5267 PROPOSED catalog-api override http.max_body_kb=512 (pending review; not applied)\ndeploy/changes.log 3 2031-03-06T10:22:26Z CHG-5268 APPLIED  shipping-api override log.level=info (was debug) by k.novak\nops/oncall-notes.md 1 # On-call notes - payments-api incident 2031-03-06\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:45 tax-engine timeouts stopped after the mitigation, but ingress-a still shows 503s for payments-api.\nops/oncall-notes.md 6 - 09:55 New errors look like db pool exhaustion, but config/payments-api.yaml says max_size 48, so the pool should have plenty of room?\n[110, 136] N] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) \n[2, 59] N] upstream call tax-engine timed out after Nms (attempt N/N) req=NdNdN\n[1, 4] N] upstream call tax-engine timed out after Nms (attempt N/N) req=dNecafN\n[1, 5] N] upstream call tax-engine timed out after Nms (attempt N/N) req=NeNeNbN\n[1, 11] N] upstream call tax-engine timed out after Nms (attempt N/N) req=NcNdNbbNaN\n[1, 13] N] upstream call tax-engine timed out after Nms (attempt N/N) req=dNaNfNfbd\nminute,rps,p99_ms,db_pool_in_use\n09:59,217,4152,10\n"
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-5
++++ rev-6
+@@ -30,6 +30,16 @@
+    "id": "s4.obs",
+    "role": "observation",
+    "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The rates-svc timeouts stopped,\nbut ingress-a still returns 503s for quotes-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/quotes-api.log (910 lines)\n  stage-2/metrics/quotes-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: \ncode:\nimport re,collections\nb='/task/fixtures/stage-2/'\nfor f in ['UPDATE.md','deploy/changes.log','ops/oncall-notes.md']:\n  print(f);[print(i,l.rstrip()) for i,l in enumerate(open(b+f),1)]\nL=open(b+'logs/quotes-api.log').readlines()\nc=collections.Counter(re.sub(r'[0-9a-f]{6,}|\\d+','N',l[30:])[:90] for l in L if 'ERROR' in l or 'WARN' in l)\nfor k,v in c.most_common(6):print(v,k)\nn=[i for i,l in enumerate(L,1) if 'pool' in l.lower()];print(n[:2],L[n[0]-1][:200] if n else '')\nprint(open(b+'metrics/quotes-api.csv').readlines()[:3])"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nUPDATE.md\n1 # Stage 2 of 3 (09:30-10:30 UTC)\n2 \n3 On-call applied a mitigation (see stage-2/deploy/changes.log). The rates-svc timeouts stopped,\n4 but ingress-a still returns 503s for quotes-api with a different error. New files below.\ndeploy/changes.log\n1 2031-05-15T09:08:12Z CHG-5488 REVERTED profile-svc override cache.ttl_s=30 (back to 120) by r.okafor\n2 2031-05-15T09:45:27Z CHG-5489 APPLIED  quotes-api override clients.rates-svc.timeout_ms=3500 (was 600 from build 7.20.4-0a00) by s.patel; mitigation\n3 2031-05-15T10:02:15Z CHG-5490 APPLIED  shipping-api scale replicas 2 -> 7 by autoscaler\nops/oncall-notes.md\n1 # On-call notes - quotes-api incident 2031-05-15\n2 \n3 Informal running notes. Not reviewed; may be out of date.\n4 \n5 - 09:55 rates-svc timeouts stopped after the mitigation, but ingress-a still shows 503s for quotes-api.\n6 - 10:05 New errors look like db pool exhaustion, but config/quotes-api.yaml says max_size 48, so the pool should have plenty of room?\n70  quotes-api [quotes-api-fN] db pool exhausted: N/N connections in use, waited Nms (acquire\n48  quotes-api [quotes-api-fN] runtime gc pause Nms (young)\n\n40  quotes-api [quotes-api-aN] db pool exhausted: N/N connections in use, waited Nms (acquire\n27  quotes-api [quotes-api-aN] runtime gc pause Nms (young)\n\n21  quotes-api [quotes-api-fN] upstream call rates-svc timed out after Nms (attempt N/N) req=\n19  quotes-api [quotes-api-aN] upstream call rates-svc timed out after Nms (attempt N/N) req=\n[285, 289] 2031-05-15T09:49:14.999Z ERROR quotes-api [quotes-api-f72] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=a265994776\n\n['minute,rps,p99_ms,db_pool_in_use\\n', '09:30,211,1475,11\\n', '09:31,234,991,11\\n']\n"
+   }
+  ]
+ }

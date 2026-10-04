@@ -1,0 +1,54 @@
+{
+ "number": 7,
+ "parent": 6,
+ "source": "runtime",
+ "step": 6,
+ "sha256": "9e54b9b965239d53c544c2618a03a64a45832f746276ad311bcddad16e3ef64a",
+ "entries": [
+  {
+   "id": "sum1",
+   "role": "summary",
+   "body": "Stage 1 of 3 has been read; stages 2 and 3 are not yet released.\n\nStage 1 files (paths under /task/fixtures):\n- stage-1/UPDATE.md: front-proxy returns 5xx for billing-svc shortly after a deploy. Window 08:00-09:30 UTC.\n- stage-1/deploy/deploys.log:5 records the deploy at 2031-04-19T08:15:41Z: billing-svc build 6.24.0-4314 (previous 6.23.4).\n- stage-1/config/billing-svc.yaml has the repo defaults, which are overridden by release notes:\n  - clients.pricing-core.timeout_ms is 2500 (line 7).\n  - database.pool.max_size is 48 (line 11).\n  - acquire_timeout_ms is 5000; cache.ttl_s is 120.\n- stage-1/deploy/release-notes-6.24.0-4314.md:\n  - Line 9 lowers clients.pricing-core.timeout_ms from 2500 to 800 (\"fail fast\").\n  - Line 18 lowers db.pool.max_size from 48 to 10 (shared-db quota). This is a possible later twist.\n- stage-1/ops/oncall-notes.md:5-6 (informal): many pricing-core timeouts; on-call suspects the timeout default change.\n- stage-1/logs/billing-svc.log:\n  - Errors start at line 152 (08:16:57Z): \"upstream call pricing-core timed out after 800ms (attempt 1/1)\".\n  - Further examples at lines 156, 175, 185, 197, 220.\n  - About 95 such errors across pods a58, e83 and f75.\n  - No DB pool errors seen so far.\n  - Line 3 is a WARN for a gc pause, which is noise.\n- stage-1/logs/front-proxy.log: 380 access lines and 53 health-check lines; the 5xx lines have not been inspected yet.\n\nCurrent hypothesis: CLIENT_TIMEOUT_TOO_LOW. The pricing-core timeout is now 800ms against the old 2500ms. Remedy would be RAISE_CLIENT_TIMEOUT. The current value is 800 per release notes line 9.\n\nUnresolved:\n- pricing-core's normal latency has not been confirmed.\n- The DB pool change to 10 needs watching in case it becomes the real cause.\n\nNext steps:\n- Optionally grep front-proxy.log for 5xx line ranges.\n- Reply {\"action\": \"advance\"} to release stage 2, then stage 3.\n- Look for APPLIED or PROPOSED change records that alter timeout_ms or pool.max_size; a later APPLIED record wins."
+  },
+  {
+   "id": "s3.act",
+   "role": "assistant",
+   "body": "[step 3] execute\nthought: Save notes, check for DB pool errors and pricing-core latency.\ncode:\nimport re\nopen('/task/workspace/notes.md','w').write('S1: release-notes-6.24.0-4314.md:9 timeout 2500->800; :18 pool 48->10. billing log ERROR pricing-core timed out after 800ms lines 152-220 (95 errors). deploys.log:5.\\n')\nL=open('/task/fixtures/stage-1/logs/billing-svc.log').read().splitlines()\nn=0\nfor i,l in enumerate(L,1):\n  if re.search(r'pool|pricing-core.*ok|latency',l,re.I):\n    n+=1\n    if n<6:print(i,l[:180])\nprint(n)"
+  },
+  {
+   "id": "s3.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n248 2031-04-19T08:27:45.205Z WARN  billing-svc [billing-svc-f75] db pool wait 2069ms (in_use 10/10)\n387 2031-04-19T08:41:40.488Z WARN  billing-svc [billing-svc-a58] db pool wait 1271ms (in_use 10/10)\n402 2031-04-19T08:43:26.479Z WARN  billing-svc [billing-svc-a58] db pool wait 1710ms (in_use 10/10)\n432 2031-04-19T08:46:25.757Z WARN  billing-svc [billing-svc-e83] db pool wait 1315ms (in_use 10/10)\n647 2031-04-19T09:08:48.657Z WARN  billing-svc [billing-svc-f75] db pool wait 1586ms (in_use 10/10)\n7\n"
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] advance\nthought: "
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The pricing-core timeouts stopped,\nbut front-proxy still returns 503s for billing-svc with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/billing-svc.log (910 lines)\n  stage-2/logs/front-proxy.log (420 lines)\n  stage-2/metrics/billing-svc.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] execute\nthought: Read stage 2 changes, notes, and error patterns.\ncode:\nimport re,collections\nfor f in ['UPDATE.md','deploy/changes.log','ops/oncall-notes.md']:\n  for i,l in enumerate(open('/task/fixtures/stage-2/'+f).read().splitlines(),1):print(f,i,l[:220])\nL=open('/task/fixtures/stage-2/logs/billing-svc.log').read().splitlines()\nc=collections.Counter();first={}\nfor i,l in enumerate(L,1):\n  if 'ERROR' in l or 'WARN' in l:\n    k=re.sub(r'\\d+','N',l[30:])[:90];c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(6):print(v,first[k],k)\nopen('/task/workspace/notes.md','a').write('S1 db pool wait WARN billing log lines 248,387 (in_use 10/10).\\n')"
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.9s\n--- stdout ---\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The pricing-core timeouts stopped,\nUPDATE.md 4 but front-proxy still returns 503s for billing-svc with a different error. New files below.\ndeploy/changes.log 1 2031-04-19T08:50:51Z CHG-5122 APPLIED  quotes-api image quotes-api:2.13 rollout complete by deploy-bot\ndeploy/changes.log 2 2031-04-19T09:38:57Z CHG-5123 APPLIED  billing-svc override clients.pricing-core.timeout_ms=4000 (was 800 from build 6.24.0-4314) by k.novak; mitigation\ndeploy/changes.log 3 2031-04-19T09:39:46Z CHG-5124 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\nops/oncall-notes.md 1 # On-call notes - billing-svc incident 2031-04-19\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:48 pricing-core timeouts stopped after the mitigation, but front-proxy still shows 503s for billing-svc.\nops/oncall-notes.md 6 - 09:58 New errors look like db pool exhaustion, but config/billing-svc.yaml says max_size 48, so the pool should have plenty of room?\n39 194  billing-svc [billing-svc-aN] db pool exhausted: N/N connections in use, waited Nms (acqui\n39 216  billing-svc [billing-svc-fN] db pool exhausted: N/N connections in use, waited Nms (acqui\n32 187  billing-svc [billing-svc-eN] db pool exhausted: N/N connections in use, waited Nms (acqui\n27 5  billing-svc [billing-svc-eN] runtime gc pause Nms (young)\n26 25  billing-svc [billing-svc-fN] runtime gc pause Nms (young)\n24 66  billing-svc [billing-svc-aN] runtime gc pause Nms (young)\n"
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Save notes, then advance next step.\ncode:\nopen('/task/workspace/notes.md','a').write('S2: changes.log:2 CHG-5123 APPLIED timeout=4000. billing log s2 db pool exhausted first line 187,194,216 (~110). Hypothesis DB_POOL_EXHAUSTED pool 10 from release-notes:18.\\n')\nL=open('/task/fixtures/stage-2/logs/billing-svc.log').read().splitlines()\nprint(L[186][:200])"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.8s\n--- stdout ---\n2031-04-19T09:41:05.079Z ERROR billing-svc [billing-svc-e83] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=2bf85fdd73\n"
+  }
+ ]
+}

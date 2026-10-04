@@ -1,0 +1,46 @@
+--- rev-6
++++ rev-7
+@@ -4,42 +4,7 @@
+   {
+    "id": "note1",
+    "role": "note",
+-   "body": "Stage1: deploy quotes-api 7.20.4-0a00 at stage-1/deploy/deploys.log:4. Release notes stage-1/deploy/release-notes-7.20.4-0a00.md:8 rates-svc timeout_ms 2500->600; :16 db pool 48->12. Logs: 95 rates-svc timeouts (dominant), 7 db pool waits (first stage-1/logs/quotes-api.log:150). Hypothesis CLIENT_TIMEOUT_TOO_LOW value 600. Next: advance."
+-  },
+-  {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] execute\nthought: Get line numbers for rates-svc timeout sample and ingress 5xx; write a compact note.\ncode:\nimport re\nb='/task/fixtures/stage-1/logs/'\nL=open(b+'quotes-api.log').readlines()\nn=[i for i,l in enumerate(L,1) if 'rates-svc timed out' in l]\nprint(n[:3],n[-1]);print(L[n[0]-1].strip()[:200])\nI=open(b+'ingress-a.log').readlines()\nm=[i for i,l in enumerate(I,1) if re.search(r'status=5|\\s50[0-9]\\s',l)]\nprint(len(m),m[:3]);print(I[m[0]-1].strip()[:200] if m else I[5].strip()[:200])\nimport json\nc={'format':'clm-context/v1','entries':[{'id':'note1','role':'note','body':'Stage1: deploy quotes-api 7.20.4-0a00 at stage-1/deploy/deploys.log:4. Release notes stage-1/deploy/release-notes-7.20.4-0a00.md:8 rates-svc timeout_ms 2500->600; :16 db pool 48->12. Logs: 95 rates-svc timeouts (dominant), 7 db pool waits (first stage-1/logs/quotes-api.log:150). Hypothesis CLIENT_TIMEOUT_TOO_LOW value 600. Next: advance.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=2.7s\n--- stdout ---\n[139, 144, 149] 861\n2031-05-15T08:17:50.997Z ERROR quotes-api [quotes-api-a37] upstream call rates-svc timed out after 600ms (attempt 1/1) req=4ac4eca1d6\n60 [71, 72, 77]\n2031-05-15T08:17:49.633Z ingress-a access upstream=quotes-api method=GET path=/v1/search status=503 rt=3.566s upstream_error=\"upstream timeout\"\n"
+-  },
+-  {
+-   "id": "s3.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 3: revision 2 -> 3; entries 4 -> 1; body chars 4526 -> 339; removed [s1.act, s1.obs, s2.act, s2.obs]; added [note1]; rewritten []"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] advance\nthought: "
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The rates-svc timeouts stopped,\nbut ingress-a still returns 503s for quotes-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/quotes-api.log (910 lines)\n  stage-2/metrics/quotes-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: \ncode:\nimport re,collections\nb='/task/fixtures/stage-2/'\nfor f in ['UPDATE.md','deploy/changes.log','ops/oncall-notes.md']:\n  print(f);[print(i,l.rstrip()) for i,l in enumerate(open(b+f),1)]\nL=open(b+'logs/quotes-api.log').readlines()\nc=collections.Counter(re.sub(r'[0-9a-f]{6,}|\\d+','N',l[30:])[:90] for l in L if 'ERROR' in l or 'WARN' in l)\nfor k,v in c.most_common(6):print(v,k)\nn=[i for i,l in enumerate(L,1) if 'pool' in l.lower()];print(n[:2],L[n[0]-1][:200] if n else '')\nprint(open(b+'metrics/quotes-api.csv').readlines()[:3])"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nUPDATE.md\n1 # Stage 2 of 3 (09:30-10:30 UTC)\n2 \n3 On-call applied a mitigation (see stage-2/deploy/changes.log). The rates-svc timeouts stopped,\n4 but ingress-a still returns 503s for quotes-api with a different error. New files below.\ndeploy/changes.log\n1 2031-05-15T09:08:12Z CHG-5488 REVERTED profile-svc override cache.ttl_s=30 (back to 120) by r.okafor\n2 2031-05-15T09:45:27Z CHG-5489 APPLIED  quotes-api override clients.rates-svc.timeout_ms=3500 (was 600 from build 7.20.4-0a00) by s.patel; mitigation\n3 2031-05-15T10:02:15Z CHG-5490 APPLIED  shipping-api scale replicas 2 -> 7 by autoscaler\nops/oncall-notes.md\n1 # On-call notes - quotes-api incident 2031-05-15\n2 \n3 Informal running notes. Not reviewed; may be out of date.\n4 \n5 - 09:55 rates-svc timeouts stopped after the mitigation, but ingress-a still shows 503s for quotes-api.\n6 - 10:05 New errors look like db pool exhaustion, but config/quotes-api.yaml says max_size 48, so the pool should have plenty of room?\n70  quotes-api [quotes-api-fN] db pool exhausted: N/N connections in use, waited Nms (acquire\n48  quotes-api [quotes-api-fN] runtime gc pause Nms (young)\n\n40  quotes-api [quotes-api-aN] db pool exhausted: N/N connections in use, waited Nms (acquire\n27  quotes-api [quotes-api-aN] runtime gc pause Nms (young)\n\n21  quotes-api [quotes-api-fN] upstream call rates-svc timed out after Nms (attempt N/N) req=\n19  quotes-api [quotes-api-aN] upstream call rates-svc timed out after Nms (attempt N/N) req=\n[285, 289] 2031-05-15T09:49:14.999Z ERROR quotes-api [quotes-api-f72] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=a265994776\n\n['minute,rps,p99_ms,db_pool_in_use\\n', '09:30,211,1475,11\\n', '09:31,234,991,11\\n']\n"
++   "body": "Stage1: deploy 7.20.4-0a00 stage-1/deploy/deploys.log:4. Release notes stage-1/deploy/release-notes-7.20.4-0a00.md:8 rates timeout 2500->600; :16 db pool max_size 48->12. Stage2: stage-2/deploy/changes.log:2 CHG-5489 APPLIED rates timeout=3500 (timeouts fixed). Now db pool exhausted 12/12 first at stage-2/logs/quotes-api.log:285. Hypothesis DB_POOL_EXHAUSTED value 12. Next: advance to stage 3 and check changes.log for pool changes."
+   }
+  ]
+ }

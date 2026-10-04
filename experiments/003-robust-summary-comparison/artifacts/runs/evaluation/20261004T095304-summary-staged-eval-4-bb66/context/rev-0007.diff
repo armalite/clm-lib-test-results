@@ -1,0 +1,19 @@
+--- rev-6
++++ rev-7
+@@ -25,6 +25,16 @@
+    "id": "s5.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.9s\n--- stdout ---\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The tax-engine timeouts stopped,\nUPDATE.md 4 but ingress-a still returns 503s for payments-api with a different error. New files below.\ndeploy/changes.log 1 2031-03-06T09:35:24Z CHG-5266 APPLIED  payments-api override clients.tax-engine.timeout_ms=4000 (was 800 from build 6.25.3-646f) by s.patel; mitigation\ndeploy/changes.log 2 2031-03-06T09:53:29Z CHG-5267 PROPOSED catalog-api override http.max_body_kb=512 (pending review; not applied)\ndeploy/changes.log 3 2031-03-06T10:22:26Z CHG-5268 APPLIED  shipping-api override log.level=info (was debug) by k.novak\nops/oncall-notes.md 1 # On-call notes - payments-api incident 2031-03-06\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:45 tax-engine timeouts stopped after the mitigation, but ingress-a still shows 503s for payments-api.\nops/oncall-notes.md 6 - 09:55 New errors look like db pool exhaustion, but config/payments-api.yaml says max_size 48, so the pool should have plenty of room?\n41 162 [payments-api-fN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) \n35 137 [payments-api-aN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) \n34 136 [payments-api-dN] db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) \n26 22 payments-api [payments-api-aN] runtime gc pause Nms (young)\n\n26 30 payments-api [payments-api-fN] runtime gc pause Nms (young)\n\n24 84 payments-api [payments-api-dN] runtime gc pause Nms (young)\n\n12 1 payments-api [payments-api-fN] dns cache refresh retry succeeded\n\n12 7 payments-api [payments-api-dN] tls certificate for payments-api.internal expires in N days\n11 210 payments-api [payments-api-aN] disk usage /var/data at N%\n\n10 39 payments-api [payments-api-dN] disk usage /var/data at N%\n\n53 2031-03-06T09:38:41.998Z ingress-a access upstream=payments-api method=GET path=/v1/orders status=503 rt=1.834s upstream_error=\"upstream returned 503\"\n1 minute,rps,p99_ms,db_pool_in_use\n2 09:30,233,1579,9\n15 09:43,231,3391,10\n30 09:58,182,5117,10\n45 10:13,254,4317,10\n60 10:28,255,4747,10\n"
++  },
++  {
++   "id": "s6.act",
++   "role": "assistant",
++   "body": "[step 6] execute\nthought: Get exact line of a pool exhausted entry, then advance.\ncode:\nb='/task/fixtures/stage-2/logs/payments-api.log'\nfor i,l in enumerate(open(b),1):\n  if 'pool exhausted' in l: print(i,l.strip()[:200]);break\nopen('/task/workspace/notes.txt','w').write('stage2: CHG-5266 APPLIED timeout 4000 (changes.log:1). pool exhausted 10/10 from payments-api.log:136; metrics db_pool_in_use 10. pool max 10 from release notes line17. leading: DB_POOL_EXHAUSTED\\n')"
++  },
++  {
++   "id": "s6.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.7s\n--- stdout ---\n136 2031-03-06T09:37:29.550Z ERROR payments-api [payments-api-d16] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=cc7d51c330\n"
+   }
+  ]
+ }

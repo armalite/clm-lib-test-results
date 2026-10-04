@@ -1,0 +1,601 @@
+diff --git a/src/clm_lib/baseline.py b/src/clm_lib/baseline.py
+index b2c9292..4d6d0d0 100644
+--- a/src/clm_lib/baseline.py
++++ b/src/clm_lib/baseline.py
+@@ -1,35 +1,100 @@
+-"""Summary baseline: replace older working entries with a model-written summary."""
++"""Summary baselines: replace older working entries with a model-written summary.
++
++Two policies, selected by ``BaselineConfig.policy``:
++
++- ``fixed-tail/1`` (experiments 001 and 002): keep the newest ``tail_entries`` entries verbatim,
++  whatever their size, and summarise everything older.
++- ``token-tail/1`` (experiment 003): keep the longest run of newest entries that fits a token
++  allowance, summarising older entries and any recent entry too large for the allowance. The
++  single newest entry is kept even above the allowance if it fits a larger newest-entry cap,
++  so the agent always sees its latest result once; it is compacted at the next summary.
++  Ask for a summary sized so the request lands near a target well below the pressure point.
++"""
+ 
+ from __future__ import annotations
+ 
++from collections.abc import Callable
+ from dataclasses import dataclass
+ 
+ from .context import Entry
+-from .prompts import SUMMARY_SYSTEM, summary_user
++from .prompts import SUMMARY_SYSTEM, SUMMARY_SYSTEM_TOKEN_TAIL, summary_user
+ from .provider import ModelRequest
+ 
++FIXED_TAIL = "fixed-tail/1"
++TOKEN_TAIL = "token-tail/1"
++POLICIES = (FIXED_TAIL, TOKEN_TAIL)
++
+ 
+ @dataclass(frozen=True)
+ class SummaryPolicy:
+     tail_entries: int = 4
+     max_chars: int = 3000
+     retries: int = 1
++    policy: str = FIXED_TAIL
++    tail_tokens: int = 1200  # token-tail/1: verbatim allowance for recent entries
++    newest_tokens: int = 2000  # token-tail/1: the newest entry is kept if it fits this cap
++    target_tokens: int = 4000  # token-tail/1: desired request size after compaction
++    min_chars: int = 600  # token-tail/1: smallest summary length requested
+ 
+-    def split(self, entries: tuple[Entry, ...]) -> tuple[list[Entry], list[Entry]]:
+-        if len(entries) <= self.tail_entries:
+-            return [], list(entries)
+-        cut = len(entries) - self.tail_entries
++    def __post_init__(self) -> None:
++        if self.policy not in POLICIES:
++            raise ValueError(f"unknown summary policy {self.policy!r}; expected one of {POLICIES}")
++
++    def split(
++        self, entries: tuple[Entry, ...], tokens_of: Callable[[Entry], int] | None = None
++    ) -> tuple[list[Entry], list[Entry]]:
++        """Return (older entries to summarise, recent tail kept verbatim)."""
++        if self.policy == FIXED_TAIL:
++            if len(entries) <= self.tail_entries:
++                return [], list(entries)
++            cut = len(entries) - self.tail_entries
++            return list(entries[:cut]), list(entries[cut:])
++        assert tokens_of is not None, "token-tail/1 needs a token estimator"
++        if entries and tokens_of(entries[-1]) > self.tail_tokens:
++            # Oversized newest entry: keep it alone if it fits the newest-entry cap.
++            if tokens_of(entries[-1]) <= self.newest_tokens:
++                return list(entries[:-1]), [entries[-1]]
++            return list(entries), []
++        used, cut = 0, len(entries)
++        for i in range(len(entries) - 1, -1, -1):
++            cost = tokens_of(entries[i])
++            if used + cost > self.tail_tokens:
++                break
++            used += cost
++            cut = i
+         return list(entries[:cut]), list(entries[cut:])
+ 
+-    def eligible(self, entries: tuple[Entry, ...]) -> bool:
++    def eligible(
++        self, entries: tuple[Entry, ...], tokens_of: Callable[[Entry], int] | None = None
++    ) -> bool:
+         """Summarise only if the older section holds something not yet summarised."""
+-        older, _ = self.split(entries)
++        older, _ = self.split(entries, tokens_of)
+         return any(e.role != "summary" for e in older)
+ 
+-    def request(self, task: str, older: list[Entry], attempt: int, max_tokens: int) -> ModelRequest:
+-        limit = max(400, self.max_chars // (2**attempt))
++    def char_limit(self, attempt: int, room_tokens: int = 0, chars_per_token: float = 3.0) -> int:
++        if self.policy == FIXED_TAIL:
++            return max(400, self.max_chars // (2**attempt))
++        wanted = int(room_tokens * chars_per_token)
++        base = max(self.min_chars, min(self.max_chars, wanted))
++        return max(self.min_chars // 2, base // (2**attempt))
++
++    def accept_tokens(self, attempt: int, pressure_tokens: float, hard_tokens: int) -> float:
++        """Largest acceptable request after compaction for this attempt."""
++        if self.policy == FIXED_TAIL or attempt >= self.retries:
++            return hard_tokens
++        return pressure_tokens  # token-tail/1: first attempt must relieve pressure
++
++    def request(
++        self,
++        task: str,
++        older: list[Entry],
++        attempt: int,
++        max_tokens: int,
++        limit_chars: int | None = None,
++    ) -> ModelRequest:
++        limit = limit_chars if limit_chars is not None else self.char_limit(attempt)
+         return ModelRequest(
+-            system=SUMMARY_SYSTEM,
++            system=SUMMARY_SYSTEM if self.policy == FIXED_TAIL else SUMMARY_SYSTEM_TOKEN_TAIL,
+             user=summary_user(task, older, limit),
+             max_tokens=max_tokens,
+             purpose="summary",
+diff --git a/src/clm_lib/cli.py b/src/clm_lib/cli.py
+index f3800f6..fdd028e 100644
+--- a/src/clm_lib/cli.py
++++ b/src/clm_lib/cli.py
+@@ -447,7 +447,7 @@ def run_matrix(
+ ) -> tuple[list[dict[str, Any]], int]:
+     """Sequential comparison matrix; returns (cells, exit code). Never parallel."""
+     from .prompts import PROMPT_VERSION
+-    from .tasks import GENERATOR_VERSION
++    from .tasks import SCORER_VERSION
+ 
+     patch = source_patch()
+     if patch:
+@@ -458,7 +458,10 @@ def run_matrix(
+         "model": runner.provider.model,
+         "provider": runner.provider.describe(),
+         "prompt_version": PROMPT_VERSION,
+-        "generator_version": GENERATOR_VERSION,
++        # Per-task generator versions (staged tasks use their own generator).
++        "generator_version": sorted({generate(t).generator_version for t in tasks}),
++        "scorer_version": SCORER_VERSION,
++        "summary_policy": cfg.baseline.policy,
+         "config": cfg.to_dict(),
+         "code_state": code_state(),
+     }
+diff --git a/src/clm_lib/config.py b/src/clm_lib/config.py
+index 1aeb8e7..2b8939b 100644
+--- a/src/clm_lib/config.py
++++ b/src/clm_lib/config.py
+@@ -35,9 +35,17 @@ class Limits:
+ 
+ @dataclass
+ class BaselineConfig:
++    # "fixed-tail/1": experiments 001/002 policy (keep the newest `tail_entries` verbatim).
++    # "token-tail/1": experiment 003 policy (token-bounded tail, room-leaving summaries).
++    policy: str = "fixed-tail/1"
+     tail_entries: int = 4
+     summary_max_chars: int = 3000
+     summary_retries: int = 1
++    # token-tail/1 only (fractions of the request budget)
++    tail_ratio: float = 0.15
++    newest_ratio: float = 0.25
++    target_ratio: float = 0.50
++    summary_min_chars: int = 600
+ 
+ 
+ @dataclass
+diff --git a/src/clm_lib/prompts.py b/src/clm_lib/prompts.py
+index 89f85ca..61210a5 100644
+--- a/src/clm_lib/prompts.py
++++ b/src/clm_lib/prompts.py
+@@ -60,6 +60,17 @@ CONTEXT MANAGEMENT (automatic):
+   them back in later steps; they are not shown to you unless you print them.
+ """
+ 
++SUMMARY_INSTRUCTIONS_TOKEN_TAIL = """
++CONTEXT MANAGEMENT (automatic):
++- When the request grows past {pressure_pct}% of the budget, the runtime asks a summariser to
++  replace older working-context entries with a summary. The most recent entries are kept
++  verbatim up to about {tail_tokens} tokens (the newest entry is kept even if larger, when it
++  fits); older entries, and recent entries too large for that allowance, are summarised.
++  Summaries are sized to leave room for further work.
++- You may write ordinary files in /task/workspace (for example notes or helper scripts) and read
++  them back in later steps; they are not shown to you unless you print them.
++"""
++
+ GUIDED_INSTRUCTIONS = """
+ DEMONSTRATION REQUEST (this run only): as part of solving the task, create your own reusable
+ context-management helper module under /task/workspace/helpers/ (design it yourself), invoke it
+@@ -76,6 +87,19 @@ entries. It must preserve, exactly and verbatim where relevant:
+ Drop repetition and raw log dumps. Use compact bullet points. Plain text only."""
+ 
+ 
++SUMMARY_SYSTEM_TOKEN_TAIL = """You compress an agent's working transcript. The agent is
++investigating a production incident from local files, and will keep working after your summary
++replaces the entries below. The transcript may include an earlier summary: carry its facts
++forward. Preserve, exactly and verbatim where relevant:
++- every concrete value, identifier, timestamp, setting name and file:line reference found so far;
++- for each setting or claim, which value is CURRENT and which values were superseded, and by which
++  record (APPLIED records override release notes, config files and notes; later APPLIED wins);
++- hypotheses confirmed, hypotheses ruled out, approaches that failed;
++- unresolved questions and the agent's next planned steps, including evidence stages still to read.
++Drop repetition and raw log dumps. Use compact bullet points. Plain text only. Stay within the
++requested length; it is set so the agent has room to continue."""
++
++
+ def system_prompt(
+     mode: str,
+     *,
+@@ -85,12 +109,19 @@ def system_prompt(
+     tail: int,
+     max_entries: int,
+     max_body: int,
++    summary_policy: str = "fixed-tail/1",
++    tail_tokens: int = 0,
+ ) -> str:
+     text = PROTOCOL.format(exec_timeout=exec_timeout, output_cap=output_cap)
+     if mode in ("clm", "guided"):
+         text += CLM_INSTRUCTIONS.format(max_entries=max_entries, max_body=max_body)
+     else:
+-        text += SUMMARY_INSTRUCTIONS.format(pressure_pct=pressure_pct, tail=tail)
++        if summary_policy == "token-tail/1":
++            text += SUMMARY_INSTRUCTIONS_TOKEN_TAIL.format(
++                pressure_pct=pressure_pct, tail_tokens=tail_tokens
++            )
++        else:
++            text += SUMMARY_INSTRUCTIONS.format(pressure_pct=pressure_pct, tail=tail)
+     if mode == "guided":
+         text += GUIDED_INSTRUCTIONS
+     return text
+diff --git a/src/clm_lib/runner.py b/src/clm_lib/runner.py
+index 629ad4b..f79bf01 100644
+--- a/src/clm_lib/runner.py
++++ b/src/clm_lib/runner.py
+@@ -40,7 +40,7 @@ from .context import (
+     unified_diff,
+ )
+ from .executor import ExecResult, Executor, ExecutorUnavailable
+-from .prompts import PROMPT_VERSION, render_user, system_prompt
++from .prompts import PROMPT_VERSION, render_entries, render_user, system_prompt
+ from .provider import (
+     ACTION_SCHEMA,
+     STAGED_ACTION_SCHEMA,
+@@ -226,10 +226,17 @@ class _Run:
+         self.fx.mkdir()
+         self.climits = ContextLimits()
+         self.store = ContextStore(self.climits)
++        bl = self.cfg.baseline
++        budget = self.lim.context_budget_tokens
+         self.policy = SummaryPolicy(
+-            self.cfg.baseline.tail_entries,
+-            self.cfg.baseline.summary_max_chars,
+-            self.cfg.baseline.summary_retries,
++            bl.tail_entries,
++            bl.summary_max_chars,
++            bl.summary_retries,
++            policy=bl.policy,
++            tail_tokens=int(bl.tail_ratio * budget),
++            newest_tokens=int(bl.newest_ratio * budget),
++            target_tokens=int(bl.target_ratio * budget),
++            min_chars=bl.summary_min_chars,
+         )
+         self.c = _Counters()
+         self.u = _Usage()
+@@ -258,6 +265,8 @@ class _Run:
+             tail=self.cfg.baseline.tail_entries,
+             max_entries=self.climits.max_entries,
+             max_body=self.climits.max_body_chars,
++            summary_policy=self.policy.policy,
++            tail_tokens=self.policy.tail_tokens,
+         )
+ 
+     # --------------------------------------------------------------- helpers
+@@ -460,19 +469,32 @@ class _Run:
+             self.cpt = round(0.5 * self.cpt + 0.5 * observed, 4)
+ 
+     # ----------------------------------------------------- context pressure
++    def entry_tokens(self, entry: Entry) -> int:
++        return int(len(render_entries([entry])) / self.cpt) + 1
++
+     def maybe_summarise(self, forced: bool) -> bool:
+-        if not self.policy.eligible(self.store.entries):
++        if not self.policy.eligible(self.store.entries, self.entry_tokens):
+             return False
+-        older, tail = self.policy.split(self.store.entries)
++        older, tail = self.policy.split(self.store.entries, self.entry_tokens)
+         hard = self.lim.context_budget_tokens - self.lim.recovery_reserve_tokens
++        pressure_tokens = self.lim.pressure_ratio * self.lim.context_budget_tokens
++        # Room for the summary body: target request size minus everything else it will carry.
++        _, base = self.assemble(entries=(Entry("sum0", "summary", ""), *tail))
++        room = self.policy.target_tokens - base
+         for attempt in range(self.policy.retries + 1):
+-            req = self.policy.request(self.task.prompt, older, attempt, self.lim.max_output_tokens)
++            limit = self.policy.char_limit(attempt, room, self.cpt)
++            req = self.policy.request(
++                self.task.prompt, older, attempt, self.lim.max_output_tokens, limit
++            )
+             resp = self.call(
+                 req,
+                 "summary",
+                 {
++                    "summary_policy": self.policy.policy,
+                     "older_entries": [e.id for e in older],
++                    "kept_tail": [e.id for e in tail],
+                     "summary_attempt": attempt,
++                    "requested_max_chars": limit,
+                     "forced": forced,
+                 },
+             )
+@@ -481,7 +503,7 @@ class _Run:
+                 continue
+             candidate = tuple(SummaryPolicy.apply(text, tail, self.summary_index + 1))
+             _, est = self.assemble(entries=candidate)
+-            if est <= hard:
++            if est <= self.policy.accept_tokens(attempt, pressure_tokens, hard):
+                 self.summary_index += 1
+                 self.store.commit(candidate, "summary", self.step)
+                 self.c.summaries_applied += 1
+@@ -489,6 +511,9 @@ class _Run:
+                 self.trace.event(
+                     "summary_applied",
+                     step=self.step,
++                    policy=self.policy.policy,
++                    attempt=attempt,
++                    requested_max_chars=limit,
+                     replaced=[e.id for e in older],
+                     kept_tail=[e.id for e in tail],
+                     summary_chars=len(text),
+@@ -501,12 +526,16 @@ class _Run:
+             self.trace.event(
+                 "summary_too_large",
+                 step=self.step,
++                policy=self.policy.policy,
+                 attempt=attempt,
++                requested_max_chars=limit,
+                 summary_chars=len(text),
+                 est_request_tokens=est,
+             )
+         self.c.summary_overflows += 1
+-        raise _Stop("context_overflow", "summary still exceeds the hard limit after retry")
++        raise _Stop(
++            "context_overflow", "summary did not fit the acceptance limit after the bounded retry"
++        )
+ 
+     def spill_latest(self) -> bool:
+         entries = list(self.store.entries)
+@@ -974,6 +1003,7 @@ class _Run:
+             "generator_version": self.task.generator_version,
+             "stages": self.task.n_stages,
+             "prompt_version": PROMPT_VERSION,
++            "summary_policy": self.policy.policy if self.mode == "summary" else None,
+             "system_prompt_sha256": sha256_text(self.system),
+             "task_prompt_sha256": sha256_text(self.task.prompt),
+             "provider": self.r.provider.describe(),
+@@ -1075,6 +1105,7 @@ class _Run:
+             "elapsed_s": round(elapsed, 1),
+             "model": self.r.provider.model,
+             "prompt_version": PROMPT_VERSION,
++            "summary_policy": self.policy.policy if self.mode == "summary" else None,
+             "fixture_sha256": self.task.fixture_sha256,
+             "steps": self.step,
+             "counts": self.c.__dict__,
+diff --git a/src/clm_lib/tasks.py b/src/clm_lib/tasks.py
+index 261d402..2c3605d 100644
+--- a/src/clm_lib/tasks.py
++++ b/src/clm_lib/tasks.py
+@@ -67,6 +67,12 @@ INSTANCES: dict[str, InstanceSpec] = {
+     "staged-eval-1": InstanceSpec("staged-eval-1", 3201, "staged_pool", "staged-eval"),
+     "staged-eval-2": InstanceSpec("staged-eval-2", 3202, "staged_pool", "staged-eval"),
+     "staged-eval-3": InstanceSpec("staged-eval-3", 3203, "staged_pool", "staged-eval"),
++    # Experiment 003: fresh seeds of the same generator (dev for calibration; eval frozen).
++    "staged-dev-4": InstanceSpec("staged-dev-4", 3104, "staged_pool", "staged-dev"),
++    "staged-dev-5": InstanceSpec("staged-dev-5", 3105, "staged_pool", "staged-dev"),
++    "staged-eval-4": InstanceSpec("staged-eval-4", 3204, "staged_pool", "staged-eval"),
++    "staged-eval-5": InstanceSpec("staged-eval-5", 3205, "staged_pool", "staged-eval"),
++    "staged-eval-6": InstanceSpec("staged-eval-6", 3206, "staged_pool", "staged-eval"),
+ }
+ HELDOUT = ("heldout-1", "heldout-2", "heldout-3")
+ STAGED_EVAL = ("staged-eval-1", "staged-eval-2", "staged-eval-3")
+diff --git a/configs/exp003.toml b/configs/exp003.toml
+new file mode 100644
+index 0000000..e346e81
+--- /dev/null
++++ b/configs/exp003.toml
+@@ -0,0 +1,46 @@
++# Experiment 003 configuration: identical to default.toml except the summary baseline policy.
++# All limits are recorded in every run and shared by both arms.
++runs_dir = "runs"
++
++[provider]
++name = "anthropic"
++model = "claude-opus-5-5"     # verified via the models endpoint by `clm-lib doctor --probe`
++base_url = ""                 # empty: SDK default (or ANTHROPIC_BASE_URL)
++effort = "low"                # output_config.effort; thinking cannot be disabled on this model
++structured_output = true      # output_config.format json_schema for actions
++timeout_s = 120
++api_retries = 2               # runtime-level retries; SDK retries are disabled
++
++[limits]
++max_calls = 20                # per task: actions + repairs + summaries + API retries
++max_output_tokens = 2048
++exec_timeout_s = 30
++output_cap_chars = 6000       # per stream
++context_budget_tokens = 8000  # whole request input
++pressure_ratio = 0.70
++recovery_reserve_tokens = 1000
++spill_min_chars = 1500
++initial_chars_per_token = 3.0
++max_code_chars = 20000
++
++[baseline]
++policy = "token-tail/1"     # experiment 003; experiments 001/002 used "fixed-tail/1"
++tail_entries = 4
++summary_max_chars = 3000
++summary_retries = 1
++tail_ratio = 0.15            # token-tail/1: verbatim recent-entry allowance (fraction of budget)
++newest_ratio = 0.25          # token-tail/1: newest entry kept verbatim if it fits this fraction
++target_ratio = 0.50          # token-tail/1: desired request size after compaction
++summary_min_chars = 600
++
++[budget]
++ceiling_usd = 10.0            # total live-validation ceiling; ledger keeps the lowest ever set
++min_run_reserve_usd = 0.75    # compare: do not start a run with less remaining
++ledger = "runs/ledger.json"
++prices = "configs/prices.toml"
++
++[sandbox]
++image = "python:3.12-slim"
++memory = "512m"
++cpus = 1.0
++pids_limit = 128
+diff --git a/tests/test_summary_policy.py b/tests/test_summary_policy.py
+new file mode 100644
+index 0000000..dc83e13
+--- /dev/null
++++ b/tests/test_summary_policy.py
+@@ -0,0 +1,168 @@
++"""Experiment 003 baseline: token-tail/1 summary policy, with fixed-tail/1 preserved."""
++
++from __future__ import annotations
++
++import json
++from dataclasses import replace
++from pathlib import Path
++from typing import Any
++
++import pytest
++
++from clm_lib.baseline import FIXED_TAIL, TOKEN_TAIL, SummaryPolicy
++from clm_lib.config import Config, load_config
++from clm_lib.context import Entry
++from clm_lib.prompts import SUMMARY_SYSTEM, SUMMARY_SYSTEM_TOKEN_TAIL, system_prompt
++from clm_lib.tasks import generate
++
++from .conftest import FINAL, TEST_PRICE, FakeExecutor, execute, working_ids
++
++LARGE = 4200  # chars; at a 4,000-token budget this observation sinks fixed-tail/1
++
++
++def config(policy: str, budget: int = 4000) -> Config:
++    cfg = Config()
++    return replace(
++        cfg,
++        baseline=replace(cfg.baseline, policy=policy),
++        limits=replace(cfg.limits, context_budget_tokens=budget),
++    )
++
++
++class Responder:
++    def __init__(self, n: int = 6, summaries: list[str] | None = None) -> None:
++        self.actions = [execute(f"s{i}") for i in range(n)] + [FINAL]
++        self.summaries = summaries or []
++        self.summary_requests: list[Any] = []
++
++    def __call__(self, req: Any) -> Any:
++        if req.purpose == "summary":
++            self.summary_requests.append(req)
++            return self.summaries.pop(0) if self.summaries else "SUMMARY: pool=12 at logs/a.log:42"
++        return self.actions.pop(0)
++
++
++def outputs() -> list[str]:
++    return ["a" * 500, "b" * 500, "B" * LARGE, "c" * 300, "d" * 300, "e" * 300]
++
++
++def events(run_dir: Path) -> list[dict[str, Any]]:
++    return [json.loads(x) for x in (run_dir / "events.jsonl").read_text().splitlines()]
++
++
++def test_large_recent_observation_is_compacted_not_kept_verbatim(make_runner: Any) -> None:
++    resp = Responder()
++    runner, _ = make_runner(
++        [resp] * 40, executor=FakeExecutor(outputs=outputs()), config=config(TOKEN_TAIL)
++    )
++    res = runner.run(generate("dev"), "summary")
++    assert res.status == "completed"
++    applied = next(e for e in events(res.run_dir) if e["event"] == "summary_applied")
++    assert "s3.obs" in applied["replaced"]  # the oversized recent entry went into compaction
++    assert applied["policy"] == TOKEN_TAIL
++    assert applied["est_request_tokens"] <= 0.7 * 4000  # room left below the pressure point
++    assert res.metrics["counts"]["summaries_applied"] == 1
++
++
++def test_same_case_overflows_under_the_original_policy(make_runner: Any) -> None:
++    resp = Responder()
++    runner, _ = make_runner(
++        [resp] * 40, executor=FakeExecutor(outputs=outputs()), config=config(FIXED_TAIL)
++    )
++    res = runner.run(generate("dev"), "summary")
++    assert res.status == "context_overflow"  # the failure mode token-tail/1 is meant to remove
++    assert res.metrics["counts"]["summary_calls"] == 2
++
++
++def test_request_after_summarisation_is_summary_plus_token_tail(make_runner: Any) -> None:
++    resp = Responder()
++    outs = ["a" * 500, "b" * 500, "c" * 2600, "d" * 300, "e" * 300, "f" * 300]
++    runner, prov = make_runner(
++        [resp] * 40, executor=FakeExecutor(outputs=outs), config=config(TOKEN_TAIL, 4000)
++    )
++    res = runner.run(generate("dev"), "summary")
++    applied = next(e for e in events(res.run_dir) if e["event"] == "summary_applied")
++    i = next(k for k, r in enumerate(prov.requests) if r.purpose == "summary")
++    after = working_ids(prov.requests[i + 1].user)
++    assert after == ["sum1", *applied["kept_tail"]]
++    assert not set(applied["replaced"]) & set(after)
++    assert "SUMMARY: pool=12" in prov.requests[i + 1].user
++    summary_req = prov.requests[i]
++    assert summary_req.system == SUMMARY_SYSTEM_TOKEN_TAIL
++    assert f"at most {applied['requested_max_chars']} characters" in summary_req.user
++    assert all(f'"id": "{x}"' in summary_req.user for x in applied["replaced"])
++    assert len(applied["kept_tail"]) >= 1  # a small recent tail survives verbatim
++
++
++def test_summary_attempts_and_retries_are_accounted(make_runner: Any, tmp_path: Path) -> None:
++    resp = Responder(summaries=["S" * 9000, "SUMMARY: short"])  # first attempt too large
++    runner, prov = make_runner(
++        [resp] * 40,
++        executor=FakeExecutor(outputs=outputs()),
++        price=TEST_PRICE,
++        ceiling=5.0,
++        config=config(TOKEN_TAIL),
++    )
++    res = runner.run(generate("dev"), "summary")
++    c = res.metrics["counts"]
++    ev = events(res.run_dir)
++    assert c["summary_calls"] == 2 and c["summaries_applied"] == 1
++    too_large = [e for e in ev if e["event"] == "summary_too_large"]
++    assert len(too_large) == 1 and too_large[0]["attempt"] == 0
++    applied = next(e for e in ev if e["event"] == "summary_applied")
++    assert (
++        applied["attempt"] == 1
++        and applied["requested_max_chars"] < too_large[0]["requested_max_chars"]
++    )
++    ledger = json.loads((tmp_path / "ledger.json").read_text())["entries"]
++    assert sum(1 for e in ledger if e["kind"] == "summary") == 2
++    assert len(ledger) == c["provider_calls"] == len(prov.requests)
++
++
++def test_split_bounds_the_tail_by_tokens() -> None:
++    entries = (
++        Entry("a", "observation", "x" * 300),
++        Entry("b", "observation", "x" * 3000),
++        Entry("c", "assistant", "x" * 300),
++        Entry("d", "observation", "x" * 300),
++    )
++    tokens = {"a": 100, "b": 1000, "c": 100, "d": 100}
++    pol = SummaryPolicy(policy=TOKEN_TAIL, tail_tokens=400, newest_tokens=2000)
++    older, tail = pol.split(entries, lambda e: tokens[e.id])
++    assert [e.id for e in tail] == ["c", "d"] and [e.id for e in older] == ["a", "b"]
++    # A large newest entry is kept alone if it fits the newest-entry cap...
++    newest = (*entries[:3], Entry("y", "observation", "x" * 4000))
++    older, tail = pol.split(newest, lambda e: tokens.get(e.id, 1500))
++    assert [e.id for e in tail] == ["y"] and [e.id for e in older] == ["a", "b", "c"]
++    # ...and compacted too if it exceeds even that, rather than blocking everything.
++    big_last = (*entries[:3], Entry("z", "observation", "x" * 9000))
++    older, tail = pol.split(big_last, lambda e: tokens.get(e.id, 3000))
++    assert tail == [] and older[-1].id == "z"
++    # fixed-tail/1 keeps four entries regardless of size.
++    older, tail = SummaryPolicy().split(entries)
++    assert [e.id for e in tail] == ["a", "b", "c", "d"] and older == []
++
++
++def test_original_policy_is_default_and_unchanged(make_runner: Any) -> None:
++    cfg = Config()
++    assert cfg.baseline.policy == FIXED_TAIL
++    assert load_config(Path("configs/default.toml")).baseline.policy == FIXED_TAIL
++    assert load_config(Path("configs/exp003.toml")).baseline.policy == TOKEN_TAIL
++    pol = SummaryPolicy()
++    assert pol.policy == FIXED_TAIL
++    assert [pol.char_limit(0, 99999), pol.char_limit(1, 99999)] == [3000, 1500]
++    assert pol.request("t", [], 0, 100).system == SUMMARY_SYSTEM
++    kw: dict[str, Any] = dict(
++        exec_timeout=30, output_cap=6000, pressure_pct=70, tail=4, max_entries=200, max_body=24000
++    )
++    original = system_prompt("summary", **kw)
++    assert "keeping the newest 4 entries verbatim" in original
++    assert system_prompt("summary", **kw, summary_policy=FIXED_TAIL) == original
++    assert system_prompt("clm", **kw) == system_prompt("clm", **kw, summary_policy=TOKEN_TAIL)
++    with pytest.raises(ValueError, match="unknown summary policy"):
++        SummaryPolicy(policy="nope")
++    # Provenance: the policy is recorded for summary runs.
++    runner, _ = make_runner([execute("a"), FINAL], executor=FakeExecutor())
++    res = runner.run(generate("dev"), "summary")
++    assert json.loads((res.run_dir / "run.json").read_text())["summary_policy"] == FIXED_TAIL
++    assert res.metrics["summary_policy"] == FIXED_TAIL

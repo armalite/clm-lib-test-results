@@ -1,0 +1,49 @@
+{
+ "number": 9,
+ "parent": 8,
+ "source": "runtime",
+ "step": 7,
+ "sha256": "195326c361aad79bdfbf925dd83ac1aba434e32d72b311bb7046165b245785e8",
+ "entries": [
+  {
+   "id": "sum2",
+   "role": "summary",
+   "body": "- Stage 1 (08:00-09:30): deploys.log:5 at 08:15:41Z deployed billing-svc 6.24.0-4314 (prev 6.23.4).\n- Release notes 6.24.0-4314: line 9 sets pricing-core timeout_ms 2500->800; line 18 sets db.pool.max_size 48->10. Config yaml (line 7 timeout 2500, line 11 pool 48, line 12 acquire_timeout_ms 5000) is superseded.\n- Stage 1 symptom: stage-1/logs/billing-svc.log:152 (08:16:57) \"pricing-core timed out after 800ms\", ~95 similar lines.\n- Noise only, ruled out: TLS 35 days left, disk 67%, DNS retries OK.\n- Stage 2 released (09:30-10:30). On-call applied a mitigation in stage-2/deploy/changes.log. Timeouts stopped, but front-proxy still returns 503 with a different error.\n- Likely shift to DB_POOL_EXHAUSTED (pool 10 from RN:18).\n- Next:\n  - Read the output of step 4: changes.log (APPLIED vs PROPOSED), stage-2 oncall notes, error types, metrics csv.\n  - Get line refs.\n  - Advance to stage 3 and check for later APPLIED changes to pool size.\n  - Answer with the current value, the introducing change (RN:18), and symptom lines."
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.2s\n--- stdout ---\ndeploy/changes.log 1 2031-04-19T08:50:51Z CHG-5122 APPLIED  quotes-api image quotes-api:2.13 rollout complete by deploy-bot\ndeploy/changes.log 2 2031-04-19T09:38:57Z CHG-5123 APPLIED  billing-svc override clients.pricing-core.timeout_ms=4000 (was 800 from build 6.24.0-4314) by k.novak; mitigation\ndeploy/changes.log 3 2031-04-19T09:39:46Z CHG-5124 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\nops/oncall-notes.md 1 # On-call notes - billing-svc incident 2031-04-19\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:48 pricing-core timeouts stopped after the mitigation, but front-proxy still shows 503s for billing-svc.\nops/oncall-notes.md 6 - 09:58 New errors look like db pool exhaustion, but config/billing-svc.yaml says max_size 48, so the pool should have plenty of room?\n39 (194, '2031-04-19T09:41:26.179Z ERROR billing-svc [billing-svc-a58] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=e81a925296')\n39 (216, '2031-04-19T09:43:00.800Z ERROR billing-svc [billing-svc-f75] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=f444034ec5')\n32 (187, '2031-04-19T09:41:05.079Z ERROR billing-svc [billing-svc-e83] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=2bf85fdd73')\n18 (12, '2031-04-19T09:30:40.924Z ERROR billing-svc [billing-svc-a58] upstream call pricing-core timed out after 800ms (attempt 1/1) req=5ee76ef096')\n"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: Stage 2 shows DB pool exhausted at 10/10 (release notes line 18). Moving on to stage 3."
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (6 lines)\n  stage-3/logs/billing-svc.log (830 lines)\n  stage-3/logs/front-proxy.log (366 lines)\n  stage-3/metrics/billing-svc.csv (61 lines)"
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Read stage-3 changes.log and sample db pool errors.\ncode:\nimport re\nb='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(b+'deploy/changes.log'),1):print(i,l.rstrip())\nn=0\nfor i,l in enumerate(open(b+'logs/billing-svc.log'),1):\n  if 'ERROR' in l:\n    n+=1\n    if n<4:print(i,l.rstrip())\nprint(n)\nfor i,l in enumerate(open(b+'logs/front-proxy.log'),1):\n  if '503' in l:print(i,l.rstrip());break"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.0s\n--- stdout ---\n1 2031-04-19T09:39:31Z CHG-5803 APPLIED  shipping-api override log.level=info (was debug) by j.moreau\n2 2031-04-19T10:08:29Z CHG-5804 APPLIED  fulfil-svc scale replicas 4 -> 6 by autoscaler\n3 2031-04-19T10:11:58Z CHG-5805 APPLIED  catalog-api image catalog-api:5.14 rollout complete by deploy-bot\n4 2031-04-19T10:55:01Z CHG-5806 APPLIED  billing-svc override db.pool.max_size=16 (was 10, the build 6.24.0-4314 default) by j.moreau; partial mitigation\n5 2031-04-19T11:02:09Z CHG-5807 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\n6 2031-04-19T11:19:59Z CHG-5808 PROPOSED billing-svc override db.pool.max_size=32 (pending review; not applied)\n3 2031-04-19T10:30:04.558Z ERROR billing-svc [billing-svc-a58] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=7c2cd01406\n8 2031-04-19T10:30:16.299Z ERROR billing-svc [billing-svc-a58] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=e68356c4f9\n16 2031-04-19T10:30:43.017Z ERROR billing-svc [billing-svc-f75] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=67a249b09b\n130\n155 2031-04-19T10:55:44.735Z front-proxy access upstream=billing-svc method=GET path=/v1/items status=503 rt=2.741s upstream_error=\"upstream returned 503\"\n"
+  },
+  {
+   "id": "s7.act",
+   "role": "assistant",
+   "body": "[step 7] execute\nthought: Get post-10:55 pool errors showing 16/16.\ncode:\nb='/task/fixtures/stage-3/logs/billing-svc.log'\nn=0\nfor i,l in enumerate(open(b),1):\n  if '/16 ' in l:\n    n+=1\n    if n<3:print(i,l.rstrip())\nprint(n)"
+  },
+  {
+   "id": "s7.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.0s\n--- stdout ---\n361 2031-04-19T10:56:13.207Z ERROR billing-svc [billing-svc-e83] db pool exhausted: 16/16 connections in use, waited 5000ms (acquire_timeout) req=cdc9a94655\n370 2031-04-19T10:56:49.967Z ERROR billing-svc [billing-svc-a58] db pool exhausted: 16/16 connections in use, waited 5000ms (acquire_timeout) req=54bf7c0a83\n70\n"
+  }
+ ]
+}

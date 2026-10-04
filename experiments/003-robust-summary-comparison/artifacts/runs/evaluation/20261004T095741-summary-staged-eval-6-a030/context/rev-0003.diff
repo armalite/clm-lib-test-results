@@ -1,0 +1,19 @@
+--- rev-2
++++ rev-3
+@@ -20,6 +20,16 @@
+    "id": "s2.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=0.9s\n--- stdout ---\n152 2031-04-19T08:16:57.116Z ERROR billing-svc [billing-svc-a58] upstream call pricing-core timed out after 800ms (attempt 1/1) req=377b8ef300\n156 2031-04-19T08:17:11.750Z ERROR billing-svc [billing-svc-a58] upstream call pricing-core timed out after 800ms (attempt 1/1) req=760363b8fc\n175 2031-04-19T08:19:33.552Z ERROR billing-svc [billing-svc-e83] upstream call pricing-core timed out after 800ms (attempt 1/1) req=4d6fde41c3\n185 2031-04-19T08:20:25.338Z ERROR billing-svc [billing-svc-e83] upstream call pricing-core timed out after 800ms (attempt 1/1) req=29228ff17d\n197 2031-04-19T08:21:37.178Z ERROR billing-svc [billing-svc-f75] upstream call pricing-core timed out after 800ms (attempt 1/1) req=642b409335\n220 2031-04-19T08:24:43.716Z ERROR billing-svc [billing-svc-f75] upstream call pricing-core timed out after 800ms (attempt 1/1) req=1e5c668f11\n[('vc [billing-svc-aN] upstream call pricing-core timed out after Nms (attempt N', 34), ('vc [billing-svc-fN] upstream call pricing-core timed out after Nms (attempt N', 33), ('vc [billing-svc-eN] upstream call pricing-core timed out after Nms (attempt N', 28)]\n"
++  },
++  {
++   "id": "s3.act",
++   "role": "assistant",
++   "body": "[step 3] execute\nthought: Save notes, check for DB pool errors and pricing-core latency.\ncode:\nimport re\nopen('/task/workspace/notes.md','w').write('S1: release-notes-6.24.0-4314.md:9 timeout 2500->800; :18 pool 48->10. billing log ERROR pricing-core timed out after 800ms lines 152-220 (95 errors). deploys.log:5.\\n')\nL=open('/task/fixtures/stage-1/logs/billing-svc.log').read().splitlines()\nn=0\nfor i,l in enumerate(L,1):\n  if re.search(r'pool|pricing-core.*ok|latency',l,re.I):\n    n+=1\n    if n<6:print(i,l[:180])\nprint(n)"
++  },
++  {
++   "id": "s3.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n248 2031-04-19T08:27:45.205Z WARN  billing-svc [billing-svc-f75] db pool wait 2069ms (in_use 10/10)\n387 2031-04-19T08:41:40.488Z WARN  billing-svc [billing-svc-a58] db pool wait 1271ms (in_use 10/10)\n402 2031-04-19T08:43:26.479Z WARN  billing-svc [billing-svc-a58] db pool wait 1710ms (in_use 10/10)\n432 2031-04-19T08:46:25.757Z WARN  billing-svc [billing-svc-e83] db pool wait 1315ms (in_use 10/10)\n647 2031-04-19T09:08:48.657Z WARN  billing-svc [billing-svc-f75] db pool wait 1586ms (in_use 10/10)\n7\n"
+   }
+  ]
+ }

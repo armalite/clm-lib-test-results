@@ -1,0 +1,19 @@
+--- rev-2
++++ rev-3
+@@ -20,6 +20,16 @@
+    "id": "s2.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.8s\n--- stdout ---\n201 INFO heartbeat ok build=N.N.N\n95 ERROR upstream call ledger-api timed out\n86 WARN runtime gc pause Nms (young)\n24 WARN disk usage /var/data at N%\n22 WARN tls certificate for profile-svc.internal expires\n18 WARN dns cache refresh retry succeeded\n7 WARN db pool wait Nms (in_use\n3 INFO req=NfN route=/vN/quote status=N dur_ms=N\n3 INFO req=NeN route=/vN/account status=N dur_ms=N\n2 INFO req=NaNdN route=/vN/cart status=N dur_ms=N\n1 INFO req=NeaN route=/vN/orders status=N dur_ms=N\n1 INFO req=NdcbN route=/vN/quote status=N dur_ms=N\n1 INFO req=eNdNdNdN route=/vN/history status=N dur_ms=N\n1 INFO req=NbcfffadN route=/vN/cart status=N dur_ms=N\n1 INFO req=dNeNbd route=/vN/orders status=N dur_ms=N\n131 2031-06-06T08:15:50.345Z ERROR profile-svc [profile-svc-f78] upstream call ledger-api timed out after 600ms (attempt 1/1) req=59b6ea1338\nCounter({'200': 320, '503': 60, '-': 53})\n"
++  },
++  {
++   "id": "s3.act",
++   "role": "assistant",
++   "body": "[step 3] execute\nthought: Save notes, check ledger latency and gateway 503 lines.\ncode:\nopen('/task/workspace/notes.txt','w').write('S1: ledger timeout 600 set by release-notes-8.15.4-7744.md:11; deploy deploys.log:5; symptom profile-svc.log:131 timeout 600ms. db pool 14 (rn:17) also.\\n')\nimport re\nL=open('/task/fixtures/stage-1/logs/profile-svc.log').read().splitlines()\nfor i,l in enumerate(L,1):\n if 'db pool' in l: print(i,l[:200])\nG=open('/task/fixtures/stage-1/logs/api-gateway.log').read().splitlines()\nfor i,l in enumerate(G,1):\n if '503' in l: print(i,l[:200]);break"
++  },
++  {
++   "id": "s3.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.9s\n--- stdout ---\n132 2031-06-06T08:15:52.436Z WARN  profile-svc [profile-svc-c88] db pool wait 1858ms (in_use 14/14)\n152 2031-06-06T08:18:28.846Z WARN  profile-svc [profile-svc-f97] db pool wait 1737ms (in_use 14/14)\n339 2031-06-06T08:37:41.463Z WARN  profile-svc [profile-svc-f97] db pool wait 1549ms (in_use 14/14)\n480 2031-06-06T08:52:07.140Z WARN  profile-svc [profile-svc-c88] db pool wait 1775ms (in_use 14/14)\n651 2031-06-06T09:10:42.283Z WARN  profile-svc [profile-svc-f78] db pool wait 2205ms (in_use 14/14)\n664 2031-06-06T09:11:56.960Z WARN  profile-svc [profile-svc-c88] db pool wait 1720ms (in_use 14/14)\n716 2031-06-06T09:15:52.719Z WARN  profile-svc [profile-svc-f97] db pool wait 2066ms (in_use 14/14)\n64 2031-06-06T08:14:56.692Z api-gateway access upstream=profile-svc method=GET path=/v1/cart status=503 rt=2.859s upstream_error=\"upstream timeout\"\n"
+   }
+  ]
+ }

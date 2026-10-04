@@ -1,0 +1,19 @@
+--- rev-5
++++ rev-6
+@@ -30,6 +30,16 @@
+    "id": "s4.obs",
+    "role": "observation",
+    "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The rates-svc timeouts stopped,\nbut ingress-a still returns 503s for quotes-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/quotes-api.log (910 lines)\n  stage-2/metrics/quotes-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: Inspect stage 2.\ncode:\nimport collections\nb='/task/fixtures/stage-2/'\nfor f in ['UPDATE.md','deploy/changes.log','ops/oncall-notes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nL=open(b+'logs/quotes-api.log').readlines()\nc=collections.Counter()\nfirst={}\nfor i,l in enumerate(L,1):\n  if 'ERROR' in l or 'WARN' in l:\n    k=' '.join(l.split()[2:6]);c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(6):print(v,first[k],k)\nM=open(b+'metrics/quotes-api.csv').readlines();print(M[0],M[1],M[-1])"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The rates-svc timeouts stopped,\nUPDATE.md 4 but ingress-a still returns 503s for quotes-api with a different error. New files below.\ndeploy/changes.log 1 2031-05-15T09:08:12Z CHG-5488 REVERTED profile-svc override cache.ttl_s=30 (back to 120) by r.okafor\ndeploy/changes.log 2 2031-05-15T09:45:27Z CHG-5489 APPLIED  quotes-api override clients.rates-svc.timeout_ms=3500 (was 600 from build 7.20.4-0a00) by s.patel; mitigation\ndeploy/changes.log 3 2031-05-15T10:02:15Z CHG-5490 APPLIED  shipping-api scale replicas 2 -> 7 by autoscaler\nops/oncall-notes.md 1 # On-call notes - quotes-api incident 2031-05-15\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:55 rates-svc timeouts stopped after the mitigation, but ingress-a still shows 503s for quotes-api.\nops/oncall-notes.md 6 - 10:05 New errors look like db pool exhaustion, but config/quotes-api.yaml says max_size 48, so the pool should have plenty of room?\n40 301 quotes-api [quotes-api-a37] db pool\n38 285 quotes-api [quotes-api-f72] db pool\n32 289 quotes-api [quotes-api-f12] db pool\n27 31 quotes-api [quotes-api-a37] runtime gc\n26 4 quotes-api [quotes-api-f12] runtime gc\n22 33 quotes-api [quotes-api-f72] runtime gc\nminute,rps,p99_ms,db_pool_in_use\n 09:30,211,1475,11\n 10:29,249,4262,12\n\n"
+   }
+  ]
+ }

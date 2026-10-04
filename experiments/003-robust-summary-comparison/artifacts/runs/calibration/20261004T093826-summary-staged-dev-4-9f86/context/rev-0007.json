@@ -1,0 +1,19 @@
+{
+ "number": 7,
+ "parent": 6,
+ "source": "summary",
+ "step": 6,
+ "sha256": "831c0d9fe2d5e757f0c9dfafb246639e15b4cfbeb664c312eb5e7b08444418af",
+ "entries": [
+  {
+   "id": "sum2",
+   "role": "summary",
+   "body": "<summary>\nStage 2 of 3 released; s5 output (changes.log, notes, error counts) not yet seen; stage 3 pending.\nS1: deploys.log:5 08:13:01Z profile-svc 8.15.4-7744. release-notes:11 ledger timeout_ms 2500->600 (yaml:7 superseded). release-notes:17 db.pool.max_size 48->14 (yaml:11 superseded).\nS1 symptoms: profile-svc.log:131 ledger timeout 600ms (95x). db pool wait in_use 14/14 at lines 132,152,339,480,651,664,716. gateway:64 first 503.\nS2 UPDATE: on-call mitigation in stage-2/deploy/changes.log stopped ledger timeouts. 503s continue with a different error, likely DB_POOL_EXHAUSTED (pool 14).\nNext: read changes.log (APPLIED vs PROPOSED), stage-2 logs, metrics csv. Then advance to stage 3 and check the current pool value.\n</summary>"
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.2s\n--- stdout ---\n== deploy/changes.log\n1 2031-06-06T08:43:01Z CHG-5479 REVERTED payments-api override cache.ttl_s=30 (back to 120) by a.tanaka\n2 2031-06-06T09:01:49Z CHG-5480 APPLIED  payments-api image payments-api:7.10 rollout complete by deploy-bot\n3 2031-06-06T09:14:54Z CHG-5481 PROPOSED returns-svc override http.max_body_kb=512 (pending review; not applied)\n4 2031-06-06T09:45:00Z CHG-5482 APPLIED  profile-svc override clients.ledger-api.timeout_ms=4000 (was 600 from build 8.15.4-7744) by a.tanaka; mitigation\n== ops/oncall-notes.md\n1 # On-call notes - profile-svc incident 2031-06-06\n2 \n3 Informal running notes. Not reviewed; may be out of date.\n4 \n5 - 09:55 ledger-api timeouts stopped after the mitigation, but api-gateway still shows 503s for profile-svc.\n6 - 10:05 New errors look like db pool exhaustion, but config/profile-svc.yaml says max_size 48, so the pool should have plenty of room?\n== UPDATE.md\n1 # Stage 2 of 3 (09:30-10:30 UTC)\n2 \n3 On-call applied a mitigation (see stage-2/deploy/changes.log). The ledger-api timeouts stopped,\n4 but api-gateway still returns 503s for profile-svc with a different error. New files below.\n110 (234, '2031-06-06T09:47:29.183Z ERROR profile-svc [profile-svc-c88] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=39bf182919')\n40 (5, '2031-06-06T09:30:25.995Z ERROR profile-svc [profile-svc-f78] upstream call ledger-api timed out after 600ms (attempt 1/1) req=50c6aa457e')\n33 (3, '2031-06-06T09:30:17.612Z WARN  profile-svc [profile-svc-f78] dns cache refresh retry succeeded')\n28 (19, '2031-06-06T09:32:05.402Z WARN  profile-svc [profile-svc-f78] disk usage /var/data at 61%')\n20 (45, '2031-06-06T09:34:15.102Z WARN  profile-svc [profile-svc-f78] tls certificate for profile-svc.internal expires in 23 days')\n3 (41, '2031-06-06T09:33:56.870Z WARN  profile-svc [profile-svc-c88] runtime gc pause 151ms (young)')\n3 (187, '2031-06-06T09:43:38.467Z WARN  profile-svc [profile-svc-c88] runtime gc pause 173ms (young)')\n3 (538, '2031-06-06T10:07:22.148Z WARN  profile-svc [profile-svc-f78] runtime gc pause 179ms (young)')\n101 2031-06-06T09:47:51.947Z api-gateway access upstream=profile-svc method=GET path=/v1/status status=503 rt=2.657s upstream_error=\"upstream returned 503\"\n"
+  }
+ ]
+}

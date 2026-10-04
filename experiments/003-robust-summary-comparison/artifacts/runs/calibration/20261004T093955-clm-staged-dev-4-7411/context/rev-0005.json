@@ -1,0 +1,29 @@
+{
+ "number": 5,
+ "parent": 4,
+ "source": "runtime",
+ "step": 3,
+ "sha256": "f8c654c9412a14e1a22a5270a500ca6383ac8f1d39d475c95c106992a590a527",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "S1 facts: release-notes-8.15.4-7744.md:11 ledger timeout 2500->600; :17 db pool 48->14. deploys.log:5 profile-svc 8.15.4-7744 at 08:13:01. config yaml:7 timeout 2500, :11 pool 48. profile-svc.log:131 ledger timed out 600ms; :132 db pool wait in_use 14/14. oncall suspects ledger timeout (informal)."
+  },
+  {
+   "id": "s3.act",
+   "role": "assistant",
+   "body": "[step 3] execute\nthought: Count timeouts vs pool waits more precisely, check ledger latency; compact context.\ncode:\nimport json,re\nb='/task/fixtures/stage-1/'\nL=open(b+'logs/profile-svc.log').read().splitlines()\nt=[i+1 for i,l in enumerate(L) if 'timed out' in l];p=[i+1 for i,l in enumerate(L) if 'pool wait' in l]\nprint(len(t),t[:3],t[-3:],len(p),p)\nlat=[l for l in L if 'ledger' in l and 'ms' in l and 'timed out' not in l][:3];print(lat)\nG=open(b+'logs/api-gateway.log').read().splitlines()\nprint([ (i+1,l[:150]) for i,l in enumerate(G) if ' 5' in l and 'profile' in l][:3])\nnote=open('/task/workspace/context.json').read()\nc=json.loads(note);c['entries']=[e for e in c['entries'] if e['id']=='n1'];json.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s3.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n95 [131, 136, 140] [851, 860, 861] 7 [132, 152, 339, 480, 651, 664, 716]\n[]\n[]\n"
+  },
+  {
+   "id": "s3.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 3: revision 3 -> 4; entries 4 -> 1; body chars 2115 -> 298; removed [s2.act, s2.obs, s2.rcpt]; added []; rewritten []"
+  }
+ ]
+}

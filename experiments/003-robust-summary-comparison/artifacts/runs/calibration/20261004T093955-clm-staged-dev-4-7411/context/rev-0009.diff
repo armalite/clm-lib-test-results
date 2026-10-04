@@ -1,0 +1,55 @@
+--- rev-8
++++ rev-9
+@@ -7,49 +7,9 @@
+    "body": "S1 facts: release-notes-8.15.4-7744.md:11 ledger timeout 2500->600; :17 db pool 48->14. deploys.log:5 profile-svc 8.15.4-7744 at 08:13:01. config yaml:7 timeout 2500, :11 pool 48. profile-svc.log:131 ledger timed out 600ms; :132 db pool wait in_use 14/14. oncall suspects ledger timeout (informal)."
+   },
+   {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] execute\nthought: Count timeouts vs pool waits more precisely, check ledger latency; compact context.\ncode:\nimport json,re\nb='/task/fixtures/stage-1/'\nL=open(b+'logs/profile-svc.log').read().splitlines()\nt=[i+1 for i,l in enumerate(L) if 'timed out' in l];p=[i+1 for i,l in enumerate(L) if 'pool wait' in l]\nprint(len(t),t[:3],t[-3:],len(p),p)\nlat=[l for l in L if 'ledger' in l and 'ms' in l and 'timed out' not in l][:3];print(lat)\nG=open(b+'logs/api-gateway.log').read().splitlines()\nprint([ (i+1,l[:150]) for i,l in enumerate(G) if ' 5' in l and 'profile' in l][:3])\nnote=open('/task/workspace/context.json').read()\nc=json.loads(note);c['entries']=[e for e in c['entries'] if e['id']=='n1'];json.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n95 [131, 136, 140] [851, 860, 861] 7 [132, 152, 339, 480, 651, 664, 716]\n[]\n[]\n"
+-  },
+-  {
+-   "id": "s3.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 3: revision 3 -> 4; entries 4 -> 1; body chars 2115 -> 298; removed [s2.act, s2.obs, s2.rcpt]; added []; rewritten []"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] advance\nthought: "
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The ledger-api timeouts stopped,\nbut api-gateway still returns 503s for profile-svc with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (4 lines)\n  stage-2/logs/api-gateway.log (420 lines)\n  stage-2/logs/profile-svc.log (910 lines)\n  stage-2/metrics/profile-svc.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Inspect stage 2 changes and errors.\ncode:\nb='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md','UPDATE.md']:\n  for i,l in enumerate(open(b+f).read().splitlines()):print(f,i+1,l[:200])\nL=open(b+'logs/profile-svc.log').read().splitlines()\nimport collections\nc=collections.Counter()\nfor i,l in enumerate(L):\n  if 'ERROR' in l or 'WARN' in l:\n    k=l.split(' ',3)[-1][:60];c[k]+=1\nprint(c.most_common(6))\nprint([(i+1,l[:160]) for i,l in enumerate(L) if 'pool' in l][:2])\nM=open(b+'metrics/profile-svc.csv').read().splitlines();print(M[0],M[1],M[-1])"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=2.0s\n--- stdout ---\ndeploy/changes.log 1 2031-06-06T08:43:01Z CHG-5479 REVERTED payments-api override cache.ttl_s=30 (back to 120) by a.tanaka\ndeploy/changes.log 2 2031-06-06T09:01:49Z CHG-5480 APPLIED  payments-api image payments-api:7.10 rollout complete by deploy-bot\ndeploy/changes.log 3 2031-06-06T09:14:54Z CHG-5481 PROPOSED returns-svc override http.max_body_kb=512 (pending review; not applied)\ndeploy/changes.log 4 2031-06-06T09:45:00Z CHG-5482 APPLIED  profile-svc override clients.ledger-api.timeout_ms=4000 (was 600 from build 8.15.4-7744) by a.tanaka; mitigation\nops/oncall-notes.md 1 # On-call notes - profile-svc incident 2031-06-06\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:55 ledger-api timeouts stopped after the mitigation, but api-gateway still shows 503s for profile-svc.\nops/oncall-notes.md 6 - 10:05 New errors look like db pool exhaustion, but config/profile-svc.yaml says max_size 48, so the pool should have plenty of room?\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The ledger-api timeouts stopped,\nUPDATE.md 4 but api-gateway still returns 503s for profile-svc with a different error. New files below.\n[('[profile-svc-f97] db pool exhausted: 14/14 connections in us', 42), ('[profile-svc-c88] db pool exhausted: 14/14 connections in us', 35), ('[profile-svc-f78] db pool exhausted: 14/14 connections in us', 33), ('profile-svc [profile-svc-f78] dns cache refresh retry succee', 15), ('[profile-svc-f97] upstream call ledger-api timed out after 6', 15), ('[profile-svc-f78] upstream call ledger-api timed out after 6', 14)]\n[(234, '2031-06-06T09:47:29.183Z ERROR profile-svc [profile-svc-c88] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=39bf182919'), (235, '2031-06-06T09:47:29.247Z ERROR profile-svc [profile-svc-c88] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=81a01dca26')]\nminute,rps,p99_ms,db_pool_in_use 09:30,249,1518,10 10:29,256,3443,14\n"
+-  },
+-  {
+-   "id": "s6.act",
+-   "role": "assistant",
+-   "body": "[step 6] advance\nthought: "
+-  },
+-  {
+-   "id": "s6.obs",
+-   "role": "observation",
+-   "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (4 lines)\n  stage-3/logs/api-gateway.log (366 lines)\n  stage-3/logs/profile-svc.log (830 lines)\n  stage-3/metrics/profile-svc.csv (61 lines)"
++   "id": "n2",
++   "role": "note",
++   "body": "S2: changes.log:4 CHG-5482 APPLIED ledger timeout=4000 (fixed timeouts). S2 profile-svc.log:234 db pool exhausted 14/14. Stage3 released."
+   }
+  ]
+ }

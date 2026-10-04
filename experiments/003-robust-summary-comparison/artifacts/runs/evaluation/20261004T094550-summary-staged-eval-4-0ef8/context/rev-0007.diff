@@ -1,0 +1,44 @@
+--- rev-6
++++ rev-7
+@@ -2,39 +2,9 @@
+  "format": "clm-context/v1",
+  "entries": [
+   {
+-   "id": "sum1",
++   "id": "sum2",
+    "role": "summary",
+-   "body": "Summary of work so far (stage 1 of 3 released; stages 2 and 3 not yet advanced):\n\nStage 1 files read:\n- UPDATE.md: covers 08:00-09:30 UTC. ingress-a began returning 5xx for payments-api shortly after a deploy.\n- config/payments-api.yaml (repo defaults, overridden by release notes and APPLIED records):\n  - clients.tax-engine.timeout_ms: 2500 (line 7)\n  - database.pool.max_size: 48 (line 11)\n  - acquire_timeout_ms: 5000 (line 12)\n  - cache.ttl_s: 120 (line 14)\n- deploy/deploys.log:1: 2031-03-06T08:14:28Z DEPLOY payments-api build 6.25.3-646f (previous 6.24.1).\n  - Other deploys on lines 2-7 (billing-svc, quotes-api x2, inventory-svc, orders-api, shipping-api) look unrelated.\n- deploy/release-notes-6.25.3-646f.md changes two relevant defaults, both now current and superseding the yaml:\n  - Line 5: clients.tax-engine.timeout_ms lowered 2500 -> 800 (\"fail fast\").\n  - Line 17: db.pool.max_size lowered 48 -> 10 (\"to fit the shared-db connection quota\").\n- ops/oncall-notes.md (informal, may be out of date):\n  - 08:29 (line 5): many tax-engine timeouts.\n  - 08:39 (line 6): suspects the tax-engine timeout change.\n- logs/payments-api.log WARN noise, judged not causal:\n  - gc pauses\n  - dns cache refresh retry succeeded\n  - TLS cert expires in 31 days (e.g. line 32)\n  - disk /var/data at 70% (line 47)\n  - This rules out TLS_CERT_EXPIRED, DISK_FULL and DNS for now.\n- Output was truncated, so the ERROR lines after the 08:14 deploy in both logs have NOT been seen yet.\n\nHypotheses:\n- Leading candidates: CLIENT_TIMEOUT_TOO_LOW (800ms tax-engine timeout) vs DB_POOL_EXHAUSTED (pool 10).\n- To decide, check the logs for tax-engine latency vs 800ms timeouts and for pool acquire timeouts.\n\nNext steps:\n1. Grep payments-api.log and ingress-a.log for ERROR lines and line numbers, especially after 08:14:28 (tax-engine timeout, pool exhausted, upstream latency).\n2. Advance to stage 2, then stage 3. Read any APPLIED or PROPOSED change records that alter timeout_ms or pool max_size; the later APPLIED record wins.\n3. Final answer must cite:\n   - symptom log lines;\n   - the record setting the current value;\n   - the original introduction (release-notes line 5 or 17, plus deploys.log:1)."
+-  },
+-  {
+-   "id": "s2.act",
+-   "role": "assistant",
+-   "body": "[step 2] execute\nthought: Filter errors only, dedupe by message type after stripping instance/numbers.\ncode:\nimport re,collections\nb='/task/fixtures/stage-1/'\nfor f in ['logs/ingress-a.log','logs/payments-api.log']:\n  c=collections.Counter();first={}\n  for i,l in enumerate(open(b+f),1):\n    if 'ERROR' in l:\n      k=re.sub(r'\\d+','N',l[24:].split(']')[-1])[:80]\n      c[k]+=1\n      if k not in first:first[k]=(i,l.rstrip()[:180])\n  for k,v in c.most_common(8):print(f,v,first[k])\n"
+-  },
+-  {
+-   "id": "s2.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nlogs/payments-api.log 2 (196, '2031-03-06T08:20:37.328Z ERROR payments-api [payments-api-a48] upstream call tax-engine timed out after 800ms (attempt 1/1) req=307b321485')\nlogs/payments-api.log 2 (605, '2031-03-06T09:01:57.388Z ERROR payments-api [payments-api-f51] upstream call tax-engine timed out after 800ms (attempt 1/1) req=7857642912')\nlogs/payments-api.log 1 (153, '2031-03-06T08:15:33.845Z ERROR payments-api [payments-api-f51] upstream call tax-engine timed out after 800ms (attempt 1/1) req=3c3f8deafd')\nlogs/payments-api.log 1 (164, '2031-03-06T08:16:28.386Z ERROR payments-api [payments-api-f51] upstream call tax-engine timed out after 800ms (attempt 1/1) req=74d4d92b2a')\nlogs/payments-api.log 1 (169, '2031-03-06T08:16:52.993Z ERROR payments-api [payments-api-d16] upstream call tax-engine timed out after 800ms (attempt 1/1) req=ef8d16b915')\nlogs/payments-api.log 1 (181, '2031-03-06T08:18:24.029Z ERROR payments-api [payments-api-d16] upstream call tax-engine timed out after 800ms (attempt 1/1) req=d2b1380cc3')\nlogs/payments-api.log 1 (182, '2031-03-06T08:18:29.070Z ERROR payments-api [payments-api-d16] upstream call tax-engine timed out after 800ms (attempt 1/1) req=02853901ba')\nlogs/payments-api.log 1 (207, '2031-03-06T08:22:03.528Z ERROR payments-api [payments-api-d16] upstream call tax-engine timed out after 800ms (attempt 1/1) req=4e3698f024')\n"
+-  },
+-  {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] execute\nthought: Check pool errors and tax-engine latency, and count error kinds; save notes.\ncode:\nimport re,collections\nb='/task/fixtures/stage-1/'\nc=collections.Counter();ex={}\nfor i,l in enumerate(open(b+'logs/payments-api.log'),1):\n  if 'ERROR' in l or 'pool' in l or 'latency' in l:\n    k=re.sub(r'[0-9a-f]{6,}|\\d+','N',l[24:])[:70]\n    c[k]+=1;ex.setdefault(k,i)\nfor k,v in c.most_common(10):print(v,ex[k],k)\nfor i,l in enumerate(open(b+'logs/ingress-a.log'),1):\n  if ' 50' in l and i<200:print(i,l[:150]);break\nopen('/task/workspace/notes.txt','w').write('s1: tax timeout 800ms errors payments-api.log:153-207; release-notes:5 timeout 2500->800; :17 pool 48->10; deploys.log:1\\n')"
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.9s\n--- stdout ---\n40 196  ERROR payments-api [payments-api-aN] upstream call tax-engine timed o\n29 153  ERROR payments-api [payments-api-fN] upstream call tax-engine timed o\n26 169  ERROR payments-api [payments-api-dN] upstream call tax-engine timed o\n4 204  WARN  payments-api [payments-api-fN] db pool wait Nms (in_use N/N)\n\n3 175  WARN  payments-api [payments-api-aN] db pool wait Nms (in_use N/N)\n\n"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] advance\nthought: Stage 1 evidence points to the 800ms tax-engine timeout (95 timeout errors versus only a handful of pool-wait warnings); releasing stage 2 to check for change records."
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The tax-engine timeouts stopped,\nbut ingress-a still returns 503s for payments-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/payments-api.log (910 lines)\n  stage-2/metrics/payments-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
++   "body": "Stage 2 of 3 released; stage 3 not yet released.\n- S1 configuration: yaml timeout_ms 2500 (config/payments-api.yaml:7) and pool max_size 48 (:11) are superseded by release-notes-6.25.3-646f.md:5 (timeout 800) and :17 (pool 10). Deployed at deploys.log:1, 08:14:28Z.\n- S1 symptom: 95 \"tax-engine timed out after 800ms\" errors in stage-1/logs/payments-api.log:153-207 and later. There were only 7 db pool wait WARNs (lines 175, 204).\n- TLS, disk and DNS are ruled out.\n- S2: on-call mitigation in stage-2/deploy/changes.log stopped the timeouts. Ingress still returns 503s with a different error, likely DB_POOL_EXHAUSTED at pool 10.\n- Next: read stage-2 changes.log, UPDATE, logs, metrics csv and notes. Then advance to stage 3. Cite symptom, current-value record and release-notes:17."
+   },
+   {
+    "id": "s5.act",

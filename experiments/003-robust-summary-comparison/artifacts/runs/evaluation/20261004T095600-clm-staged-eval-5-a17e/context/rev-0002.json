@@ -1,0 +1,29 @@
+{
+ "number": 2,
+ "parent": 1,
+ "source": "runtime",
+ "step": 2,
+ "sha256": "48ad669228740b6cf535ea0506c64986af6f3f2643c12e29be8356fcfdf805d4",
+ "entries": [
+  {
+   "id": "s1.act",
+   "role": "assistant",
+   "body": "[step 1] execute\nthought: \ncode:\nimport os\nb='/task/fixtures/stage-1/'\nfor f in ['UPDATE.md','config/quotes-api.yaml','deploy/deploys.log','deploy/release-notes-7.20.4-0a00.md','ops/oncall-notes.md']:\n  print('##',f)\n  for i,l in enumerate(open(b+f),1):print(i,l.rstrip())\nimport collections\nfor f in ['logs/ingress-a.log','logs/quotes-api.log']:\n  L=open(b+f).readlines()\n  c=collections.Counter(' '.join(l.split()[2:4]) for l in L)\n  print(f,c.most_common(6))\n  for i,l in enumerate(L,1):\n    if 'WARN' in l or 'ERR' in l:\n      print(i,l.strip()[:200]);break"
+  },
+  {
+   "id": "s1.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.0s\n--- stdout ---\n## UPDATE.md\n1 # Stage 1 of 3 (08:00-09:30 UTC)\n2 \n3 ingress-a began returning 5xx for quotes-api shortly after a deploy. Investigate the files below.\n4 More evidence will be released in later stages.\n## config/quotes-api.yaml\n1 # Repository default configuration for quotes-api.\n2 # Build release notes and APPLIED change records override these values.\n3 service: quotes-api\n4 clients:\n5   rates-svc:\n6     base_url: http://rates-svc.internal\n7     timeout_ms: 2500\n8 database:\n9   host: quotes-api-db.internal\n10   pool:\n11     max_size: 48\n12     acquire_timeout_ms: 5000\n13 cache:\n14   ttl_s: 120\n## deploy/deploys.log\n1 2031-05-15T07:16:15Z DEPLOY payments-api build 2.24.3 rollout 100% by deploy-bot\n2 2031-05-15T07:48:16Z DEPLOY fulfil-svc build 8.26.7 rollout 100% by deploy-bot\n3 2031-05-15T07:53:55Z DEPLOY profile-svc build 5.5.4 rollout 100% by deploy-bot\n4 2031-05-15T08:16:21Z DEPLOY quotes-api build 7.20.4-0a00 (previous 7.19.0) rollout 100% by deploy-bot; release notes: stage-1/deploy/release-notes-7.20.4-0a00.md\n5 2031-05-15T08:49:53Z DEPLOY orders-api build 3.17.6 rollout 100% by deploy-bot\n6 2031-05-15T09:22:21Z DEPLOY returns-svc build 6.9.4 rollout 100% by deploy-bot\n7 2031-05-15T09:29:07Z DEPLOY payments-api build 2.6.7 rollout 100% by deploy-bot\n## deploy/release-notes-7.20.4-0a00.md\n1 # Release notes: quotes-api build 7.20.4-0a00\n2 \n3 Previous build: 7.19.0. Defaults below override repository config files.\n4 \n5 - build: container base image refreshed\n6 - config: `log.level` default remains info\n7 - health: readiness probe timeout 2s (unchanged)\n8 - clients: default `clients.rates-svc.timeout_ms` lowered from 2500 to 600 (fail fast)\n9 - api: `/v1/status` returns build id\n10 - scheduler: cron jitter added to cleanup job\n11 - locale: currency formatting fixes\n12 - metrics: new histogram for cache hit latency\n13 - feature flags: `ff-legacy-export` removed (was 0%)\n14 - security: TLS session tickets rotated hourly\n15 - batching: max batch size default 200 (unchanged)\n16 - db: default connection pool `db.pool.max_size` lowered from 48 to 12 to fit the shared-db connection quota\n17 - logging: structured request ids added to access logs\n18 - deps: json serializer upgraded\n19 - deps: http client library upgraded to a patch release\n20 - metrics: db pool gauges renamed to `db_pool_*`\n21 - tracing: sampling rate default 1% (unchanged)\n22 - cache: default `cache.ttl_s` unchanged (120)\n## ops/oncall-notes.md\n1 # On-call notes - quotes-api incident 2031-05-15\n2 \n3 Informal running notes. Not reviewed; may be out of date.\n4 \n5 - 08:31 ingress-a 5xx for quotes-api since build 7.20.4-0a00 rolled out. Many rates-svc timeouts.\n6 - 08:41 Suspect the rates-svc timeout default change in 7.20.4-0a00; asking for a mitigation.\nlogs/ingress-a.log [('access upstream=quotes-api', 380), ('health-check upstream=quotes-api', 53)]\nlogs/quotes-api.log [('quotes-api [quotes-api-f12]', 295), ('quotes-api [quotes-api-a37]', 284), ('quotes-api [quotes-api-f72]', 283)]\n3 2031-05-15T08:00:33.968Z WARN  quotes-api [quotes-api-f12] dns cache refresh retry succeeded\n"
+  },
+  {
+   "id": "s2.act",
+   "role": "assistant",
+   "body": "[step 2] execute\nthought: \ncode:\nimport collections,re\nb='/task/fixtures/stage-1/logs/quotes-api.log'\nL=open(b).readlines()\nc=collections.Counter(re.sub(r'\\d+','N',' '.join(l.split()[4:9])) for l in L if 'INFO' not in l)\nfor k,v in c.most_common(12):print(v,k)\nfor i,l in enumerate(L,1):\n  if 'pool' in l or 'timeout' in l:\n    print(i,l.strip()[:180]);break\nfor i,l in enumerate(open('/task/fixtures/stage-1/logs/ingress-a.log'),1):\n  if ' 50' in l:print(i,l.strip()[:180]);break"
+  },
+  {
+   "id": "s2.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n95 upstream call rates-svc timed out\n82 runtime gc pause Nms (young)\n30 tls certificate for quotes-api.internal expires\n24 dns cache refresh retry succeeded\n17 disk usage /var/data at N%\n7 db pool wait Nms (in_use\n150 2031-05-15T08:18:44.612Z WARN  quotes-api [quotes-api-f72] db pool wait 1476ms (in_use 12/12)\n"
+  }
+ ]
+}

@@ -1,0 +1,1 @@
+open('/task/workspace/notes.txt','a').write('S1 also: db pool wait in_use 12/12 quotes-api.log:150; deploy deploys.log:4. Leading hypothesis CLIENT_TIMEOUT_TOO_LOW (600ms) vs DB pool 12.\n');print('ok')

@@ -1,0 +1,54 @@
+{
+ "number": 11,
+ "parent": 10,
+ "source": "runtime",
+ "step": 9,
+ "sha256": "fd1c1cf0dce159378efb7299dfa5a01107be436904e010cc429b447b175966c9",
+ "entries": [
+  {
+   "id": "sum2",
+   "role": "summary",
+   "body": "Summary of work so far (stages 1-2 of 3 read; stage 3 not yet released):\n\nStage 1 facts (paths relative to /task/fixtures):\n- stage-1/UPDATE.md:1-3. Window 08:00-09:30 UTC. ingress-a began returning 5xx for payments-api shortly after a deploy.\n- stage-1/deploy/deploys.log:1. 2031-03-06T08:14:28Z, payments-api build 6.25.3-646f (previous 6.24.1) rolled out 100%. Lines 2-7 are deploys of other services and look irrelevant.\n- stage-1/config/payments-api.yaml (repo values, superseded): line 7 tax-engine timeout_ms 2500; line 11 database.pool.max_size 48; line 12 acquire_timeout_ms 5000.\n- stage-1/deploy/release-notes-6.25.3-646f.md:\n  - line 5: timeout_ms changed 2500 to 800.\n  - line 17: db.pool.max_size changed 48 to 10, \"to fit the shared-db connection quota\".\n- stage-1/logs/ingress-a.log:80. First 503 at 08:16:11 with \"upstream timeout\".\n- stage-1/logs/payments-api.log: tax-engine \"timed out after 800ms\" from line 153 onward. Pool waits (in_use 10/10) appeared only 7 times (line 175, line 204).\n\nStage 2 facts (09:30-10:30):\n- stage-2/UPDATE.md:3-4. The mitigation stopped the tax-engine timeouts, but 503s continue with a different error.\n- stage-2/deploy/changes.log:\n  - line 1: 09:35:24Z CHG-5266 APPLIED, tax-engine timeout_ms=4000 (was 800). Timeout is now resolved; current value 4000.\n  - line 2: CHG-5267 PROPOSED for catalog-api; not applied, irrelevant.\n  - line 3: CHG-5268 for shipping-api log level; irrelevant.\n- stage-2/ops/oncall-notes.md:6. On-call suspects db pool exhaustion but wrongly cites yaml max_size 48. The effective value is 10, per release notes line 17.\n- stage-2/logs/payments-api.log: \"db pool exhausted: N/N connections in use, waited Nms (acquire_timeout)\" appears about 110 times, first at line 136-137 and line 162. The rest is noise (gc, dns retry ok, tls expiry warnings, disk usage).\n- stage-2/logs/ingress-a.log:53. 09:38:41 status=503 with \"upstream returned 503\".\n- stage-2/metrics/payments-api.csv: db_pool_in_use is pinned at 10 from line 15 (09:43) through line 60 (10:28). p99_ms ranges 3391-5117 (line 2 at 09:30: in_use 9).\n\nCurrent hypothesis: DB_POOL_EXHAUSTED. Pool max_size is 10, set by stage-1/deploy/release-notes-6.25.3-646f.md:17, with no APPLIED override yet. Remedy would be RAISE_DB_POOL_LIMIT (e.g., back to 48, within the shared-db quota).\n- CLIENT_TIMEOUT_TOO_LOW is superseded by CHG-5266.\n\nNext steps:\n- Advance to stage 3 and read all files.\n- Check for any APPLIED change to pool max_size; a later APPLIED record would win and become required_value and evidence ref (2).\n- Confirm the symptom persists.\n- Planned evidence refs:\n  - (1) symptom: stage-2 (or stage-3) payments-api.log pool-exhausted lines plus metrics.\n  - (2) current-value record: release-notes:17, unless overridden in stage 3.\n  - (3) originating change: release-notes:17."
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Get exact line of a pool exhausted entry, then advance.\ncode:\nb='/task/fixtures/stage-2/logs/payments-api.log'\nfor i,l in enumerate(open(b),1):\n  if 'pool exhausted' in l: print(i,l.strip()[:200]);break\nopen('/task/workspace/notes.txt','w').write('stage2: CHG-5266 APPLIED timeout 4000 (changes.log:1). pool exhausted 10/10 from payments-api.log:136; metrics db_pool_in_use 10. pool max 10 from release notes line17. leading: DB_POOL_EXHAUSTED\\n')"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.7s\n--- stdout ---\n136 2031-03-06T09:37:29.550Z ERROR payments-api [payments-api-d16] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=cc7d51c330\n"
+  },
+  {
+   "id": "s7.act",
+   "role": "assistant",
+   "body": "[step 7] advance\nthought: "
+  },
+  {
+   "id": "s7.obs",
+   "role": "observation",
+   "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (6 lines)\n  stage-3/logs/ingress-a.log (366 lines)\n  stage-3/logs/payments-api.log (830 lines)\n  stage-3/metrics/payments-api.csv (61 lines)"
+  },
+  {
+   "id": "s8.act",
+   "role": "assistant",
+   "body": "[step 8] execute\nthought: \ncode:\np='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(p+'deploy/changes.log'),1):print(i,l.strip()[:250])\nc=0\nfor i,l in enumerate(open(p+'logs/payments-api.log'),1):\n  if 'pool exhausted' in l:\n    c+=1\n    if c<3:print(i,l.strip()[:160])\nprint('count',c)\nm=open(p+'metrics/payments-api.csv').read().splitlines();print(m[0]);print(m[1]);print(m[30])"
+  },
+  {
+   "id": "s8.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.0s\n--- stdout ---\n1 2031-03-06T09:34:27Z CHG-5830 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\n2 2031-03-06T10:46:11Z CHG-5831 APPLIED  billing-svc image billing-svc:4.15 rollout complete by deploy-bot\n3 2031-03-06T10:47:32Z CHG-5832 APPLIED  payments-api override db.pool.max_size=18 (was 10, the build 6.25.3-646f default) by s.patel; partial mitigation\n4 2031-03-06T10:53:26Z CHG-5833 REVERTED fulfil-svc override cache.ttl_s=30 (back to 120) by j.moreau\n5 2031-03-06T11:07:16Z CHG-5834 PROPOSED payments-api override db.pool.max_size=34 (pending review; not applied)\n6 2031-03-06T11:19:13Z CHG-5835 APPLIED  fulfil-svc override log.level=info (was debug) by k.novak\n4 2031-03-06T10:30:19.499Z ERROR payments-api [payments-api-d16] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=800bf75417\n13 2031-03-06T10:30:53.447Z ERROR payments-api [payments-api-f51] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=3043e498b8\ncount 130\nminute,rps,p99_ms,db_pool_in_use\n10:30,257,2560,10\n10:59,215,2074,18\n"
+  },
+  {
+   "id": "s9.act",
+   "role": "assistant",
+   "body": "[step 9] execute\nthought: Find post-change 18/18 exhaustion line in stage 3.\ncode:\np='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(p+'logs/payments-api.log'),1):\n  if '18/18' in l: print(i,l.strip()[:150]);break\nfor i,l in enumerate(open(p+'logs/ingress-a.log'),1):\n  if ' 503' in l or '=503' in l:\n    if l[11:16]>'10:48': print(i,l.strip()[:150]);break"
+  },
+  {
+   "id": "s9.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n289 2031-03-06T10:49:38.588Z ERROR payments-api [payments-api-f51] db pool exhausted: 18/18 connections in use, waited 5000ms (acquire_timeout) req=2ab9e1\n116 2031-03-06T10:50:01.799Z ingress-a access upstream=payments-api method=GET path=/v1/status status=503 rt=3.482s upstream_error=\"upstream returned 503\"\n"
+  }
+ ]
+}

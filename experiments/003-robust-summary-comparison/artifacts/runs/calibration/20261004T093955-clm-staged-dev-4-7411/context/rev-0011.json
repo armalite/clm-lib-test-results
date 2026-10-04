@@ -1,0 +1,44 @@
+{
+ "number": 11,
+ "parent": 10,
+ "source": "runtime",
+ "step": 8,
+ "sha256": "b4a56ed6717e914d1a4d8ee26e37655ecb4e98822fe8bd72634f3dd980696afa",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "S1 facts: release-notes-8.15.4-7744.md:11 ledger timeout 2500->600; :17 db pool 48->14. deploys.log:5 profile-svc 8.15.4-7744 at 08:13:01. config yaml:7 timeout 2500, :11 pool 48. profile-svc.log:131 ledger timed out 600ms; :132 db pool wait in_use 14/14. oncall suspects ledger timeout (informal)."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "S2: changes.log:4 CHG-5482 APPLIED ledger timeout=4000 (fixed timeouts). S2 profile-svc.log:234 db pool exhausted 14/14. Stage3 released."
+  },
+  {
+   "id": "s7.act",
+   "role": "assistant",
+   "body": "[step 7] execute\nthought: Inspect stage 3 changes and errors; compact context.\ncode:\nimport json\nb='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(b+'deploy/changes.log').read().splitlines()):print(i+1,l[:220])\nL=open(b+'logs/profile-svc.log').read().splitlines()\nx=[(i+1,l[:150]) for i,l in enumerate(L) if 'pool' in l];print(len(x),x[:2])\nG=open(b+'logs/api-gateway.log').read().splitlines()\ng=[(i+1,l[:160]) for i,l in enumerate(G) if '503' in l];print(len(g),g[:1])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']+[{'id':'n2','role':'note','body':'S2: changes.log:4 CHG-5482 APPLIED ledger timeout=4000 (fixed timeouts). S2 profile-svc.log:234 db pool exhausted 14/14. Stage3 released.'}]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s7.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.0s\n--- stdout ---\n1 2031-06-06T09:40:09Z CHG-5748 PROPOSED payments-api override http.max_body_kb=512 (pending review; not applied)\n2 2031-06-06T10:51:29Z CHG-5749 APPLIED  profile-svc override db.pool.max_size=22 (was 14, the build 8.15.4-7744 default) by j.moreau; partial mitigation\n3 2031-06-06T11:01:40Z CHG-5750 PROPOSED profile-svc override db.pool.max_size=38 (pending review; not applied)\n4 2031-06-06T11:17:05Z CHG-5751 APPLIED  fulfil-svc image fulfil-svc:8.9 rollout complete by deploy-bot\n130 [(5, '2031-06-06T10:30:18.121Z ERROR profile-svc [profile-svc-f97] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=08015a3d'), (9, '2031-06-06T10:30:33.921Z ERROR profile-svc [profile-svc-f78] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=a5ac7f16')]\n40 [(129, '2031-06-06T10:51:58.049Z api-gateway access upstream=profile-svc method=GET path=/v1/history status=503 rt=2.945s upstream_error=\"upstream returned 503\"')]\n"
+  },
+  {
+   "id": "s7.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 7: revision 8 -> 9; entries 10 -> 2; body chars 5093 -> 435; removed [s3.act, s3.obs, s3.rcpt, s4.act, s4.obs, s5.act, s5.obs, s6.act, s6.obs]; added [n2]; rewritten []"
+  },
+  {
+   "id": "s8.act",
+   "role": "assistant",
+   "body": "[step 8] execute\nthought: \ncode:\nL=open('/task/fixtures/stage-3/logs/profile-svc.log').read().splitlines()\nx=[(i+1,l[:120]) for i,l in enumerate(L) if 'pool' in l and '/22' in l];print(len(x),x[:2])"
+  },
+  {
+   "id": "s8.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.1s\n--- stdout ---\n70 [(341, '2031-06-06T10:53:19.823Z ERROR profile-svc [profile-svc-f97] db pool exhausted: 22/22 connections in use, waited 5000ms '), (345, '2031-06-06T10:53:44.001Z ERROR profile-svc [profile-svc-f97] db pool exhausted: 22/22 connections in use, waited 5000ms ')]\n"
+  }
+ ]
+}

@@ -1,0 +1,29 @@
+--- rev-13
++++ rev-14
+@@ -2,24 +2,9 @@
+  "format": "clm-context/v1",
+  "entries": [
+   {
+-   "id": "sum2",
++   "id": "sum3",
+    "role": "summary",
+-   "body": "Stage 1 facts (stage 2 released, stage 3 pending):\n- Symptom S1: ingress 503s for quotes-api after deploy at deploy/deploys.log:4 (2031-05-15T08:16:21Z, build 7.20.4-0a00, previous 7.19.0).\n- Ingress S1: 60 503s, first at stage-1/logs/ingress-a.log:71 (08:17:49Z, upstream_error=\"upstream timeout\"). The 53 non-status lines are health checks.\n- Repo config quotes-api.yaml: rates-svc timeout_ms 2500 (line 7); db pool max_size 48 (line 11), acquire_timeout_ms 5000 (line 12). Release notes override these.\n- release-notes-7.20.4-0a00.md:8 lowers the rates-svc timeout 2500->600; line 16 lowers db.pool.max_size 48->12.\n- quotes-api.log S1: first ERROR at line 139, \"rates-svc timed out after 600ms\".\n- Few db pool WARNs (in_use 12/12) at lines 150, 177, 219, 357.\n- Noise WARNs: gc, tls expires, disk, dns.\n- Stage 2 UPDATE: on-call applied a mitigation via stage-2/deploy/changes.log. The rates timeouts stopped, but 503s continue with a different error.\n- Hypothesis now: the timeout was fixed, and DB_POOL_EXHAUSTED (pool 12) is likely next.\n- Next steps:\n  - Check whether changes.log is APPLIED or PROPOSED and what values it sets.\n  - Find the stage-2 error lines in quotes-api.log, ingress-a.log and metrics.\n  - Then advance to stage 3."
+-  },
+-  {
+-   "id": "s7.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.0s\n--- stdout ---\ndeploy/changes.log 1 2031-05-15T09:08:12Z CHG-5488 REVERTED profile-svc override cache.ttl_s=30 (back to 120) by r.okafor\ndeploy/changes.log 2 2031-05-15T09:45:27Z CHG-5489 APPLIED  quotes-api override clients.rates-svc.timeout_ms=3500 (was 600 from build 7.20.4-0a00) by s.patel; mitigation\ndeploy/changes.log 3 2031-05-15T10:02:15Z CHG-5490 APPLIED  shipping-api scale replicas 2 -> 7 by autoscaler\nops/oncall-notes.md 1 # On-call notes - quotes-api incident 2031-05-15\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:55 rates-svc timeouts stopped after the mitigation, but ingress-a still shows 503s for quotes-api.\nops/oncall-notes.md 6 - 10:05 New errors look like db pool exhaustion, but config/quotes-api.yaml says max_size 48, so the pool should have plenty of room?\n70 ERROR quotes-api [quotes-api-fN] db pool exhausted: N/N connections in use, waited Nms (ac\n40 ERROR quotes-api [quotes-api-aN] db pool exhausted: N/N connections in use, waited Nms (ac\n21 ERROR quotes-api [quotes-api-fN] upstream call rates-svc timed out after Nms (attempt N/N)\n19 ERROR quotes-api [quotes-api-aN] upstream call rates-svc timed out after Nms (attempt N/N)\n7 2031-05-15T09:30:16.792Z ERROR quotes-api [quotes-api-a37] upstream call rates-svc timed out after 600ms (attempt 1/1) req=f645407e6c\n14 2031-05-15T09:30:35.353Z ERROR quotes-api [quotes-api-f72] upstream call rates-svc timed out after 600ms (attempt 1/1) req=15372d7c9e\n16 2031-05-15T09:30:51.368Z ERROR quotes-api [quotes-api-a37] upstream call rates-svc timed out after 600ms (attempt 1/1) req=7ec1d55136\n70 [110, 113, 114]\n2031-05-15T09:48:01.400Z ingress-a access upstream=quotes-api method=GET path=/v1/status status=503 rt=1.485s upstream_error=\"upstream returned 503\"\n"
+-  },
+-  {
+-   "id": "s8.act",
+-   "role": "assistant",
+-   "body": "[step 8] execute\nthought: Locate stage-2 db pool error lines and file list.\ncode:\nimport os,glob\nfor f in sorted(glob.glob('/task/fixtures/stage-2/**/*',recursive=True)):print(f)\nfor f in glob.glob('/task/fixtures/stage-2/logs/*.log'):\n  L=open(f).read().splitlines();h=[i+1 for i,l in enumerate(L) if 'pool exhausted' in l]\n  print(f,len(h),h[:3]);\n  if h:print(L[h[0]-1])"
+-  },
+-  {
+-   "id": "s8.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.8s\n--- stdout ---\n/task/fixtures/stage-2/UPDATE.md\n/task/fixtures/stage-2/deploy\n/task/fixtures/stage-2/deploy/changes.log\n/task/fixtures/stage-2/logs\n/task/fixtures/stage-2/logs/ingress-a.log\n/task/fixtures/stage-2/logs/quotes-api.log\n/task/fixtures/stage-2/metrics\n/task/fixtures/stage-2/metrics/quotes-api.csv\n/task/fixtures/stage-2/ops\n/task/fixtures/stage-2/ops/oncall-notes.md\n/task/fixtures/stage-2/logs/ingress-a.log 0 []\n/task/fixtures/stage-2/logs/quotes-api.log 110 [285, 289, 292]\n2031-05-15T09:49:14.999Z ERROR quotes-api [quotes-api-f72] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=a265994776\n"
++   "body": "Stage 1-2 facts (stage 3 pending):\n- Change origin: deploy/deploys.log:4 at 08:16:21Z deployed build 7.20.4-0a00. Its release-notes-7.20.4-0a00.md:16 set db.pool.max_size 48->12. Line 8 set the rates timeout to 600.\n- stage-2/deploy/changes.log:2 CHG-5489 APPLIED rates timeout_ms=3500. This fixed the timeouts.\n- Current symptom: stage-2/logs/quotes-api.log:285 at 09:49:14Z shows \"db pool exhausted 12/12, waited 5000ms\". There are 110 such errors.\n- On-call note (yaml says 48) is stale.\n- Leading cause: DB_POOL_EXHAUSTED, current value 12. Remedy: RAISE_DB_POOL_LIMIT.\n- Next: advance to stage 3 and check for any APPLIED pool change."
+   },
+   {
+    "id": "s9.act",

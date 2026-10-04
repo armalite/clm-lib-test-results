@@ -1,0 +1,19 @@
+--- rev-10
++++ rev-11
+@@ -35,6 +35,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.0s\n--- stdout ---\n1 2031-03-06T09:34:27Z CHG-5830 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\n2 2031-03-06T10:46:11Z CHG-5831 APPLIED  billing-svc image billing-svc:4.15 rollout complete by deploy-bot\n3 2031-03-06T10:47:32Z CHG-5832 APPLIED  payments-api override db.pool.max_size=18 (was 10, the build 6.25.3-646f default) by s.patel; partial mitigation\n4 2031-03-06T10:53:26Z CHG-5833 REVERTED fulfil-svc override cache.ttl_s=30 (back to 120) by j.moreau\n5 2031-03-06T11:07:16Z CHG-5834 PROPOSED payments-api override db.pool.max_size=34 (pending review; not applied)\n6 2031-03-06T11:19:13Z CHG-5835 APPLIED  fulfil-svc override log.level=info (was debug) by k.novak\n4 2031-03-06T10:30:19.499Z ERROR payments-api [payments-api-d16] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=800bf75417\n13 2031-03-06T10:30:53.447Z ERROR payments-api [payments-api-f51] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=3043e498b8\ncount 130\nminute,rps,p99_ms,db_pool_in_use\n10:30,257,2560,10\n10:59,215,2074,18\n"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Find post-change 18/18 exhaustion line in stage 3.\ncode:\np='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(p+'logs/payments-api.log'),1):\n  if '18/18' in l: print(i,l.strip()[:150]);break\nfor i,l in enumerate(open(p+'logs/ingress-a.log'),1):\n  if ' 503' in l or '=503' in l:\n    if l[11:16]>'10:48': print(i,l.strip()[:150]);break"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n289 2031-03-06T10:49:38.588Z ERROR payments-api [payments-api-f51] db pool exhausted: 18/18 connections in use, waited 5000ms (acquire_timeout) req=2ab9e1\n116 2031-03-06T10:50:01.799Z ingress-a access upstream=payments-api method=GET path=/v1/status status=503 rt=3.482s upstream_error=\"upstream returned 503\"\n"
+   }
+  ]
+ }

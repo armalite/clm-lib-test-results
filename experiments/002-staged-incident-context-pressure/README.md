@@ -108,4 +108,5 @@ So **better factual reasoning or memory retention was not demonstrated.** What t
 - `artifacts/runs/evaluation/`: the 12 comparison runs, with requests, context revisions, model-written code and scores.
 - `artifacts/runs/calibration/`: the 2 calibration runs.
 - `artifacts/comparisons/20261004T080858/`: the comparison record, with its frozen settings and the exact source patch used.
+  - **Provenance note, added later:** that record's `frozen.generator_version` field reads `incident-gen/1`. This is a recording mistake: the field was filled from the single-stage generator's constant. The runs themselves used `staged-incident-gen/1`, as each run's `run.json` (`generator_version`) and `manifest.json` show. The recorded evidence is left unchanged; experiment 003 onwards records each task's actual generator version.
 - `artifacts/fixtures/`: the task files, all three stages.

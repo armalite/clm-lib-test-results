@@ -1,0 +1,19 @@
+--- rev-5
++++ rev-6
+@@ -25,6 +25,16 @@
+    "id": "s4.obs",
+    "role": "observation",
+    "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The ledger-api timeouts stopped,\nbut api-gateway still returns 503s for profile-svc with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (4 lines)\n  stage-2/logs/api-gateway.log (420 lines)\n  stage-2/logs/profile-svc.log (910 lines)\n  stage-2/metrics/profile-svc.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: Inspect stage 2 changes and errors.\ncode:\nimport collections\nb='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md','UPDATE.md']:\n print('==',f)\n for i,l in enumerate(open(b+f),1):print(i,l.rstrip()[:220])\nL=open(b+'logs/profile-svc.log').read().splitlines()\nc=collections.Counter()\nfirst={}\nfor i,l in enumerate(L,1):\n if 'ERROR' in l or 'WARN' in l:\n  k=l.split(']',1)[-1][:60];c[k[:40]]+=1;first.setdefault(k[:40],(i,l[:200]))\nfor k,v in c.most_common(8):print(v,first[k])\nG=open(b+'logs/api-gateway.log').read().splitlines()\nfor i,l in enumerate(G,1):\n if '503' in l: print(i,l[:200]);break\nopen('/task/workspace/notes.txt','a').write('S2 read\\n')"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.2s\n--- stdout ---\n== deploy/changes.log\n1 2031-06-06T08:43:01Z CHG-5479 REVERTED payments-api override cache.ttl_s=30 (back to 120) by a.tanaka\n2 2031-06-06T09:01:49Z CHG-5480 APPLIED  payments-api image payments-api:7.10 rollout complete by deploy-bot\n3 2031-06-06T09:14:54Z CHG-5481 PROPOSED returns-svc override http.max_body_kb=512 (pending review; not applied)\n4 2031-06-06T09:45:00Z CHG-5482 APPLIED  profile-svc override clients.ledger-api.timeout_ms=4000 (was 600 from build 8.15.4-7744) by a.tanaka; mitigation\n== ops/oncall-notes.md\n1 # On-call notes - profile-svc incident 2031-06-06\n2 \n3 Informal running notes. Not reviewed; may be out of date.\n4 \n5 - 09:55 ledger-api timeouts stopped after the mitigation, but api-gateway still shows 503s for profile-svc.\n6 - 10:05 New errors look like db pool exhaustion, but config/profile-svc.yaml says max_size 48, so the pool should have plenty of room?\n== UPDATE.md\n1 # Stage 2 of 3 (09:30-10:30 UTC)\n2 \n3 On-call applied a mitigation (see stage-2/deploy/changes.log). The ledger-api timeouts stopped,\n4 but api-gateway still returns 503s for profile-svc with a different error. New files below.\n110 (234, '2031-06-06T09:47:29.183Z ERROR profile-svc [profile-svc-c88] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=39bf182919')\n40 (5, '2031-06-06T09:30:25.995Z ERROR profile-svc [profile-svc-f78] upstream call ledger-api timed out after 600ms (attempt 1/1) req=50c6aa457e')\n33 (3, '2031-06-06T09:30:17.612Z WARN  profile-svc [profile-svc-f78] dns cache refresh retry succeeded')\n28 (19, '2031-06-06T09:32:05.402Z WARN  profile-svc [profile-svc-f78] disk usage /var/data at 61%')\n20 (45, '2031-06-06T09:34:15.102Z WARN  profile-svc [profile-svc-f78] tls certificate for profile-svc.internal expires in 23 days')\n3 (41, '2031-06-06T09:33:56.870Z WARN  profile-svc [profile-svc-c88] runtime gc pause 151ms (young)')\n3 (187, '2031-06-06T09:43:38.467Z WARN  profile-svc [profile-svc-c88] runtime gc pause 173ms (young)')\n3 (538, '2031-06-06T10:07:22.148Z WARN  profile-svc [profile-svc-f78] runtime gc pause 179ms (young)')\n101 2031-06-06T09:47:51.947Z api-gateway access upstream=profile-svc method=GET path=/v1/status status=503 rt=2.657s upstream_error=\"upstream returned 503\"\n"
+   }
+  ]
+ }

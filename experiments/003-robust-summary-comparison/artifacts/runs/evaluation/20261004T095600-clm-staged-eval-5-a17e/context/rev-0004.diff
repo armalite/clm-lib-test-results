@@ -1,0 +1,24 @@
+--- rev-3
++++ rev-4
+@@ -5,6 +5,21 @@
+    "id": "note1",
+    "role": "note",
+    "body": "Stage1: deploy quotes-api 7.20.4-0a00 at stage-1/deploy/deploys.log:4. Release notes stage-1/deploy/release-notes-7.20.4-0a00.md:8 rates-svc timeout_ms 2500->600; :16 db pool 48->12. Logs: 95 rates-svc timeouts (dominant), 7 db pool waits (first stage-1/logs/quotes-api.log:150). Hypothesis CLIENT_TIMEOUT_TOO_LOW value 600. Next: advance."
++  },
++  {
++   "id": "s3.act",
++   "role": "assistant",
++   "body": "[step 3] execute\nthought: Get line numbers for rates-svc timeout sample and ingress 5xx; write a compact note.\ncode:\nimport re\nb='/task/fixtures/stage-1/logs/'\nL=open(b+'quotes-api.log').readlines()\nn=[i for i,l in enumerate(L,1) if 'rates-svc timed out' in l]\nprint(n[:3],n[-1]);print(L[n[0]-1].strip()[:200])\nI=open(b+'ingress-a.log').readlines()\nm=[i for i,l in enumerate(I,1) if re.search(r'status=5|\\s50[0-9]\\s',l)]\nprint(len(m),m[:3]);print(I[m[0]-1].strip()[:200] if m else I[5].strip()[:200])\nimport json\nc={'format':'clm-context/v1','entries':[{'id':'note1','role':'note','body':'Stage1: deploy quotes-api 7.20.4-0a00 at stage-1/deploy/deploys.log:4. Release notes stage-1/deploy/release-notes-7.20.4-0a00.md:8 rates-svc timeout_ms 2500->600; :16 db pool 48->12. Logs: 95 rates-svc timeouts (dominant), 7 db pool waits (first stage-1/logs/quotes-api.log:150). Hypothesis CLIENT_TIMEOUT_TOO_LOW value 600. Next: advance.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s3.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.7s\n--- stdout ---\n[139, 144, 149] 861\n2031-05-15T08:17:50.997Z ERROR quotes-api [quotes-api-a37] upstream call rates-svc timed out after 600ms (attempt 1/1) req=4ac4eca1d6\n60 [71, 72, 77]\n2031-05-15T08:17:49.633Z ingress-a access upstream=quotes-api method=GET path=/v1/search status=503 rt=3.566s upstream_error=\"upstream timeout\"\n"
++  },
++  {
++   "id": "s3.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 3: revision 2 -> 3; entries 4 -> 1; body chars 4526 -> 339; removed [s1.act, s1.obs, s2.act, s2.obs]; added [note1]; rewritten []"
+   }
+  ]
+ }

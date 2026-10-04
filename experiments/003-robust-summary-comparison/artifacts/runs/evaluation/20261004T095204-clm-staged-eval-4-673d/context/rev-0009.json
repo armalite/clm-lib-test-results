@@ -1,0 +1,49 @@
+{
+ "number": 9,
+ "parent": 8,
+ "source": "runtime",
+ "step": 6,
+ "sha256": "537f69c54778186808a161430fc8d191268deb1aff1079f6967aab5a1d32fc0c",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1: deploy 6.25.3-646f at 08:14 (stage-1/deploy/deploys.log:1). Release notes: tax-engine timeout 2500->800 (release-notes:5), db.pool.max_size 48->10 (release-notes-6.25.3-646f.md:17). Config yaml: timeout 2500 line7, pool 48 line11. ingress-a 503 upstream timeout from line 80. Oncall suspects tax timeout (oncall-notes.md:5-6, informal). payments-api.log:153 first ERROR tax-engine timed out after 800ms (attempt 1/1). Many gc pause warns too. Next: advance."
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Save note, then advance next step.\ncode:\nimport json\nctx=json.load(open('/task/workspace/context.json'))\nctx['entries']=[e for e in ctx['entries'] if e['id']=='n1']\nctx['entries'][0]['body']+=' payments-api.log:153 first ERROR tax-engine timed out after 800ms (attempt 1/1). Many gc pause warns too. Next: advance.'\njson.dump(ctx,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.0s"
+  },
+  {
+   "id": "s4.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 4: revision 5 -> 6; entries 4 -> 1; body chars 1735 -> 465; removed [s3.act, s3.obs, s3.rcpt]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: "
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The tax-engine timeouts stopped,\nbut ingress-a still returns 503s for payments-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/payments-api.log (910 lines)\n  stage-2/metrics/payments-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Inspect stage-2 files.\ncode:\nimport re\nb='/task/fixtures/stage-2/'\nfor f in ['UPDATE.md','deploy/changes.log','ops/oncall-notes.md']:\n  print(f);print(open(b+f).read())\nL=open(b+'logs/payments-api.log').read().splitlines()\nc=0\nfor i,l in enumerate(L,1):\n  if 'ERROR' in l:\n    print(i,l);c+=1\n    if c>5:break\nprint(open(b+'metrics/payments-api.csv').read().splitlines()[:3])\nI=open(b+'logs/ingress-a.log').read().splitlines()\nfor i,l in enumerate(I,1):\n  if '503' in l: print(i,l);break"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.0s\n--- stdout ---\nUPDATE.md\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The tax-engine timeouts stopped,\nbut ingress-a still returns 503s for payments-api with a different error. New files below.\n\ndeploy/changes.log\n2031-03-06T09:35:24Z CHG-5266 APPLIED  payments-api override clients.tax-engine.timeout_ms=4000 (was 800 from build 6.25.3-646f) by s.patel; mitigation\n2031-03-06T09:53:29Z CHG-5267 PROPOSED catalog-api override http.max_body_kb=512 (pending review; not applied)\n2031-03-06T10:22:26Z CHG-5268 APPLIED  shipping-api override log.level=info (was debug) by k.novak\n\nops/oncall-notes.md\n# On-call notes - payments-api incident 2031-03-06\n\nInformal running notes. Not reviewed; may be out of date.\n\n- 09:45 tax-engine timeouts stopped after the mitigation, but ingress-a still shows 503s for payments-api.\n- 09:55 New errors look like db pool exhaustion, but config/payments-api.yaml says max_size 48, so the pool should have plenty of room?\n\n4 2031-03-06T09:30:13.608Z ERROR payments-api [payments-api-d16] upstream call tax-engine timed out after 800ms (attempt 1/1) req=d6507ecaf8\n5 2031-03-06T09:30:13.939Z ERROR payments-api [payments-api-a48] upstream call tax-engine timed out after 800ms (attempt 1/1) req=3e7e920b98\n11 2031-03-06T09:30:31.476Z ERROR payments-api [payments-api-d16] upstream call tax-engine timed out after 800ms (attempt 1/1) req=4c0d3bb6a5\n13 2031-03-06T09:30:33.915Z ERROR payments-api [payments-api-a48] upstream call tax-engine timed out after 800ms (attempt 1/1) req=d3a2f84fbd\n15 2031-03-06T09:30:53.572Z ERROR payments-api [payments-api-a48] upstream call tax-engine timed out after 800ms (attempt 1/1) req=02df12b47c\n16 2031-03-06T09:30:55.808Z ERROR payments-api [payments-api-a48] upstream call tax-engine timed out after 800ms (attempt 1/1) req=2851d196e9\n['minute,rps,p99_ms,db_pool_in_use', '09:30,233,1579,9', '09:31,238,1259,7']\n53 2031-03-06T09:38:41.998Z ingress-a access upstream=payments-api method=GET path=/v1/orders status=503 rt=1.834s upstream_error=\"upstream returned 503\"\n"
+  }
+ ]
+}

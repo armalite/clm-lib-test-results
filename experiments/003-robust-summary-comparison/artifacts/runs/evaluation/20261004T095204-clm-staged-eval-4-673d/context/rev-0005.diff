@@ -1,0 +1,24 @@
+--- rev-4
++++ rev-5
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "Stage1: deploy 6.25.3-646f at 08:14 (stage-1/deploy/deploys.log:1). Release notes: tax-engine timeout 2500->800 (release-notes:5), db.pool.max_size 48->10 (release-notes-6.25.3-646f.md:17). Config yaml: timeout 2500 line7, pool 48 line11. ingress-a 503 upstream timeout from line 80. Oncall suspects tax timeout (oncall-notes.md:5-6, informal)."
++  },
++  {
++   "id": "s3.act",
++   "role": "assistant",
++   "body": "[step 3] execute\nthought: Check error types quickly, tax-engine latency, then advance.\ncode:\nimport re,collections,json\nb='/task/fixtures/stage-1/logs/payments-api.log'\nc=collections.Counter();lat=[]\nfor i,l in enumerate(open(b),1):\n  m=re.search(r'(ERROR|WARN)\\s+\\S+\\s+(.{0,40})',l)\n  if m:c[re.sub(r'\\d+','N',m.group(2))]+=1\n  m2=re.search(r'tax-engine.*?(\\d+)ms',l)\n  if m2 and 'timed out' not in l:lat.append(int(m2.group(1)))\nprint(c.most_common(6));print(len(lat),sorted(lat)[len(lat)//2] if lat else None)\nfor i,l in enumerate(open(b),1):\n  if 'timed out' in l:print(i,l[:160]);break\nctx=json.load(open('/task/workspace/context.json'))\nctx['entries']=[e for e in ctx['entries'] if e['id']=='n1']\njson.dump(ctx,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s3.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.0s\n--- stdout ---\n[('[payments-api-aN] upstream call tax-eng', 40), ('[payments-api-aN] runtime gc pause Nm', 35), ('[payments-api-dN] runtime gc pause Nm', 30), ('[payments-api-fN] upstream call tax-eng', 29), ('[payments-api-dN] upstream call tax-eng', 26), ('[payments-api-fN] runtime gc pause Nm', 19)]\n0 None\n153 2031-03-06T08:15:33.845Z ERROR payments-api [payments-api-f51] upstream call tax-engine timed out after 800ms (attempt 1/1) req=3c3f8deafd\n\n"
++  },
++  {
++   "id": "s3.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 3: revision 3 -> 4; entries 4 -> 1; body chars 2091 -> 344; removed [s2.act, s2.obs, s2.rcpt]; added []; rewritten []"
+   }
+  ]
+ }

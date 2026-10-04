@@ -1,0 +1,29 @@
+{
+ "number": 7,
+ "parent": 6,
+ "source": "summary",
+ "step": 6,
+ "sha256": "2d42fb580eae34c9b94746e92f0b4ea0a714aa818117a475a7cd084eb32d0fe1",
+ "entries": [
+  {
+   "id": "sum2",
+   "role": "summary",
+   "body": "- Stage 1 (08:00-09:30): deploys.log:5 at 08:15:41Z deployed billing-svc 6.24.0-4314 (prev 6.23.4).\n- Release notes 6.24.0-4314: line 9 sets pricing-core timeout_ms 2500->800; line 18 sets db.pool.max_size 48->10. Config yaml (line 7 timeout 2500, line 11 pool 48, line 12 acquire_timeout_ms 5000) is superseded.\n- Stage 1 symptom: stage-1/logs/billing-svc.log:152 (08:16:57) \"pricing-core timed out after 800ms\", ~95 similar lines.\n- Noise only, ruled out: TLS 35 days left, disk 67%, DNS retries OK.\n- Stage 2 released (09:30-10:30). On-call applied a mitigation in stage-2/deploy/changes.log. Timeouts stopped, but front-proxy still returns 503 with a different error.\n- Likely shift to DB_POOL_EXHAUSTED (pool 10 from RN:18).\n- Next:\n  - Read the output of step 4: changes.log (APPLIED vs PROPOSED), stage-2 oncall notes, error types, metrics csv.\n  - Get line refs.\n  - Advance to stage 3 and check for later APPLIED changes to pool size.\n  - Answer with the current value, the introducing change (RN:18), and symptom lines."
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.2s\n--- stdout ---\ndeploy/changes.log 1 2031-04-19T08:50:51Z CHG-5122 APPLIED  quotes-api image quotes-api:2.13 rollout complete by deploy-bot\ndeploy/changes.log 2 2031-04-19T09:38:57Z CHG-5123 APPLIED  billing-svc override clients.pricing-core.timeout_ms=4000 (was 800 from build 6.24.0-4314) by k.novak; mitigation\ndeploy/changes.log 3 2031-04-19T09:39:46Z CHG-5124 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\nops/oncall-notes.md 1 # On-call notes - billing-svc incident 2031-04-19\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:48 pricing-core timeouts stopped after the mitigation, but front-proxy still shows 503s for billing-svc.\nops/oncall-notes.md 6 - 09:58 New errors look like db pool exhaustion, but config/billing-svc.yaml says max_size 48, so the pool should have plenty of room?\n39 (194, '2031-04-19T09:41:26.179Z ERROR billing-svc [billing-svc-a58] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=e81a925296')\n39 (216, '2031-04-19T09:43:00.800Z ERROR billing-svc [billing-svc-f75] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=f444034ec5')\n32 (187, '2031-04-19T09:41:05.079Z ERROR billing-svc [billing-svc-e83] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=2bf85fdd73')\n18 (12, '2031-04-19T09:30:40.924Z ERROR billing-svc [billing-svc-a58] upstream call pricing-core timed out after 800ms (attempt 1/1) req=5ee76ef096')\n"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: Stage 2 shows DB pool exhausted at 10/10 (release notes line 18). Moving on to stage 3."
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (6 lines)\n  stage-3/logs/billing-svc.log (830 lines)\n  stage-3/logs/front-proxy.log (366 lines)\n  stage-3/metrics/billing-svc.csv (61 lines)"
+  }
+ ]
+}

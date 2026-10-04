@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'note1','role':'note','body':'Stage1: deploy 7.20.4-0a00 stage-1/deploy/deploys.log:4. Release notes stage-1/deploy/release-notes-7.20.4-0a00.md:8 rates timeout 2500->600; :16 db pool max_size 48->12. Stage2: stage-2/deploy/changes.log:2 CHG-5489 APPLIED rates timeout=3500 (timeouts fixed). Now db pool exhausted 12/12 first at stage-2/logs/quotes-api.log:285. Hypothesis DB_POOL_EXHAUSTED value 12. Next: advance to stage 3 and check changes.log for pool changes.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

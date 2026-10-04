@@ -1,0 +1,19 @@
+--- rev-10
++++ rev-11
+@@ -45,6 +45,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.2s\n--- stdout ---\n2031-04-19T09:39:31Z CHG-5803 APPLIED  shipping-api override log.level=info (was debug) by j.moreau\n2031-04-19T10:08:29Z CHG-5804 APPLIED  fulfil-svc scale replicas 4 -> 6 by autoscaler\n2031-04-19T10:11:58Z CHG-5805 APPLIED  catalog-api image catalog-api:5.14 rollout complete by deploy-bot\n2031-04-19T10:55:01Z CHG-5806 APPLIED  billing-svc override db.pool.max_size=16 (was 10, the build 6.24.0-4314 default) by j.moreau; partial mitigation\n2031-04-19T11:02:09Z CHG-5807 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\n2031-04-19T11:19:59Z CHG-5808 PROPOSED billing-svc override db.pool.max_size=32 (pending review; not applied)\n3 2031-04-19T10:30:04.558Z ERROR billing-svc [billing-svc-a58] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=7c2cd01406\n8 2031-04-19T10:30:16.299Z ERROR billing-svc [billing-svc-a58] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=e68356c4f9\n16 2031-04-19T10:30:43.017Z ERROR billing-svc [billing-svc-f75] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=67a249b09b\n17 2031-04-19T10:30:46.892Z ERROR billing-svc [billing-svc-e83] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=ed7d2b9597\n19 2031-04-19T10:30:48.485Z ERROR billing-svc [billing-svc-f75] db pool exhausted: 10/10 connections in use, waited 5000ms (acquire_timeout) req=e0297025d8\n259\n['minute,rps,p99_ms,db_pool_in_use\\n', '10:30,256,3996,10\\n', '10:31,188,2679,10\\n']\n"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Find post-10:55 pool exhausted errors showing 16/16.\ncode:\nL=open('/task/fixtures/stage-3/logs/billing-svc.log').readlines()\nc=0\nfor i,l in enumerate(L,1):\n  if 'exhausted' in l and '16/16' in l:\n    c+=1\n    if c<3:print(i,l.rstrip())\nprint(c)"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n361 2031-04-19T10:56:13.207Z ERROR billing-svc [billing-svc-e83] db pool exhausted: 16/16 connections in use, waited 5000ms (acquire_timeout) req=cdc9a94655\n370 2031-04-19T10:56:49.967Z ERROR billing-svc [billing-svc-a58] db pool exhausted: 16/16 connections in use, waited 5000ms (acquire_timeout) req=54bf7c0a83\n70\n"
+   }
+  ]
+ }

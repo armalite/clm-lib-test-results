@@ -1,0 +1,19 @@
+--- rev-12
++++ rev-13
+@@ -40,6 +40,16 @@
+    "id": "s10.obs",
+    "role": "observation",
+    "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (5 lines)\n  stage-3/logs/ingress-a.log (366 lines)\n  stage-3/logs/quotes-api.log (830 lines)\n  stage-3/metrics/quotes-api.csv (61 lines)"
++  },
++  {
++   "id": "s11.act",
++   "role": "assistant",
++   "body": "[step 11] execute\nthought: Read stage-3 changes.log and find pool errors.\ncode:\nL=open('/task/fixtures/stage-3/deploy/changes.log').read().splitlines()\nfor i,l in enumerate(L):print(i+1,l)\nQ=open('/task/fixtures/stage-3/logs/quotes-api.log').read().splitlines()\nh=[i+1 for i,l in enumerate(Q) if 'pool exhausted' in l];print(len(h),h[:3])\nif h:print(Q[h[0]-1][:160])\nI=open('/task/fixtures/stage-3/logs/ingress-a.log').read().splitlines()\nh=[i+1 for i,l in enumerate(I) if 'status=503' in l];print(len(h),h[:3])"
++  },
++  {
++   "id": "s11.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.1s\n--- stdout ---\n1 2031-05-15T09:36:44Z CHG-5824 APPLIED  orders-api image orders-api:3.9 rollout complete by deploy-bot\n2 2031-05-15T10:05:42Z CHG-5825 APPLIED  shipping-api image shipping-api:4.14 rollout complete by deploy-bot\n3 2031-05-15T10:52:39Z CHG-5826 APPLIED  quotes-api override db.pool.max_size=22 (was 12, the build 7.20.4-0a00 default) by r.okafor; partial mitigation\n4 2031-05-15T11:06:46Z CHG-5827 PROPOSED quotes-api override db.pool.max_size=38 (pending review; not applied)\n5 2031-05-15T11:13:37Z CHG-5828 APPLIED  payments-api scale replicas 4 -> 5 by autoscaler\n130 [4, 5, 6]\n2031-05-15T10:30:19.126Z ERROR quotes-api [quotes-api-f72] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=f866afdd23\n40 [125, 129, 134]\n"
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-12
++++ rev-13
+@@ -15,6 +15,16 @@
+    "id": "s9.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.6s\n--- stdout ---\n1 2031-05-15T09:36:44Z CHG-5824 APPLIED  orders-api image orders-api:3.9 rollout complete by deploy-bot\n2 2031-05-15T10:05:42Z CHG-5825 APPLIED  shipping-api image shipping-api:4.14 rollout complete by deploy-bot\n3 2031-05-15T10:52:39Z CHG-5826 APPLIED  quotes-api override db.pool.max_size=22 (was 12, the build 7.20.4-0a00 default) by r.okafor; partial mitigation\n4 2031-05-15T11:06:46Z CHG-5827 PROPOSED quotes-api override db.pool.max_size=38 (pending review; not applied)\n5 2031-05-15T11:13:37Z CHG-5828 APPLIED  payments-api scale replicas 4 -> 5 by autoscaler\n4 2031-05-15T10:30:19.126Z ERROR quotes-api [quotes-api-f72] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=f866afdd23\n5 2031-05-15T10:30:22.329Z ERROR quotes-api [quotes-api-f12] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=2b9f8eafb0\n6 2031-05-15T10:30:25.835Z ERROR quotes-api [quotes-api-f12] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=8c3d9914d7\n130\n125 2031-05-15T10:53:05.455Z ingress-a access upstream=quotes-api method=GET path=/v1/search status=503 rt=3.368s upstream_e\n129 2031-05-15T10:53:59.302Z ingress-a access upstream=quotes-api method=GET path=/v1/items status=503 rt=5.407s upstream_er\n40\nminute,rps,p99_ms,db_pool_in_use\n 10:59,219,3168,22\n 11:29,250,3709,22\n\n"
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Find a post-10:52 pool error line showing 22/22.\ncode:\nb='/task/fixtures/stage-3/logs/quotes-api.log'\nn=0\nfor i,l in enumerate(open(b),1):\n  if '22/22' in l:\n    n+=1\n    if n<3:print(i,l[:110].rstrip())\nprint(n)"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n328 2031-05-15T10:53:55.332Z ERROR quotes-api [quotes-api-a37] db pool exhausted: 22/22 connections in use, waited\n345 2031-05-15T10:55:06.281Z ERROR quotes-api [quotes-api-f12] db pool exhausted: 22/22 connections in use, waited\n70\n"
+   }
+  ]
+ }

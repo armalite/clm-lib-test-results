@@ -1,0 +1,34 @@
+{
+ "number": 13,
+ "parent": 12,
+ "source": "runtime",
+ "step": 10,
+ "sha256": "644ad8cb25558dfadf7a2824ca737d423f105aace919b4c76eb467490fcc6f60",
+ "entries": [
+  {
+   "id": "sum3",
+   "role": "summary",
+   "body": "<summary>\nProgress: Stages 1-2 read; stage 3 released (all 3 now), not yet read.\n\nStage 1:\n- release-notes-7.20.4-0a00.md:16 db.pool.max_size 48->12 (origin of problem); :8 timeout_ms 2500->600. config yaml:11 (48) superseded. deploys.log:4 08:16:21Z build 7.20.4-0a00.\n- quotes-api.log:150 etc \"(in_use 12/12)\".\n\nStage 2:\n- changes.log:2 09:45:27Z CHG-5489 APPLIED rates-svc.timeout_ms=3500 (fixed timeouts). Lines 1,3 noise.\n- Symptom: stage-2/logs/ingress-a.log:110 09:48:01Z 503; stage-2/logs/quotes-api.log:285 09:49:14Z \"db pool exhausted: 12/12 ... waited 5000ms\" (110 hits). metrics db_pool_in_use 12.\n- oncall-notes:6 wrongly cites yaml 48.\n\nHypothesis: DB_POOL_EXHAUSTED / RAISE_DB_POOL_LIMIT.\n\nNext: read stage-3/deploy/changes.log (5 lines) for APPLIED pool max_size change (current value; errors persist at lower rate, so likely raised but still insufficient), stage-3 quotes-api.log pool errors, metrics csv; then answer.\n</summary>"
+  },
+  {
+   "id": "s9.act",
+   "role": "assistant",
+   "body": "[step 9] execute\nthought: Read stage-3 changes and pool error lines.\ncode:\nb='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(b+'deploy/changes.log'),1):print(i,l.rstrip())\nn=0\nfor i,l in enumerate(open(b+'logs/quotes-api.log'),1):\n  if 'pool' in l:\n    n+=1\n    if n<4:print(i,l[:150].rstrip())\nprint(n)\nn=0\nfor i,l in enumerate(open(b+'logs/ingress-a.log'),1):\n  if 'status=503' in l:\n    n+=1\n    if n<3:print(i,l[:120].rstrip())\nprint(n)\nL=open(b+'metrics/quotes-api.csv').readlines();print(L[0],L[30],L[-1])"
+  },
+  {
+   "id": "s9.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.6s\n--- stdout ---\n1 2031-05-15T09:36:44Z CHG-5824 APPLIED  orders-api image orders-api:3.9 rollout complete by deploy-bot\n2 2031-05-15T10:05:42Z CHG-5825 APPLIED  shipping-api image shipping-api:4.14 rollout complete by deploy-bot\n3 2031-05-15T10:52:39Z CHG-5826 APPLIED  quotes-api override db.pool.max_size=22 (was 12, the build 7.20.4-0a00 default) by r.okafor; partial mitigation\n4 2031-05-15T11:06:46Z CHG-5827 PROPOSED quotes-api override db.pool.max_size=38 (pending review; not applied)\n5 2031-05-15T11:13:37Z CHG-5828 APPLIED  payments-api scale replicas 4 -> 5 by autoscaler\n4 2031-05-15T10:30:19.126Z ERROR quotes-api [quotes-api-f72] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=f866afdd23\n5 2031-05-15T10:30:22.329Z ERROR quotes-api [quotes-api-f12] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=2b9f8eafb0\n6 2031-05-15T10:30:25.835Z ERROR quotes-api [quotes-api-f12] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=8c3d9914d7\n130\n125 2031-05-15T10:53:05.455Z ingress-a access upstream=quotes-api method=GET path=/v1/search status=503 rt=3.368s upstream_e\n129 2031-05-15T10:53:59.302Z ingress-a access upstream=quotes-api method=GET path=/v1/items status=503 rt=5.407s upstream_er\n40\nminute,rps,p99_ms,db_pool_in_use\n 10:59,219,3168,22\n 11:29,250,3709,22\n\n"
+  },
+  {
+   "id": "s10.act",
+   "role": "assistant",
+   "body": "[step 10] execute\nthought: Find a post-10:52 pool error line showing 22/22.\ncode:\nb='/task/fixtures/stage-3/logs/quotes-api.log'\nn=0\nfor i,l in enumerate(open(b),1):\n  if '22/22' in l:\n    n+=1\n    if n<3:print(i,l[:110].rstrip())\nprint(n)"
+  },
+  {
+   "id": "s10.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n328 2031-05-15T10:53:55.332Z ERROR quotes-api [quotes-api-a37] db pool exhausted: 22/22 connections in use, waited\n345 2031-05-15T10:55:06.281Z ERROR quotes-api [quotes-api-f12] db pool exhausted: 22/22 connections in use, waited\n70\n"
+  }
+ ]
+}

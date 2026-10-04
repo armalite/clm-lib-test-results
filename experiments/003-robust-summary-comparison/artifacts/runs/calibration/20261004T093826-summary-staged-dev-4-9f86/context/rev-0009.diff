@@ -1,0 +1,19 @@
+--- rev-8
++++ rev-9
+@@ -20,6 +20,16 @@
+    "id": "s6.obs",
+    "role": "observation",
+    "body": "Stage 3 of 3 released.\n# Stage 3 of 3 (10:30-11:30 UTC)\n\nAnother change was applied (see stage-3/deploy/changes.log) and errors persist at a lower rate.\nThis is the final evidence stage. Give your final diagnosis once you have reviewed it.\n\nNew files:\n  stage-3/UPDATE.md (4 lines)\n  stage-3/deploy/changes.log (4 lines)\n  stage-3/logs/api-gateway.log (366 lines)\n  stage-3/logs/profile-svc.log (830 lines)\n  stage-3/metrics/profile-svc.csv (61 lines)"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: Read stage-3 changes.log and pool errors.\ncode:\nimport re\nb='/task/fixtures/stage-3/'\nfor i,l in enumerate(open(b+'deploy/changes.log'),1):print(i,l.rstrip())\nc=0\nfor i,l in enumerate(open(b+'logs/profile-svc.log'),1):\n  if 'pool' in l:\n    c+=1\n    if c<4:print(i,l.rstrip())\nprint(c)\nfor i,l in enumerate(open(b+'metrics/profile-svc.csv'),1):\n  if i<3:print(i,l.rstrip())"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.4s\n--- stdout ---\n1 2031-06-06T09:40:09Z CHG-5748 PROPOSED payments-api override http.max_body_kb=512 (pending review; not applied)\n2 2031-06-06T10:51:29Z CHG-5749 APPLIED  profile-svc override db.pool.max_size=22 (was 14, the build 8.15.4-7744 default) by j.moreau; partial mitigation\n3 2031-06-06T11:01:40Z CHG-5750 PROPOSED profile-svc override db.pool.max_size=38 (pending review; not applied)\n4 2031-06-06T11:17:05Z CHG-5751 APPLIED  fulfil-svc image fulfil-svc:8.9 rollout complete by deploy-bot\n5 2031-06-06T10:30:18.121Z ERROR profile-svc [profile-svc-f97] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=08015a3dfe\n9 2031-06-06T10:30:33.921Z ERROR profile-svc [profile-svc-f78] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=a5ac7f1680\n24 2031-06-06T10:31:14.857Z ERROR profile-svc [profile-svc-f97] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=33c941b387\n130\n1 minute,rps,p99_ms,db_pool_in_use\n2 10:30,195,3724,14\n"
+   }
+  ]
+ }

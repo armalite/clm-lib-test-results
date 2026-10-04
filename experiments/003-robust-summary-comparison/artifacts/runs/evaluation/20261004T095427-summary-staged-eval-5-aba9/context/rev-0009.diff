@@ -1,0 +1,64 @@
+--- rev-8
++++ rev-9
+@@ -2,59 +2,9 @@
+  "format": "clm-context/v1",
+  "entries": [
+   {
+-   "id": "sum1",
++   "id": "sum2",
+    "role": "summary",
+-   "body": "Stage 1 facts so far (stages 2 and 3 not yet released):\n- Symptom: ingress-a returning 5xx for quotes-api after deploy deploy/deploys.log:4. That line is 2031-05-15T08:16:21Z, quotes-api build 7.20.4-0a00, previous build 7.19.0.\n- config/quotes-api.yaml (repo defaults, overridden by release notes):\n  - rates-svc timeout_ms 2500 (line 7)\n  - db pool max_size 48 (line 11), acquire_timeout_ms 5000 (line 12)\n- Release notes deploy/release-notes-7.20.4-0a00.md:\n  - line 8: clients.rates-svc.timeout_ms lowered 2500 -> 600\n  - line 16: db.pool.max_size lowered 48 -> 12\n  - Current effective values: timeout 600, pool 12.\n- quotes-api.log: first ERROR at line 139, 08:17:50.997Z: \"upstream call rates-svc timed out after 600ms (attempt 1/1)\". Many \"upstream\" and \"runtime\" ERROR/WARN entries (pods f12, a37, f72); runtime messages not yet inspected.\n- ingress-a.log: no ERROR/WARN keyword matches; format not yet checked.\n- Oncall notes (informal) suspect the rates-svc timeout change.\n- Leading hypothesis: CLIENT_TIMEOUT_TOO_LOW. Possible alternative: DB pool 12.\n- Next steps: inspect runtime errors and the ingress log, then advance to stage 2."
+-  },
+-  {
+-   "id": "s2.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n62 ERROR quotes-api [quotes-api-fN] upstream call rates-svc timed out after Nms (attempt N\n55 WARN quotes-api [quotes-api-fN] runtime gc pause Nms (young)\n33 ERROR quotes-api [quotes-api-aN] upstream call rates-svc timed out after Nms (attempt N\n27 WARN quotes-api [quotes-api-aN] runtime gc pause Nms (young)\n21 WARN quotes-api [quotes-api-fN] tls certificate for quotes-api.internal expires in N day\n15 WARN quotes-api [quotes-api-fN] disk usage /var/data at N%\n12 WARN quotes-api [quotes-api-fN] dns cache refresh retry suN\n12 WARN quotes-api [quotes-api-aN] dns cache refresh retry suN\n2031-05-15T08:00:17.742Z ingress-a access upstream=quotes-api method=GET path=/v1/status status=200 rt=0.051s\n\n[('upstream=quotes-api', 433)]\n"
+-  },
+-  {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] execute\nthought: Save notes, check rates-svc latency and db pool logs.\ncode:\nopen('/task/workspace/notes.md','w').write('S1: rel-notes 7.20.4-0a00 line8 rates timeout 2500->600; line16 db pool 48->12. quotes-api.log first timeout line139 (600ms). deploys.log:4 deploy 08:16.\\n')\nimport re\nL=open('/task/fixtures/stage-1/logs/quotes-api.log').readlines()\nfor i,l in enumerate(L,1):\n  if 'pool' in l or ('rates-svc' in l and 'timed out' not in l):print(i,l.strip()[:160])\n  if i>400:break\nI=open('/task/fixtures/stage-1/logs/ingress-a.log').readlines()\nimport collections;print(collections.Counter(re.search(r'status=(\\d+)',l).group(1) for l in I))\nprint([i for i,l in enumerate(I,1) if 'status=5' in l][:5])"
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "exit_code=1 duration=1.0s\n--- stdout ---\n150 2031-05-15T08:18:44.612Z WARN  quotes-api [quotes-api-f72] db pool wait 1476ms (in_use 12/12)\n177 2031-05-15T08:21:37.183Z WARN  quotes-api [quotes-api-a37] db pool wait 2260ms (in_use 12/12)\n219 2031-05-15T08:25:58.288Z WARN  quotes-api [quotes-api-f12] db pool wait 1650ms (in_use 12/12)\n357 2031-05-15T08:37:52.742Z WARN  quotes-api [quotes-api-f12] db pool wait 995ms (in_use 12/12)\n\n--- stderr ---\nTraceback (most recent call last):\n  File \"<string>\", line 80, in <module>\n  File \"<model-code>\", line 8, in <module>\n  File \"/usr/local/lib/python3.12/collections/__init__.py\", line 607, in __init__\n    self.update(iterable, **kwds)\n  File \"/usr/local/lib/python3.12/collections/__init__.py\", line 699, in update\n    _count_elements(self, iterable)\n  File \"<model-code>\", line 8, in <genexpr>\nAttributeError: 'NoneType' object has no attribute 'group'\n"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] execute\nthought: Fix the ingress status parsing and check rates-svc latency hints.\ncode:\nimport re,collections\nI=open('/task/fixtures/stage-1/logs/ingress-a.log').readlines()\nc=collections.Counter();b=[]\nfor i,l in enumerate(I,1):\n  m=re.search(r'status=(\\d+)',l)\n  s=m.group(1) if m else 'NA'\n  c[s]+=1\n  if s.startswith('5') or s=='NA':b.append(i)\nprint(c);print(b[:8])\nfor i in b[:3]:print(i,I[i-1].strip()[:200])\nopen('/task/workspace/notes.md','a').write('db pool wait in_use 12/12 at quotes-api.log:150,177,219,357 (few WARN only).\\n')"
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.0s\n--- stdout ---\nCounter({'200': 320, '503': 60, 'NA': 53})\n[17, 18, 20, 32, 40, 53, 67, 68]\n17 2031-05-15T08:04:36.385Z ingress-a health-check upstream=quotes-api ok\n18 2031-05-15T08:04:37.828Z ingress-a health-check upstream=quotes-api ok\n20 2031-05-15T08:04:41.234Z ingress-a health-check upstream=quotes-api ok\n"
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Find the first 503 lines in the ingress log, then advance.\ncode:\nI=open('/task/fixtures/stage-1/logs/ingress-a.log').readlines()\nb=[i for i,l in enumerate(I,1) if 'status=503' in l]\nprint(b[:5]);print(I[b[0]-1].strip()[:200])\nopen('/task/workspace/notes.md','a').write('ingress 503 first at ingress-a.log:%d; 60 503s total\\n'%b[0])"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.0s\n--- stdout ---\n[71, 72, 77, 78, 86]\n2031-05-15T08:17:49.633Z ingress-a access upstream=quotes-api method=GET path=/v1/search status=503 rt=3.566s upstream_error=\"upstream timeout\"\n"
+-  },
+-  {
+-   "id": "s6.act",
+-   "role": "assistant",
+-   "body": "[step 6] advance\nthought: "
+-  },
+-  {
+-   "id": "s6.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The rates-svc timeouts stopped,\nbut ingress-a still returns 503s for quotes-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/quotes-api.log (910 lines)\n  stage-2/metrics/quotes-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
+-  },
+-  {
+-   "id": "s7.act",
+-   "role": "assistant",
+-   "body": "[step 7] execute\nthought: Inspect stage 2 changes and the new errors.\ncode:\nimport re,collections\nB='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md']:\n  for i,l in enumerate(open(B+f),1):print(f,i,l.rstrip()[:220])\nL=open(B+'logs/quotes-api.log').readlines()\nc=collections.Counter(re.sub(r'\\d+','N',l[25:])[:90] for l in L if 'ERROR' in l)\nfor k,v in c.most_common(6):print(v,k.strip())\ne=[i for i,l in enumerate(L,1) if 'ERROR' in l][:3]\nfor i in e:print(i,L[i-1].strip()[:200])\nI=open(B+'logs/ingress-a.log').readlines()\nb=[i for i,l in enumerate(I,1) if 'status=5' in l];print(len(b),b[:3]);print(I[b[0]-1].strip()[:200])\nopen('/task/workspace/notes.md','a').write('advanced to stage2\\n')"
++   "body": "Stage 1 facts (stage 2 released, stage 3 pending):\n- Symptom S1: ingress 503s for quotes-api after deploy at deploy/deploys.log:4 (2031-05-15T08:16:21Z, build 7.20.4-0a00, previous 7.19.0).\n- Ingress S1: 60 503s, first at stage-1/logs/ingress-a.log:71 (08:17:49Z, upstream_error=\"upstream timeout\"). The 53 non-status lines are health checks.\n- Repo config quotes-api.yaml: rates-svc timeout_ms 2500 (line 7); db pool max_size 48 (line 11), acquire_timeout_ms 5000 (line 12). Release notes override these.\n- release-notes-7.20.4-0a00.md:8 lowers the rates-svc timeout 2500->600; line 16 lowers db.pool.max_size 48->12.\n- quotes-api.log S1: first ERROR at line 139, \"rates-svc timed out after 600ms\".\n- Few db pool WARNs (in_use 12/12) at lines 150, 177, 219, 357.\n- Noise WARNs: gc, tls expires, disk, dns.\n- Stage 2 UPDATE: on-call applied a mitigation via stage-2/deploy/changes.log. The rates timeouts stopped, but 503s continue with a different error.\n- Hypothesis now: the timeout was fixed, and DB_POOL_EXHAUSTED (pool 12) is likely next.\n- Next steps:\n  - Check whether changes.log is APPLIED or PROPOSED and what values it sets.\n  - Find the stage-2 error lines in quotes-api.log, ingress-a.log and metrics.\n  - Then advance to stage 3."
+   },
+   {
+    "id": "s7.obs",

@@ -1,0 +1,45 @@
+--- rev-6
++++ rev-7
+@@ -7,39 +7,9 @@
+    "body": "S1: rates timeout default 2500->600 in release-notes-7.20.4-0a00.md:8 (deploy deploys.log:4 08:16). db pool 48->12 at :16. quotes-api.log:139 first rates-svc timeout 600ms (95 such). db pool wait warns 7. oncall suspects timeout. ingress 5xx lines: [71, 72, 77, 78, 86]"
+   },
+   {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] execute\nthought: Compact context and gather key lines.\ncode:\nimport json,re\nb='/task/fixtures/stage-1/logs/'\nI=open(b+'ingress-a.log').readlines()\nx=[i for i,l in enumerate(I,1) if 'status=5' in l];print(len(x),x[:3])\nL=open(b+'quotes-api.log').readlines()\nprint([i for i,l in enumerate(L,1) if 'db pool' in l][:7])\nn='S1: rates timeout default 2500->600 in release-notes-7.20.4-0a00.md:8 (deploy deploys.log:4 08:16). db pool 48->12 at :16. quotes-api.log:139 first rates-svc timeout 600ms (95 such). db pool wait warns 7. oncall suspects timeout. ingress 5xx lines: '+str(x[:5])\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n60 [71, 72, 77]\n[150, 177, 219, 357, 410, 613, 671]\n"
+-  },
+-  {
+-   "id": "s3.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 3: revision 2 -> 3; entries 4 -> 1; body chars 5046 -> 269; removed [s1.act, s1.obs, s2.act, s2.obs]; added [n1]; rewritten []"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] advance\nthought: "
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The rates-svc timeouts stopped,\nbut ingress-a still returns 503s for quotes-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/quotes-api.log (910 lines)\n  stage-2/metrics/quotes-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Inspect stage 2.\ncode:\nimport collections\nb='/task/fixtures/stage-2/'\nfor f in ['UPDATE.md','deploy/changes.log','ops/oncall-notes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nL=open(b+'logs/quotes-api.log').readlines()\nc=collections.Counter()\nfirst={}\nfor i,l in enumerate(L,1):\n  if 'ERROR' in l or 'WARN' in l:\n    k=' '.join(l.split()[2:6]);c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(6):print(v,first[k],k)\nM=open(b+'metrics/quotes-api.csv').readlines();print(M[0],M[1],M[-1])"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The rates-svc timeouts stopped,\nUPDATE.md 4 but ingress-a still returns 503s for quotes-api with a different error. New files below.\ndeploy/changes.log 1 2031-05-15T09:08:12Z CHG-5488 REVERTED profile-svc override cache.ttl_s=30 (back to 120) by r.okafor\ndeploy/changes.log 2 2031-05-15T09:45:27Z CHG-5489 APPLIED  quotes-api override clients.rates-svc.timeout_ms=3500 (was 600 from build 7.20.4-0a00) by s.patel; mitigation\ndeploy/changes.log 3 2031-05-15T10:02:15Z CHG-5490 APPLIED  shipping-api scale replicas 2 -> 7 by autoscaler\nops/oncall-notes.md 1 # On-call notes - quotes-api incident 2031-05-15\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:55 rates-svc timeouts stopped after the mitigation, but ingress-a still shows 503s for quotes-api.\nops/oncall-notes.md 6 - 10:05 New errors look like db pool exhaustion, but config/quotes-api.yaml says max_size 48, so the pool should have plenty of room?\n40 301 quotes-api [quotes-api-a37] db pool\n38 285 quotes-api [quotes-api-f72] db pool\n32 289 quotes-api [quotes-api-f12] db pool\n27 31 quotes-api [quotes-api-a37] runtime gc\n26 4 quotes-api [quotes-api-f12] runtime gc\n22 33 quotes-api [quotes-api-f72] runtime gc\nminute,rps,p99_ms,db_pool_in_use\n 09:30,211,1475,11\n 10:29,249,4262,12\n\n"
++   "id": "n2",
++   "role": "note",
++   "body": "S2: CHG-5489 APPLIED timeout=3500 changes.log:2 fixed timeouts. Now db pool errors quotes-api.log (stage-2) first line 285; metrics pool in_use 12 (max 12 from release notes :16). ingress-a stage2 5xx: [110, 113, 114]"
+   }
+  ]
+ }

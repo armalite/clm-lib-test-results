@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1 facts: billing-svc.log 95 ERROR pricing-core timed out after 800ms (e.g. stage-1/logs/billing-svc.log:152, :854). 7 db pool wait warnings in_use 10/10 (lines 248,402). Release notes stage-1/deploy/release-notes-6.24.0-4314.md:9 timeout 2500->800; :18 db pool 48->10. Deploy stage-1/deploy/deploys.log:5 at 08:15:41. Config yaml: timeout_ms 2500 line7, pool max_size 48 line11. Oncall suspects timeout. Leading: CLIENT_TIMEOUT_TOO_LOW value 800. Next: advance to stage 2.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -30,6 +30,16 @@
+    "id": "s7.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=2.4s\n--- stdout ---\n1 2031-06-06T09:40:09Z CHG-5748 PROPOSED payments-api override http.max_body_kb=512 (pending review; not applied)\n2 2031-06-06T10:51:29Z CHG-5749 APPLIED  profile-svc override db.pool.max_size=22 (was 14, the build 8.15.4-7744 default) by j.moreau; partial mitigation\n3 2031-06-06T11:01:40Z CHG-5750 PROPOSED profile-svc override db.pool.max_size=38 (pending review; not applied)\n4 2031-06-06T11:17:05Z CHG-5751 APPLIED  fulfil-svc image fulfil-svc:8.9 rollout complete by deploy-bot\n5 2031-06-06T10:30:18.121Z ERROR profile-svc [profile-svc-f97] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=08015a3dfe\n9 2031-06-06T10:30:33.921Z ERROR profile-svc [profile-svc-f78] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=a5ac7f1680\n24 2031-06-06T10:31:14.857Z ERROR profile-svc [profile-svc-f97] db pool exhausted: 14/14 connections in use, waited 5000ms (acquire_timeout) req=33c941b387\n130\n1 minute,rps,p99_ms,db_pool_in_use\n2 10:30,195,3724,14\n"
++  },
++  {
++   "id": "s8.act",
++   "role": "assistant",
++   "body": "[step 8] execute\nthought: Find post-10:51 pool errors with 22/22 and gateway 503 lines.\ncode:\nb='/task/fixtures/stage-3/'\nc=0\nfor i,l in enumerate(open(b+'logs/profile-svc.log'),1):\n  if '22/22' in l:\n    c+=1\n    if c<3:print(i,l.rstrip())\nprint(c)\nc=0\nfor i,l in enumerate(open(b+'logs/api-gateway.log'),1):\n  if 'status=503' in l and l[11:16]>'10:52':\n    c+=1\n    if c<2:print(i,l.rstrip()[:120])\nprint(c)"
++  },
++  {
++   "id": "s8.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n341 2031-06-06T10:53:19.823Z ERROR profile-svc [profile-svc-f97] db pool exhausted: 22/22 connections in use, waited 5000ms (acquire_timeout) req=a87b15e370\n345 2031-06-06T10:53:44.001Z ERROR profile-svc [profile-svc-f97] db pool exhausted: 22/22 connections in use, waited 5000ms (acquire_timeout) req=fdf572500a\n70\n153 2031-06-06T10:55:32.166Z api-gateway access upstream=profile-svc method=GET path=/v1/account status=503 rt=3.339s upstre\n37\n"
+   }
+  ]
+ }

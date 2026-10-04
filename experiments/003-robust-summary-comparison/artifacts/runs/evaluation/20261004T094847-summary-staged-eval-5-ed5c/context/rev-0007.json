@@ -1,0 +1,54 @@
+{
+ "number": 7,
+ "parent": 6,
+ "source": "runtime",
+ "step": 6,
+ "sha256": "742c5c828df7973838820b1e87f77ed1730d872f1124bd0ef350cfef1ff77502",
+ "entries": [
+  {
+   "id": "sum1",
+   "role": "summary",
+   "body": "<summary>\nProgress: Stage 1 read (all files). Stages 2 and 3 not yet released.\n\nStage 1 facts:\n- Symptom: ingress-a 5xx for quotes-api right after the deploy. First error is logs/ingress-a.log:71 at 08:17:49Z: status=503 rt=3.566s upstream_error=\"upstream timeout\".\n- quotes-api.log: about 95 ERROR lines \"upstream call rates-svc timed out after 600ms (attempt 1/1)\". First one is at line 139, 08:17:50Z.\n- Noise, not the cause: young-gen GC pauses, a TLS cert for quotes-api.internal \"expires in N days\" (not expired), disk usage warnings on /var/data, and dns cache refresh retries that succeeded.\n- deploy/deploys.log:4: at 2031-05-15T08:16:21Z quotes-api build 7.20.4-0a00 was deployed (previous 7.19.0).\n- release-notes-7.20.4-0a00.md:8 lowers clients.rates-svc.timeout_ms from 2500 to 600. This is the likely change that introduced the problem.\n- release-notes-7.20.4-0a00.md:16 lowers db.pool.max_size from 48 to 12. No pool errors seen yet; keep watching.\n- config/quotes-api.yaml:7 sets timeout_ms 2500 and line 11 sets max_size 48. Both are superseded by the release notes.\n- Current effective values: rates-svc timeout_ms=600 (from release notes :8); db pool max_size=12 (from release notes :16).\n- ops/oncall-notes.md:5-6 (informal) suspects the rates-svc timeout change.\n\nLeading hypothesis: CLIENT_TIMEOUT_TOO_LOW, with remedy RAISE_CLIENT_TIMEOUT. Not final.\n\nNext steps:\n- Advance to stage 2, then stage 3.\n- Look for APPLIED records that change timeout_ms or pool size; a later APPLIED record wins, PROPOSED records do not count.\n- Check whether rates-svc normal latency exceeds the current timeout.\n- Check whether the root cause shifts, e.g. to DB pool exhaustion.\n- Final evidence_refs must cite the symptom, the record setting the current value, and the original change (release notes :8).\n</summary>"
+  },
+  {
+   "id": "s3.act",
+   "role": "assistant",
+   "body": "[step 3] execute\nthought: Save notes, check rates-svc latency and db pool messages.\ncode:\nopen('/task/workspace/notes.txt','w').write('S1: rates-svc timeout 2500->600 in release-notes-7.20.4-0a00.md:8; db pool 48->12 line16; errors quotes-api.log:139 timed out 600ms; ingress-a.log:71 503\\n')\nimport re\nL=open('/task/fixtures/stage-1/logs/quotes-api.log').read().splitlines()\nfor i,l in enumerate(L,1):\n  if ('pool' in l or 'rates-svc' in l and 'ERROR' not in l):print(i,l[:180])\n"
+  },
+  {
+   "id": "s3.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.9s\n--- stdout ---\n150 2031-05-15T08:18:44.612Z WARN  quotes-api [quotes-api-f72] db pool wait 1476ms (in_use 12/12)\n177 2031-05-15T08:21:37.183Z WARN  quotes-api [quotes-api-a37] db pool wait 2260ms (in_use 12/12)\n219 2031-05-15T08:25:58.288Z WARN  quotes-api [quotes-api-f12] db pool wait 1650ms (in_use 12/12)\n357 2031-05-15T08:37:52.742Z WARN  quotes-api [quotes-api-f12] db pool wait 995ms (in_use 12/12)\n410 2031-05-15T08:43:44.815Z WARN  quotes-api [quotes-api-f12] db pool wait 1072ms (in_use 12/12)\n613 2031-05-15T09:04:17.741Z WARN  quotes-api [quotes-api-f12] db pool wait 2002ms (in_use 12/12)\n671 2031-05-15T09:09:44.528Z WARN  quotes-api [quotes-api-f72] db pool wait 2053ms (in_use 12/12)\n"
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Save notes before advancing; context near pressure.\ncode:\nopen('/task/workspace/notes.txt','a').write('S1 also: db pool wait in_use 12/12 quotes-api.log:150; deploy deploys.log:4. Leading hypothesis CLIENT_TIMEOUT_TOO_LOW (600ms) vs DB pool 12.\\n');print('ok')"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.1s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: "
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The rates-svc timeouts stopped,\nbut ingress-a still returns 503s for quotes-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/quotes-api.log (910 lines)\n  stage-2/metrics/quotes-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Read stage 2 changes, notes, and error patterns.\ncode:\nimport collections\nb='/task/fixtures/stage-2/'\nfor f in ['UPDATE.md','deploy/changes.log','ops/oncall-notes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip()[:200])\nL=open(b+'logs/quotes-api.log').read().splitlines()\nc=collections.Counter();first={}\nfor i,l in enumerate(L,1):\n  if 'ERROR' in l or 'pool' in l:\n    k=l[60:130];c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(8):print(v,first[k],k)\nI=open(b+'logs/ingress-a.log').read().splitlines()\nfor i,l in enumerate(I,1):\n  if ' 503' in l or 'status=5' in l:print('ing',i,l[:200]);break\nM=open(b+'metrics/quotes-api.csv').read().splitlines();print(M[0]);print(M[30])"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.8s\n--- stdout ---\nUPDATE.md 1 # Stage 2 of 3 (09:30-10:30 UTC)\nUPDATE.md 2 \nUPDATE.md 3 On-call applied a mitigation (see stage-2/deploy/changes.log). The rates-svc timeouts stopped,\nUPDATE.md 4 but ingress-a still returns 503s for quotes-api with a different error. New files below.\ndeploy/changes.log 1 2031-05-15T09:08:12Z CHG-5488 REVERTED profile-svc override cache.ttl_s=30 (back to 120) by r.okafor\ndeploy/changes.log 2 2031-05-15T09:45:27Z CHG-5489 APPLIED  quotes-api override clients.rates-svc.timeout_ms=3500 (was 600 from build 7.20.4-0a00) by s.patel; mitigation\ndeploy/changes.log 3 2031-05-15T10:02:15Z CHG-5490 APPLIED  shipping-api scale replicas 2 -> 7 by autoscaler\nops/oncall-notes.md 1 # On-call notes - quotes-api incident 2031-05-15\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:55 rates-svc timeouts stopped after the mitigation, but ingress-a still shows 503s for quotes-api.\nops/oncall-notes.md 6 - 10:05 New errors look like db pool exhaustion, but config/quotes-api.yaml says max_size 48, so the pool should have plenty of room?\n110 285 b pool exhausted: 12/12 connections in use, waited 5000ms (acquire_tim\n1 7 pstream call rates-svc timed out after 600ms (attempt 1/1) req=f645407\n1 14 pstream call rates-svc timed out after 600ms (attempt 1/1) req=15372d7\n1 16 pstream call rates-svc timed out after 600ms (attempt 1/1) req=7ec1d55\n1 21 pstream call rates-svc timed out after 600ms (attempt 1/1) req=a765e53\n1 30 pstream call rates-svc timed out after 600ms (attempt 1/1) req=79a3c15\n1 34 pstream call rates-svc timed out after 600ms (attempt 1/1) req=2ecfeb6\n1 39 pstream call rates-svc timed out after 600ms (attempt 1/1) req=29e29c5\ning 110 2031-05-15T09:48:01.400Z ingress-a access upstream=quotes-api method=GET path=/v1/status status=503 rt=1.485s upstream_error=\"upstream returned 503\"\nminute,rps,p99_ms,db_pool_in_use\n09:59,229,3028,12\n"
+  }
+ ]
+}

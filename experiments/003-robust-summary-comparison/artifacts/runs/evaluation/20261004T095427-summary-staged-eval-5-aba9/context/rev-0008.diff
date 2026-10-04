@@ -1,0 +1,19 @@
+--- rev-7
++++ rev-8
+@@ -50,6 +50,16 @@
+    "id": "s6.obs",
+    "role": "observation",
+    "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The rates-svc timeouts stopped,\nbut ingress-a still returns 503s for quotes-api with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/ingress-a.log (420 lines)\n  stage-2/logs/quotes-api.log (910 lines)\n  stage-2/metrics/quotes-api.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: Inspect stage 2 changes and the new errors.\ncode:\nimport re,collections\nB='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md']:\n  for i,l in enumerate(open(B+f),1):print(f,i,l.rstrip()[:220])\nL=open(B+'logs/quotes-api.log').readlines()\nc=collections.Counter(re.sub(r'\\d+','N',l[25:])[:90] for l in L if 'ERROR' in l)\nfor k,v in c.most_common(6):print(v,k.strip())\ne=[i for i,l in enumerate(L,1) if 'ERROR' in l][:3]\nfor i in e:print(i,L[i-1].strip()[:200])\nI=open(B+'logs/ingress-a.log').readlines()\nb=[i for i,l in enumerate(I,1) if 'status=5' in l];print(len(b),b[:3]);print(I[b[0]-1].strip()[:200])\nopen('/task/workspace/notes.md','a').write('advanced to stage2\\n')"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.0s\n--- stdout ---\ndeploy/changes.log 1 2031-05-15T09:08:12Z CHG-5488 REVERTED profile-svc override cache.ttl_s=30 (back to 120) by r.okafor\ndeploy/changes.log 2 2031-05-15T09:45:27Z CHG-5489 APPLIED  quotes-api override clients.rates-svc.timeout_ms=3500 (was 600 from build 7.20.4-0a00) by s.patel; mitigation\ndeploy/changes.log 3 2031-05-15T10:02:15Z CHG-5490 APPLIED  shipping-api scale replicas 2 -> 7 by autoscaler\nops/oncall-notes.md 1 # On-call notes - quotes-api incident 2031-05-15\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:55 rates-svc timeouts stopped after the mitigation, but ingress-a still shows 503s for quotes-api.\nops/oncall-notes.md 6 - 10:05 New errors look like db pool exhaustion, but config/quotes-api.yaml says max_size 48, so the pool should have plenty of room?\n70 ERROR quotes-api [quotes-api-fN] db pool exhausted: N/N connections in use, waited Nms (ac\n40 ERROR quotes-api [quotes-api-aN] db pool exhausted: N/N connections in use, waited Nms (ac\n21 ERROR quotes-api [quotes-api-fN] upstream call rates-svc timed out after Nms (attempt N/N)\n19 ERROR quotes-api [quotes-api-aN] upstream call rates-svc timed out after Nms (attempt N/N)\n7 2031-05-15T09:30:16.792Z ERROR quotes-api [quotes-api-a37] upstream call rates-svc timed out after 600ms (attempt 1/1) req=f645407e6c\n14 2031-05-15T09:30:35.353Z ERROR quotes-api [quotes-api-f72] upstream call rates-svc timed out after 600ms (attempt 1/1) req=15372d7c9e\n16 2031-05-15T09:30:51.368Z ERROR quotes-api [quotes-api-a37] upstream call rates-svc timed out after 600ms (attempt 1/1) req=7ec1d55136\n70 [110, 113, 114]\n2031-05-15T09:48:01.400Z ingress-a access upstream=quotes-api method=GET path=/v1/status status=503 rt=1.485s upstream_error=\"upstream returned 503\"\n"
+   }
+  ]
+ }

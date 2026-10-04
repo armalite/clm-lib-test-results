@@ -1,0 +1,19 @@
+--- rev-5
++++ rev-6
+@@ -30,6 +30,16 @@
+    "id": "s4.obs",
+    "role": "observation",
+    "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The pricing-core timeouts stopped,\nbut front-proxy still returns 503s for billing-svc with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/billing-svc.log (910 lines)\n  stage-2/logs/front-proxy.log (420 lines)\n  stage-2/metrics/billing-svc.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: Inspect stage 2 changes and errors.\ncode:\nimport collections,re\np='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md']:\n for i,l in enumerate(open(p+f),1):print(f,i,l.rstrip()[:250])\nL=open(p+'logs/billing-svc.log').readlines()\nc=collections.Counter()\nfirst={}\nfor i,l in enumerate(L,1):\n if 'ERROR' in l or 'WARN' in l:\n  k=re.sub(r'\\d+','N',l[25:].split(']',1)[-1])[:80];c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(8):print(v,first[k],k)\nimport csv\nr=list(csv.reader(open(p+'metrics/billing-svc.csv')));print(r[0],r[1],r[-1])"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.0s\n--- stdout ---\ndeploy/changes.log 1 2031-04-19T08:50:51Z CHG-5122 APPLIED  quotes-api image quotes-api:2.13 rollout complete by deploy-bot\ndeploy/changes.log 2 2031-04-19T09:38:57Z CHG-5123 APPLIED  billing-svc override clients.pricing-core.timeout_ms=4000 (was 800 from build 6.24.0-4314) by k.novak; mitigation\ndeploy/changes.log 3 2031-04-19T09:39:46Z CHG-5124 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\nops/oncall-notes.md 1 # On-call notes - billing-svc incident 2031-04-19\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:48 pricing-core timeouts stopped after the mitigation, but front-proxy still shows 503s for billing-svc.\nops/oncall-notes.md 6 - 09:58 New errors look like db pool exhaustion, but config/billing-svc.yaml says max_size 48, so the pool should have plenty of room?\n77 5  runtime gc pause Nms (young)\n\n24 74  dns cache refresh retry succeeded\n\n21 61  tls certificate for billing-svc.internal expires in N days\n\n20 111  disk usage /var/data at N%\n\n12 192  db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) req=NbN\n8 280  db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) req=NcN\n5 275  db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) req=NaN\n5 527  db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) req=NfN\n['minute', 'rps', 'p99_ms', 'db_pool_in_use'] ['09:30', '236', '1322', '10'] ['10:29', '210', '3134', '10']\n"
+   }
+  ]
+ }

@@ -1,0 +1,24 @@
+--- rev-7
++++ rev-8
+@@ -10,6 +10,21 @@
+    "id": "n2",
+    "role": "note",
+    "body": "S2: CHG-5489 APPLIED timeout=3500 changes.log:2 fixed timeouts. Now db pool errors quotes-api.log (stage-2) first line 285; metrics pool in_use 12 (max 12 from release notes :16). ingress-a stage2 5xx: [110, 113, 114]"
++  },
++  {
++   "id": "s6.act",
++   "role": "assistant",
++   "body": "[step 6] execute\nthought: Save note, peek db pool line, then advance.\ncode:\nimport json\nb='/task/fixtures/stage-2/logs/quotes-api.log'\nL=open(b).readlines();print(L[284].rstrip());print(L[300].rstrip())\nI=open('/task/fixtures/stage-2/logs/ingress-a.log').readlines()\nx=[i for i,l in enumerate(I,1) if 'status=5' in l];print(x[:3],I[x[0]-1].rstrip())\nn=open('/task/workspace/context.json').read()\nc=json.loads(n)\nc['entries']=[c['entries'][0],{'id':'n2','role':'note','body':'S2: CHG-5489 APPLIED timeout=3500 changes.log:2 fixed timeouts. Now db pool errors quotes-api.log (stage-2) first line 285; metrics pool in_use 12 (max 12 from release notes :16). ingress-a stage2 5xx: '+str(x[:3])}]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s6.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n2031-05-15T09:49:14.999Z ERROR quotes-api [quotes-api-f72] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=a265994776\n2031-05-15T09:50:19.764Z ERROR quotes-api [quotes-api-a37] db pool exhausted: 12/12 connections in use, waited 5000ms (acquire_timeout) req=96c4181bf7\n[110, 113, 114] 2031-05-15T09:48:01.400Z ingress-a access upstream=quotes-api method=GET path=/v1/status status=503 rt=1.485s upstream_error=\"upstream returned 503\"\n"
++  },
++  {
++   "id": "s6.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 6: revision 6 -> 7; entries 8 -> 2; body chars 3812 -> 486; removed [s3.act, s3.obs, s3.rcpt, s4.act, s4.obs, s5.act, s5.obs]; added [n2]; rewritten []"
+   }
+  ]
+ }

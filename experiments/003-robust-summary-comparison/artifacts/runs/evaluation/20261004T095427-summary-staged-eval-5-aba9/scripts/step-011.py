@@ -1,0 +1,7 @@
+L=open('/task/fixtures/stage-3/deploy/changes.log').read().splitlines()
+for i,l in enumerate(L):print(i+1,l)
+Q=open('/task/fixtures/stage-3/logs/quotes-api.log').read().splitlines()
+h=[i+1 for i,l in enumerate(Q) if 'pool exhausted' in l];print(len(h),h[:3])
+if h:print(Q[h[0]-1][:160])
+I=open('/task/fixtures/stage-3/logs/ingress-a.log').read().splitlines()
+h=[i+1 for i,l in enumerate(I) if 'status=503' in l];print(len(h),h[:3])

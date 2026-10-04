@@ -1,0 +1,49 @@
+--- rev-6
++++ rev-7
+@@ -4,42 +4,12 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Stage1: billing-svc 6.24.0-4314 deployed 08:15:41 (stage-1/deploy/deploys.log:5). Release notes: pricing-core timeout_ms 2500->800 (release-notes-6.24.0-4314.md:9); db.pool.max_size 48->10 (line 18). Repo config timeout 2500 (config:7), pool 48 (config:11). billing log: 95 ERROR pricing-core timed out after 800ms first at stage-1/logs/billing-svc.log:152; 7 WARN db pool wait. Oncall suspects timeout. Noise: gc, disk, tls, dns warns."
++   "body": "Stage1: build 6.24.0-4314 deployed 08:15:41 (stage-1/deploy/deploys.log:5). Release notes: timeout 2500->800 (stage-1/deploy/release-notes-6.24.0-4314.md:9); db.pool.max_size 48->10 (same file line 18). Repo config pool 48 (stage-1/config/billing-svc.yaml:11) overridden by build."
+   },
+   {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] execute\nthought: Compact context and look at db pool waits and pricing timeouts lines.\ncode:\nimport json\nb='/task/fixtures/stage-1/logs/billing-svc.log'\nL=open(b).readlines()\nfor i,l in enumerate(L,1):\n if 'db pool' in l:print(i,l.strip()[:200])\nidx=[i for i,l in enumerate(L,1) if 'timed out' in l];print(idx[0],idx[-1])\nctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: billing-svc 6.24.0-4314 deployed 08:15:41 (stage-1/deploy/deploys.log:5). Release notes: pricing-core timeout_ms 2500->800 (release-notes-6.24.0-4314.md:9); db.pool.max_size 48->10 (line 18). Repo config timeout 2500 (config:7), pool 48 (config:11). billing log: 95 ERROR pricing-core timed out after 800ms first at stage-1/logs/billing-svc.log:152; 7 WARN db pool wait. Oncall suspects timeout. Noise: gc, disk, tls, dns warns.'}]}\njson.dump(ctx,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n248 2031-04-19T08:27:45.205Z WARN  billing-svc [billing-svc-f75] db pool wait 2069ms (in_use 10/10)\n387 2031-04-19T08:41:40.488Z WARN  billing-svc [billing-svc-a58] db pool wait 1271ms (in_use 10/10)\n402 2031-04-19T08:43:26.479Z WARN  billing-svc [billing-svc-a58] db pool wait 1710ms (in_use 10/10)\n432 2031-04-19T08:46:25.757Z WARN  billing-svc [billing-svc-e83] db pool wait 1315ms (in_use 10/10)\n647 2031-04-19T09:08:48.657Z WARN  billing-svc [billing-svc-f75] db pool wait 1586ms (in_use 10/10)\n688 2031-04-19T09:12:53.219Z WARN  billing-svc [billing-svc-a58] db pool wait 974ms (in_use 10/10)\n699 2031-04-19T09:14:00.179Z WARN  billing-svc [billing-svc-f75] db pool wait 1051ms (in_use 10/10)\n152 854\n"
+-  },
+-  {
+-   "id": "s3.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 3: revision 2 -> 3; entries 4 -> 1; body chars 4923 -> 436; removed [s1.act, s1.obs, s2.act, s2.obs]; added [n1]; rewritten []"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] advance\nthought: "
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 3 released.\n# Stage 2 of 3 (09:30-10:30 UTC)\n\nOn-call applied a mitigation (see stage-2/deploy/changes.log). The pricing-core timeouts stopped,\nbut front-proxy still returns 503s for billing-svc with a different error. New files below.\n\nNew files:\n  stage-2/UPDATE.md (4 lines)\n  stage-2/deploy/changes.log (3 lines)\n  stage-2/logs/billing-svc.log (910 lines)\n  stage-2/logs/front-proxy.log (420 lines)\n  stage-2/metrics/billing-svc.csv (61 lines)\n  stage-2/ops/oncall-notes.md (6 lines)"
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Inspect stage 2 changes and errors.\ncode:\nimport collections,re\np='/task/fixtures/stage-2/'\nfor f in ['deploy/changes.log','ops/oncall-notes.md']:\n for i,l in enumerate(open(p+f),1):print(f,i,l.rstrip()[:250])\nL=open(p+'logs/billing-svc.log').readlines()\nc=collections.Counter()\nfirst={}\nfor i,l in enumerate(L,1):\n if 'ERROR' in l or 'WARN' in l:\n  k=re.sub(r'\\d+','N',l[25:].split(']',1)[-1])[:80];c[k]+=1;first.setdefault(k,i)\nfor k,v in c.most_common(8):print(v,first[k],k)\nimport csv\nr=list(csv.reader(open(p+'metrics/billing-svc.csv')));print(r[0],r[1],r[-1])"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.0s\n--- stdout ---\ndeploy/changes.log 1 2031-04-19T08:50:51Z CHG-5122 APPLIED  quotes-api image quotes-api:2.13 rollout complete by deploy-bot\ndeploy/changes.log 2 2031-04-19T09:38:57Z CHG-5123 APPLIED  billing-svc override clients.pricing-core.timeout_ms=4000 (was 800 from build 6.24.0-4314) by k.novak; mitigation\ndeploy/changes.log 3 2031-04-19T09:39:46Z CHG-5124 PROPOSED fulfil-svc override http.max_body_kb=512 (pending review; not applied)\nops/oncall-notes.md 1 # On-call notes - billing-svc incident 2031-04-19\nops/oncall-notes.md 2 \nops/oncall-notes.md 3 Informal running notes. Not reviewed; may be out of date.\nops/oncall-notes.md 4 \nops/oncall-notes.md 5 - 09:48 pricing-core timeouts stopped after the mitigation, but front-proxy still shows 503s for billing-svc.\nops/oncall-notes.md 6 - 09:58 New errors look like db pool exhaustion, but config/billing-svc.yaml says max_size 48, so the pool should have plenty of room?\n77 5  runtime gc pause Nms (young)\n\n24 74  dns cache refresh retry succeeded\n\n21 61  tls certificate for billing-svc.internal expires in N days\n\n20 111  disk usage /var/data at N%\n\n12 192  db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) req=NbN\n8 280  db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) req=NcN\n5 275  db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) req=NaN\n5 527  db pool exhausted: N/N connections in use, waited Nms (acquire_timeout) req=NfN\n['minute', 'rps', 'p99_ms', 'db_pool_in_use'] ['09:30', '236', '1322', '10'] ['10:29', '210', '3134', '10']\n"
++   "id": "n2",
++   "role": "note",
++   "body": "Stage2: CHG-5123 APPLIED timeout=4000 (stage-2/deploy/changes.log:2) fixed timeouts. Now ERROR db pool exhausted 10/10 first at stage-2/logs/billing-svc.log:192; metrics pool in_use 10. Hypothesis DB_POOL_EXHAUSTED, pool=10. Next: advance to stage 3, check for APPLIED pool changes."
+   }
+  ]
+ }

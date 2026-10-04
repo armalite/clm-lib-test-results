@@ -1,0 +1,3 @@
+import json
+ctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: build 6.24.0-4314 deployed 08:15:41 (stage-1/deploy/deploys.log:5). Release notes: timeout 2500->800 (stage-1/deploy/release-notes-6.24.0-4314.md:9); db.pool.max_size 48->10 (same file line 18). Repo config pool 48 (stage-1/config/billing-svc.yaml:11) overridden by build.'},{'id':'n2','role':'note','body':'Stage2: CHG-5123 APPLIED timeout=4000 (stage-2/deploy/changes.log:2) fixed timeouts. Now ERROR db pool exhausted 10/10 first at stage-2/logs/billing-svc.log:192; metrics pool in_use 10. Hypothesis DB_POOL_EXHAUSTED, pool=10. Next: advance to stage 3, check for APPLIED pool changes.'}]}
+json.dump(ctx,open('/task/workspace/context.json','w'))

@@ -1,0 +1,3 @@
+import json
+ctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: deploy 6.25.3-646f 08:14:28 (stage-1/deploy/deploys.log:1). Release notes stage-1/deploy/release-notes-6.25.3-646f.md:5 tax timeout 2500->800; :17 db.pool.max_size 48->10. Repo yaml:11 pool 48 (overridden). stage-1 payments-api.log:175 pool wait in_use 10/10.'},{'id':'n2','role':'note','body':'Stage2: stage-2/deploy/changes.log:1 CHG-5266 APPLIED tax timeout=4000 (fixed). Now db pool exhausted errors in stage-2/logs/payments-api.log first line 136 (110 occurrences), metrics in_use 10. Hypothesis DB_POOL_EXHAUSTED, value 10. Next: advance to stage 3.'}]}
+json.dump(ctx,open('/task/workspace/context.json','w'))
