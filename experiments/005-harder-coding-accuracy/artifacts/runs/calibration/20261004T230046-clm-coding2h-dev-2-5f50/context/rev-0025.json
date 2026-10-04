@@ -1,0 +1,39 @@
+{
+ "number": 25,
+ "parent": 24,
+ "source": "runtime",
+ "step": 19,
+ "sha256": "3b65645ac2c73d0733020a466261613896b0482a8e0b728866c186c8d75a628f",
+ "entries": [
+  {
+   "id": "notes",
+   "role": "note",
+   "body": "Stage1: Decimal; returns subtotal,discount,shipping,tax,total as 2dp str. Round line amounts (half up), each discount component & tax as computed. Tier discount gold 5% silver 2% of tier-eligible amount (subtotal default). tax=(subtotal-discount)*rate.\nStage2: ValueError on empty lines, qty not int>0, negative unit_price. Shipping 7.50 if subtotal-discount<100 else 0; not taxed/discounted.\nImpl: invoice/core.py (r() rounding, TIER dict, _validate, compute_invoice). Stage 2 implemented.\nStage3: bulk qty>=100 line amt *0.90 before rounding; tax 10% all. Implemented.\nStage4: tier-eligible = sum non-bulk line amts (elig var in compute_invoice). Implemented.\nStage5: BULK=50 const; qty 0 allowed & filtered after validate; all ignored->ValueError. Implemented.\nStage6: TAX dict NZ 15% US 0% default 10%; TIER platinum 10% gold 8% silver 2%. Implemented (customer.get('region')).\nStage7: coupon=min(coupon,subtotal-tier) added to discount; shipping taxed (net+shipping). Implemented."
+  },
+  {
+   "id": "s18.act",
+   "role": "assistant",
+   "body": "[step 18] execute\nthought: Implement stage 7 coupon and shipping tax.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"    net=subtotal-discount\\n\",\"    c=customer.get('coupon')\\n    c=Decimal(str(c)) if c not in (None,'') else Decimal('0')\\n    discount=discount+r(max(Decimal('0'),min(c,subtotal-discount)))\\n    net=subtotal-discount\\n\")\ns=s.replace(\"tax=r(net*TAX\",\"tax=r((net+shipping)*TAX\")\nopen(p,'w').write(s)\nimport subprocess,sys,json\nq=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(q.stderr[-1500:])\nc=json.load(open('/task/workspace/context.json'))\nn=c['entries'][0]\nn['body']+=\"\\nStage7: coupon=min(coupon,subtotal-tier) added to discount; shipping taxed (net+shipping). Implemented.\"\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s18.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n................\n----------------------------------------------------------------------\nRan 16 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s18.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 18: revision 22 -> 23; entries 8 -> 1; body chars 4734 -> 985; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs, s17.act, s17.obs]; added []; rewritten [notes]"
+  },
+  {
+   "id": "s19.act",
+   "role": "assistant",
+   "body": "[step 19] advance\nthought: "
+  },
+  {
+   "id": "s19.obs",
+   "role": "observation",
+   "body": "Stage 8 of 8 released.\n# Stage 8 of 8 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [NEW] Refunds: add invoice.compute_refund(lines, customer, returns) -> str. returns maps a sku to the number of units returned. Compute the original invoice and an invoice for the kept quantities (qty minus returned; lines with nothing kept are left out) with every rule in force for compute_invoice, except that shipping is 0.00 in both. The refund is the original total minus the kept total, where the kept total is 0.00 if no line is kept; a negative difference gives a refund of 0.00. Return it as a string with exactly 2 decimals. Raise ValueError if a returned sku is not in lines or a returned quantity is not an integer between 1 and that line's qty.\n- [CHANGED] Rounding (replaces the whole rounding rule from stage 1): do not round line amounts or any intermediate value; all calculations and comparisons use exact values. Only at the end, round subtotal, discount and tax each to 2 decimals using half-even (banker's) rounding; total = rounded subtotal - rounded discount + shipping + rounded tax.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (72 lines)\n  stage-8/REQUIREMENTS.md (10 lines)"
+  }
+ ]
+}

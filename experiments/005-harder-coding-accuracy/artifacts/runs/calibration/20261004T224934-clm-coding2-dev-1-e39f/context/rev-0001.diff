@@ -1,0 +1,19 @@
+--- rev-0
++++ rev-1
+@@ -1,4 +1,15 @@
+ {
+  "format": "clm-context/v1",
+- "entries": []
++ "entries": [
++  {
++   "id": "s1.act",
++   "role": "assistant",
++   "body": "[step 1] execute\nthought: \ncode:\nimport os\nprint(open('/task/fixtures/stage-1/REQUIREMENTS.md').read())\nfor r,d,f in os.walk('/task/workspace/invoice'):print(r,f)\nprint(open('/task/workspace/invoice/__init__.py').read())\nprint(os.listdir('/task/fixtures/current-tests'))"
++  },
++  {
++   "id": "s1.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n# Stage 1 of 6 requirements\n\n## Package and API\n\nImplement the package `invoice` in /task/workspace/invoice/ (a starting skeleton is provided).\nStandard library only. Use `decimal.Decimal` arithmetic, never float.\n\n- `invoice.compute_invoice(lines, customer) -> dict`\n  - `lines`: list of `{\"sku\": str, \"qty\": int, \"unit_price\": str}`. unit_price is a decimal\n    string such as \"12.50\"; it may have more than 2 decimal places (for example \"3.125\").\n    skus are unique within a list.\n  - `customer`: a dict with `\"tier\": str` and `\"region\": str`; later stages may add optional\n    fields.\n  - Returns a dict with exactly the keys \"subtotal\", \"discount\", \"shipping\", \"tax\" and \"total\".\n    Each value is a str with exactly 2 decimals, for example \"12.30\" or \"0.00\".\n- Base calculation (in force unless a rule changes it): line amount = qty x unit_price;\n  subtotal = sum of line amounts; discount = sum of the discounts in force (0 if none);\n  shipping = 0 unless a shipping rule is in force; tax = (subtotal - discount) x tax rate (rate 0\n  if no tax rule is in force); total = subtotal - discount + shipping + tax.\n\n## Rules introduced in stage 1\n\n- [NEW] Rounding: round each line amount to 2 decimals (half up) after any line adjustment; the subtotal is the sum of the rounded line amounts. Round every discount component and the tax to 2 decimals (half up) as soon as each is computed, and compute later values from the rounded ones.\n- [NEW] Validation: compute_invoice raises ValueError if lines is empty, if any qty is not an integer greater than 0, or if any unit_price is negative.\n- [NEW] Tax: the tax rate is 10% for every customer.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\n/task/workspace/invoice ['core.py', '__init__.py']\n\"\"\"Invoice calculator package (implement the requirements in /task/fixtures/stage-*/).\"\"\"\n\nfrom .core import compute_invoice\n\n__all__ = [\"compute_invoice\"]\n\n['test_invoice.py']\n"
++  }
++ ]
+ }

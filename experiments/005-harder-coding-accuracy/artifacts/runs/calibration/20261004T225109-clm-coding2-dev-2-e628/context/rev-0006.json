@@ -1,0 +1,39 @@
+{
+ "number": 6,
+ "parent": 5,
+ "source": "runtime",
+ "step": 5,
+ "sha256": "4cc59866c51a6d437db4816abbfb49b0030670fa103968a51faa6601b64ea098",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stages 1-2 implemented in invoice/core.py (r2 half-up helper, TIER dict, validate(), shipping 7.50 if sub-disc<100, tax rate 0 placeholder). Rules: round line amounts, discount components, tax to 2dp as computed; tier gold 5% silver 2% of tier-eligible amount (=subtotal default); ValueError on empty lines, qty not int>0, negative price; shipping not taxed/discounted."
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Implement stage 2 and compact context.\ncode:\nopen('/task/workspace/invoice/core.py','w').write('''from decimal import Decimal, ROUND_HALF_UP\nQ=Decimal('0.01')\ndef r2(x): return Decimal(x).quantize(Q, rounding=ROUND_HALF_UP)\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\ndef validate(lines):\n    if not lines: raise ValueError('empty')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError('qty')\n        if Decimal(str(l['unit_price']))<0: raise ValueError('price')\ndef compute_invoice(lines, customer):\n    validate(lines)\n    amts=[r2(l['qty']*Decimal(str(l['unit_price']))) for l in lines]\n    sub=sum(amts,Decimal(0))\n    disc=r2(TIER.get(customer.get('tier'),Decimal(0))*sub)\n    ship=Decimal('7.50') if sub-disc<Decimal('100') else Decimal(0)\n    tax=r2((sub-disc)*0)\n    tot=sub-disc+ship+tax\n    return {k:str(r2(v)) for k,v in dict(subtotal=sub,discount=disc,shipping=ship,tax=tax,total=tot).items()}\n''')\nimport subprocess,sys,json\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stages 1-2 implemented in invoice/core.py (r2 half-up helper, TIER dict, validate(), shipping 7.50 if sub-disc<100, tax rate 0 placeholder). Rules: round line amounts, discount components, tax to 2dp as computed; tier gold 5% silver 2% of tier-eligible amount (=subtotal default); ValueError on empty lines, qty not int>0, negative price; shipping not taxed/discounted.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.6s\n--- stdout ---\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s4.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 4: revision 3 -> 4; entries 6 -> 1; body chars 4193 -> 369; removed [s1.act, s1.obs, s2.act, s2.obs, s3.act, s3.obs]; added [n1]; rewritten []"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: "
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 6 released.\n# Stage 3 of 6 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 is a bulk line; its line amount is multiplied by 0.90. This is a line adjustment, applied before any line rounding.\n- [NEW] Tax: the tax rate is 10% for every customer.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (54 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
+  }
+ ]
+}

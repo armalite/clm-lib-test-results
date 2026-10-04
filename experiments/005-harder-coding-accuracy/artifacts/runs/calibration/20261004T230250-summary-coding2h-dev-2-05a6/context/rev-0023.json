@@ -1,0 +1,29 @@
+{
+ "number": 23,
+ "parent": 22,
+ "source": "summary",
+ "step": 20,
+ "sha256": "f95cbb73d14637ebefc9de20e44eb73eac128d93dc1b051e3c6bb7dab5ee7bc7",
+ "entries": [
+  {
+   "id": "sum4",
+   "role": "summary",
+   "body": "Progress summary: stages 1-7 of 8 are released; 1 stage remains. A final answer is accepted only after all 8 are released.\n\nTask setup\n- Implement package `invoice` in /task/workspace/invoice/.\n- Run tests: subprocess.run([sys.executable,\"-m\",\"unittest\",\"discover\",\"-s\",\"/task/fixtures/current-tests\"], cwd=\"/task/workspace\").\n- Release the next stage with {\"action\":\"advance\"}.\n- Finish with {\"action\":\"final\",\"answer\":{\"summary\":\"...\"}}.\n- Hidden final tests cover all rules in force at the end, including unchanged earlier rules and combinations.\n\nRequirements in force\n- API (stage 1): `invoice.compute_invoice(lines, customer) -> dict`.\n  - lines: list of {\"sku\": str, \"qty\": int, \"unit_price\": str}; unit_price may have more than 2 decimals; skus are unique.\n  - customer: {\"tier\",\"region\"} plus optional fields (e.g. \"coupon\").\n  - Returns exactly the keys subtotal, discount, shipping, tax, total, each a str with 2 decimals.\n  - Standard library only; Decimal arithmetic, never float.\n- Base (stage 1):\n  - line amount = qty x unit_price; subtotal = sum of rounded line amounts.\n  - discount = sum of the discounts in force.\n  - total = subtotal - discount + shipping + tax.\n- Rounding (stage 1): half up to 2 decimals for each line amount (after any bulk adjustment), each discount component, and the tax.\n- Tier discount: gold 8% (stage 6), platinum 10% (stage 6), silver 2% (stage 1), any other tier 0%. Applied to the sum of rounded non-bulk line amounts (stage 4).\n- Coupon (stage 7):\n  - customer.get('coupon') is a decimal string; missing means 0.\n  - coupon applied = min(coupon, subtotal - tier discount).\n  - discount = tier discount + coupon applied.\n- Validation:\n  - Stage 2: ValueError if lines empty, qty not an int (bool rejected), qty < 0, or unit_price negative, unparseable or non-finite.\n  - Stage 5: qty 0 lines are ignored; ValueError if every line is ignored.\n- Shipping (stage 2): 7.50 if subtotal - discount < 100.00, else 0.00. Not discounted.\n- Shipping is taxed (stage 7): tax = (subtotal - discount + shipping) x rate.\n- Bulk lines (stage 5): qty >= 50; amount x 0.90 before rounding (stage 3); not tier-eligible.\n- Tax rate (stage 6): NZ 15%, US 0%, other regions 10% (stage 3).\n\nSuperseded rules\n- Tier-eligible = whole subtotal (stage 1) → non-bulk lines only (stage 4).\n- Tax rate 0 (stage 1) → flat 10% (stage 3) → region-based (stage 6).\n- Bulk threshold qty >= 100 (stage 3) → qty >= 50 (stage 5).\n- Rejection of qty 0 (stage 2) → line ignored (stage 5).\n- Gold 5% (stage 1) → 8% (stage 6).\n- Untaxed shipping, tax on (subtotal - discount) (stage 2) → shipping taxed (stage 7).\n\nCode\n- /task/workspace/invoice/core.py:\n  - Q, r() half-up; TIER dict (gold/silver/platinum); TAX = {'NZ':0.15,'US':0}, default 0.10.\n  - validate(lines) filters out qty 0 lines.\n  - compute_invoice computes the amounts, then tier_d, the coupon (my own choice: ValueError if non-finite or negative), discount, shipping, then tax on subtotal - discount + shipping.\n- __init__.py exports compute_invoice.\n- NOTES.md is updated through stage 7.\n\nTests\n- Stage 6: 14/14 passed.\n- Stage 7 changes applied in step 18; the test run output has not been seen yet.\n\nNext steps\n1. Check the stage 7 test results and fix any failures. Edge case: coupon applied should not go below 0.\n2. Advance to stage 8, implement it, run the tests, then give the final answer."
+  },
+  {
+   "id": "s18.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n................\n----------------------------------------------------------------------\nRan 16 tests in 0.002s\n\nOK\n\n"
+  },
+  {
+   "id": "s19.act",
+   "role": "assistant",
+   "body": "[step 19] advance\nthought: "
+  },
+  {
+   "id": "s19.obs",
+   "role": "observation",
+   "body": "Stage 8 of 8 released.\n# Stage 8 of 8 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [NEW] Refunds: add invoice.compute_refund(lines, customer, returns) -> str. returns maps a sku to the number of units returned. Compute the original invoice and an invoice for the kept quantities (qty minus returned; lines with nothing kept are left out) with every rule in force for compute_invoice, except that shipping is 0.00 in both. The refund is the original total minus the kept total, where the kept total is 0.00 if no line is kept; a negative difference gives a refund of 0.00. Return it as a string with exactly 2 decimals. Raise ValueError if a returned sku is not in lines or a returned quantity is not an integer between 1 and that line's qty.\n- [CHANGED] Rounding (replaces the whole rounding rule from stage 1): do not round line amounts or any intermediate value; all calculations and comparisons use exact values. Only at the end, round subtotal, discount and tax each to 2 decimals using half-even (banker's) rounding; total = rounded subtotal - rounded discount + shipping + rounded tax.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (72 lines)\n  stage-8/REQUIREMENTS.md (10 lines)"
+  }
+ ]
+}

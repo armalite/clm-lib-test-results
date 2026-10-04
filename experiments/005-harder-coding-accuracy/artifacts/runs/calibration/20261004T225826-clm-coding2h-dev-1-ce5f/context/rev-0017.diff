@@ -1,0 +1,19 @@
+--- rev-16
++++ rev-17
+@@ -30,6 +30,16 @@
+    "id": "s12.obs",
+    "role": "observation",
+    "body": "Stage 5 of 8 released.\n# Stage 5 of 8 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [CHANGED] Tier discount (partly replaces the stage-2 rates): the 'gold' rate is now 8%, and a new tier 'platinum' gets 10%. The 'silver' rate, the 0% for other tiers and the rest of the tier discount rule are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-5/REQUIREMENTS.md (9 lines)"
++  },
++  {
++   "id": "s13.act",
++   "role": "assistant",
++   "body": "[step 13] execute\nthought: Update tier rates and run tests.\ncode:\nimport re,subprocess,sys\np='/task/workspace/invoice/core.py'\ns=open(p).read()\nfor i,l in enumerate(s.splitlines()):\n    if 'gold' in l or 'silver' in l: print(i+1,l)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])"
++  },
++  {
++   "id": "s13.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n16 def tier_rate(c): return {'gold':Decimal('0.05'),'silver':Decimal('0.02')}.get((c or {}).get('tier'),Decimal(0))\ncount': '0.00',\n?               ^ ^\n\n+ {'discount': '58.60',\n?               ^^ ^\n\n   'shipping': '0.00',\n   'subtotal': '585.97',\n-  'tax': '58.60',\n?           ^ ^^\n\n+  'tax': '52.74',\n?           ^ ^^\n\n-  'total': '644.57'}\n+  'total': '580.11'}\n\n======================================================================\nFAIL: test_tier_8 (test_invoice.TestInvoice.test_tier_8)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/task/fixtures/current-tests/test_invoice.py\", line 38, in test_tier_8\n    self.assertEqual(invoice.compute_invoice(*[[{'sku': 'SKU-611', 'qty': 5, 'unit_price': '17.54'}, {'sku': 'SKU-637', 'qty': 8, 'unit_price': '15.75'}, {'sku': 'SKU-109', 'qty': 4, 'unit_price': '31.00'}], {'tier': 'platinum', 'region': 'AU'}]), {'subtotal': '337.70', 'discount': '33.77', 'shipping': '0.00', 'tax': '30.39', 'total': '334.32'})\nAssertionError: {'sub[26 chars]t': '0.00', 'shipping': '0.00', 'tax': '33.77'[15 chars].47'} != {'sub[26 chars]t': '33.77', 'shipping': '0.00', 'tax': '30.39[16 chars].32'}\n- {'discount': '0.00',\n?               ^ ^^\n\n+ {'discount': '33.77',\n?               ^^ ^^\n\n   'shipping': '0.00',\n   'subtotal': '337.70',\n-  'tax': '33.77',\n?            ^^^\n\n+  'tax': '30.39',\n?           ++ ^\n\n-  'total': '371.47'}\n?             ^^ ^^\n\n+  'total': '334.32'}\n?             ^^ ^^\n\n\n----------------------------------------------------------------------\nRan 14 tests in 0.005s\n\nFAILED (failures=6)\n\n"
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-21
++++ rev-22
+@@ -30,6 +30,16 @@
+    "id": "s16.obs",
+    "role": "observation",
+    "body": "Stage 6 of 8 released.\n# Stage 6 of 8 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [CHANGED] Rounding (replaces the whole rounding rule from stage 1): do not round line amounts or any intermediate value; all calculations and comparisons use exact values. Only at the end, round subtotal, discount and tax each to 2 decimals using half-even (banker's) rounding; total = rounded subtotal - rounded discount + shipping + rounded tax.\n- [CHANGED] Shipping (partly replaces the stage-3 rule): shipping is now taxed, so the tax is computed on (subtotal - discount + shipping). The 7.50 fee and the 100.00 threshold are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-6/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s17.act",
++   "role": "assistant",
++   "body": "[step 17] execute\nthought: View core.py to modify.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
++  },
++  {
++   "id": "s17.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.1s\n--- stdout ---\n\"\"\"Invoice calculator.\"\"\"\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\ndef r2(x): return x.quantize(Q, rounding=ROUND_HALF_UP)\n\ndef _validate(lines):\n    if not lines: raise ValueError('empty')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError('qty')\n        try: p=Decimal(str(l['unit_price']))\n        except Exception: raise ValueError('price')\n        if not p.is_finite() or p<0: raise ValueError('price')\n\ndef tier_rate(c): return {'gold':Decimal('0.08'),'silver':Decimal('0.02'),'platinum':Decimal('0.10')}.get((c or {}).get('tier'),Decimal(0))\n\ndef tax_rate(customer): return {'NZ':Decimal('0.15'),'US':Decimal('0')}.get((customer or {}).get('region'),Decimal('0.10'))\n\ndef compute_invoice(lines, customer):\n    _validate(lines)\n    amounts=[r2(l['qty']*Decimal(str(l['unit_price']))*(Decimal('0.90') if l['qty']>=100 else 1)) for l in lines]\n    subtotal=sum(amounts,Decimal(0))\n    elig=sum((a for a,l in zip(amounts,lines) if l['qty']<100),Decimal(0))\n    discounts=[tier_rate(customer)*elig]\n    discount=sum((r2(d) for d in discounts),Decimal(0))\n    shipping=Decimal('7.50') if subtotal-discount<Decimal('100.00') else Decimal(0)\n    tax=r2((subtotal-discount)*tax_rate(customer))\n    total=subtotal-discount+shipping+tax\n    return {k:str(r2(v)) for k,v in [('subtotal',subtotal),('discount',discount),('shipping',shipping),('tax',tax),('total',total)]}\n\n"
+   }
+  ]
+ }

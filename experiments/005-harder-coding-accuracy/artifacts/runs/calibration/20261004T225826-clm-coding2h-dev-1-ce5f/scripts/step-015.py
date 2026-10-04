@@ -1,0 +1,3 @@
+import json
+n='Stages1-5 done in invoice/core.py (tests pass): r2, _validate, tier_rate(gold .08, silver .02, platinum .10), tax_rate(NZ .15, US 0, else .10 by customer region), compute_invoice: amounts (bulk qty>=100 x0.90 before round), subtotal, elig=sum non-bulk amounts, discounts list [tier*elig], discount=sum r2, shipping 7.50 if subtotal-discount<100 else 0, tax=r2((subtotal-discount)*rate), total. Returns str dict subtotal/discount/shipping/tax/total. Read stage files for reqs.'
+json.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))

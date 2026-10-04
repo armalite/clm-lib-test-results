@@ -1,0 +1,1 @@
+print(open('/task/fixtures/stage-6/REQUIREMENTS.md').read()[:3000])

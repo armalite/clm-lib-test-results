@@ -1,0 +1,19 @@
+--- rev-19
++++ rev-20
+@@ -35,6 +35,16 @@
+    "id": "s16.obs",
+    "role": "observation",
+    "body": "Stage 7 of 8 released.\n# Stage 7 of 8 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [NEW] Coupons: customer may contain 'coupon', a decimal string such as '15.00' (a missing coupon means 0). The coupon is applied after the tier discount, and only up to the amount left: coupon applied = min(coupon, subtotal - tier discount). discount = tier discount + coupon applied.\n- [CHANGED] Shipping (partly replaces the stage-2 rule): shipping is now taxed, so the tax is computed on (subtotal - discount + shipping). The 7.50 fee and the 100.00 threshold are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (65 lines)\n  stage-7/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s17.act",
++   "role": "assistant",
++   "body": "[step 17] execute\nthought: Implement stage 7: coupon and taxed shipping.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\nfor i,l in enumerate(s.splitlines()):\n    if 'discount' in l or 'shipping' in l: print(i,l)"
++  },
++  {
++   "id": "s17.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.0s\n--- stdout ---\n24     discount=r(TIER.get(customer.get('tier'),Decimal(0))*sum((a for a,l in zip(amounts,lines) if l['qty']<50),Decimal(0)))\n25     shipping=Decimal('7.50') if subtotal-discount<Decimal(100) else Decimal(0)\n26     tax=r((subtotal-discount)*TAX.get(customer.get('region'),Decimal('0.10')))\n27     total=subtotal-discount+shipping+tax\n28     return {k:str(r(v)) for k,v in dict(subtotal=subtotal,discount=discount,shipping=shipping,tax=tax,total=total).items()}\n"
+   }
+  ]
+ }

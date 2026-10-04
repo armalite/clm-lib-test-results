@@ -1,0 +1,19 @@
+--- rev-11
++++ rev-12
+@@ -65,6 +65,16 @@
+    "id": "s10.obs",
+    "role": "observation",
+    "body": "Stage 5 of 8 released.\n# Stage 5 of 8 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [CHANGED] Bulk lines (partly replaces the stage-3 rule): a line is now a bulk line when qty >= 50. The 0.90 multiplier and everything else about bulk lines are unchanged.\n- [CHANGED] Validation (partly replaces the stage-2 rule): a line with qty 0 is now allowed and ignored entirely. If every line is ignored, raise ValueError as for an empty list. All other validation from stage 2 is unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (59 lines)\n  stage-5/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s11.act",
++   "role": "assistant",
++   "body": "[step 11] execute\nthought: Implement stage 5: bulk threshold 50, qty 0 ignored.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"l['qty']>=100\",\"l['qty']>=50\").replace(\"l['qty']<100\",\"l['qty']<50\")\nopen(p,'w').write(s)\nprint(s[s.find('def validate'):s.find('def compute')])\nprint(s[s.find('def compute'):s.find('amounts=')])"
++  },
++  {
++   "id": "s11.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.0s\n--- stdout ---\ndef validate(lines):\n    if not lines: raise ValueError('empty lines')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError('bad qty')\n        try: p=Decimal(str(l['unit_price']))\n        except Exception: raise ValueError('bad price')\n        if not p.is_finite() or p<0: raise ValueError('negative price')\n\n\ndef compute_invoice(lines, customer):\n    validate(lines)\n    \n"
+   }
+  ]
+ }

@@ -1,0 +1,7 @@
+### [005 – Harder coding accuracy comparison](experiments/005-harder-coding-accuracy/README.md)
+
+- **Problem:** the experiment-004 invoice package made harder. Rules interact (bulk lines lose the tier discount, shipping depends on discounts and may be taxed, coupons change the calculation order, refunds recompute both invoices), and later stages change only parts of earlier rules. Requirements arrive over 6 stages (base) or 8 stages (harder variant).
+- **Compared:** CLM against the robust `token-tail/1` summary baseline. `claude-opus-5-5` (effort `low`), 8,000-token budget per request, up to 45 calls per run.
+- **Headline:** **stopped after calibration.** Both arms passed every hidden check in all 8 calibration runs at both difficulty levels. This includes retained, replaced, partially kept, interaction, refund and boundary checks, with no stale rules or regressions. By the rule fixed before calibration, the 36-run evaluation was not run.
+- **Main finding:** no informative accuracy comparison was possible at these difficulty levels, and no claim is made about CLM's effect on correctness. In calibration, CLM was cheaper in all 4 matched pairs.
+- **Most important limitation:** the task stayed below the model's ability. The likely reasons are that rules were kept in the code, requirements stayed rereadable, visible tests covered every rule in force, and the budget did not bind tightly.

@@ -1,0 +1,39 @@
+{
+ "number": 9,
+ "parent": 8,
+ "source": "runtime",
+ "step": 7,
+ "sha256": "b3410f7bd89c480d578b791f0a4dd35cd76fa9c61f8bed8b9fbe6c3f2b62e651",
+ "entries": [
+  {
+   "id": "notes",
+   "role": "note",
+   "body": "Stage1: Decimal; returns subtotal,discount,shipping,tax,total as 2dp str. Round line amounts (half up), each discount component & tax as computed. Tier discount gold 5% silver 2% of tier-eligible amount (subtotal default). tax=(subtotal-discount)*rate.\nStage2: ValueError on empty lines, qty not int>0, negative unit_price. Shipping 7.50 if subtotal-discount<100 else 0; not taxed/discounted.\nImpl: invoice/core.py (r() rounding, TIER dict, _validate, compute_invoice). Stage 2 implemented.\nStage3: bulk qty>=100 line amt *0.90 before rounding; tax 10% all. Implemented."
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Implement stage 3: bulk lines and 10% tax.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"amts=[r(l['qty']*Decimal(str(l['unit_price']))) for l in lines]\",\"amts=[r(l['qty']*Decimal(str(l['unit_price']))*(Decimal('0.90') if l['qty']>=100 else 1)) for l in lines]\")\ns=s.replace(\"tax=Decimal('0')\",\"tax=r(net*Decimal('0.10'))\")\nopen(p,'w').write(s)\nimport subprocess,sys,json\nq=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(q.stderr[-1500:])\nc=json.load(open('/task/workspace/context.json'))\nn=c['entries'][0]\nn['body']+=\"\\nStage3: bulk qty>=100 line amt *0.90 before rounding; tax 10% all. Implemented.\"\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n............\n----------------------------------------------------------------------\nRan 12 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s6.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 6: revision 6 -> 7; entries 6 -> 1; body chars 3617 -> 570; removed [s4.act, s4.obs, s4.rcpt, s5.act, s5.obs]; added []; rewritten [notes]"
+  },
+  {
+   "id": "s7.act",
+   "role": "assistant",
+   "body": "[step 7] advance\nthought: "
+  },
+  {
+   "id": "s7.obs",
+   "role": "observation",
+   "body": "Stage 4 of 8 released.\n# Stage 4 of 8 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [NEW] Bulk and tier discounts do not stack: bulk lines are not tier-eligible. The tier-eligible amount is the sum of the line amounts of the lines that are not bulk lines.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (9 lines)"
+  }
+ ]
+}

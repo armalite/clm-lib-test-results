@@ -1,0 +1,24 @@
+--- rev-23
++++ rev-24
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "Stages1-6 done in invoice/core.py (tests pass): r2, _validate, tier_rate(gold .08, silver .02, platinum .10), tax_rate(NZ .15, US 0, else .10 by customer region), compute_invoice: amounts (bulk qty>=100 x0.90 before round), subtotal, elig=sum non-bulk amounts, discounts list [tier*elig], discount=sum r2, shipping 7.50 if subtotal-discount<100 else 0, tax=r2((subtotal-discount)*rate), total. Returns str dict subtotal/discount/shipping/tax/total. Read stage files for reqs. Stage6: no intermediate rounding, half-even final round of subtotal/discount/tax; tax on subtotal-discount+shipping."
++  },
++  {
++   "id": "s18.act",
++   "role": "assistant",
++   "body": "[step 18] execute\nthought: Apply stage 6: exact intermediates, half-even final rounding, taxed shipping.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace('ROUND_HALF_UP','ROUND_HALF_EVEN')\ns=s.replace(\"amounts=[r2(l['qty']*Decimal(str(l['unit_price']))*(Decimal('0.90') if l['qty']>=100 else 1))\",\"amounts=[(l['qty']*Decimal(str(l['unit_price']))*(Decimal('0.90') if l['qty']>=100 else 1))\")\ns=s.replace(\"discount=sum((r2(d) for d in discounts),Decimal(0))\",\"discount=sum(discounts,Decimal(0))\")\ns=s.replace(\"    tax=r2((subtotal-discount)*tax_rate(customer))\\n    total=subtotal-discount+shipping+tax\",\"    tax=(subtotal-discount+shipping)*tax_rate(customer)\\n    subtotal,discount,tax=r2(subtotal),r2(discount),r2(tax)\\n    total=subtotal-discount+shipping+tax\")\nopen(p,'w').write(s)\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[{'id':'n1','role':'note','body':c['entries'][0]['body'].replace('Stages1-5','Stages1-6')+' Stage6: no intermediate rounding, half-even final round of subtotal/discount/tax; tax on subtotal-discount+shipping.'}]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s18.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
++  },
++  {
++   "id": "s18.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 18: revision 22 -> 23; entries 8 -> 1; body chars 4014 -> 592; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs, s17.act, s17.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

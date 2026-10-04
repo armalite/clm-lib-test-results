@@ -1,0 +1,19 @@
+--- rev-7
++++ rev-8
+@@ -70,6 +70,16 @@
+    "id": "s7.obs",
+    "role": "observation",
+    "body": "Stage 4 of 6 released.\n# Stage 4 of 6 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [NEW] Bulk and tier discounts do not stack: bulk lines are not tier-eligible. The tier-eligible amount is the sum of the line amounts of the lines that are not bulk lines.\n- [CHANGED] Tax (partly replaces the stage-1 rule): customers with region 'NZ' are now taxed at 15% and region 'US' at 0%. Every other region keeps the stage-1 rate.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s8.act",
++   "role": "assistant",
++   "body": "[step 8] execute\nthought: Implement stage 4: non-bulk tier eligible amount, region tax.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace('sub=Decimal(0)\\n','sub=Decimal(0)\\n    elig=Decimal(0)\\n',1)\ns=s.replace('        sub+=r(amt)','        sub+=r(amt)\\n        if q<100: elig+=r(amt)')\ns=s.replace('disc=r(sub*rate)','disc=r(elig*rate)')\ns=s.replace('tax=r((sub-disc)*Decimal(\"0.10\"))','trate={\"NZ\":Decimal(\"0.15\"),\"US\":Decimal(0)}.get(customer.get(\"region\"),Decimal(\"0.10\"))\\n    tax=r((sub-disc)*trate)')\nopen(p,'w').write(s)\nimport subprocess,sys\nq=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(q.stderr[-1500:])\nopen('/task/workspace/NOTES.md','a').write('stage4 done: tier on non-bulk lines only; tax NZ15 US0 else10\\n')"
++  },
++  {
++   "id": "s8.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

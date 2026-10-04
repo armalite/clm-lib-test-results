@@ -1,0 +1,19 @@
+--- rev-20
++++ rev-21
+@@ -45,6 +45,16 @@
+    "id": "s17.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.0s\n--- stdout ---\n24     discount=r(TIER.get(customer.get('tier'),Decimal(0))*sum((a for a,l in zip(amounts,lines) if l['qty']<50),Decimal(0)))\n25     shipping=Decimal('7.50') if subtotal-discount<Decimal(100) else Decimal(0)\n26     tax=r((subtotal-discount)*TAX.get(customer.get('region'),Decimal('0.10')))\n27     total=subtotal-discount+shipping+tax\n28     return {k:str(r(v)) for k,v in dict(subtotal=subtotal,discount=discount,shipping=shipping,tax=tax,total=total).items()}\n"
++  },
++  {
++   "id": "s18.act",
++   "role": "assistant",
++   "body": "[step 18] execute\nthought: Apply stage 7 changes: add coupon handling and tax the shipping, then run the tests.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"    shipping=Decimal('7.50')\",\"    tier_d=discount\\n    c=customer.get('coupon')\\n    c=Decimal(str(c)) if c not in (None,'') else Decimal(0)\\n    if not c.is_finite() or c<0: raise ValueError('bad coupon')\\n    discount=tier_d+r(min(c,subtotal-tier_d))\\n    shipping=Decimal('7.50')\",1)\ns=s.replace(\"tax=r((subtotal-discount)*\",\"tax=r((subtotal-discount+shipping)*\")\nopen(p,'w').write(s)\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])\nopen('/task/workspace/NOTES.md','a').write('stage7: coupon=min(coupon,subtotal-tier), shipping taxed. done.\\n')"
++  },
++  {
++   "id": "s18.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n................\n----------------------------------------------------------------------\nRan 16 tests in 0.002s\n\nOK\n\n"
+   }
+  ]
+ }

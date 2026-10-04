@@ -1,0 +1,49 @@
+{
+ "number": 10,
+ "parent": 9,
+ "source": "runtime",
+ "step": 8,
+ "sha256": "a0bab08564faeed074fa66f147a9783a47e25784265007dc8abd7541c74ebf80",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stages 1-2 implemented in invoice/core.py (r2 half-up helper, TIER dict, validate(), shipping 7.50 if sub-disc<100, tax rate 0 placeholder). Rules: round line amounts, discount components, tax to 2dp as computed; tier gold 5% silver 2% of tier-eligible amount (=subtotal default); ValueError on empty lines, qty not int>0, negative price; shipping not taxed/discounted. Stage3 done: bulk qty>=100 line amt*0.90 before rounding; tax 10% of (sub-disc)."
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Implement stage 3: bulk lines and 10% tax.\ncode:\np='/task/workspace/invoice/core.py';s=open(p).read()\ns=s.replace(\"amts=[r2(l['qty']*Decimal(str(l['unit_price']))) for l in lines]\",\"amts=[r2(l['qty']*Decimal(str(l['unit_price']))*(Decimal('0.90') if l['qty']>=100 else 1)) for l in lines]\")\ns=s.replace(\"tax=r2((sub-disc)*0)\",\"tax=r2((sub-disc)*Decimal('0.10'))\")\nopen(p,'w').write(s)\nimport subprocess,sys,json\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']+=' Stage3 done: bulk qty>=100 line amt*0.90 before rounding; tax 10% of (sub-disc).'\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n............\n----------------------------------------------------------------------\nRan 12 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s6.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 6: revision 6 -> 7; entries 6 -> 1; body chars 3079 -> 450; removed [s4.act, s4.obs, s4.rcpt, s5.act, s5.obs]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s7.act",
+   "role": "assistant",
+   "body": "[step 7] advance\nthought: "
+  },
+  {
+   "id": "s7.obs",
+   "role": "observation",
+   "body": "Stage 4 of 6 released.\n# Stage 4 of 6 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [NEW] Bulk and tier discounts do not stack: bulk lines are not tier-eligible. The tier-eligible amount is the sum of the line amounts of the lines that are not bulk lines.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (9 lines)"
+  },
+  {
+   "id": "s8.act",
+   "role": "assistant",
+   "body": "[step 8] execute\nthought: Look at core.py to implement stage 4.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
+  },
+  {
+   "id": "s8.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.0s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\nQ=Decimal('0.01')\ndef r2(x): return Decimal(x).quantize(Q, rounding=ROUND_HALF_UP)\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\ndef validate(lines):\n    if not lines: raise ValueError('empty')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError('qty')\n        if Decimal(str(l['unit_price']))<0: raise ValueError('price')\ndef compute_invoice(lines, customer):\n    validate(lines)\n    amts=[r2(l['qty']*Decimal(str(l['unit_price']))*(Decimal('0.90') if l['qty']>=100 else 1)) for l in lines]\n    sub=sum(amts,Decimal(0))\n    disc=r2(TIER.get(customer.get('tier'),Decimal(0))*sub)\n    ship=Decimal('7.50') if sub-disc<Decimal('100') else Decimal(0)\n    tax=r2((sub-disc)*Decimal('0.10'))\n    tot=sub-disc+ship+tax\n    return {k:str(r2(v)) for k,v in dict(subtotal=sub,discount=disc,shipping=ship,tax=tax,total=tot).items()}\n\n"
+  }
+ ]
+}

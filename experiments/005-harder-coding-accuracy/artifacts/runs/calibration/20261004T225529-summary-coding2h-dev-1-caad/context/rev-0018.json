@@ -1,0 +1,29 @@
+{
+ "number": 18,
+ "parent": 17,
+ "source": "summary",
+ "step": 16,
+ "sha256": "cfb142b8f9caa1d334f126201a8fb550d28328600e34552cedac9e70563302c5",
+ "entries": [
+  {
+   "id": "sum3",
+   "role": "summary",
+   "body": "TASK: implement Python package `invoice` in /task/workspace/invoice/. Requirements arrive in 8 stages at /task/fixtures/stage-N/REQUIREMENTS.md.\n- Run visible tests: subprocess.run([sys.executable,\"-m\",\"unittest\",\"discover\",\"-s\",\"/task/fixtures/current-tests\"],cwd=\"/task/workspace\")\n- Reply {\"action\":\"advance\"} to release the next stage.\n- Finish with {\"action\":\"final\",\"answer\":{\"summary\":\"...\"}} only after all 8 stages are released.\n- Hidden tests check the final rules, including unchanged earlier rules and combinations of rules.\n\nREQUIREMENTS IN FORCE (stage that introduced or last changed each):\n- S1 API: compute_invoice(lines, customer) -> dict with exactly the keys subtotal, discount, shipping, tax, total.\n  - Each value is a str with exactly 2 decimals.\n  - lines items: {\"sku\",\"qty\":int,\"unit_price\":str}. unit_price may have more than 2 decimals. skus are unique.\n  - customer: {\"tier\",\"region\"} plus optional later fields.\n  - Standard library only; Decimal arithmetic, never float.\n- S1 Base calculation:\n  - line amount = qty x unit_price; subtotal = sum of line amounts.\n  - discount = sum of discounts in force.\n  - tax = taxable base x rate.\n  - total = subtotal - discount + shipping + tax.\n- S6 Rounding (replaces the whole S1 rounding rule):\n  - No rounding of lines or any intermediate value; all calculations and comparisons use exact values.\n  - At the end, round subtotal, discount and tax each to 2 decimals HALF-EVEN.\n  - total = rounded subtotal - rounded discount + shipping + rounded tax.\n- S1 Validation: raise ValueError if lines is empty, if any qty is not an int > 0 (bool rejected), or if any unit_price < 0.\n- S4 Tax rate: region NZ 15%, US 0%, any other region 10%.\n- S2+S5 Tier discount: gold 8% (S5), platinum 10% (S5), silver 2% (S2), any other tier 0%. Applied to the tier-eligible amount.\n- S2 Bulk: qty >= 100 means line amount x 0.90 (a line adjustment).\n- S4 No stacking: tier-eligible amount = sum of the non-bulk line amounts (qty < 100).\n- S3 Shipping: 7.50 if (subtotal - discount) < 100.00, else 0.00. Not discounted.\n- S6 Shipping is now taxed: tax = (subtotal - discount + shipping) x rate.\n\nSUPERSEDED:\n- S1 flat 10% tax -> replaced by S4 region rates.\n- S2 \"tier-eligible = subtotal\" -> replaced by S4 non-bulk lines only.\n- S2 gold 5% -> replaced by S5 gold 8%; S5 also added platinum 10%.\n- S1 rounding (half-up, round each line, discount component and tax immediately) -> replaced by S6 exact math with final half-even rounding.\n- S3 \"shipping not taxed\" -> replaced by S6 shipping taxed.\n\nFILES:\n- invoice/__init__.py: exports compute_invoice.\n- invoice/core.py (rewritten in step 14 for S6):\n  - Defines Q, TIER, RATES={'NZ':0.15,'US':0} with default 0.10, and r() = quantize HALF_EVEN.\n  - Loop: validate each line; compute exact amount; bulk x0.90, otherwise added to elig; add to sub.\n  - disc = rate x elig; ship based on exact sub-disc; tax = (sub-disc+ship) x rate.\n  - Returns rounded strings; total = rs-rd+ship+rt.\n- /task/workspace/NOTES.md: per-stage notes through stage 6.\n\nSTATUS:\n- Stage 4: 14/14 OK. Stage 5: 14/14 OK.\n- Stage 6 code is written; its test output has not been seen yet. Next: rerun the tests, fix any failures, then advance.\n- Stages 7–8 are not yet released."
+  },
+  {
+   "id": "s14.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s15.act",
+   "role": "assistant",
+   "body": "[step 15] advance\nthought: "
+  },
+  {
+   "id": "s15.obs",
+   "role": "observation",
+   "body": "Stage 7 of 8 released.\n# Stage 7 of 8 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [NEW] Coupons: customer may contain 'coupon', a decimal string such as '15.00' (a missing coupon means 0). The coupon is applied after the tier discount, and only up to the amount left: coupon applied = min(coupon, subtotal - tier discount). discount = tier discount + coupon applied.\n- [CHANGED] Bulk lines (partly replaces the stage-2 rule): a line is now a bulk line when qty >= 50. The 0.90 multiplier and everything else about bulk lines are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (66 lines)\n  stage-7/REQUIREMENTS.md (10 lines)"
+  }
+ ]
+}

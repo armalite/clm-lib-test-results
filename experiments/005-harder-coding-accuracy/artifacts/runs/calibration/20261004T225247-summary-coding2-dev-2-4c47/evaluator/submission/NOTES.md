@@ -1,0 +1,6 @@
+stage1 done: rounding half up per line, tier gold5 silver2 on subtotal
+stage2 done: validation, shipping 7.50 if sub-disc<100
+stage3 done: bulk qty>=100 x0.90 before rounding; tax 10% of sub-disc
+stage4 done: tier eligible = non-bulk lines
+stage5 done: BULK=50, qty0 ignored
+stage6 done: gold 8, platinum 10, NZ 15 US 0 tax

@@ -1,0 +1,36 @@
+--- rev-6
++++ rev-7
+@@ -4,32 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "Stage1: Decimal; returns subtotal,discount,shipping,tax,total as 2dp str. Round line amounts (half up), each discount component & tax as computed. Tier discount gold 5% silver 2% of tier-eligible amount (subtotal default). tax=(subtotal-discount)*rate.\nStage2: ValueError on empty lines, qty not int>0, negative unit_price. Shipping 7.50 if subtotal-discount<100 else 0; not taxed/discounted.\nImpl: invoice/core.py (r() rounding, TIER dict, _validate, compute_invoice). Stage 2 implemented."
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] execute\nthought: Implement stage 2 and compact context.\ncode:\ncode='''from decimal import Decimal, ROUND_HALF_UP, InvalidOperation\n\nQ=Decimal('0.01')\ndef r(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\n\ndef _validate(lines):\n    if not lines:\n        raise ValueError('empty lines')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0:\n            raise ValueError('bad qty')\n        try:\n            p=Decimal(str(l.get('unit_price')))\n        except (InvalidOperation,TypeError):\n            raise ValueError('bad price')\n        if not p.is_finite() or p<0:\n            raise ValueError('bad price')\n\ndef compute_invoice(lines, customer):\n    _validate(lines)\n    amts=[r(l['qty']*Decimal(str(l['unit_price']))) for l in lines]\n    subtotal=sum(amts,Decimal('0'))\n    discount=r(TIER.get(customer.get('tier'),Decimal('0'))*subtotal)\n    net=subtotal-discount\n    shipping=Decimal('7.50') if net<Decimal('100.00') else Decimal('0')\n    tax=Decimal('0')\n    total=net+shipping+tax\n    return {k:str(r(v)) for k,v in [('subtotal',subtotal),('discount',discount),('shipping',shipping),('tax',tax),('total',total)]}\n'''\nopen('/task/workspace/invoice/core.py','w').write(code)\nimport subprocess,sys,json\np=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(p.stderr[-1500:])\nnote='''Stage1: Decimal; returns subtotal,discount,shipping,tax,total as 2dp str. Round line amounts (half up), each discount component & tax as computed. Tier discount gold 5% silver 2% of tier-eligible amount (subtotal default). tax=(subtotal-discount)*rate.\nStage2: ValueError on empty lines, qty not int>0, negative unit_price. Shipping 7.50 if subtotal-discount<100 else 0; not taxed/discounted.\nImpl: invoice/core.py (r() rounding, TIER dict, _validate, compute_invoice). Stage 2 implemented.'''\njson.dump({'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':note}]},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n\n"
+-  },
+-  {
+-   "id": "s4.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 4: revision 3 -> 4; entries 6 -> 1; body chars 4393 -> 490; removed [s1.act, s1.obs, s2.act, s2.obs, s3.act, s3.obs]; added [notes]; rewritten []"
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] advance\nthought: "
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "Stage 3 of 8 released.\n# Stage 3 of 8 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 is a bulk line; its line amount is multiplied by 0.90. This is a line adjustment, applied before any line rounding.\n- [NEW] Tax: the tax rate is 10% for every customer.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (54 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
++   "body": "Stage1: Decimal; returns subtotal,discount,shipping,tax,total as 2dp str. Round line amounts (half up), each discount component & tax as computed. Tier discount gold 5% silver 2% of tier-eligible amount (subtotal default). tax=(subtotal-discount)*rate.\nStage2: ValueError on empty lines, qty not int>0, negative unit_price. Shipping 7.50 if subtotal-discount<100 else 0; not taxed/discounted.\nImpl: invoice/core.py (r() rounding, TIER dict, _validate, compute_invoice). Stage 2 implemented.\nStage3: bulk qty>=100 line amt *0.90 before rounding; tax 10% all. Implemented."
+   }
+  ]
+ }

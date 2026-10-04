@@ -18,10 +18,11 @@ Each experiment documents its own methods, model, context budget and settings in
 | [002](experiments/002-staged-incident-context-pressure/README.md) | Incident investigations with evidence arriving in stages | Both methods managed context. CLM achieved higher strict task success, with lower cost and elapsed time, against this baseline. |
 | [003](experiments/003-robust-summary-comparison/README.md) | The same staged investigations, against a more robust summary baseline | Both methods managed context and both got 6/6 strict successes. CLM remained about 25% cheaper and 28% faster, matching the baseline's spending on summary calls. |
 | [004](experiments/004-coding-changing-requirements/README.md) | Coding an invoice package while requirements are added and replaced over four stages, against the robust baseline | Both methods managed context and both got 12/12 strict successes, with no regressions or stale rules. CLM was about 25% cheaper, matching the baseline's spending on summary calls. |
+| [005](experiments/005-harder-coding-accuracy/README.md) | A harder version of 004: interacting rules, partial changes, 6 or 8 stages | Stopped after calibration: both methods passed every hidden check in all 8 calibration runs at both difficulty levels, so by the pre-registered rule the accuracy comparison was not run. No claim about correctness. |
 
 ### Methods compared in experiments 001 and 002
 
-Experiments 003 and 004 used a different, more robust baseline; see their READMEs.
+Experiments 003–005 used a different, more robust baseline; see their READMEs.
 
 Both experiments compared two context-management approaches. The model was the same (`claude-opus-5-5`, effort `low`), as were the 8,000-token budget per model request and the limits:
 - **Summary baseline:** a policy we implemented; the same Claude model writes the summaries it asks for. When a model request reaches about 70% of its budget, Claude is asked to summarise the older working-context entries, and the summary replaces them. The four most recent entries are kept unchanged.
@@ -61,13 +62,20 @@ Both experiments compared two context-management approaches. The model was the s
 - **Main finding:** correctness was equal; the efficiency gap again matches the baseline's spending on separate summary calls.
 - **Most important limitation:** one synthetic application scenario that proved too easy to separate the approaches on correctness. Prompt caching was not tested.
 
+### [005 – Harder coding accuracy comparison](experiments/005-harder-coding-accuracy/README.md)
+
+- **Problem:** the experiment-004 invoice package with interacting rules and partial changes (bulk lines lose the tier discount, shipping depends on discounts and may be taxed, coupons change the calculation order, refunds recompute both invoices), over 6 stages (base) or 8 stages (harder variant).
+- **Compared:** CLM against the robust `token-tail/1` baseline. `claude-opus-5-5` (effort `low`), 8,000-token budget per request, up to 45 calls per run.
+- **Headline:** **stopped after calibration.** Both arms passed every hidden check in all 8 calibration runs at both levels, with no stale rules, retained-rule failures or regressions. By the rule fixed before calibration, the 36-run evaluation was not run.
+- **Main finding:** no informative accuracy comparison was possible at these levels, and no claim is made about correctness. In calibration, CLM was cheaper in all 4 matched pairs.
+- **Most important limitation:** the task stayed below the model's ability. Likely reasons: rules were kept in the code, requirements stayed rereadable, and visible tests covered every rule in force.
+
 ## Planned experiments
 
 These are draft plans only: nothing has been run, and their settings, sample sizes and budgets are not agreed.
 
 | Experiment | Question | Status |
 | --- | --- | --- |
-| [005](experiments/005-harder-coding-accuracy/README.md) | Does CLM affect correctness when changing requirements create a more demanding coding task? | draft plan; not implemented |
 | [006](experiments/006-prompt-caching-comparison/README.md) | Does CLM's efficiency advantage persist with ordinary provider prompt caching? | draft plan; not implemented |
 
 ## Navigating the raw evidence
@@ -93,7 +101,7 @@ Each experiment folder contains:
   - `scripts/`: model-written code, saved before it ran;
   - `files/`: workspace files before and after each step;
   - `workspace/`: the final sandbox workspace;
-  - `evaluator/`: ground truth and score, written after the run;
+  - `evaluator/`: ground truth and score, written after the run (from experiment 005, also the hidden stage snapshots of the workspace);
   - `summary.json`: metrics.
 - `artifacts/fixtures/<task>/`: the task files the agent investigated.
 - `artifacts/comparisons/`: comparison records, including frozen settings and source patches.

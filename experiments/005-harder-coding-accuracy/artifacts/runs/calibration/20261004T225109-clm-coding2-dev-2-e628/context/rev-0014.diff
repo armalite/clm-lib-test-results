@@ -1,0 +1,19 @@
+--- rev-13
++++ rev-14
+@@ -30,6 +30,16 @@
+    "id": "s10.obs",
+    "role": "observation",
+    "body": "Stage 5 of 6 released.\n# Stage 5 of 6 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [CHANGED] Bulk lines (partly replaces the stage-3 rule): a line is now a bulk line when qty >= 50. The 0.90 multiplier and everything else about bulk lines are unchanged.\n- [CHANGED] Validation (partly replaces the stage-2 rule): a line with qty 0 is now allowed and ignored entirely. If every line is ignored, raise ValueError as for an empty list. All other validation from stage 2 is unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (59 lines)\n  stage-5/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s11.act",
++   "role": "assistant",
++   "body": "[step 11] execute\nthought: Look at core.py to apply stage 5.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
++  },
++  {
++   "id": "s11.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.0s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\nQ=Decimal('0.01')\ndef r2(x): return Decimal(x).quantize(Q, rounding=ROUND_HALF_UP)\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\ndef validate(lines):\n    if not lines: raise ValueError('empty')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError('qty')\n        if Decimal(str(l['unit_price']))<0: raise ValueError('price')\ndef compute_invoice(lines, customer):\n    validate(lines)\n    amts=[r2(l['qty']*Decimal(str(l['unit_price']))*(Decimal('0.90') if l['qty']>=100 else 1)) for l in lines]\n    sub=sum(amts,Decimal(0))\n    elig=sum((a for a,l in zip(amts,lines) if l['qty']<100),Decimal(0))\n    disc=r2(TIER.get(customer.get('tier'),Decimal(0))*elig)\n    ship=Decimal('7.50') if sub-disc<Decimal('100') else Decimal(0)\n    tax=r2((sub-disc)*Decimal('0.10'))\n    tot=sub-disc+ship+tax\n    return {k:str(r2(v)) for k,v in dict(subtotal=sub,discount=disc,shipping=ship,tax=tax,total=tot).items()}\n\n"
+   }
+  ]
+ }

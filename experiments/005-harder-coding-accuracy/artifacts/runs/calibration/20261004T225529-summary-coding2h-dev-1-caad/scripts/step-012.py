@@ -1,0 +1,1 @@
+import re;s=open('/task/workspace/invoice/core.py').read();print([l for l in s.splitlines() if 'TIER' in l])

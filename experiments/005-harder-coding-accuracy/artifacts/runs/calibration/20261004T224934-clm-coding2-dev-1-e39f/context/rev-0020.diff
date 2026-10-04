@@ -1,0 +1,19 @@
+--- rev-19
++++ rev-20
+@@ -30,6 +30,16 @@
+    "id": "s14.obs",
+    "role": "observation",
+    "body": "Stage 6 of 6 released.\n# Stage 6 of 6 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; everything else from earlier stages stays in force.\n\n## Changes\n\n- [CHANGED] Rounding (replaces the whole rounding rule from stage 1): do not round line amounts or any intermediate value; all calculations and comparisons use exact values. Only at the end, round subtotal, discount and tax each to 2 decimals using half-even (banker's) rounding; total = rounded subtotal - rounded discount + shipping + rounded tax.\n- [CHANGED] Shipping (partly replaces the stage-3 rule): shipping is now taxed, so the tax is computed on (subtotal - discount + shipping). The 7.50 fee and the 100.00 threshold are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-6/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s15.act",
++   "role": "assistant",
++   "body": "[step 15] execute\nthought: Look at core.py to modify.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
++  },
++  {
++   "id": "s15.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.1s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\ndef r2(x): return x.quantize(Q, rounding=ROUND_HALF_UP)\n\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError('empty')\n    sub=Decimal(0); elig=Decimal(0)\n    for l in lines:\n        q=l.get('qty')\n        if not isinstance(q,int) or isinstance(q,bool) or q<=0: raise ValueError('qty')\n        p=Decimal(str(l['unit_price']))\n        if p<0: raise ValueError('price')\n        a=q*p\n        if q>=100: a=a*Decimal('0.90')\n        sub+=r2(a)\n        if q<100: elig+=r2(a)\n    rate={'gold':Decimal('0.08'),'platinum':Decimal('0.10'),'silver':Decimal('0.02')}.get((customer or {}).get('tier'),Decimal(0))\n    disc=r2(elig*rate)\n    ship=Decimal('7.50') if sub-disc<Decimal('100.00') else Decimal('0.00')\n    trate={'NZ':Decimal('0.15'),'US':Decimal(0)}.get((customer or {}).get('region'),Decimal('0.10'))\n    tax=r2((sub-disc)*trate)\n    tot=sub-disc+ship+tax\n    return {k:str(r2(v)) for k,v in dict(subtotal=sub,discount=disc,shipping=ship,tax=tax,total=tot).items()}\n\n"
+   }
+  ]
+ }

@@ -1,0 +1,24 @@
+--- rev-27
++++ rev-28
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "Stages1-7 done in invoice/core.py (tests pass): r2, _validate, tier_rate(gold .08, silver .02, platinum .10), tax_rate(NZ .15, US 0, else .10 by customer region), compute_invoice: amounts (bulk qty>=100 x0.90 before round), subtotal, elig=sum non-bulk amounts, discounts list [tier*elig], discount=sum r2, shipping 7.50 if subtotal-discount<100 else 0, tax=r2((subtotal-discount)*rate), total. Returns str dict subtotal/discount/shipping/tax/total. Read stage files for reqs. Stage6: no intermediate rounding, half-even final round of subtotal/discount/tax; tax on subtotal-discount+shipping. Stage7: bulk qty>=50; coupon from customer applied min(coupon,subtotal-tierdisc) added to discount."
++  },
++  {
++   "id": "s21.act",
++   "role": "assistant",
++   "body": "[step 21] execute\nthought: Apply stage 7: bulk threshold 50, coupon.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"l['qty']>=100\",\"l['qty']>=50\").replace(\"l['qty']<100\",\"l['qty']<50\")\ns=s.replace(\"    discount=sum(discounts,Decimal(0))\\n\",\"    discount=sum(discounts,Decimal(0))\\n    coupon=Decimal(str((customer or {}).get('coupon') or 0))\\n    discount=discount+max(Decimal(0),min(coupon,subtotal-discount))\\n\")\nopen(p,'w').write(s)\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[{'id':'n1','role':'note','body':c['entries'][0]['body'].replace('Stages1-6','Stages1-7')+' Stage7: bulk qty>=50; coupon from customer applied min(coupon,subtotal-tierdisc) added to discount.'}]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s21.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n................\n----------------------------------------------------------------------\nRan 16 tests in 0.001s\n\nOK\n\n"
++  },
++  {
++   "id": "s21.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 21: revision 26 -> 27; entries 8 -> 1; body chars 4893 -> 692; removed [s18.act, s18.obs, s18.rcpt, s19.act, s19.obs, s20.act, s20.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }
