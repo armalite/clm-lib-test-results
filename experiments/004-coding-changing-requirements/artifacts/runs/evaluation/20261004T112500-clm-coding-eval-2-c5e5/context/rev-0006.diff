@@ -1,0 +1,24 @@
+--- rev-5
++++ rev-6
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "Stage1 in invoice/core.py: line round half-up, subtotal, tier discount gold5%/silver2%, ValueError on empty/bad qty/neg price. Outputs str 2dp. Stage2: tax 10% on (sub-disc); format_money(amount,currency) NZ$/A$/US$, -prefix for neg, else ValueError. Exported in __init__."
++  },
++  {
++   "id": "s4.act",
++   "role": "assistant",
++   "body": "[step 4] execute\nthought: Implement stage 2: tax 10%, format_money; compact context.\ncode:\nimport json,subprocess,sys\np='/task/workspace/invoice/core.py'\ns=open(p).read().replace(\"rate=Decimal(0)\",\"rate=Decimal('0.10')\")\ns+='''\nPFX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\ndef format_money(amount, currency):\n    if currency not in PFX: raise ValueError('currency')\n    a=r2(Decimal(str(amount)))\n    sign='-' if a<0 else ''\n    return sign+PFX[currency]+str(abs(a))\n'''\nopen(p,'w').write(s)\nopen('/task/workspace/invoice/__init__.py','w').write('from .core import compute_invoice, format_money\\n')\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1 in invoice/core.py: line round half-up, subtotal, tier discount gold5%/silver2%, ValueError on empty/bad qty/neg price. Outputs str 2dp. Stage2: tax 10% on (sub-disc); format_money(amount,currency) NZ$/A$/US$, -prefix for neg, else ValueError. Exported in __init__.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s4.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
++  },
++  {
++   "id": "s4.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 6 -> 1; body chars 2668 -> 272; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

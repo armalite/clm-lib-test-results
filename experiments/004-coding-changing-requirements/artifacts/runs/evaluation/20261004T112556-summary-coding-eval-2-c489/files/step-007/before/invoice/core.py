@@ -1,0 +1,34 @@
+from decimal import Decimal, ROUND_HALF_UP
+
+Q = Decimal("0.01")
+TIER = {"gold": Decimal("0.05"), "silver": Decimal("0.02")}
+
+def r2(x):
+    return x.quantize(Q, rounding=ROUND_HALF_UP)
+
+def compute_invoice(lines, customer):
+    if not lines:
+        raise ValueError("empty")
+    sub = Decimal(0)
+    for l in lines:
+        q = l.get("qty")
+        if not isinstance(q, int) or isinstance(q, bool) or q <= 0:
+            raise ValueError("qty")
+        p = Decimal(str(l["unit_price"]))
+        if p < 0:
+            raise ValueError("price")
+        sub += r2(q * p)
+    disc = r2(sub * TIER.get(customer.get("tier"), Decimal(0)))
+    tax = r2((sub - disc) * Decimal("0.10"))
+    total = sub - disc + tax
+    return {"subtotal": str(r2(sub)), "discount": str(disc), "tax": str(tax), "total": str(r2(total))}
+
+
+PREFIX = {"NZD": "NZ$", "AUD": "A$", "USD": "US$"}
+
+def format_money(amount, currency):
+    if currency not in PREFIX:
+        raise ValueError("currency")
+    a = r2(Decimal(str(amount)))
+    sign = "-" if a < 0 else ""
+    return sign + PREFIX[currency] + str(abs(a))

@@ -17,10 +17,11 @@ Each experiment documents its own methods, model, context budget and settings in
 | [001](experiments/001-short-incident-pilot/README.md) | Short incident investigations | Neither context-management method activated in the comparison, so it did not test their relative effectiveness. |
 | [002](experiments/002-staged-incident-context-pressure/README.md) | Incident investigations with evidence arriving in stages | Both methods managed context. CLM achieved higher strict task success, with lower cost and elapsed time, against this baseline. |
 | [003](experiments/003-robust-summary-comparison/README.md) | The same staged investigations, against a more robust summary baseline | Both methods managed context and both got 6/6 strict successes. CLM remained about 25% cheaper and 28% faster, matching the baseline's spending on summary calls. |
+| [004](experiments/004-coding-changing-requirements/README.md) | Coding an invoice package while requirements are added and replaced over four stages, against the robust baseline | Both methods managed context and both got 12/12 strict successes, with no regressions or stale rules. CLM was about 25% cheaper, matching the baseline's spending on summary calls. |
 
 ### Methods compared in experiments 001 and 002
 
-Experiment 003 used a different, more robust baseline; see its README.
+Experiments 003 and 004 used a different, more robust baseline; see their READMEs.
 
 Both experiments compared two context-management approaches. The model was the same (`claude-opus-5-5`, effort `low`), as were the 8,000-token budget per model request and the limits:
 - **Summary baseline:** a policy we implemented; the same Claude model writes the summaries it asks for. When a model request reaches about 70% of its budget, Claude is asked to summarise the older working-context entries, and the summary replaces them. The four most recent entries are kept unchanged.
@@ -51,13 +52,18 @@ Both experiments compared two context-management approaches. The model was the s
 - **Main finding:** experiment 002's quality gap disappeared against the robust baseline. The remaining efficiency gap matches the baseline's spending on separate summary calls.
 - **Most important limitation:** a small synthetic pilot with one task family and one model. The task was too easy to separate the approaches on accuracy.
 
+### [004 – Coding with changing requirements](experiments/004-coding-changing-requirements/README.md)
+
+- **Problem:** an agent builds a small invoice-calculator package while requirements arrive in four stages. Later stages add rules and replace some earlier ones; every rule not replaced stays in force.
+- **Compared:** CLM against the robust `token-tail/1` summary baseline from experiment 003.
+- **Setup:** `claude-opus-5-5` (effort `low`), 8,000-token budget per model request, up to 30 calls per run. 4 instances (different add/replace schedules, one generator) × 3 repetitions per approach = 24 runs.
+- **Headline:** both approaches got **12/12** strict successes (all 336 evaluator checks passed in each, no regressions, no stale rules). CLM was about **25% cheaper** per run (USD 0.225 vs 0.302) and cheaper in 11 of 12 matched pairs; elapsed time was about 15% lower.
+- **Main finding:** correctness was equal; the efficiency gap again matches the baseline's spending on separate summary calls.
+- **Most important limitation:** one synthetic application scenario that proved too easy to separate the approaches on correctness. Prompt caching was not tested.
+
 ## Planned experiments
 
-These are plans only: nothing has been run, and their settings are not frozen.
-
-| Experiment | Question | Status |
-| --- | --- | --- |
-| [004](experiments/004-coding-changing-requirements/README.md) | Does model-controlled context editing help an agent implement changing requirements while preserving existing functionality? | planned; not implemented |
+None at the moment.
 
 ## Navigating the raw evidence
 

@@ -1,0 +1,39 @@
+{
+ "number": 3,
+ "parent": 2,
+ "source": "runtime",
+ "step": 3,
+ "sha256": "c521fde60a558a60414fa0ccc7d55ec3199a561457c624d17eb59dad9ea961c2",
+ "entries": [
+  {
+   "id": "s1.act",
+   "role": "assistant",
+   "body": "[step 1] execute\nthought: \ncode:\nimport os\nprint(open('/task/fixtures/stage-1/REQUIREMENTS.md').read())\nfor r,d,f in os.walk('/task/workspace'):print(r,f)\nprint(os.listdir('/task/fixtures/current-tests'))"
+  },
+  {
+   "id": "s1.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.0s\n--- stdout ---\n# Stage 1 of 4 requirements\n\n## Package and API\n\nImplement the package `invoice` in /task/workspace/invoice/ (a starting skeleton is provided).\nStandard library only. Use `decimal.Decimal` arithmetic.\n\n- `invoice.compute_invoice(lines, customer) -> dict`\n  - `lines`: list of `{\"sku\": str, \"qty\": int, \"unit_price\": str}`. unit_price is a decimal\n    string such as \"12.50\"; it may have more than 2 decimal places (for example \"3.125\").\n  - `customer`: `{\"tier\": str, \"region\": str}` and optionally `\"tax_exempt\": bool`.\n  - Returns `{\"subtotal\": str, \"discount\": str, \"tax\": str, \"total\": str}`, each a string with\n    exactly 2 decimals, for example \"12.30\".\n- Base calculation (always in force): line amount = qty x unit_price; subtotal = sum of line\n  amounts; discount = subtotal x discount rate; tax = (subtotal - discount) x tax rate;\n  total = subtotal - discount + tax. With no discount rule in force the discount rate is 0; with\n  no tax rule in force the tax rate is 0.\n\n## Rules introduced in stage 1\n\n- [NEW] Rounding: round each line amount to 2 decimals (half up) before summing; compute discount from the rounded subtotal and round it to 2 decimals (half up); compute tax from (subtotal - discount) and round it to 2 decimals (half up); total = subtotal - discount + tax.\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [NEW] Tier discount: discount rate by customer['tier']: 'gold' 5%, 'silver' 2%, any other tier 0%.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\n/task/workspace []\n/task/workspace/invoice ['core.py', '__init__.py']\n/task/workspace/helpers []\n['test_invoice.py']\n"
+  },
+  {
+   "id": "s2.act",
+   "role": "assistant",
+   "body": "[step 2] execute\nthought: Write implementation and notes, run tests.\ncode:\nimport subprocess,sys\nsrc='''from decimal import Decimal, ROUND_HALF_UP\nQ=Decimal('0.01')\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\ndef r(x): return x.quantize(Q, rounding=ROUND_HALF_UP)\ndef compute_invoice(lines, customer):\n    sub=Decimal(0)\n    for l in lines:\n        a=Decimal(l['qty'])*Decimal(l['unit_price'])\n        if l['qty']>=100: a*=Decimal('0.90')\n        sub+=r(a)\n    disc=r(sub*TIER.get(customer.get('tier'),Decimal(0)))\n    rate=Decimal(0)\n    tax=r((sub-disc)*rate)\n    tot=sub-disc+tax\n    return {'subtotal':str(r(sub)),'discount':str(disc),'tax':str(tax),'total':str(r(tot))}\n'''\nopen('/task/workspace/invoice/core.py','w').write(src)\nopen('/task/workspace/invoice/__init__.py','w').write('from .core import compute_invoice\\n')\nopen('/task/workspace/NOTES.md','w').write('stage1 done in core.py\\n')\np=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(p.stderr[-1500:])"
+  },
+  {
+   "id": "s2.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.000s\n\nOK\n\n"
+  },
+  {
+   "id": "s3.act",
+   "role": "assistant",
+   "body": "[step 3] advance\nthought: "
+  },
+  {
+   "id": "s3.obs",
+   "role": "observation",
+   "body": "Stage 2 of 4 released.\n# Stage 2 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax: the tax rate is 10% for every customer.\n- [NEW] Validation: compute_invoice raises ValueError if lines is empty, if any qty is not a positive integer, or if any unit_price is negative.\n- [CHANGED] Tier discount (replaces the earlier tier rates): 'platinum' 10%, 'gold' 7%, 'silver' 3%, any other tier 0%.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (48 lines)\n  stage-2/REQUIREMENTS.md (11 lines)"
+  }
+ ]
+}

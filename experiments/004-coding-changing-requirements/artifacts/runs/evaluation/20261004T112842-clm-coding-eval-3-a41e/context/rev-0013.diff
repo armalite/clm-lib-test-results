@@ -1,0 +1,19 @@
+--- rev-12
++++ rev-13
+@@ -40,6 +40,16 @@
+    "id": "s9.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.0s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN\n\nQ = Decimal(\"0.01\")\n\n\ndef _r(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\n\ndef _re(x):\n    return x.quantize(Q, rounding=ROUND_HALF_EVEN)\n\n\nTIER = {\"gold\": Decimal(\"0.05\"), \"silver\": Decimal(\"0.02\")}\n\n\ndef discount_rate(lines, customer, subtotal):\n    return TIER.get((customer or {}).get(\"tier\"), Decimal(0))\n\n\ndef tax_rate(customer):\n    return Decimal(\"0.10\")\n\n\ndef compute_invoice(lines, customer):\n    customer = customer or {}\n    sub = sum((int(l[\"qty\"]) * Decimal(str(l[\"unit_price\"])) * (Decimal(\"0.90\") if int(l[\"qty\"]) >= 100 else 1) for l in lines), Decimal(0))\n    disc = sub * discount_rate(lines, customer, sub)\n    tax = (sub - disc) * tax_rate(customer)\n    if customer.get(\"tax_exempt\") is True:\n        tax = Decimal(0)\n    s, d, t = _re(sub), _re(disc), _re(tax)\n    return {\"subtotal\": str(s), \"discount\": str(d), \"tax\": str(t), \"total\": str(s - d + t)}\n\n\nPREFIX = {\"NZD\": \"NZ$\", \"AUD\": \"A$\", \"USD\": \"US$\"}\n\n\ndef format_money(amount, currency):\n    if currency not in PREFIX:\n        raise ValueError(currency)\n    a = _r(Decimal(str(amount)))\n    sign = \"-\" if a < 0 else \"\"\n    return f\"{sign}{PREFIX[currency]}{abs(a):,.2f}\"\n\n"
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Apply stage 4 changes.\ncode:\np='/task/workspace/invoice/core.py';s=open(p).read()\ns=s.replace('''    return Decimal(\"0.10\")''','''    return {\"NZ\": Decimal(\"0.15\"), \"AU\": Decimal(\"0.10\"), \"US\": Decimal(0)}.get((customer or {}).get(\"region\"), Decimal(\"0.12\"))''')\nold='''    sub = sum((int(l[\"qty\"]) * Decimal(str(l[\"unit_price\"])) * (Decimal(\"0.90\") if int(l[\"qty\"]) >= 100 else 1) for l in lines), Decimal(0))'''\nnew='''    if not lines:\n        raise ValueError(\"empty\")\n    sub = Decimal(0)\n    for l in lines:\n        q = l.get(\"qty\")\n        if isinstance(q, bool) or not isinstance(q, int) or q <= 0:\n            raise ValueError(\"qty\")\n        up = Decimal(str(l[\"unit_price\"]))\n        if up < 0:\n            raise ValueError(\"price\")\n        f = Decimal(\"0.88\") if q >= 200 else Decimal(\"0.95\") if q >= 50 else Decimal(1)\n        sub += q * up * f'''\nassert old in s\ns=s.replace(old,new)\nopen(p,'w').write(s)\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-2500:])"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

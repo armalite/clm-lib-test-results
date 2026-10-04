@@ -1,0 +1,36 @@
+--- rev-4
++++ rev-5
+@@ -4,32 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Stage1 done in invoice/core.py: line round half-up, subtotal, tier discount gold5%/silver2%, tax rate 0 (var rate), ValueError on empty/bad qty/neg price. Outputs str 2dp."
+-  },
+-  {
+-   "id": "s2.act",
+-   "role": "assistant",
+-   "body": "[step 2] execute\nthought: Write implementation and save requirements note.\ncode:\nimport json,subprocess,sys\nsrc='''from decimal import Decimal, ROUND_HALF_UP\nQ=Decimal('0.01')\ndef r2(x): return x.quantize(Q, rounding=ROUND_HALF_UP)\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError('empty')\n    sub=Decimal(0)\n    for l in lines:\n        q=l.get('qty')\n        if not isinstance(q,int) or isinstance(q,bool) or q<=0: raise ValueError('qty')\n        p=Decimal(str(l['unit_price']))\n        if p<0: raise ValueError('price')\n        sub+=r2(q*p)\n    disc=r2(sub*TIER.get(customer.get('tier'),Decimal(0)))\n    rate=Decimal(0)\n    tax=r2((sub-disc)*rate)\n    tot=sub-disc+tax\n    return {k:str(r2(v)) for k,v in [('subtotal',sub),('discount',disc),('tax',tax),('total',tot)]}\n'''\nopen('/task/workspace/invoice/core.py','w').write(src)\nopen('/task/workspace/invoice/__init__.py','w').write('from .core import compute_invoice\\n')\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1 done in invoice/core.py: line round half-up, subtotal, tier discount gold5%/silver2%, tax rate 0 (var rate), ValueError on empty/bad qty/neg price. Outputs str 2dp.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s2.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.000s\n\nOK\n\n"
+-  },
+-  {
+-   "id": "s2.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 2124 -> 171; removed [s1.act, s1.obs]; added [n1]; rewritten []"
+-  },
+-  {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] advance\nthought: "
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 4 released.\n# Stage 2 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax: the tax rate is 10% for every customer.\n- [NEW] Money formatting: add format_money(amount: str, currency: str) -> str. Prefix 'NZD' with 'NZ$', 'AUD' with 'A$', 'USD' with 'US$'; always 2 decimals; a negative amount puts '-' before the prefix (for example '-NZ$5.00'); any other currency raises ValueError.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (48 lines)\n  stage-2/REQUIREMENTS.md (10 lines)"
++   "body": "Stage1 in invoice/core.py: line round half-up, subtotal, tier discount gold5%/silver2%, ValueError on empty/bad qty/neg price. Outputs str 2dp. Stage2: tax 10% on (sub-disc); format_money(amount,currency) NZ$/A$/US$, -prefix for neg, else ValueError. Exported in __init__."
+   }
+  ]
+ }

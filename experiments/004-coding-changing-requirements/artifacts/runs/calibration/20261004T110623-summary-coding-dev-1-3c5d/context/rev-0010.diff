@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -40,6 +40,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=0.9s\n--- stdout ---\ndef discount_rate(subtotal, customer):\n    return {'gold':Decimal('0.05'),'silver':Decimal('0.02')}.get(customer.get('tier'),Decimal('0'))\n\ndef tax_rate(customer):\n    return {'NZ':Decimal('0.15'),'AU':Decimal('0.10'),'US':Decimal('0')}.get(customer.get('region'),Decimal('0.12'))\n\ndef compute_invoice(lines, customer):\n    if not lines:\n        raise ValueError('empty lines')\n    sub = Decimal('0')\ndef format_money(amount, currency):\n    raise NotImplementedError\n\n"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Update tier rates and implement format_money.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"{'gold':Decimal('0.05'),'silver':Decimal('0.02')}\",\"{'platinum':Decimal('0.10'),'gold':Decimal('0.07'),'silver':Decimal('0.03')}\")\ns=s.replace(\"def format_money(amount, currency):\\n    raise NotImplementedError\",\"def format_money(amount, currency):\\n    pre={'NZD':'NZ$','AUD':'A$','USD':'US$'}\\n    if currency not in pre:\\n        raise ValueError('unknown currency')\\n    d=Decimal(str(amount)).quantize(Q, rounding=ROUND_HALF_EVEN)\\n    sign='-' if d<0 else ''\\n    return sign+pre[currency]+str(abs(d))\")\nopen(p,'w').write(s)\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n............\n----------------------------------------------------------------------\nRan 12 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

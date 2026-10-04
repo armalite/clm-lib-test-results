@@ -1,0 +1,19 @@
+--- rev-12
++++ rev-13
+@@ -40,6 +40,16 @@
+    "id": "s9.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=0.9s\n--- stdout ---\n3 def r2(x): return x.quantize(Q, rounding=ROUND_HALF_UP)\n5 def compute_invoice(lines, customer):\n19     tax=r2((sub-disc)*rate)\n20     tot=sub-disc+tax\n21     return {k:str(r2(v)) for k,v in [('subtotal',sub),('discount',disc),('tax',tax),('total',tot)]}\n23 PFX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n24 def format_money(amount, currency):\n28     return sign+PFX[currency]+str(abs(a))\n"
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Apply stage 4 changes.\ncode:\nimport subprocess,sys\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"    tax=r2((sub-disc)*rate)\",\"    tax=r2((sub-disc)*rate)\\n    if customer.get('tax_exempt') is True: tax=Decimal('0.00')\")\ns=s.replace(\"str(abs(a))\",\"'{:,.2f}'.format(r2(abs(a)))\")\nopen(p,'w').write(s)\nprint(s[s.find('def format_money'):])\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\ndef format_money(amount, currency):\n    if currency not in PFX: raise ValueError('currency')\n    a=r2(Decimal(str(amount)))\n    sign='-' if a<0 else ''\n    return sign+PFX[currency]+'{:,.2f}'.format(r2(abs(a)))\n\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

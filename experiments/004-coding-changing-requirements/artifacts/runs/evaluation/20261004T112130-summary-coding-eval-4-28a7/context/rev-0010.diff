@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -35,6 +35,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.0s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\nQ=Decimal('0.01')\nTIER={'platinum':Decimal('0.10'),'gold':Decimal('0.07'),'silver':Decimal('0.03')}\nTAX=Decimal('0.10')\ndef r(x): return x.quantize(Q, rounding=ROUND_HALF_UP)\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError('empty lines')\n    sub=Decimal(0)\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError('bad qty')\n        try: p=Decimal(str(l['unit_price']))\n        except Exception: raise ValueError('bad price')\n        if not p.is_finite() or p<0: raise ValueError('negative price')\n        a=Decimal(q)*p\n        if q>=200: a*=Decimal('0.88')\n        elif q>=50: a*=Decimal('0.95')\n        sub+=r(a)\n    disc=r(sub*TIER.get(customer.get('tier'),Decimal(0)))\n    tax=r((sub-disc)*TAX)\n    tot=sub-disc+tax\n    return {'subtotal':str(r(sub)),'discount':str(disc),'tax':str(tax),'total':str(r(tot))}\n\nCUR={'NZD':'NZ$','AUD':'A$','USD':'US$'}\ndef format_money(amount, currency):\n    if currency not in CUR: raise ValueError('bad currency')\n    try: d=Decimal(str(amount))\n    except Exception: raise ValueError('bad amount')\n    d=r(d)\n    sign='-' if d<0 else ''\n    return sign+CUR[currency]+str(abs(d))\n\n"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Rewrite compute_invoice for stage 4.\ncode:\nimport subprocess,sys,re\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ni=s.index('def compute_invoice');j=s.index('CUR=')\nnew='''from decimal import ROUND_HALF_EVEN\ndef rb(x): return x.quantize(Q, rounding=ROUND_HALF_EVEN)\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError('empty lines')\n    sub=Decimal(0)\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<0: raise ValueError('bad qty')\n        try: p=Decimal(str(l['unit_price']))\n        except Exception: raise ValueError('bad price')\n        if not p.is_finite() or p<0: raise ValueError('negative price')\n        if q==0: continue\n        a=Decimal(q)*p\n        if q>=200: a*=Decimal('0.88')\n        elif q>=50: a*=Decimal('0.95')\n        sub+=a\n    disc=sub*TIER.get(customer.get('tier'),Decimal(0))\n    tax=Decimal(0) if customer.get('tax_exempt') is True else (sub-disc)*TAX\n    s2,d2,t2=rb(sub),rb(disc),rb(tax)\n    return {'subtotal':str(s2),'discount':str(d2),'tax':str(t2),'total':str(s2-d2+t2)}\n\n'''\ns=s[:i]+new+s[j:]\nopen(p,'w').write(s)\nopen('/task/workspace/NOTES.md','a').write('stage4 done: half-even final rounding, tax_exempt, qty0 skip\\n')\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -30,6 +30,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.0s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_EVEN\nQ=Decimal(\"0.01\")\ndef r2(x): return x.quantize(Q, rounding=ROUND_HALF_EVEN)\nRATES={\"gold\":Decimal(\"0.05\"),\"silver\":Decimal(\"0.02\")}\n\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError(\"empty lines\")\n    sub=Decimal(0)\n    for l in lines:\n        q=l.get(\"qty\")\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError(\"bad qty\")\n        p=Decimal(str(l[\"unit_price\"]))\n        if p<0: raise ValueError(\"negative price\")\n        a=Decimal(q)*p\n        if q>=200: a=a*Decimal(\"0.88\")\n        elif q>=50: a=a*Decimal(\"0.95\")\n        sub+=a\n    disc=sub*RATES.get(customer.get(\"tier\"),Decimal(0))\n    tax=(sub-disc)*Decimal(\"0.10\")\n    rs,rd,rt=r2(sub),r2(disc),r2(tax)\n    return {\"subtotal\":str(rs),\"discount\":str(rd),\"tax\":str(rt),\"total\":str(rs-rd+rt)}\n\n"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Implement stage 4 changes and run tests.\ncode:\nsrc=open('/task/workspace/invoice/core.py').read()\nsrc=src.replace('    tax=(sub-disc)*Decimal(\"0.10\")','    TR={\"NZ\":Decimal(\"0.15\"),\"AU\":Decimal(\"0.10\"),\"US\":Decimal(\"0\")}\\n    tax=(sub-disc)*TR.get(customer.get(\"region\"),Decimal(\"0.12\"))\\n    if customer.get(\"tax_exempt\") is True: tax=Decimal(0)')\nsrc+='''\nPREFIX={\"NZD\":\"NZ$\",\"AUD\":\"A$\",\"USD\":\"US$\"}\ndef format_money(amount, currency):\n    if currency not in PREFIX: raise ValueError(\"bad currency\")\n    d=r2(Decimal(str(amount)))\n    s=\"-\" if d<0 else \"\"\n    return s+PREFIX[currency]+str(abs(d))\n'''\nopen('/task/workspace/invoice/core.py','w').write(src)\nopen('/task/workspace/invoice/__init__.py','w').write('from .core import compute_invoice, format_money\\n')\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

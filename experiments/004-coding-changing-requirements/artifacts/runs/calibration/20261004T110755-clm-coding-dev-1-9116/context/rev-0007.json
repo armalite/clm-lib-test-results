@@ -1,0 +1,49 @@
+{
+ "number": 7,
+ "parent": 6,
+ "source": "runtime",
+ "step": 6,
+ "sha256": "51cf613aff2820fcef70b40ca8d9124aef1f35699530846efa8728047005410d",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "summary",
+   "body": "invoice/core.py: _r (2dp half up), _validate, discount_rate(lines,customer,subtotal), tax_rate(customer), compute_invoice, format_money (NotImplemented). Stage1: per-line rounding, validation (empty, qty pos int, price>=0). Stage2 done: tier gold5%/silver2%; tax region NZ15 AU10 US0 else12. Next: advance to stage 3."
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Implement stage 2, compact context.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"\"\"def discount_rate(lines, customer, subtotal):\n    return Decimal('0')\"\"\",\"\"\"def discount_rate(lines, customer, subtotal):\n    return {'gold':Decimal('0.05'),'silver':Decimal('0.02')}.get(customer.get('tier'),Decimal('0'))\"\"\")\ns=s.replace(\"\"\"def tax_rate(customer):\n    return Decimal('0.10')\"\"\",\"\"\"def tax_rate(customer):\n    return {'NZ':Decimal('0.15'),'AU':Decimal('0.10'),'US':Decimal('0')}.get(customer.get('region'),Decimal('0.12'))\"\"\")\nopen(p,'w').write(s)\nimport subprocess,sys,json\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'summary','body':'invoice/core.py: _r (2dp half up), _validate, discount_rate(lines,customer,subtotal), tax_rate(customer), compute_invoice, format_money (NotImplemented). Stage1: per-line rounding, validation (empty, qty pos int, price>=0). Stage2 done: tier gold5%/silver2%; tax region NZ15 AU10 US0 else12. Next: advance to stage 3.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s4.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 4: revision 3 -> 4; entries 6 -> 1; body chars 4917 -> 317; removed [s1.act, s1.obs, s2.act, s2.obs, s3.act, s3.obs]; added [n1]; rewritten []"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: "
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Rounding (replaces the earlier rounding rule): do NOT round line amounts. Compute the subtotal, discount and tax exactly (discount from the exact subtotal; tax from the exact subtotal minus the exact discount), then round each of subtotal, discount and tax to 2 decimals using banker's rounding (half even); total = rounded subtotal - rounded discount + rounded tax.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (48 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Look at core.py compute_invoice to apply stage 3.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef _r(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\ndef _validate(lines):\n    if not lines:\n        raise ValueError('empty lines')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0:\n            raise ValueError('bad qty')\n        try:\n            p=Decimal(str(l.get('unit_price')))\n        except Exception:\n            raise ValueError('bad price')\n        if not p.is_finite() or p<0:\n            raise ValueError('negative price')\n\ndef discount_rate(lines, customer, subtotal):\n    return {'gold':Decimal('0.05'),'silver':Decimal('0.02')}.get(customer.get('tier'),Decimal('0'))\n\ndef tax_rate(customer):\n    return {'NZ':Decimal('0.15'),'AU':Decimal('0.10'),'US':Decimal('0')}.get(customer.get('region'),Decimal('0.12'))\n\ndef compute_invoice(lines, customer):\n    _validate(lines)\n    subtotal=sum((_r(l['qty']*Decimal(str(l['unit_price']))) for l in lines), Decimal('0'))\n    discount=_r(subtotal*discount_rate(lines,customer,subtotal))\n    tax=_r((subtotal-discount)*tax_rate(customer))\n    total=subtotal-discount+tax\n    return {k:str(_r(v)) for k,v in [('subtotal',subtotal),('discount',discount),('tax',tax),('total',total)]}\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n\n"
+  }
+ ]
+}

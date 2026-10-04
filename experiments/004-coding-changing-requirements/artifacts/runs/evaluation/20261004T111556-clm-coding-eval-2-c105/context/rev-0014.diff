@@ -1,0 +1,19 @@
+--- rev-13
++++ rev-14
+@@ -40,6 +40,16 @@
+    "id": "s10.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=0.9s\n--- stdout ---\n9     return x.quantize(Q, rounding=ROUND_HALF_UP)\n13     return TIER_RATES.get(customer.get('tier'), Decimal('0'))\n16 def tax_rate(customer):\n17     return Decimal('0.10')\n38     tax = r2((subtotal - disc) * tax_rate(customer))\n39     total = subtotal - disc + tax\n40     return {k: str(r2(v)) for k, v in (('subtotal', subtotal), ('discount', disc), ('tax', tax), ('total', total))}\n43 PREFIX = {'NZD': 'NZ$', 'AUD': 'A$', 'USD': 'US$'}\n46 def format_money(amount, currency):\n47     if currency not in PREFIX:\n51     return sign + PREFIX[currency] + str(abs(a))\n"
++  },
++  {
++   "id": "s11.act",
++   "role": "assistant",
++   "body": "[step 11] execute\nthought: Apply stage 4: tax exemption and comma separators.\ncode:\nimport subprocess,sys\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"    tax = r2((subtotal - disc) * tax_rate(customer))\",\"    tax = r2((subtotal - disc) * tax_rate(customer))\\n    if customer.get('tax_exempt') is True:\\n        tax = Decimal('0.00')\")\ns=s.replace(\"str(abs(a))\",\"'{:,.2f}'.format(r2(abs(a)))\")\nopen(p,'w').write(s)\nprint('\\n'.join(s.split('\\n')[44:56]))\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])"
++  },
++  {
++   "id": "s11.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nPREFIX = {'NZD': 'NZ$', 'AUD': 'A$', 'USD': 'US$'}\n\n\ndef format_money(amount, currency):\n    if currency not in PREFIX:\n        raise ValueError('bad currency')\n    a = r2(Decimal(str(amount)))\n    sign = '-' if a < 0 else ''\n    return sign + PREFIX[currency] + '{:,.2f}'.format(r2(abs(a)))\n\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

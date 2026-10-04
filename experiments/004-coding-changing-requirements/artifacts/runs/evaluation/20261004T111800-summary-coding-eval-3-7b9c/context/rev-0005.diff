@@ -1,0 +1,19 @@
+--- rev-4
++++ rev-5
+@@ -40,6 +40,16 @@
+    "id": "s4.obs",
+    "role": "observation",
+    "body": "Stage 2 of 4 released.\n# Stage 2 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tier discount: discount rate by customer['tier']: 'gold' 5%, 'silver' 2%, any other tier 0%.\n- [NEW] Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.\n- [CHANGED] Rounding (replaces the earlier rounding rule): do NOT round line amounts. Compute the subtotal, discount and tax exactly (discount from the exact subtotal; tax from the exact subtotal minus the exact discount), then round each of subtotal, discount and tax to 2 decimals using banker's rounding (half even); total = rounded subtotal - rounded discount + rounded tax.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (46 lines)\n  stage-2/REQUIREMENTS.md (11 lines)"
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: Implement stage 2 changes.\ncode:\nsrc=open('/task/workspace/invoice/core.py').read()\nsrc=src.replace(\"from decimal import Decimal, ROUND_HALF_UP\",\"from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN\")\nsrc=src.replace(\"\"\"def discount_rate(lines, customer, subtotal):\n    return Decimal('0')\"\"\",\"\"\"def _re(x):\n    return x.quantize(Q, rounding=ROUND_HALF_EVEN)\n\n\nTIER = {'gold': Decimal('0.05'), 'silver': Decimal('0.02')}\n\n\ndef discount_rate(lines, customer, subtotal):\n    return TIER.get(customer.get('tier'), Decimal('0'))\"\"\")\nold=src[src.index('def compute_invoice'):src.index('PREFIX =')]\nnew='''def compute_invoice(lines, customer):\n    sub = sum((Decimal(l['qty']) * Decimal(l['unit_price']) for l in lines), Decimal('0'))\n    disc = sub * discount_rate(lines, customer, sub)\n    tax = (sub - disc) * tax_rate(customer)\n    if customer.get('tax_exempt') is True:\n        tax = Decimal('0')\n    s, d, t = _re(sub), _re(disc), _re(tax)\n    total = s - d + t\n    return {'subtotal': str(s), 'discount': str(d), 'tax': str(t), 'total': str(_re(total))}\n\n\n'''\nsrc=src.replace(old,new)\nopen('/task/workspace/invoice/core.py','w').write(src)\nopen('/task/workspace/NOTES.md','a').write('stage2 done: tier discount gold5/silver2, tax_exempt, half-even exact rounding.\\n')\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

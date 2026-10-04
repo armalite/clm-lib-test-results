@@ -1,0 +1,19 @@
+--- rev-10
++++ rev-11
+@@ -30,6 +30,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Money formatting: add format_money(amount: str, currency: str) -> str. Prefix 'NZD' with 'NZ$', 'AUD' with 'A$', 'USD' with 'US$'; always 2 decimals; a negative amount puts '-' before the prefix (for example '-NZ$5.00'); any other currency raises ValueError.\n- [CHANGED] Tier discount (replaces the earlier tier rates): 'platinum' 10%, 'gold' 7%, 'silver' 3%, any other tier 0%.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (54 lines)\n  stage-4/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Inspect discount_rate and format_money to edit.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ni=s.index('def discount_rate');print(s[i:i+700])\nimport re\nprint([l for l in open('/task/fixtures/current-tests/test_invoice.py') if 'format_money' in l or 'platinum' in l])"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.0s\n--- stdout ---\ndef discount_rate(lines, customer, subtotal):\n    return {'gold':Decimal('0.05'),'silver':Decimal('0.02')}.get(customer.get('tier'),Decimal('0'))\n\ndef tax_rate(customer):\n    return {'NZ':Decimal('0.15'),'AU':Decimal('0.10'),'US':Decimal('0')}.get(customer.get('region'),Decimal('0.12'))\n\nfrom decimal import ROUND_HALF_EVEN\ndef _re(x):\n    return x.quantize(Q, rounding=ROUND_HALF_EVEN)\n\ndef _line(l):\n    a=l['qty']*Decimal(str(l['unit_price']))\n    if l['qty']>=100:\n        a=a*Decimal('0.90')\n    return a\n\ndef compute_invoice(lines, customer):\n    _validate(lines)\n    sub=sum((_line(l) for l in lines), Decimal('0'))\n    disc=sub*discount_rate(lines,customer,sub)\n    tax=(sub-disc)*tax_rate(c\n[\"        self.assertEqual(invoice.compute_invoice(*[[{'sku': 'SKU-641', 'qty': 8, 'unit_price': '27.85'}, {'sku': 'SKU-799', 'qty': 8, 'unit_price': '82.50'}], {'tier': 'platinum', 'region': 'US'}]), {'subtotal': '882.80', 'discount': '88.28', 'tax': '0.00', 'total': '794.52'})\\n\", \"        self.assertEqual(invoice.format_money(*['89115.73', 'NZD']), 'NZ$89115.73')\\n\", \"        self.assertEqual(invoice.format_money(*['700.0', 'USD']), 'US$700.00')\\n\"]\n"
+   }
+  ]
+ }

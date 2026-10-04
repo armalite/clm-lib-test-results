@@ -1,0 +1,19 @@
+--- rev-6
++++ rev-7
+@@ -30,6 +30,16 @@
+    "id": "s5.obs",
+    "role": "observation",
+    "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tier discount: discount rate by customer['tier']: 'gold' 5%, 'silver' 2%, any other tier 0%.\n- [CHANGED] Rounding (replaces the earlier rounding rule): do NOT round line amounts. Compute the subtotal, discount and tax exactly (discount from the exact subtotal; tax from the exact subtotal minus the exact discount), then round each of subtotal, discount and tax to 2 decimals using banker's rounding (half even); total = rounded subtotal - rounded discount + rounded tax.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (48 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s6.act",
++   "role": "assistant",
++   "body": "[step 6] execute\nthought: Look at core.py to apply stage 3.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
++  },
++  {
++   "id": "s6.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef r2(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\ndef discount_rate(lines, customer, subtotal):\n    return Decimal('0')\n\ndef tax_rate(customer):\n    return Decimal('0.10')\n\ndef line_amount(line):\n    q=line['qty']\n    amt=Decimal(q)*Decimal(str(line['unit_price']))\n    if q>=200:\n        amt*=Decimal('0.88')\n    elif q>=50:\n        amt*=Decimal('0.95')\n    return r2(amt)\n\ndef validate(lines):\n    if not lines:\n        raise ValueError('empty lines')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0:\n            raise ValueError('bad qty')\n        try:\n            pr=Decimal(str(l.get('unit_price')))\n        except Exception:\n            raise ValueError('bad price')\n        if not pr.is_finite() or pr<0:\n            raise ValueError('negative price')\n\ndef compute_invoice(lines, customer):\n    validate(lines)\n    subtotal=sum((line_amount(l) for l in lines), Decimal('0'))\n    discount=r2(subtotal*discount_rate(lines,customer,subtotal))\n    tax=r2((subtotal-discount)*tax_rate(customer))\n    total=subtotal-discount+tax\n    return {k:str(r2(v)) for k,v in dict(subtotal=subtotal,discount=discount,tax=tax,total=total).items()}\n\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n\n"
+   }
+  ]
+ }

@@ -1,0 +1,1646 @@
+diff --git a/src/clm_lib/baseline.py b/src/clm_lib/baseline.py
+index 4d6d0d0..63f91f4 100644
+--- a/src/clm_lib/baseline.py
++++ b/src/clm_lib/baseline.py
+@@ -91,10 +91,13 @@ class SummaryPolicy:
+         attempt: int,
+         max_tokens: int,
+         limit_chars: int | None = None,
++        system: str | None = None,
+     ) -> ModelRequest:
++        """``system`` overrides the policy's summariser instructions (e.g. for coding tasks)."""
+         limit = limit_chars if limit_chars is not None else self.char_limit(attempt)
++        default = SUMMARY_SYSTEM if self.policy == FIXED_TAIL else SUMMARY_SYSTEM_TOKEN_TAIL
+         return ModelRequest(
+-            system=SUMMARY_SYSTEM if self.policy == FIXED_TAIL else SUMMARY_SYSTEM_TOKEN_TAIL,
++            system=system or default,
+             user=summary_user(task, older, limit),
+             max_tokens=max_tokens,
+             purpose="summary",
+diff --git a/src/clm_lib/budget.py b/src/clm_lib/budget.py
+index 0466855..31479ce 100644
+--- a/src/clm_lib/budget.py
++++ b/src/clm_lib/budget.py
+@@ -121,6 +121,8 @@ class Ledger:
+     _open: dict[str, Reservation] = field(default_factory=dict)
+     limit_usd: float | None = None  # optional lower cap for this process
+     start_spent_usd: float = 0.0
++    # Explicit, user-authorised ceiling changes (never automatic); see set_ceiling.
++    ceiling_history: list[dict[str, Any]] = field(default_factory=list)
+ 
+     @classmethod
+     def open(cls, path: Path, ceiling_usd: float, limit_usd: float | None = None) -> Ledger:
+@@ -134,6 +136,7 @@ class Ledger:
+             data = json.loads(path.read_text(encoding="utf-8"))
+             ceiling = min(float(data["ceiling_usd"]), ceiling_usd)
+             led = cls(path, ceiling, data.get("entries", []))
++            led.ceiling_history = data.get("ceiling_history", [])
+             pending = data.get("pending", [])
+             live = [p for p in pending if _pid_alive(int(p.get("pid", -1)))]
+             if live:
+@@ -237,6 +240,7 @@ class Ledger:
+             "ceiling_usd": self.ceiling_usd,
+             "note": "Charged = provider-usage cost, or the full reservation when the outcome is unknown.",
+             "reservation_bound": BOUND_BASIS,
++            "ceiling_history": self.ceiling_history,
+             "entries": self.entries,
+             "pending": [
+                 {
+@@ -253,6 +257,32 @@ class Ledger:
+         tmp.write_text(json.dumps(doc, indent=1), encoding="utf-8")
+         os.replace(tmp, self.path)
+ 
++    @classmethod
++    def set_ceiling(cls, path: Path, new_ceiling: float, reason: str) -> dict[str, Any]:
++        """Explicitly change the stored ceiling (for a user-authorised budget change).
++
++        Spend records are untouched. The change is appended to ``ceiling_history``. Note that
++        opening the ledger with a lower configured ceiling still lowers the effective ceiling.
++        """
++        if not reason.strip():
++            raise ValueError("a reason is required to change the ledger ceiling")
++        data = json.loads(path.read_text(encoding="utf-8"))
++        if data.get("pending"):
++            raise LedgerBusy("cannot change the ceiling while reservations are pending")
++        led = cls(path, float(data["ceiling_usd"]), data.get("entries", []))
++        led.ceiling_history = data.get("ceiling_history", [])
++        change = {
++            "ts": datetime.now(UTC).isoformat(timespec="seconds"),
++            "from_usd": led.ceiling_usd,
++            "to_usd": round(new_ceiling, 6),
++            "spent_at_change_usd": round(led.spent_usd, 6),
++            "reason": reason,
++        }
++        led.ceiling_history.append(change)
++        led.ceiling_usd = round(new_ceiling, 6)
++        led._save()
++        return change
++
+     def summary(self) -> dict[str, Any]:
+         by_kind: dict[str, float] = {}
+         for e in self.entries:
+diff --git a/src/clm_lib/cli.py b/src/clm_lib/cli.py
+index fdd028e..b8c73e4 100644
+--- a/src/clm_lib/cli.py
++++ b/src/clm_lib/cli.py
+@@ -573,6 +573,11 @@ def cmd_export(args: argparse.Namespace) -> int:
+ 
+ def cmd_budget(args: argparse.Namespace) -> int:
+     cfg = _config(args)
++    if args.set_ceiling is not None:
++        change = Ledger.set_ceiling(
++            _resolve(cfg.budget.ledger), args.set_ceiling, args.reason or ""
++        )
++        print(json.dumps({"ceiling_change": change}, indent=1))
+     print(json.dumps(_ledger(cfg, None).summary(), indent=1))
+     return 0
+ 
+@@ -635,6 +640,13 @@ def build_parser() -> argparse.ArgumentParser:
+     ex.set_defaults(func=cmd_export)
+ 
+     b = sub.add_parser("budget", help="show the persistent spend ledger")
++    b.add_argument(
++        "--set-ceiling",
++        type=float,
++        default=None,
++        help="explicitly change the stored ceiling (user-authorised; recorded)",
++    )
++    b.add_argument("--reason", default="", help="required with --set-ceiling")
+     b.set_defaults(func=cmd_budget)
+     return ap
+ 
+diff --git a/src/clm_lib/export.py b/src/clm_lib/export.py
+index 2aceeb9..3f76115 100644
+--- a/src/clm_lib/export.py
++++ b/src/clm_lib/export.py
+@@ -192,10 +192,31 @@ def _metrics_row(run_id: str, role: str, src: Path, charged: float) -> dict[str,
+         outcome_current=rs["outcome"] if rs else "no_answer",
+         strict_current=bool(rs and rs["strict_success"]),
+         scorer_current=SCORER_VERSION,
+-        cause_ok=bool(rs and rs["cause_ok"]),
+-        remedy_ok=bool(rs and rs["remedy_ok"]),
+-        value_status=rs["value_status"] if rs else "missing",
+-        evidence_groups=json.dumps(rs["groups_covered"] if rs else {}),
++    )
++    if rs and "by_category" in rs:  # coding task
++        row["scorer_current"] = rs.get("scorer_version", row["scorer_current"])
++        row.update(
++            completed=rs["completed"],
++            checks_total=rs["checks"],
++            checks_passed=rs["passed"],
++            stale_checks=rs["stale"],
++            import_error=rs["import_error"],
++            evaluation_error=rs.get("evaluation_error"),
++        )
++        for cat, v in sorted(rs["by_category"].items()):
++            row[f"{cat}_passed"], row[f"{cat}_total"], row[f"{cat}_stale"] = (
++                v["passed"],
++                v["total"],
++                v["stale"],
++            )
++    else:
++        row.update(
++            cause_ok=bool(rs and rs["cause_ok"]),
++            remedy_ok=bool(rs and rs["remedy_ok"]),
++            value_status=rs["value_status"] if rs else "missing",
++            evidence_groups=json.dumps(rs["groups_covered"] if rs else {}),
++        )
++    row.update(
+         provider_calls=c["provider_calls"],
+         action_calls=c["action_calls"],
+         repair_calls=c["repair_calls"],
+diff --git a/src/clm_lib/prompts.py b/src/clm_lib/prompts.py
+index 61210a5..7bbac35 100644
+--- a/src/clm_lib/prompts.py
++++ b/src/clm_lib/prompts.py
+@@ -11,7 +11,7 @@ from .context import Entry
+ 
+ PROMPT_VERSION = "2026-10-04.1"
+ 
+-PROTOCOL = """You are an investigation agent working through a strict JSON protocol.
++PROTOCOL = """You are {agent_role} working through a strict JSON protocol.
+ 
+ Each request contains three sections:
+ - <task>: the fixed task. It is never edited and always present.
+@@ -21,8 +21,7 @@ Each request contains three sections:
+ 
+ Reply with exactly one JSON object and nothing else:
+   {{"action": "execute", "thought": "<optional, one or two sentences>", "code": "<python source>"}}
+-  {{"action": "final", "answer": {{"root_cause": "...", "required_value": "...", "remedy": "...",
+-                                 "evidence_refs": ["path:line", ...]}}}}
++{final_example}
+ 
+ "execute" runs your code as a new Python 3.12 process (standard library only) in a sandbox with
+ no network and a {exec_timeout}s time limit. The working directory /task/workspace is writable and
+@@ -32,6 +31,17 @@ what you need: search and filter (with line numbers) instead of printing whole f
+ "final" ends the task; you get one final answer.
+ """
+ 
++# Task-kind specific protocol fragments. The "incident" values reproduce the original text
++# byte for byte, so incident-task prompts (experiments 001-003) are unchanged.
++AGENT_ROLE = {"incident": "an investigation agent", "coding": "a software engineering agent"}
++FINAL_EXAMPLE = {
++    "incident": (
++        '  {"action": "final", "answer": {"root_cause": "...", "required_value": "...", "remedy": "...",\n'
++        '                                 "evidence_refs": ["path:line", ...]}}'
++    ),
++    "coding": '  {"action": "final", "answer": {"summary": "<what you implemented and changed>"}}',
++}
++
+ CLM_INSTRUCTIONS = """
+ CONTEXT EDITING (you control your working context):
+ - /task/workspace/context.json is the authoritative working context. Whatever it contains after
+@@ -100,6 +110,21 @@ Drop repetition and raw log dumps. Use compact bullet points. Plain text only. S
+ requested length; it is set so the agent has room to continue."""
+ 
+ 
++SUMMARY_SYSTEM_TOKEN_TAIL_CODING = """You compress an agent's working transcript. The agent is
++implementing a Python package whose requirements arrive in stages, and will keep working after your
++summary replaces the entries below. The transcript may include an earlier summary: carry its facts
++forward. Preserve, exactly where relevant:
++- every requirement currently in force, with the stage that introduced or last changed it;
++- every superseded rule, what replaced it, and in which stage;
++- exact numbers, thresholds, rates, formats, function names and signatures;
++- which files and functions exist and what they implement;
++- the latest test results (which tests fail and why) and remaining work, including stages still
++  to be released.
++Drop repetition, full code listings and raw test dumps (the code is in the workspace files). Use
++compact bullet points. Plain text only. Stay within the requested length; it is set so the agent has
++room to continue."""
++
++
+ def system_prompt(
+     mode: str,
+     *,
+@@ -111,8 +136,14 @@ def system_prompt(
+     max_body: int,
+     summary_policy: str = "fixed-tail/1",
+     tail_tokens: int = 0,
++    task_kind: str = "incident",
+ ) -> str:
+-    text = PROTOCOL.format(exec_timeout=exec_timeout, output_cap=output_cap)
++    text = PROTOCOL.format(
++        exec_timeout=exec_timeout,
++        output_cap=output_cap,
++        agent_role=AGENT_ROLE[task_kind],
++        final_example=FINAL_EXAMPLE[task_kind],
++    )
+     if mode in ("clm", "guided"):
+         text += CLM_INSTRUCTIONS.format(max_entries=max_entries, max_body=max_body)
+     else:
+diff --git a/src/clm_lib/provider.py b/src/clm_lib/provider.py
+index ea1e904..24c037a 100644
+--- a/src/clm_lib/provider.py
++++ b/src/clm_lib/provider.py
+@@ -46,6 +46,21 @@ STAGED_ACTION_SCHEMA: dict[str, Any] = {
+ }
+ 
+ 
++# Coding tasks: staged actions with a final answer that only summarises the submitted work.
++CODING_ACTION_SCHEMA: dict[str, Any] = {
++    **STAGED_ACTION_SCHEMA,
++    "properties": {
++        **STAGED_ACTION_SCHEMA["properties"],
++        "answer": {
++            "type": "object",
++            "properties": {"summary": {"type": "string"}},
++            "required": ["summary"],
++            "additionalProperties": False,
++        },
++    },
++}
++
++
+ @dataclass
+ class ModelRequest:
+     system: str
+diff --git a/src/clm_lib/report.py b/src/clm_lib/report.py
+index d29a487..e49958e 100644
+--- a/src/clm_lib/report.py
++++ b/src/clm_lib/report.py
+@@ -177,9 +177,15 @@ def rescore(run_dir: Path) -> dict[str, Any] | None:
+ 
+     answer = next((e["answer"] for e in _events(run_dir) if e.get("event") == "final_answer"), None)
+     truth_path = run_dir / "evaluator" / "truth.json"
+-    if answer is None or not truth_path.exists():
++    if not truth_path.exists():
+         return None
+     t = _load(truth_path)
++    if t.get("kind") == "coding":
++        # Coding checks are deterministic data; the recorded score is the current score.
++        score: dict[str, Any] = _load(run_dir / "evaluator" / "score.json")
++        return score
++    if answer is None:
++        return None
+     truth = Truth(
+         cause=t["cause"],
+         remedies=t["remedies"],
+@@ -251,7 +257,7 @@ def build_report(
+         "Outcome columns: recorded at run time (score/1) and re-scored from the same answer with "
+         "the current scorer (score/2, post-hoc `setting=value` correction).",
+         "",
+-        "| run | label | mode | task | status | outcome score/1 | outcome score/2 | strict score/2 | cause/remedy/value/evidence | calls (act/rep/sum/retry) | exec | edits ok/unch/rej | summaries | pressure steps | in/out tokens | peak req tok (rep) | bound held | cost $ | elapsed s |",
++        "| run | label | mode | task | status | outcome (recorded) | outcome (current scorer) | strict (current) | components: cause/remedy/value/evidence, or coding checks by category | calls (act/rep/sum/retry) | exec | edits ok/unch/rej | summaries | pressure steps | in/out tokens | peak req tok (rep) | bound held | cost $ | elapsed s |",
+         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+     ]
+     rescored: dict[str, dict[str, Any] | None] = {}
+@@ -259,20 +265,33 @@ def build_report(
+         c, sc = m["counts"], m["score"]
+         rs = rescore(run_dir)
+         rescored[m["run_id"]] = rs
+-        comp = rs and {
+-            "cause": float(rs["cause_ok"]),
+-            "remedy": float(rs["remedy_ok"]),
+-            "value": float(rs["value_status"] == "exact"),
+-            "evidence": sum(rs["groups_covered"].values()) / max(1, len(rs["groups_covered"])),
+-        }
+-        comp = comp or sc["components"]
++        if rs and "by_category" in rs:  # coding task: evaluator checks by requirement category
++            comp_str = f"{rs['passed']}/{rs['checks']} checks; " + "; ".join(
++                f"{k} {v['passed']}/{v['total']}" + (f" (stale {v['stale']})" if v["stale"] else "")
++                for k, v in sorted(rs["by_category"].items())
++            )
++        else:
++            comp = (
++                {
++                    "cause": float(rs["cause_ok"]),
++                    "remedy": float(rs["remedy_ok"]),
++                    "value": float(rs["value_status"] == "exact"),
++                    "evidence": sum(rs["groups_covered"].values())
++                    / max(1, len(rs["groups_covered"])),
++                }
++                if rs
++                else sc["components"]
++            )
++            comp_str = (
++                f"{comp.get('cause', 0):.0f}/{comp.get('remedy', 0):.0f}/"
++                f"{comp.get('value', 0):.0f}/{comp.get('evidence', 0):.2f}"
++            )
+         u = m["usage_provider_reported"]
+         n, held = bound_checks(run_dir)
+         lines.append(
+             f"| {m['run_id']} | {m.get('label', '')} | {m['mode']} | {m['task']} | {m['status']} | "
+             f"{sc['outcome']} | {rs['outcome'] if rs else 'no answer'} | "
+-            f"{rs['strict_success'] if rs else False} | {comp['cause']:.0f}/{comp['remedy']:.0f}/"
+-            f"{comp['value']:.0f}/{comp['evidence']:.2f} | {c['provider_calls']} ({c['action_calls']}/"
++            f"{rs['strict_success'] if rs else False} | {comp_str} | {c['provider_calls']} ({c['action_calls']}/"
+             f"{c['repair_calls']}/{c['summary_calls']}/{c['api_retries']}) | {c['executions']} | "
+             f"{c['edits_accepted_changed']}/{c['edits_unchanged_write']}/{c['edits_rejected']} | "
+             f"{c['summaries_applied']} | {c['pressure_steps']} | {u['input_tokens_uncached']}/"
+diff --git a/src/clm_lib/runner.py b/src/clm_lib/runner.py
+index f79bf01..8586fbf 100644
+--- a/src/clm_lib/runner.py
++++ b/src/clm_lib/runner.py
+@@ -21,14 +21,16 @@ from __future__ import annotations
+ import json
+ import re
+ import secrets
++import shutil
+ import time
+-from dataclasses import dataclass, field
++from dataclasses import dataclass, field, replace
+ from datetime import UTC, datetime
+ from pathlib import Path
+ from typing import Any
+ 
+ from .baseline import SummaryPolicy
+ from .budget import BudgetExhausted, Ledger, ModelPrice, input_token_bound
++from .coding import CODING_SCORER_VERSION
+ from .config import Config
+ from .context import (
+     CONTEXT_FILENAME,
+@@ -39,10 +41,17 @@ from .context import (
+     total_chars,
+     unified_diff,
+ )
+-from .executor import ExecResult, Executor, ExecutorUnavailable
+-from .prompts import PROMPT_VERSION, render_entries, render_user, system_prompt
++from .executor import DockerExecutor, ExecResult, Executor, ExecutorUnavailable
++from .prompts import (
++    PROMPT_VERSION,
++    SUMMARY_SYSTEM_TOKEN_TAIL_CODING,
++    render_entries,
++    render_user,
++    system_prompt,
++)
+ from .provider import (
+     ACTION_SCHEMA,
++    CODING_ACTION_SCHEMA,
+     STAGED_ACTION_SCHEMA,
+     ModelRequest,
+     ModelResponse,
+@@ -51,7 +60,6 @@ from .provider import (
+ )
+ from .tasks import (
+     SCORER_VERSION,
+-    Score,
+     TaskInstance,
+     no_answer_score,
+     score_answer,
+@@ -81,7 +89,7 @@ class RunResult:
+     task: str
+     status: str
+     stop_reason: str
+-    score: Score
++    score: Any  # tasks.Score (incident) or coding.CodingScore
+     metrics: dict[str, Any]
+ 
+ 
+@@ -121,8 +129,15 @@ class _Usage:
+     assumed_cost_usd: float = 0.0
+ 
+ 
++INCIDENT_FIELDS = ("root_cause", "required_value", "remedy", "evidence_refs")
++CODING_FIELDS = ("summary",)
++
++
+ def parse_action(
+-    text: str, max_code_chars: int, allow_advance: bool = False
++    text: str,
++    max_code_chars: int,
++    allow_advance: bool = False,
++    answer_fields: tuple[str, ...] = INCIDENT_FIELDS,
+ ) -> tuple[dict[str, Any] | None, str]:
+     """Return (action, error). Only a whole-response JSON object is accepted."""
+     raw = text.strip()
+@@ -147,10 +162,10 @@ def parse_action(
+         return obj, ""
+     if kind == "final":
+         ans = obj.get("answer")
+-        need = ("root_cause", "required_value", "remedy", "evidence_refs")
++        need = answer_fields
+         if not isinstance(ans, dict) or any(k not in ans for k in need):
+             return None, f"final action needs answer with fields {list(need)}"
+-        if not isinstance(ans["evidence_refs"], list):
++        if "evidence_refs" in need and not isinstance(ans["evidence_refs"], list):
+             return None, "evidence_refs must be a list of strings"
+         return obj, ""
+     return None, "action must be 'execute' or 'final'"
+@@ -267,6 +282,7 @@ class _Run:
+             max_body=self.climits.max_body_chars,
+             summary_policy=self.policy.policy,
+             tail_tokens=self.policy.tail_tokens,
++            task_kind=task.kind,
+         )
+ 
+     # --------------------------------------------------------------- helpers
+@@ -484,7 +500,12 @@ class _Run:
+         for attempt in range(self.policy.retries + 1):
+             limit = self.policy.char_limit(attempt, room, self.cpt)
+             req = self.policy.request(
+-                self.task.prompt, older, attempt, self.lim.max_output_tokens, limit
++                self.task.prompt,
++                older,
++                attempt,
++                self.lim.max_output_tokens,
++                limit,
++                system=SUMMARY_SYSTEM_TOKEN_TAIL_CODING if self.task.kind == "coding" else None,
+             )
+             resp = self.call(
+                 req,
+@@ -881,7 +902,15 @@ class _Run:
+ 
+     # --------------------------------------------------------------- loop
+     def loop(self) -> tuple[str, str]:
+-        schema = STAGED_ACTION_SCHEMA if self.task.staged else ACTION_SCHEMA
++        coding = self.task.kind == "coding"
++        schema = (
++            CODING_ACTION_SCHEMA
++            if coding
++            else STAGED_ACTION_SCHEMA
++            if self.task.staged
++            else ACTION_SCHEMA
++        )
++        fields = CODING_FIELDS if coding else INCIDENT_FIELDS
+         staged = self.task.staged
+         while True:
+             self.step += 1
+@@ -899,7 +928,7 @@ class _Run:
+             req = ModelRequest(self.system, user, self.lim.max_output_tokens, "action", schema)
+             resp = self.call(req, "action", {"pressure": pressure, "recovery": recovery})
+             self.timeline[-1]["reported_input_tokens"] = self.last_reported_input
+-            action, err = parse_action(resp.text, self.lim.max_code_chars, staged)
++            action, err = parse_action(resp.text, self.lim.max_code_chars, staged, fields)
+             if action is None:
+                 self.trace.event(
+                     "invalid_action", step=self.step, error=err, stop_reason=resp.stop_reason
+@@ -913,7 +942,7 @@ class _Run:
+                     self.system, user + note, self.lim.max_output_tokens, "repair", schema
+                 )
+                 resp = self.call(repair, "repair", {"error": err})
+-                action, err = parse_action(resp.text, self.lim.max_code_chars, staged)
++                action, err = parse_action(resp.text, self.lim.max_code_chars, staged, fields)
+                 if action is None:
+                     self.trace.event("invalid_action", step=self.step, error=err, after_repair=True)
+                     return "failed_protocol", f"invalid response after repair: {err}"
+@@ -990,12 +1019,17 @@ class _Run:
+     def execute(self) -> RunResult:
+         self.task.write_fixtures(self.fx, 1 if self.task.staged else None)
+         (self.ws / "helpers").mkdir()
++        for rel, text in self.task.workspace_seed.items():
++            path = self.ws / rel
++            path.parent.mkdir(parents=True, exist_ok=True)
++            path.write_text(text, encoding="utf-8")
+         run_meta = {
+             "run_id": self.run_id,
+             "label": self.label,
+             "mode": self.mode,
+             "comparison_arm": self.mode in ("summary", "clm"),
+             "task": self.task.spec.name,
++            "task_kind": self.task.kind,
+             "split": self.task.spec.split,
+             "scenario_hidden_from_model": True,
+             "fixture_seed": self.task.spec.seed,
+@@ -1076,18 +1110,69 @@ class _Run:
+             "timeline": tl,
+         }
+ 
++    def evaluate_coding(self, completed: bool) -> Any:
++        """Score the submitted workspace in a fresh sandbox; never run it on the host."""
++        from .coding import EVAL_RUNNER, checks_json, score_coding
++
++        ev = self.dir / "evaluator"
++        skip = shutil.ignore_patterns(
++            CONTEXT_FILENAME, f".{CONTEXT_FILENAME}.host-tmp", "spill", "__pycache__"
++        )
++        shutil.copytree(self.ws, ev / "submission", ignore=skip)  # recorded submission
++        work, fx = ev / "_eval_work", ev / "_eval_fixtures"
++        shutil.copytree(ev / "submission", work)  # disposable copy the evaluation may alter
++        fx.mkdir()
++        (fx / "checks.json").write_text(checks_json(self.task.truth), encoding="utf-8")
++        error: str | None = None
++        output: str | None = None
++        if not isinstance(self.r.executor, DockerExecutor):
++            error = "coding evaluation requires the Docker executor"
++        else:
++            evaluator = replace(self.r.executor, timeout_s=180, output_cap_bytes=2_000_000)
++            try:
++                res = evaluator.run(EVAL_RUNNER, work, fx)
++                output = res.stdout
++                self.trace.write("evaluator/eval_stdout.txt", res.stdout)
++                self.trace.write("evaluator/eval_stderr.txt", res.stderr)
++                if res.timed_out or res.exit_code not in (0, None):
++                    error = f"evaluator exit {res.exit_code} timed_out={res.timed_out}"
++            except ExecutorUnavailable as exc:
++                error = f"evaluator unavailable: {exc}"
++        shutil.rmtree(work, ignore_errors=True)
++        shutil.rmtree(fx, ignore_errors=True)
++        score = score_coding(self.task.truth, output, completed, error)
++        self.trace.event(
++            "coding_evaluation",
++            outcome=score.outcome,
++            passed=score.passed,
++            checks=score.checks,
++            stale=score.stale,
++            error=error,
++        )
++        return score
++
+     def finish(self, status: str, reason: str, human: str) -> RunResult:
+         # Ground truth is written only now, outside the sandbox mounts.
+         truth = self.task.truth
+-        score = (
+-            score_answer(self.answer, truth, self.task.files)
+-            if self.answer
+-            else no_answer_score(truth)
+-        )
++        score: Any
++        if self.task.kind == "coding":
++            score = self.evaluate_coding(completed=self.answer is not None)
++        else:
++            score = (
++                score_answer(self.answer, truth, self.task.files)
++                if self.answer
++                else no_answer_score(truth)
++            )
+         self.trace.write_json("evaluator/truth.json", truth.to_dict())
+         self.trace.write_json(
+             "evaluator/score.json",
+-            {**score.to_dict(), "components": score.components, "scorer_version": SCORER_VERSION},
++            {
++                **score.to_dict(),
++                "components": score.components,
++                "scorer_version": CODING_SCORER_VERSION
++                if self.task.kind == "coding"
++                else SCORER_VERSION,
++            },
+         )
+         elapsed = time.monotonic() - self.t_start
+         u = self.u
+@@ -1098,7 +1183,8 @@ class _Run:
+             "task": self.task.spec.name,
+             "status": status,
+             "stop_reason": reason,
+-            "valid_for_comparison": status not in INVALID_FOR_COMPARISON,
++            "valid_for_comparison": status not in INVALID_FOR_COMPARISON
++            and getattr(score, "outcome", "") != "evaluation_error",
+             "human_intervention": human,
+             "started": self.started,
+             "ended": now_iso(),
+diff --git a/src/clm_lib/tasks.py b/src/clm_lib/tasks.py
+index 2c3605d..5466072 100644
+--- a/src/clm_lib/tasks.py
++++ b/src/clm_lib/tasks.py
+@@ -73,6 +73,14 @@ INSTANCES: dict[str, InstanceSpec] = {
+     "staged-eval-4": InstanceSpec("staged-eval-4", 3204, "staged_pool", "staged-eval"),
+     "staged-eval-5": InstanceSpec("staged-eval-5", 3205, "staged_pool", "staged-eval"),
+     "staged-eval-6": InstanceSpec("staged-eval-6", 3206, "staged_pool", "staged-eval"),
++    # Experiment 004: coding task with changing requirements (coding.py). Each instance has a
++    # different schedule of added and replaced rules; dev instances are for calibration only.
++    "coding-dev-1": InstanceSpec("coding-dev-1", 4101, "coding_invoice", "coding-dev"),
++    "coding-dev-2": InstanceSpec("coding-dev-2", 4102, "coding_invoice", "coding-dev"),
++    "coding-eval-1": InstanceSpec("coding-eval-1", 4201, "coding_invoice", "coding-eval"),
++    "coding-eval-2": InstanceSpec("coding-eval-2", 4202, "coding_invoice", "coding-eval"),
++    "coding-eval-3": InstanceSpec("coding-eval-3", 4203, "coding_invoice", "coding-eval"),
++    "coding-eval-4": InstanceSpec("coding-eval-4", 4204, "coding_invoice", "coding-eval"),
+ }
+ HELDOUT = ("heldout-1", "heldout-2", "heldout-3")
+ STAGED_EVAL = ("staged-eval-1", "staged-eval-2", "staged-eval-3")
+@@ -107,12 +115,15 @@ class TaskInstance:
+     spec: InstanceSpec
+     prompt: str
+     files: dict[str, str]
+-    truth: Truth = field(repr=False)
++    truth: Any = field(repr=False)  # Truth (incident tasks) or coding.CodingTruth
+     # Staged tasks: stages[k] holds the files released at stage k+1 (union == files) and
+     # stage_updates[k] the update message shown when that stage is released.
+     stages: list[dict[str, str]] = field(default_factory=list)
+     stage_updates: list[str] = field(default_factory=list)
+     generator_version: str = GENERATOR_VERSION
++    kind: str = "incident"  # "incident" | "coding"
++    # Files copied into the agent workspace at the start (coding tasks: the project skeleton).
++    workspace_seed: dict[str, str] = field(default_factory=dict)
+ 
+     @property
+     def staged(self) -> bool:
+@@ -853,6 +864,10 @@ def generate(name: str) -> TaskInstance:
+         from .staged import generate_staged
+ 
+         return generate_staged(spec)
++    if spec.scenario == "coding_invoice":
++        from .coding import generate_coding
++
++        return generate_coding(spec)
+     files, truth = _GENERATORS[spec.scenario](spec)
+     return TaskInstance(spec=spec, prompt=task_prompt(files), files=files, truth=truth)
+ 
+diff --git a/tests/test_budget.py b/tests/test_budget.py
+index ad6e645..0e09040 100644
+--- a/tests/test_budget.py
++++ b/tests/test_budget.py
+@@ -189,3 +189,23 @@ def test_compare_halts_on_accounting_bound_violation(cfg: Any, tmp_path: Path) -
+     assert all("accounting assumption failed" in c["reason"] for c in cells[1:])
+     rec = json.loads(out.read_text())
+     assert rec["halted"] and rec["frozen"]["prompt_version"] and "code_state" in rec["frozen"]
++
++
++def test_explicit_ceiling_change_is_recorded_and_preserves_spend(tmp_path: Path) -> None:
++    path = tmp_path / "l.json"
++    led = Ledger.open(path, 10.0)
++    led.settle(led.reserve(0.5, "r1", "action"), actual_usd=0.25, status="ok")
++    with pytest.raises(ValueError, match="reason"):
++        Ledger.set_ceiling(path, 40.0, "")
++    change = Ledger.set_ceiling(path, 40.25, "user authorised +$30 for experiment 004")
++    assert change["from_usd"] == 10.0 and change["to_usd"] == 40.25
++    assert change["spent_at_change_usd"] == pytest.approx(0.25)
++    reopened = Ledger.open(path, 40.25)
++    assert reopened.ceiling_usd == 40.25 and reopened.spent_usd == pytest.approx(0.25)
++    assert len(reopened.entries) == 1 and len(reopened.ceiling_history) == 1
++    # A lower configured ceiling still wins when opening (never raised implicitly).
++    assert Ledger.open(path, 10.0).ceiling_usd == 10.0
++    held = Ledger.open(path, 40.25)
++    held.reserve(0.1, "r2", "action")
++    with pytest.raises(LedgerBusy):
++        Ledger.set_ceiling(path, 50.0, "should be refused while pending")
+diff --git a/tests/test_tasks.py b/tests/test_tasks.py
+index be67c6f..5d977f3 100644
+--- a/tests/test_tasks.py
++++ b/tests/test_tasks.py
+@@ -7,7 +7,7 @@ from typing import Any
+ from clm_lib.tasks import HELDOUT, INSTANCES, TaskInstance, generate, score_answer
+ 
+ # Experiment 001 task family; the staged family (experiment 002) is tested in test_staged.py.
+-SINGLE = [n for n in INSTANCES if not n.startswith("staged-")]
++SINGLE = [n for n in INSTANCES if not n.startswith(("staged-", "coding-"))]
+ 
+ 
+ def refs(inst: TaskInstance) -> list[str]:
+diff --git a/configs/exp004.toml b/configs/exp004.toml
+new file mode 100644
+index 0000000..34a144f
+--- /dev/null
++++ b/configs/exp004.toml
+@@ -0,0 +1,49 @@
++# Experiment 004 configuration (coding task): experiment 003's settings (token-tail/1 baseline,
++# 8K whole-request budget, same model/effort) except max_calls 30 and max_output_tokens 4096,
++# needed for a four-stage coding task, and the authorised ledger ceiling. Prompt caching is not
++# used (no cache_control is sent).
++# All limits are recorded in every run and shared by both arms.
++runs_dir = "runs"
++
++[provider]
++name = "anthropic"
++model = "claude-opus-5-5"     # verified via the models endpoint by `clm-lib doctor --probe`
++base_url = ""                 # empty: SDK default (or ANTHROPIC_BASE_URL)
++effort = "low"                # output_config.effort; thinking cannot be disabled on this model
++structured_output = true      # output_config.format json_schema for actions
++timeout_s = 120
++api_retries = 2               # runtime-level retries; SDK retries are disabled
++
++[limits]
++max_calls = 30                # per task: actions + repairs + summaries + API retries
++max_output_tokens = 4096
++exec_timeout_s = 30
++output_cap_chars = 6000       # per stream
++context_budget_tokens = 8000  # whole request input
++pressure_ratio = 0.70
++recovery_reserve_tokens = 1000
++spill_min_chars = 1500
++initial_chars_per_token = 3.0
++max_code_chars = 20000
++
++[baseline]
++policy = "token-tail/1"     # experiment 003; experiments 001/002 used "fixed-tail/1"
++tail_entries = 4
++summary_max_chars = 3000
++summary_retries = 1
++tail_ratio = 0.15            # token-tail/1: verbatim recent-entry allowance (fraction of budget)
++newest_ratio = 0.25          # token-tail/1: newest entry kept verbatim if it fits this fraction
++target_ratio = 0.50          # token-tail/1: desired request size after compaction
++summary_min_chars = 600
++
++[budget]
++ceiling_usd = 38.916744            # total live-validation ceiling; ledger keeps the lowest ever set
++min_run_reserve_usd = 0.75    # compare: do not start a run with less remaining
++ledger = "runs/ledger.json"
++prices = "configs/prices.toml"
++
++[sandbox]
++image = "python:3.12-slim"
++memory = "512m"
++cpus = 1.0
++pids_limit = 128
+diff --git a/src/clm_lib/coding.py b/src/clm_lib/coding.py
+new file mode 100644
+index 0000000..d4e73b1
+--- /dev/null
++++ b/src/clm_lib/coding.py
+@@ -0,0 +1,681 @@
++"""Coding task family: an invoice calculator whose requirements change over stages.
++
++The agent implements a small, dependency-free package (``invoice``) in its workspace. Requirements
++arrive in four stages, released by the ``advance`` action. Each stage adds rule modules and/or
++replaces (supersedes) the version of an earlier module; modules that are never changed after they
++are introduced remain in force. Later stage documents state only the changes, so the agent has
++to keep track of what is still in force (earlier documents stay readable).
++
++Visible material (fixture mount, read-only):
++- ``stage-N/REQUIREMENTS.md``: released with stage N and never changed afterwards.
++- ``current-tests/test_invoice.py``: a visible ``unittest`` suite for every rule currently in force.
++  It is rewritten at each release, so tests of superseded rules are updated rather than left
++  contradicting the new requirements.
++
++Evaluator-only material (host memory until scoring; never mounted during the run):
++- data-driven checks with expected results computed by a host-side reference implementation,
++  covering only disclosed requirements, on inputs different from the visible tests. For
++  replaced rules a "stale" expectation (the old rule's result) is also recorded.
++
++Scoring runs the submitted workspace copy in a fresh sandbox container (see ``EVAL_RUNNER``).
++"""
++
++from __future__ import annotations
++
++import json
++import random
++from dataclasses import dataclass, field
++from decimal import ROUND_HALF_EVEN, ROUND_HALF_UP, Decimal
++from typing import Any
++
++from .tasks import InstanceSpec, TaskInstance
++
++CODING_GENERATOR_VERSION = "invoice-gen/1"
++CODING_SCORER_VERSION = "invoice-checks/1"
++N_STAGES = 4
++MODULES = ("ROUND", "TAX", "TIER", "BULK", "EXEMPT", "VALIDATE", "FORMAT")
++
++# Rule text, per module and version.
++RULES: dict[str, dict[int, str]] = {
++    "ROUND": {
++        1: (
++            "Rounding: round each line amount to 2 decimals (half up) before summing; compute "
++            "discount from the rounded subtotal and round it to 2 decimals (half up); compute tax "
++            "from (subtotal - discount) and round it to 2 decimals (half up); "
++            "total = subtotal - discount + tax."
++        ),
++        2: (
++            "Rounding (replaces the earlier rounding rule): do NOT round line amounts. Compute the "
++            "subtotal, discount and tax exactly (discount from the exact subtotal; tax from the exact "
++            "subtotal minus the exact discount), then round each of subtotal, discount and tax to 2 "
++            "decimals using banker's rounding (half even); total = rounded subtotal - rounded "
++            "discount + rounded tax."
++        ),
++    },
++    "TAX": {
++        1: "Tax: the tax rate is 10% for every customer.",
++        2: (
++            "Tax (replaces the flat 10% rate): the tax rate depends on customer['region']: "
++            "'NZ' 15%, 'AU' 10%, 'US' 0%, any other region 12%."
++        ),
++    },
++    "TIER": {
++        1: (
++            "Tier discount: discount rate by customer['tier']: 'gold' 5%, 'silver' 2%, any other "
++            "tier 0%."
++        ),
++        2: (
++            "Tier discount (replaces the earlier tier rates): 'platinum' 10%, 'gold' 7%, "
++            "'silver' 3%, any other tier 0%."
++        ),
++    },
++    "BULK": {
++        1: (
++            "Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any "
++            "line rounding)."
++        ),
++        2: (
++            "Bulk lines (replaces the earlier bulk rule): qty >= 200 multiplies the line amount by "
++            "0.88; otherwise qty >= 50 multiplies it by 0.95; smaller lines are unchanged "
++            "(before any line rounding)."
++        ),
++    },
++    "EXEMPT": {
++        1: "Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.",
++    },
++    "VALIDATE": {
++        1: (
++            "Validation: compute_invoice raises ValueError if lines is empty, if any qty is not a "
++            "positive integer, or if any unit_price is negative."
++        ),
++        2: (
++            "Validation (replaces the earlier qty rule): qty 0 is now allowed and such a line is "
++            "skipped entirely; a negative qty still raises ValueError; an empty lines list or a "
++            "negative unit_price still raises ValueError."
++        ),
++    },
++    "FORMAT": {
++        1: (
++            "Money formatting: add format_money(amount: str, currency: str) -> str. Prefix 'NZD' "
++            "with 'NZ$', 'AUD' with 'A$', 'USD' with 'US$'; always 2 decimals; a negative amount "
++            "puts '-' before the prefix (for example '-NZ$5.00'); any other currency raises "
++            "ValueError."
++        ),
++        2: (
++            "Money formatting (replaces the earlier format): format_money also uses comma "
++            "thousands separators, for example format_money('1234.5', 'NZD') == 'NZ$1,234.50'. "
++            "Prefixes, the minus sign position and unknown-currency errors are unchanged."
++        ),
++    },
++}
++
++# Stage schedules: stage -> list of (module, version). Version 2 replaces version 1.
++SCHEDULES: dict[str, list[list[tuple[str, int]]]] = {
++    "coding-dev-1": [
++        [("ROUND", 1), ("TAX", 1), ("VALIDATE", 1)],
++        [("TIER", 1), ("TAX", 2)],
++        [("BULK", 1), ("ROUND", 2)],
++        [("FORMAT", 1), ("TIER", 2)],
++    ],
++    "coding-dev-2": [
++        [("ROUND", 1), ("TIER", 1), ("FORMAT", 1)],
++        [("TAX", 1), ("FORMAT", 2)],
++        [("VALIDATE", 1), ("EXEMPT", 1), ("TIER", 2)],
++        [("BULK", 1), ("TAX", 2)],
++    ],
++    "coding-eval-1": [
++        [("ROUND", 1), ("TAX", 1), ("BULK", 1)],
++        [("VALIDATE", 1), ("BULK", 2)],
++        [("TIER", 1), ("ROUND", 2)],
++        [("EXEMPT", 1), ("FORMAT", 1), ("TAX", 2)],
++    ],
++    "coding-eval-2": [
++        [("ROUND", 1), ("TIER", 1), ("VALIDATE", 1)],
++        [("TAX", 1), ("FORMAT", 1)],
++        [("BULK", 1), ("TIER", 2), ("VALIDATE", 2)],
++        [("EXEMPT", 1), ("FORMAT", 2)],
++    ],
++    "coding-eval-3": [
++        [("ROUND", 1), ("TAX", 1), ("FORMAT", 1)],
++        [("TIER", 1), ("EXEMPT", 1), ("ROUND", 2)],
++        [("BULK", 1), ("FORMAT", 2)],
++        [("VALIDATE", 1), ("TAX", 2), ("BULK", 2)],
++    ],
++    "coding-eval-4": [
++        [("ROUND", 1), ("BULK", 1), ("TIER", 1)],
++        [("TAX", 1), ("VALIDATE", 1), ("TIER", 2)],
++        [("FORMAT", 1), ("BULK", 2)],
++        [("EXEMPT", 1), ("ROUND", 2), ("VALIDATE", 2)],
++    ],
++}
++
++Config = dict[str, int]
++
++
++def config_at(schedule: list[list[tuple[str, int]]], stage: int) -> Config:
++    cfg: Config = {}
++    for changes in schedule[:stage]:
++        for module, version in changes:
++            cfg[module] = version
++    return cfg
++
++
++# ------------------------------------------------------------- reference model
++Q2 = Decimal("0.01")
++TIER_RATES = {
++    1: {"gold": "0.05", "silver": "0.02"},
++    2: {"platinum": "0.10", "gold": "0.07", "silver": "0.03"},
++}
++REGION_RATES = {"NZ": "0.15", "AU": "0.10", "US": "0"}
++PREFIX = {"NZD": "NZ$", "AUD": "A$", "USD": "US$"}
++
++
++def ref_compute(
++    lines: list[dict[str, Any]], customer: dict[str, Any], cfg: Config
++) -> dict[str, str]:
++    v = cfg.get("VALIDATE", 0)
++    if v and not lines:
++        raise ValueError("empty")
++    rnd = cfg.get("ROUND", 1)
++    sub = Decimal(0)
++    for ln in lines:
++        qty, price = ln["qty"], Decimal(ln["unit_price"])
++        if v == 1 and (not isinstance(qty, int) or qty <= 0):
++            raise ValueError("qty")
++        if v == 2 and qty < 0:
++            raise ValueError("qty")
++        if v and price < 0:
++            raise ValueError("price")
++        if v == 2 and qty == 0:
++            continue
++        amount = qty * price
++        bulk = cfg.get("BULK", 0)
++        if bulk == 1 and qty >= 100:
++            amount *= Decimal("0.90")
++        elif bulk == 2:
++            if qty >= 200:
++                amount *= Decimal("0.88")
++            elif qty >= 50:
++                amount *= Decimal("0.95")
++        if rnd == 1:
++            amount = amount.quantize(Q2, ROUND_HALF_UP)
++        sub += amount
++    tier = cfg.get("TIER", 0)
++    d_rate = Decimal(TIER_RATES[tier].get(customer.get("tier", ""), "0")) if tier else Decimal(0)
++    tax_v = cfg.get("TAX", 0)
++    if tax_v == 1:
++        t_rate = Decimal("0.10")
++    elif tax_v == 2:
++        t_rate = Decimal(REGION_RATES.get(customer.get("region", ""), "0.12"))
++    else:
++        t_rate = Decimal(0)
++    if cfg.get("EXEMPT") and customer.get("tax_exempt") is True:
++        t_rate = Decimal(0)
++    if rnd == 1:
++        discount = (sub * d_rate).quantize(Q2, ROUND_HALF_UP)
++        tax = ((sub - discount) * t_rate).quantize(Q2, ROUND_HALF_UP)
++        subtotal = sub.quantize(Q2, ROUND_HALF_UP)
++    else:
++        d_exact = sub * d_rate
++        t_exact = (sub - d_exact) * t_rate
++        subtotal = sub.quantize(Q2, ROUND_HALF_EVEN)
++        discount = d_exact.quantize(Q2, ROUND_HALF_EVEN)
++        tax = t_exact.quantize(Q2, ROUND_HALF_EVEN)
++    total = subtotal - discount + tax
++    return {
++        "subtotal": str(subtotal),
++        "discount": str(discount),
++        "tax": str(tax),
++        "total": str(total),
++    }
++
++
++def ref_format(amount: str, currency: str, cfg: Config) -> str:
++    if currency not in PREFIX:
++        raise ValueError("currency")
++    value = Decimal(amount).quantize(Q2, ROUND_HALF_UP)
++    sign = "-" if value < 0 else ""
++    body = f"{abs(value):,.2f}" if cfg.get("FORMAT") == 2 else f"{abs(value):.2f}"
++    return f"{sign}{PREFIX[currency]}{body}"
++
++
++def ref_call(fn: str, args: list[Any], cfg: Config) -> dict[str, Any]:
++    try:
++        if fn == "compute_invoice":
++            return {"value": ref_compute(args[0], args[1], cfg)}
++        return {"value": ref_format(args[0], args[1], cfg)}
++    except ValueError:
++        return {"raises": "ValueError"}
++
++
++# ------------------------------------------------------------- case generation
++def _line(rng: random.Random, qty: int | None = None, price: str | None = None) -> dict[str, Any]:
++    return {
++        "sku": f"SKU-{rng.randrange(100, 999)}",
++        "qty": qty if qty is not None else rng.randrange(1, 9),
++        "unit_price": price
++        if price is not None
++        else f"{rng.randrange(1, 90)}.{rng.randrange(0, 99):02d}",
++    }
++
++
++def _customer(tier: str = "standard", region: str = "US", exempt: bool = False) -> dict[str, Any]:
++    c: dict[str, Any] = {"tier": tier, "region": region}
++    if exempt:
++        c["tax_exempt"] = True
++    return c
++
++
++def module_cases(module: str, rng: random.Random, n: int) -> list[tuple[str, list[Any]]]:
++    """Inputs that exercise ``module`` (other rules are kept as neutral as possible)."""
++    out: list[tuple[str, list[Any]]] = []
++    for _ in range(n):
++        if module == "ROUND":
++            lines = [
++                _line(
++                    rng,
++                    rng.randrange(1, 9),
++                    f"{rng.randrange(1, 30)}.{rng.randrange(0, 99):02d}{rng.choice([5, 3, 7])}",
++                )
++                for _ in range(3)
++            ]
++            out.append(
++                ("compute_invoice", [lines, _customer("standard", rng.choice(["NZ", "AU"]))])
++            )
++        elif module == "TAX":
++            lines = [_line(rng) for _ in range(2)]
++            out.append(
++                (
++                    "compute_invoice",
++                    [lines, _customer("standard", rng.choice(["NZ", "AU", "US", "JP"]))],
++                )
++            )
++        elif module == "TIER":
++            lines = [_line(rng) for _ in range(2)]
++            out.append(
++                (
++                    "compute_invoice",
++                    [lines, _customer(rng.choice(["gold", "silver", "platinum"]), "US")],
++                )
++            )
++        elif module == "BULK":
++            lines = [
++                _line(
++                    rng,
++                    rng.choice([60, 120, 250]),
++                    f"{rng.randrange(1, 9)}.{rng.randrange(0, 99):02d}",
++                ),
++                _line(rng),
++            ]
++            out.append(("compute_invoice", [lines, _customer("standard", "US")]))
++        elif module == "EXEMPT":
++            lines = [_line(rng) for _ in range(2)]
++            out.append(
++                (
++                    "compute_invoice",
++                    [lines, _customer("standard", rng.choice(["NZ", "AU"]), exempt=True)],
++                )
++            )
++        elif module == "VALIDATE":
++            kind = rng.choice(["empty", "zero", "negqty", "negprice"])
++            if kind == "empty":
++                bad: list[dict[str, Any]] = []
++            elif kind == "zero":
++                bad = [_line(rng, 0), _line(rng)]
++            elif kind == "negqty":
++                bad = [_line(rng, -rng.randrange(1, 5)), _line(rng)]
++            else:
++                bad = [_line(rng, price=f"-{rng.randrange(1, 20)}.00"), _line(rng)]
++            out.append(("compute_invoice", [bad, _customer("standard", "US")]))
++        elif module == "FORMAT":
++            amount = rng.choice(
++                [
++                    f"{rng.randrange(1000, 99999)}.{rng.randrange(0, 99):02d}",
++                    f"-{rng.randrange(1000, 9999)}.5",
++                    f"{rng.randrange(1, 999)}.{rng.randrange(0, 9)}",
++                ]
++            )
++            out.append(("format_money", [amount, rng.choice(["NZD", "AUD", "USD"])]))
++    return out
++
++
++def _distinct(
++    module: str, rng: random.Random, cfg: Config, old: Config | None, n: int
++) -> list[tuple[str, list[Any]]]:
++    """Cases for a module; for replaced modules, only cases where old and new rules differ."""
++    picked: list[tuple[str, list[Any]]] = []
++    for _ in range(400):
++        if len(picked) >= n:
++            break
++        (fn, args) = module_cases(module, rng, 1)[0]
++        if old is not None and ref_call(fn, args, cfg) == ref_call(fn, args, old):
++            continue
++        picked.append((fn, args))
++    return picked
++
++
++@dataclass
++class CodingTruth:
++    schedule: list[list[tuple[str, int]]]
++    final_config: Config
++    checks: list[dict[str, Any]]
++    categories: dict[str, str]  # module -> retained | replaced | final_stage
++    notes: str = ""
++    stale_causes: list[str] = field(default_factory=list)
++
++    def to_dict(self) -> dict[str, Any]:
++        return {
++            "kind": "coding",
++            "schedule": [[list(x) for x in st] for st in self.schedule],
++            "final_config": self.final_config,
++            "categories": self.categories,
++            "checks": self.checks,
++            "notes": self.notes,
++        }
++
++
++def _categories(schedule: list[list[tuple[str, int]]]) -> dict[str, str]:
++    introduced: dict[str, int] = {}
++    replaced: set[str] = set()
++    for stage, changes in enumerate(schedule, start=1):
++        for module, version in changes:
++            introduced.setdefault(module, stage)
++            if version > 1:
++                replaced.add(module)
++    cats = {}
++    for module, stage in introduced.items():
++        if module in replaced:
++            cats[module] = "replaced"
++        elif stage == len(schedule):
++            cats[module] = "final_stage"
++        else:
++            cats[module] = "retained"
++    return cats
++
++
++def _visible_tests(cfg: Config, rng: random.Random, stage: int) -> str:
++    lines = [
++        f'"""Visible tests for the requirements in force after stage {stage}.',
++        "",
++        "Run from /task/workspace:  python -m unittest discover -s /task/fixtures/current-tests",
++        '"""',
++        "",
++        "import unittest",
++        "",
++        "import invoice",
++        "",
++        "",
++        "class TestInvoice(unittest.TestCase):",
++        "    maxDiff = None",
++        "",
++    ]
++    n = 0
++    for module in [m for m in MODULES if m in cfg]:
++        for fn, args in _distinct(module, rng, cfg, None, 2):
++            n += 1
++            exp = ref_call(fn, args, cfg)
++            call = f"invoice.{fn}(*{args!r})"
++            lines.append(f"    def test_{module.lower()}_{n}(self):")
++            if "raises" in exp:
++                lines.append(f"        with self.assertRaises(ValueError):\n            {call}")
++            else:
++                lines.append(f"        self.assertEqual({call}, {exp['value']!r})")
++            lines.append("")
++    lines += ["", 'if __name__ == "__main__":', "    unittest.main()", ""]
++    return "\n".join(lines)
++
++
++API_DOC = """## Package and API
++
++Implement the package `invoice` in /task/workspace/invoice/ (a starting skeleton is provided).
++Standard library only. Use `decimal.Decimal` arithmetic.
++
++- `invoice.compute_invoice(lines, customer) -> dict`
++  - `lines`: list of `{"sku": str, "qty": int, "unit_price": str}`. unit_price is a decimal
++    string such as "12.50"; it may have more than 2 decimal places (for example "3.125").
++  - `customer`: `{"tier": str, "region": str}` and optionally `"tax_exempt": bool`.
++  - Returns `{"subtotal": str, "discount": str, "tax": str, "total": str}`, each a string with
++    exactly 2 decimals, for example "12.30".
++- Base calculation (always in force): line amount = qty x unit_price; subtotal = sum of line
++  amounts; discount = subtotal x discount rate; tax = (subtotal - discount) x tax rate;
++  total = subtotal - discount + tax. With no discount rule in force the discount rate is 0; with
++  no tax rule in force the tax rate is 0.
++"""
++
++
++def _stage_doc(stage: int, changes: list[tuple[str, int]]) -> str:
++    head = [f"# Stage {stage} of {N_STAGES} requirements", ""]
++    if stage == 1:
++        head += [API_DOC, "## Rules introduced in stage 1", ""]
++    else:
++        head += [
++            "Only the changes are listed. Every earlier requirement that is not replaced below "
++            "remains in force.",
++            "",
++            "## Changes",
++            "",
++        ]
++    for module, version in changes:
++        tag = "NEW" if version == 1 else "CHANGED"
++        head.append(f"- [{tag}] {RULES[module][version]}")
++    head += [
++        "",
++        "Visible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py "
++        "(this file is updated at each stage).",
++        "",
++    ]
++    return "\n".join(head)
++
++
++SEED_INIT = '''"""Invoice calculator package (implement the requirements in /task/fixtures/stage-*/)."""
++
++from .core import compute_invoice, format_money
++
++__all__ = ["compute_invoice", "format_money"]
++'''
++SEED_CORE = '''"""Implementation goes here."""
++
++from decimal import Decimal  # noqa: F401
++
++
++def compute_invoice(lines, customer):
++    raise NotImplementedError
++
++
++def format_money(amount, currency):
++    raise NotImplementedError
++'''
++
++
++def coding_task_prompt() -> str:
++    return f"""Software task with requirements released in {N_STAGES} stages over time.
++
++Implement the Python package `invoice` in /task/workspace/invoice/ (a skeleton is provided; you
++may add modules). Requirements are under /task/fixtures/stage-N/REQUIREMENTS.md; only stage 1 is
++available now. Visible unittest tests for every rule currently in force are in
++/task/fixtures/current-tests/ (updated at each stage). To run them from your code:
++  import subprocess, sys
++  subprocess.run([sys.executable, "-m", "unittest", "discover", "-s",
++                  "/task/fixtures/current-tests"], cwd="/task/workspace")
++
++Staged requirements:
++- Reply {{"action": "advance"}} to release the next stage when you are ready. Its requirements
++  appear under /task/fixtures/stage-N/ and are added to your working context; the visible tests
++  are updated to match all rules then in force.
++- Later stages list only changes. A rule marked CHANGED replaces the earlier version of that rule;
++  every other earlier rule stays in force. Earlier requirement files stay readable.
++- A final answer is accepted only after all {N_STAGES} stages are released.
++
++Finish with {{"action": "final", "answer": {{"summary": "..."}}}} once the package implements every
++rule in force at the end of the final stage. Your code in /task/workspace is evaluated afterwards
++by separate tests of the final requirements, including rules that have stayed unchanged since
++earlier stages.
++"""
++
++
++def generate_coding(spec: InstanceSpec) -> TaskInstance:
++    rng = random.Random(spec.seed)
++    schedule = SCHEDULES[spec.name]
++    stages: list[dict[str, str]] = []
++    updates: list[str] = []
++    for k in range(1, N_STAGES + 1):
++        cfg = config_at(schedule, k)
++        doc = _stage_doc(k, schedule[k - 1])
++        stages.append(
++            {
++                f"stage-{k}/REQUIREMENTS.md": doc,
++                "current-tests/test_invoice.py": _visible_tests(cfg, rng, k),
++            }
++        )
++        updates.append(doc if k > 1 else "")
++    final = config_at(schedule, N_STAGES)
++    cats = _categories(schedule)
++    checks: list[dict[str, Any]] = []
++    erng = random.Random(spec.seed * 7919 + 13)
++    for module in [m for m in MODULES if m in final]:
++        category = cats[module]
++        old = {**final, module: 1} if category == "replaced" else None
++        for i, (fn, args) in enumerate(_distinct(module, erng, final, old, 4), start=1):
++            checks.append(
++                {
++                    "id": f"{module}-{category}-{i}",
++                    "module": module,
++                    "category": category,
++                    "fn": fn,
++                    "args": args,
++                    "expect": ref_call(fn, args, final),
++                    "stale": ref_call(fn, args, old) if old is not None else None,
++                }
++            )
++    files: dict[str, str] = {}
++    for st in stages:
++        files.update(st)
++    truth = CodingTruth(
++        schedule=schedule,
++        final_config=final,
++        checks=checks,
++        categories=cats,
++        notes=f"final config {final}",
++    )
++    return TaskInstance(
++        spec=spec,
++        prompt=coding_task_prompt(),
++        files=files,
++        truth=truth,
++        stages=stages,
++        stage_updates=[u or stages[0]["stage-1/REQUIREMENTS.md"] for u in updates],
++        generator_version=CODING_GENERATOR_VERSION,
++        kind="coding",
++        workspace_seed={"invoice/__init__.py": SEED_INIT, "invoice/core.py": SEED_CORE},
++    )
++
++
++# ------------------------------------------------------------- evaluation
++EVAL_MARKER = "@@CLM-EVAL@@"
++
++# Runs inside a fresh sandbox container with the submission copy at /task/workspace (rw copy)
++# and the evaluator checks at /task/fixtures/checks.json (read-only). Each check has a 5 s alarm.
++EVAL_RUNNER = r"""
++import json, signal, sys
++sys.path.insert(0, '/task/workspace')
++checks = json.load(open('/task/fixtures/checks.json'))
++def _alarm(*_):
++    raise TimeoutError('check timed out')
++signal.signal(signal.SIGALRM, _alarm)
++results = []
++try:
++    import invoice
++    import_error = None
++except BaseException as e:
++    invoice, import_error = None, repr(e)[:300]
++def norm(v):
++    if isinstance(v, dict):
++        return {str(k): str(x) for k, x in v.items()}
++    return str(v)
++for c in checks:
++    r = {'id': c['id']}
++    if invoice is None:
++        r.update(passed=False, stale=False, observed={'import_error': import_error})
++        results.append(r)
++        continue
++    signal.alarm(5)
++    try:
++        obs = {'value': norm(getattr(invoice, c['fn'])(*c['args']))}
++    except ValueError:
++        obs = {'raises': 'ValueError'}
++    except BaseException as e:
++        obs = {'raises': type(e).__name__, 'detail': str(e)[:200]}
++    finally:
++        signal.alarm(0)
++    r['observed'] = obs
++    r['passed'] = obs == c['expect']
++    r['stale'] = c.get('stale') is not None and obs == c['stale']
++    results.append(r)
++print('@@CLM-EVAL@@' + json.dumps({'import_error': import_error, 'results': results}))
++"""
++
++
++@dataclass
++class CodingScore:
++    completed: bool
++    checks: int
++    passed: int
++    by_category: dict[str, dict[str, int]]
++    stale: int
++    import_error: str | None
++    strict_success: bool
++    outcome: str
++    evaluation_error: str | None = None
++    results: list[dict[str, Any]] = field(default_factory=list)
++
++    def to_dict(self) -> dict[str, Any]:
++        return {**self.__dict__, "components": self.components}
++
++    @property
++    def components(self) -> dict[str, float]:
++        out = {"all_checks": self.passed / self.checks if self.checks else 0.0}
++        for cat, v in self.by_category.items():
++            out[cat] = v["passed"] / v["total"] if v["total"] else 0.0
++        return out
++
++
++def score_coding(
++    truth: CodingTruth, eval_output: str | None, completed: bool, error: str | None = None
++) -> CodingScore:
++    by: dict[str, dict[str, int]] = {}
++    for c in truth.checks:
++        by.setdefault(c["category"], {"total": 0, "passed": 0, "stale": 0})["total"] += 1
++    results: list[dict[str, Any]] = []
++    import_error = None
++    if eval_output is not None and EVAL_MARKER in eval_output:
++        payload = json.loads(eval_output.rsplit(EVAL_MARKER, 1)[1].strip().splitlines()[0])
++        results, import_error = payload["results"], payload["import_error"]
++    elif error is None:
++        error = "evaluator produced no result"
++    cat_of = {c["id"]: c["category"] for c in truth.checks}
++    passed = stale = 0
++    for r in results:
++        cat = cat_of[r["id"]]
++        if r["passed"]:
++            passed += 1
++            by[cat]["passed"] += 1
++        if r["stale"]:
++            stale += 1
++            by[cat]["stale"] += 1
++    total = len(truth.checks)
++    strict = completed and error is None and passed == total
++    if error is not None:
++        outcome = "evaluation_error"
++    elif strict:
++        outcome = "correct"
++    elif not completed:
++        outcome = "correct_unsubmitted" if passed == total else "no_submission"
++    else:
++        outcome = "failed_checks"
++    return CodingScore(
++        completed, total, passed, by, stale, import_error, strict, outcome, error, results
++    )
++
++
++def checks_json(truth: CodingTruth) -> str:
++    return json.dumps(truth.checks)
+diff --git a/tests/coding_solutions.py b/tests/coding_solutions.py
+new file mode 100644
+index 0000000..5f6bcb6
+--- /dev/null
++++ b/tests/coding_solutions.py
+@@ -0,0 +1,39 @@
++"""Known solutions for the coding task, used only by tests (written into the sandbox workspace)."""
++
++from __future__ import annotations
++
++import inspect
++
++from clm_lib import coding
++
++
++def solution_source(cfg: dict[str, int]) -> str:
++    """A standalone invoice/core.py implementing the reference rules for ``cfg``."""
++    parts = [
++        "from decimal import ROUND_HALF_EVEN, ROUND_HALF_UP, Decimal",
++        "from typing import Any",
++        "Q2 = Decimal('0.01')",
++        f"TIER_RATES = {coding.TIER_RATES!r}",
++        f"REGION_RATES = {coding.REGION_RATES!r}",
++        f"PREFIX = {coding.PREFIX!r}",
++        f"CFG = {cfg!r}",
++        "Config = dict",
++        inspect.getsource(coding.ref_compute),
++        inspect.getsource(coding.ref_format),
++        "def compute_invoice(lines, customer):\n    return ref_compute(lines, customer, CFG)\n",
++        "def format_money(amount, currency):\n    return ref_format(amount, currency, CFG)\n",
++    ]
++    return "\n".join(parts)
++
++
++def write_solution_code(cfg: dict[str, int]) -> str:
++    """Agent-side Python that writes the solution into /task/workspace/invoice/core.py."""
++    return f"open('invoice/core.py', 'w').write({solution_source(cfg)!r})\nprint('written')\n"
++
++
++RUN_VISIBLE_TESTS = (
++    "import subprocess, sys\n"
++    "r = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', "
++    "'/task/fixtures/current-tests'], cwd='/task/workspace', capture_output=True, text=True)\n"
++    "print('rc', r.returncode)\nprint(r.stderr[-1500:])\n"
++)
+diff --git a/tests/test_coding.py b/tests/test_coding.py
+new file mode 100644
+index 0000000..16c0a09
+--- /dev/null
++++ b/tests/test_coding.py
+@@ -0,0 +1,186 @@
++"""Experiment 004 coding task: generation, stage visibility, evaluator isolation and scoring.
++
++These test the library (task generator, runtime, evaluator). Agent performance is measured
++separately by the evaluator checks during live runs.
++"""
++
++from __future__ import annotations
++
++import hashlib
++import json
++from collections import Counter
++from typing import Any
++
++import pytest
++
++from clm_lib import coding
++from clm_lib.prompts import system_prompt
++from clm_lib.runner import CODING_FIELDS, parse_action
++from clm_lib.tasks import INSTANCES, generate
++
++from .coding_solutions import RUN_VISIBLE_TESTS, write_solution_code
++from .conftest import execute, working_block
++
++CODING = [n for n in INSTANCES if n.startswith("coding-")]
++ADVANCE = {"action": "advance"}
++FINAL = {"action": "final", "answer": {"summary": "done"}}
++
++
++def test_generation_is_deterministic_and_instances_differ_in_structure() -> None:
++    structures = set()
++    for name in CODING:
++        a, b = generate(name), generate(name)
++        assert a.fixture_sha256 == b.fixture_sha256 and a.kind == "coding" and a.n_stages == 4
++        structures.add(json.dumps(a.truth.schedule))
++        cats = Counter(a.truth.categories.values())
++        assert cats["retained"] >= 1 and cats["replaced"] >= 1  # unchanged and superseded rules
++        final = coding.config_at(a.truth.schedule, 4)
++        assert {c["module"] for c in a.truth.checks} == set(final)  # only disclosed rules
++        for c in a.truth.checks:
++            if c["category"] == "replaced":
++                assert c["stale"] is not None and c["stale"] != c["expect"]
++        for k, files in enumerate(a.stages, start=1):
++            assert set(files) == {f"stage-{k}/REQUIREMENTS.md", "current-tests/test_invoice.py"}
++            cfg = coding.config_at(a.truth.schedule, k)
++            tests = files["current-tests/test_invoice.py"]
++            assert all(f"def test_{m.lower()}_" in tests for m in cfg)  # every rule in force
++        later = "".join(a.stages[1]["stage-2/REQUIREMENTS.md"])
++        assert "Only the changes are listed" in later
++    assert len(structures) == len(CODING)
++
++
++def test_visible_test_inputs_differ_from_evaluator_inputs() -> None:
++    inst = generate("coding-eval-1")
++    visible = inst.stages[-1]["current-tests/test_invoice.py"]
++    for c in inst.truth.checks:
++        assert repr(c["args"]) not in visible
++
++
++def test_coding_final_answer_and_prompts() -> None:
++    ok, err = parse_action(
++        '{"action": "final", "answer": {"summary": "x"}}', 1000, True, CODING_FIELDS
++    )
++    assert ok and not err
++    bad, err = parse_action(
++        '{"action": "final", "answer": {"root_cause": "x"}}', 1000, True, CODING_FIELDS
++    )
++    assert bad is None and "summary" in err
++    kw: dict[str, Any] = dict(
++        exec_timeout=30, output_cap=6000, pressure_pct=70, tail=4, max_entries=200, max_body=24000
++    )
++    # Incident prompts are byte-identical to those recorded in experiment 002.
++    assert (
++        hashlib.sha256(system_prompt("summary", **kw).encode())
++        .hexdigest()
++        .startswith("84134cfb02d2d02e")
++    )
++    assert (
++        hashlib.sha256(system_prompt("clm", **kw).encode())
++        .hexdigest()
++        .startswith("fa474b0d1ea967a4")
++    )
++    coding_prompt = system_prompt("clm", **kw, task_kind="coding")
++    assert "software engineering agent" in coding_prompt and '"summary"' in coding_prompt
++    assert "root_cause" not in coding_prompt
++
++
++def _final_cfg(name: str) -> dict[str, int]:
++    return coding.config_at(generate(name).truth.schedule, 4)
++
++
++def _run(make_runner: Any, name: str, cfg: dict[str, int], extra: list[Any] | None = None) -> Any:
++    script = [execute(write_solution_code(cfg)), *(extra or []), ADVANCE, ADVANCE, ADVANCE, FINAL]
++    runner, prov = make_runner(script)
++    return runner.run(generate(name), "clm"), prov
++
++
++@pytest.mark.docker
++def test_known_correct_solution_is_strictly_successful(make_runner: Any) -> None:
++    res, _ = _run(make_runner, "coding-eval-2", _final_cfg("coding-eval-2"))
++    s = res.score
++    assert res.status == "completed" and s.outcome == "correct" and s.strict_success
++    assert s.passed == s.checks and s.stale == 0
++    assert (res.run_dir / "evaluator" / "submission" / "invoice" / "core.py").exists()
++    assert not (res.run_dir / "evaluator" / "_eval_work").exists()
++
++
++@pytest.mark.docker
++def test_regressed_solution_fails_retained_checks(make_runner: Any) -> None:
++    name = "coding-eval-2"
++    inst = generate(name)
++    retained = next(m for m, c in inst.truth.categories.items() if c == "retained" and m != "ROUND")
++    cfg = {k: v for k, v in _final_cfg(name).items() if k != retained}  # rule dropped
++    s = _run(make_runner, name, cfg)[0].score
++    assert s.outcome == "failed_checks" and not s.strict_success
++    assert s.by_category["retained"]["passed"] < s.by_category["retained"]["total"]
++    assert s.by_category["retained"]["stale"] == 0
++
++
++@pytest.mark.docker
++def test_stale_rule_solution_is_detected(make_runner: Any) -> None:
++    name = "coding-eval-1"
++    inst = generate(name)
++    replaced = next(m for m, c in inst.truth.categories.items() if c == "replaced")
++    cfg = {**_final_cfg(name), replaced: 1}  # old rule left in place
++    s = _run(make_runner, name, cfg)[0].score
++    assert not s.strict_success
++    module_checks = [c["id"] for c in inst.truth.checks if c["module"] == replaced]
++    stale_ids = {r["id"] for r in s.results if r["stale"]}
++    assert set(module_checks) <= stale_ids  # every check of that rule shows the old behaviour
++    assert s.by_category["replaced"]["stale"] >= len(module_checks)
++
++
++@pytest.mark.docker
++def test_unsubmitted_correct_code_is_not_strict(make_runner: Any) -> None:
++    runner, _ = make_runner(
++        [execute(write_solution_code(_final_cfg("coding-eval-3"))), ADVANCE, ADVANCE, ADVANCE]
++    )
++    res = runner.run(generate("coding-eval-3"), "clm")  # script ends: no final answer
++    assert res.score.outcome == "correct_unsubmitted" and not res.score.strict_success
++
++
++@pytest.mark.docker
++def test_stage_visibility_and_evaluator_isolation(make_runner: Any) -> None:
++    probe = (
++        "import os\n"
++        "fx = sorted(os.path.relpath(os.path.join(r, f), '/task/fixtures') for r, _, fs in os.walk('/task/fixtures') for f in fs)\n"
++        "print('fixtures', fx)\n"
++        "ev = [os.path.join(r, f) for r, _, fs in os.walk('/task') for f in fs if 'checks' in f or 'truth' in f]\n"
++        "print('evaluator_files', ev)\n"
++        "try:\n    open('/task/fixtures/current-tests/test_invoice.py', 'a').write('x')\n    print('visible_tests_writable True')\n"
++        "except OSError:\n    print('visible_tests_writable False')\n"
++        "print('tests_head', open('/task/fixtures/current-tests/test_invoice.py').read()[:60])\n"
++    )
++    inst = generate("coding-dev-1")
++    script = [execute(probe), ADVANCE, execute(probe), ADVANCE, ADVANCE, execute(probe), FINAL]
++    runner, prov = make_runner(script)
++    res = runner.run(inst, "clm")
++    obs = [r.user for r in prov.requests]
++    assert "fixtures ['current-tests/test_invoice.py', 'stage-1/REQUIREMENTS.md']" in obs[1]
++    assert "'stage-2/REQUIREMENTS.md'" in obs[3] and "'stage-3/REQUIREMENTS.md'" not in obs[3]
++    assert "'stage-4/REQUIREMENTS.md'" in obs[6]
++    assert all(
++        "evaluator_files []" in o and "visible_tests_writable False" in o
++        for o in (obs[1], obs[3], obs[6])
++    )
++    assert "after stage 1" in working_block(obs[1]) and "after stage 4" in working_block(obs[6])
++    # The released requirement text is also added to the working context on advance.
++    assert "Stage 2 of 4 requirements" in working_block(obs[2])
++    # Earlier stage documents never change; the visible tests reflect the final stage.
++    for k in range(1, 5):
++        doc = (res.run_dir / "fixtures" / f"stage-{k}" / "REQUIREMENTS.md").read_text()
++        assert doc == inst.stages[k - 1][f"stage-{k}/REQUIREMENTS.md"]
++    final_tests = (res.run_dir / "fixtures" / "current-tests" / "test_invoice.py").read_text()
++    assert final_tests == inst.stages[3]["current-tests/test_invoice.py"]
++
++
++@pytest.mark.docker
++def test_visible_tests_run_in_the_sandbox(make_runner: Any) -> None:
++    inst = generate("coding-dev-2")
++    stage1 = coding.config_at(inst.truth.schedule, 1)
++    runner, prov = make_runner(
++        [execute(write_solution_code(stage1)), execute(RUN_VISIBLE_TESTS), FINAL]
++    )
++    runner.run(inst, "clm")
++    out = working_block(prov.requests[2].user)
++    assert "rc 0" in out and "OK" in out

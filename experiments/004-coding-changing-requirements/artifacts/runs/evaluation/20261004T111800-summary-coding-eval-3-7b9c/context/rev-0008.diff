@@ -1,0 +1,19 @@
+--- rev-7
++++ rev-8
+@@ -25,6 +25,16 @@
+    "id": "s6.obs",
+    "role": "observation",
+    "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Money formatting (replaces the earlier format): format_money also uses comma thousands separators, for example format_money('1234.5', 'NZD') == 'NZ$1,234.50'. Prefixes, the minus sign position and unknown-currency errors are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (52 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: Implement stage 3: bulk lines and comma thousands separators.\ncode:\nsrc=open('/task/workspace/invoice/core.py').read()\nsrc=src.replace(\"sub = sum((Decimal(l['qty']) * Decimal(l['unit_price']) for l in lines), Decimal('0'))\",\"sub = sum((Decimal(l['qty']) * Decimal(l['unit_price']) * (Decimal('0.90') if l['qty'] >= 100 else 1) for l in lines), Decimal('0'))\")\nopen('/task/workspace/invoice/core.py','w').write(src)\ni=src.index('def format_money');print(src[i:])"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\ndef format_money(amount, currency):\n    if currency not in PREFIX:\n        raise ValueError(currency)\n    a = _r(Decimal(amount))\n    sign = '-' if a < 0 else ''\n    return sign + PREFIX[currency] + str(abs(a))\n\n"
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -50,6 +50,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=0.9s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_EVEN\n\nQ=Decimal('0.01')\ndef r2(x): return Decimal(x).quantize(Q, rounding=ROUND_HALF_EVEN)\n\nTIERS={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\ndef discount_rate(lines, customer, subtotal):\n    return TIERS.get(customer.get('tier'), Decimal('0'))\n\ndef tax_rate(customer):\n    if customer.get('tax_exempt') is True: return Decimal('0')\n    return Decimal('0.10')\n\ndef compute_invoice(lines, customer):\n    sub=sum((Decimal(l['qty'])*Decimal(str(l['unit_price']))*(Decimal('0.90') if l['qty']>=100 else 1) for l in lines), Decimal('0'))\n    disc=sub*discount_rate(lines, customer, sub)\n    tax=(sub-disc)*tax_rate(customer)\n    s,d,t=r2(sub),r2(disc),r2(tax)\n    total=s-d+t\n    return {'subtotal':str(s),'discount':str(d),'tax':str(t),'total':str(r2(total))}\n\nPREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\ndef format_money(amount, currency):\n    if currency not in PREFIX: raise ValueError(currency)\n    a=Decimal(str(amount)).quantize(Q)\n    sign='-' if a<0 else ''\n    return sign+PREFIX[currency]+'{:,.2f}'.format(abs(a))\n\n"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Implement stage 4: validation, regional tax, new bulk rule.\ncode:\np='/task/workspace/invoice/core.py'\nc=open(p).read()\nc=c.replace(\"    return Decimal('0.10')\",\"    return {'NZ':Decimal('0.15'),'AU':Decimal('0.10'),'US':Decimal('0')}.get(customer.get('region'),Decimal('0.12'))\")\nc=c.replace(\"(Decimal('0.90') if l['qty']>=100 else 1)\",\"bulk(l['qty'])\")\nc=c.replace(\"def compute_invoice(lines, customer):\\n\",\"\"\"def bulk(q):\n    if q>=200: return Decimal('0.88')\n    if q>=50: return Decimal('0.95')\n    return Decimal('1')\n\ndef validate(lines):\n    if not lines: raise ValueError('empty')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError('qty')\n        try: p=Decimal(str(l['unit_price']))\n        except Exception: raise ValueError('price')\n        if not p.is_finite() or p<0: raise ValueError('price')\n\ndef compute_invoice(lines, customer):\n    validate(lines)\n\"\"\")\nopen(p,'w').write(c)\nopen('/task/workspace/NOTES.md','a').write('Stage4 done.\\n')\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

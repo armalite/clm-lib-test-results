@@ -1,0 +1,24 @@
+{
+ "number": 12,
+ "parent": 11,
+ "source": "summary",
+ "step": 11,
+ "sha256": "3b1f383b2da53c35c25cc59712038c3849175eb068e699eaafbea86b91edf821",
+ "entries": [
+  {
+   "id": "sum2",
+   "role": "summary",
+   "body": "Summary of progress so far (transcript compressed):\n\nTask: implement the Python package `invoice` in /task/workspace/invoice/. Standard library only, Decimal arithmetic. All 4 stages are now released; none remain. Finish with {\"action\":\"final\",\"answer\":{\"summary\":\"...\"}} once stage 4 is implemented and the tests pass.\n\nRun the visible tests with:\n`subprocess.run([sys.executable,\"-m\",\"unittest\",\"discover\",\"-s\",\"/task/fixtures/current-tests\"],cwd=\"/task/workspace\")`\nThe current test_invoice.py is 60 lines.\n\nRequirements in force:\n\nAPI (stage 1):\n- `compute_invoice(lines, customer) -> dict`.\n  - lines: `[{\"sku\",\"qty\":int,\"unit_price\":str}]`; unit_price may have more than 2 decimals.\n  - customer: `{\"tier\",\"region\"}`, optional `\"tax_exempt\"`.\n  - Returns `{\"subtotal\",\"discount\",\"tax\",\"total\"}`, each a string with exactly 2 decimals.\n- line amount = qty × unit_price; subtotal = sum of line amounts.\n- discount = subtotal × rate; tax = (subtotal − discount) × tax rate; total = subtotal − discount + tax.\n- A rate is 0 unless a rule sets it.\n\nRounding (stage 1):\n- Half up, 2 decimals.\n- Round each line amount before summing.\n- Discount is computed from the rounded subtotal, then rounded.\n- Tax is computed from (subtotal − discount), then rounded.\n\nRules by stage:\n- Tier discount (CHANGED in stage 3; replaces stage 1's gold 5%, silver 2%): platinum 10%, gold 7%, silver 3%, any other tier 0%.\n- Validation (stage 1, qty rule CHANGED in stage 3):\n  - ValueError if lines is empty or any unit_price is negative.\n  - ValueError if qty is negative or not an int (bool is rejected).\n  - qty 0 is allowed and the line is skipped. Stage 1 rejected qty 0; stage 3 replaced that.\n- Tax (stage 2): 10% for every customer.\n- Bulk lines (NEW, stage 3): if qty >= 100, the line amount is multiplied by 0.90 before line rounding.\n- Tax exemption (NEW, stage 4): if customer.get('tax_exempt') is True, tax = 0.00 whatever the rate.\n- `format_money(amount: str, currency: str) -> str`:\n  - Stage 2: prefixes NZD 'NZ$', AUD 'A$', USD 'US$'; 2 decimals; a negative amount puts '-' before the prefix (e.g. '-NZ$5.00'); an unknown currency raises ValueError.\n  - CHANGED in stage 4 (replaces the plain format): adds comma thousands separators, e.g. format_money('1234.5','NZD') == 'NZ$1,234.50'. Other behaviour is unchanged.\n\nFiles:\n- /task/workspace/invoice/core.py contains:\n  - Q; TIER dict (already has the stage-3 rates); `r2` (ROUND_HALF_UP);\n  - `compute_invoice` with stage 1–3 logic. Tax is currently `tax = r2((sub - disc) * Decimal(\"0.10\"))` on line 27;\n  - PREFIX dict;\n  - `format_money`, whose last line (39) is `return sign + PREFIX[currency] + str(abs(a))`.\n- /task/workspace/invoice/__init__.py exports compute_invoice and format_money.\n- /task/workspace/NOTES.md holds per-stage notes, through stage 3.\n- /task/workspace/helpers/ exists and is empty.\n\nTest status:\n- Stage 2: 10/10 passed.\n- Stage 3: 12/12 passed.\n- Stage 4: not implemented yet.\n\nNext steps:\n1. Edit core.py:\n   - Make tax `Decimal(\"0.00\")` when `customer.get(\"tax_exempt\") is True`.\n   - In format_money, use `\"{:,.2f}\".format(abs(a))`. This works for a Decimal: a format spec is fine with Decimal.\n2. Append a stage-4 note to NOTES.md.\n3. Run the tests and confirm they all pass.\n4. Submit the final answer."
+  },
+  {
+   "id": "s10.act",
+   "role": "assistant",
+   "body": "[step 10] execute\nthought: Apply the stage 4 changes: tax exemption and comma thousands separators in format_money.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace('    tax = r2((sub - disc) * Decimal(\"0.10\"))','    tax = r2((sub - disc) * Decimal(\"0.10\"))\\n    if customer.get(\"tax_exempt\") is True:\\n        tax = Decimal(\"0.00\")')\ns=s.replace('str(abs(a))','\"{:,.2f}\".format(abs(a))')\nopen(p,'w').write(s)\nopen('/task/workspace/NOTES.md','a').write('stage4 done: tax_exempt, comma format.\\n')\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nimport sys;sys.path.insert(0,'/task/workspace');from invoice import format_money as f;print(f('1234.5','NZD'),f('-1234567.005','USD'))"
+  },
+  {
+   "id": "s10.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.1s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\nNZ$1,234.50 -US$1,234,567.01\n"
+  }
+ ]
+}

@@ -1,0 +1,29 @@
+{
+ "number": 7,
+ "parent": 6,
+ "source": "summary",
+ "step": 7,
+ "sha256": "f91a27683398fb7a59059c3e47b8d1b964b7bb2bc46589d3a20730146d991f76",
+ "entries": [
+  {
+   "id": "sum1",
+   "role": "summary",
+   "body": "Progress summary (stages 1–2 done; stage 3 advance just requested, its requirements not yet seen):\n\nTask setup\n- Implement package `invoice` in /task/workspace/invoice/. Standard library only; use Decimal arithmetic.\n- Requirements live at /task/fixtures/stage-N/REQUIREMENTS.md; there are 4 stages.\n- Visible tests: /task/fixtures/current-tests/test_invoice.py. Run with `python -m unittest discover -s /task/fixtures/current-tests`, cwd=/task/workspace.\n- Final answer `{\"action\":\"final\",\"answer\":{\"summary\":...}}` is accepted only after all 4 stages are released.\n- Hidden tests check every final rule, including rules unchanged since early stages.\n\nAPI (stage 1)\n- `invoice.compute_invoice(lines, customer) -> dict`\n  - lines: `[{\"sku\": str, \"qty\": int, \"unit_price\": str}]`; unit_price may have more than 2 decimals, e.g. \"3.125\".\n  - customer: `{\"tier\", \"region\"}`, optional `\"tax_exempt\": bool` (not yet used by any rule).\n  - Returns `{\"subtotal\",\"discount\",\"tax\",\"total\"}` as strings with exactly 2 decimals, e.g. \"12.30\".\n- Base calculation:\n  - line amount = qty × unit_price; subtotal = sum of line amounts\n  - discount = subtotal × discount rate\n  - tax = (subtotal − discount) × tax rate\n  - total = subtotal − discount + tax\n  - Rates default to 0 when no rule is in force.\n- `format_money(amount, currency)` exists in the skeleton and is exported in `__init__`. It still raises NotImplementedError; probably used in a later stage.\n\nRules in force\n- Rounding (stage 1): round each line amount to 2dp half-up before summing. Discount is computed from the rounded subtotal, then rounded 2dp half-up. Tax is computed from (subtotal − discount), then rounded 2dp half-up. total = subtotal − discount + tax.\n- Validation (stage 1): raise ValueError if lines is empty, if qty is not a positive int (bool rejected), or if unit_price < 0.\n- Tier discount (stage 2, new): gold 5%, silver 2%, any other tier 0%.\n- Tax (stage 2, CHANGED): rate by region: NZ 15%, AU 10%, US 0%, any other region 12%.\n\nSuperseded rules\n- Stage 1 flat 10% tax for every customer → replaced in stage 2 by region-based tax.\n\nCode (/task/workspace/invoice/core.py)\n- `Q = Decimal('0.01')`; `r2(x)` quantizes half-up.\n- `discount_rate(subtotal, customer)`: dict lookup by tier.\n- `tax_rate(customer)`: dict lookup by region, default 0.12.\n- `compute_invoice` validates input, accumulates rounded line amounts, then computes disc, tax and total.\n- `format_money` is still NotImplementedError.\n\nOther files\n- /task/workspace/NOTES.md records stage progress notes.\n\nTest status\n- Stage 2: 8/8 visible tests pass.\n\nNext steps\n- Read /task/fixtures/stage-3/REQUIREMENTS.md and implement its changes.\n- Rerun the visible tests.\n- Advance to stage 4, implement it, then give the final answer."
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Rounding (replaces the earlier rounding rule): do NOT round line amounts. Compute the subtotal, discount and tax exactly (discount from the exact subtotal; tax from the exact subtotal minus the exact discount), then round each of subtotal, discount and tax to 2 decimals using banker's rounding (half even); total = rounded subtotal - rounded discount + rounded tax.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (48 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Implement stage 3: bulk lines and exact computation with half-even rounding.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"from decimal import Decimal, ROUND_HALF_UP\",\"from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN\")\ns=s.replace(\"        sub += r2(q * p)\\n    disc = r2(sub * discount_rate(sub, customer))\\n    tax = r2((sub - disc) * tax_rate(customer))\\n    total = sub - disc + tax\\n    return {'subtotal': str(r2(sub)), 'discount': str(disc), 'tax': str(tax), 'total': str(r2(total))}\",\"        amt = q * p\\n        if q >= 100:\\n            amt = amt * Decimal('0.90')\\n        sub += amt\\n    disc = sub * discount_rate(sub, customer)\\n    tax = (sub - disc) * tax_rate(customer)\\n    rs, rd, rt = he(sub), he(disc), he(tax)\\n    total = rs - rd + rt\\n    return {'subtotal': str(rs), 'discount': str(rd), 'tax': str(rt), 'total': str(he(total))}\")\ns=s.replace(\"def discount_rate\",\"def he(x):\\n    return x.quantize(Q, rounding=ROUND_HALF_EVEN)\\n\\ndef discount_rate\")\nopen(p,'w').write(s)\nopen('/task/workspace/NOTES.md','a').write('Stage3 done: bulk qty>=100 x0.9; exact calc, half-even rounding of sub/disc/tax.\\n')\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
+  }
+ ]
+}

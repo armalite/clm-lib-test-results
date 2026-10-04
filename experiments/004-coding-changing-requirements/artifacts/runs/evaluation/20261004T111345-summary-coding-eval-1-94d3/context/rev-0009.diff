@@ -1,0 +1,19 @@
+--- rev-8
++++ rev-9
+@@ -20,6 +20,16 @@
+    "id": "s7.obs",
+    "role": "observation",
+    "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.\n- [NEW] Money formatting: add format_money(amount: str, currency: str) -> str. Prefix 'NZD' with 'NZ$', 'AUD' with 'A$', 'USD' with 'US$'; always 2 decimals; a negative amount puts '-' before the prefix (for example '-NZ$5.00'); any other currency raises ValueError.\n- [CHANGED] Tax (replaces the flat 10% rate): the tax rate depends on customer['region']: 'NZ' 15%, 'AU' 10%, 'US' 0%, any other region 12%.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (11 lines)"
++  },
++  {
++   "id": "s8.act",
++   "role": "assistant",
++   "body": "[step 8] execute\nthought: Look at core.py to modify for stage 4.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
++  },
++  {
++   "id": "s8.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.0s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_EVEN\nQ=Decimal(\"0.01\")\ndef r2(x): return x.quantize(Q, rounding=ROUND_HALF_EVEN)\nRATES={\"gold\":Decimal(\"0.05\"),\"silver\":Decimal(\"0.02\")}\n\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError(\"empty lines\")\n    sub=Decimal(0)\n    for l in lines:\n        q=l.get(\"qty\")\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError(\"bad qty\")\n        p=Decimal(str(l[\"unit_price\"]))\n        if p<0: raise ValueError(\"negative price\")\n        a=Decimal(q)*p\n        if q>=200: a=a*Decimal(\"0.88\")\n        elif q>=50: a=a*Decimal(\"0.95\")\n        sub+=a\n    disc=sub*RATES.get(customer.get(\"tier\"),Decimal(0))\n    tax=(sub-disc)*Decimal(\"0.10\")\n    rs,rd,rt=r2(sub),r2(disc),r2(tax)\n    return {\"subtotal\":str(rs),\"discount\":str(rd),\"tax\":str(rt),\"total\":str(rs-rd+rt)}\n\n"
+   }
+  ]
+ }

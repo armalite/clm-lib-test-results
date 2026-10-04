@@ -1,0 +1,19 @@
+--- rev-11
++++ rev-12
+@@ -30,6 +30,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.\n- [CHANGED] Money formatting (replaces the earlier format): format_money also uses comma thousands separators, for example format_money('1234.5', 'NZD') == 'NZ$1,234.50'. Prefixes, the minus sign position and unknown-currency errors are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Inspect relevant code parts.\ncode:\nimport re\ns=open('/task/workspace/invoice/core.py').read()\nfor i,l in enumerate(s.splitlines(),1):\n    if any(k in l for k in ['tax','def ','customer','format','PREFIX','return']): print(i,l)"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n8 def r2(x):\n9     return x.quantize(Q, rounding=ROUND_HALF_UP)\n12 def discount_rate(customer, subtotal, lines):\n13     return TIER_RATES.get(customer.get('tier'), Decimal('0'))\n16 def tax_rate(customer, lines):\n17     return Decimal('0.10')\n20 def compute_invoice(lines, customer):\n40     disc = r2(sub * discount_rate(customer, sub, lines))\n41     tax = r2((sub - disc) * tax_rate(customer, lines))\n42     total = sub - disc + tax\n43     return {k: str(r2(v)) for k, v in (('subtotal', sub), ('discount', disc), ('tax', tax), ('total', total))}\n46 PREFIX = {'NZD': 'NZ$', 'AUD': 'A$', 'USD': 'US$'}\n49 def format_money(amount, currency):\n50     if currency not in PREFIX:\n54     return f'{sign}{PREFIX[currency]}{abs(a):.2f}'\n"
+   }
+  ]
+ }

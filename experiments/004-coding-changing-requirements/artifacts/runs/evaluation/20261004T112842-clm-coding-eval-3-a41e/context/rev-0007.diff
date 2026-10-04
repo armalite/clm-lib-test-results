@@ -1,0 +1,24 @@
+--- rev-6
++++ rev-7
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "Stage1+2 done in invoice/core.py: tier discount gold5%/silver2%, tax_exempt->0 tax, half-even rounding of exact subtotal/discount/tax, total=sum of rounded. format_money(NZD NZ$/AUD A$/USD US$, - before prefix, else ValueError, half-up). tax_rate(customer)=0.10."
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: Implement stage 2 changes and compact context.\ncode:\ncode='''from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN\n\nQ = Decimal(\"0.01\")\n\n\ndef _r(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\n\ndef _re(x):\n    return x.quantize(Q, rounding=ROUND_HALF_EVEN)\n\n\nTIER = {\"gold\": Decimal(\"0.05\"), \"silver\": Decimal(\"0.02\")}\n\n\ndef discount_rate(lines, customer, subtotal):\n    return TIER.get((customer or {}).get(\"tier\"), Decimal(0))\n\n\ndef tax_rate(customer):\n    return Decimal(\"0.10\")\n\n\ndef compute_invoice(lines, customer):\n    customer = customer or {}\n    sub = sum((int(l[\"qty\"]) * Decimal(str(l[\"unit_price\"])) for l in lines), Decimal(0))\n    disc = sub * discount_rate(lines, customer, sub)\n    tax = (sub - disc) * tax_rate(customer)\n    if customer.get(\"tax_exempt\") is True:\n        tax = Decimal(0)\n    s, d, t = _re(sub), _re(disc), _re(tax)\n    return {\"subtotal\": str(s), \"discount\": str(d), \"tax\": str(t), \"total\": str(s - d + t)}\n\n\nPREFIX = {\"NZD\": \"NZ$\", \"AUD\": \"A$\", \"USD\": \"US$\"}\n\n\ndef format_money(amount, currency):\n    if currency not in PREFIX:\n        raise ValueError(currency)\n    a = _r(Decimal(str(amount)))\n    sign = \"-\" if a < 0 else \"\"\n    return f\"{sign}{PREFIX[currency]}{abs(a)}\"\n'''\nopen('/task/workspace/invoice/core.py','w').write(code)\nimport subprocess,sys,json\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-2500:])\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1+2 done in invoice/core.py: tier discount gold5%/silver2%, tax_exempt->0 tax, half-even rounding of exact subtotal/discount/tax, total=sum of rounded. format_money(NZD NZ$/AUD A$/USD US$, - before prefix, else ValueError, half-up). tax_rate(customer)=0.10.'}]},open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.000s\n\nOK\n\n"
++  },
++  {
++   "id": "s5.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 5: revision 5 -> 6; entries 6 -> 1; body chars 3265 -> 262; removed [s3.act, s3.obs, s3.rcpt, s4.act, s4.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

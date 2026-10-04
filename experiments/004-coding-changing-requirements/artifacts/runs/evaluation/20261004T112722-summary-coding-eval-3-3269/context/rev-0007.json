@@ -1,0 +1,39 @@
+{
+ "number": 7,
+ "parent": 6,
+ "source": "summary",
+ "step": 7,
+ "sha256": "2e0619471a8f8c844757b398a744e8191d4736083cad52f26c2c89a3312d1551",
+ "entries": [
+  {
+   "id": "sum1",
+   "role": "summary",
+   "body": "Task context:\n- Implement Python package `invoice` in /task/workspace/invoice/. Standard library only, using `decimal.Decimal`.\n- Requirements arrive in 4 stages at /task/fixtures/stage-N/REQUIREMENTS.md. Stages 1 and 2 are released; stages 3 and 4 are not yet.\n- Visible tests are in /task/fixtures/current-tests/test_invoice.py. Run them with: subprocess.run([sys.executable,\"-m\",\"unittest\",\"discover\",\"-s\",\"/task/fixtures/current-tests\"],cwd=\"/task/workspace\").\n- Release the next stage with {\"action\":\"advance\"}.\n- Finish with {\"action\":\"final\",\"answer\":{\"summary\":\"...\"}}, accepted only after all 4 stages are released.\n- Hidden tests check the final rules, including rules unchanged since early stages.\n\nAPI (stage 1):\n- `compute_invoice(lines, customer) -> dict`\n  - lines: list of {\"sku\",\"qty\":int,\"unit_price\":str}; unit_price may have more than 2 decimal places.\n  - customer: {\"tier\",\"region\"}, optionally \"tax_exempt\": bool.\n  - Returns {\"subtotal\",\"discount\",\"tax\",\"total\"} as strings with exactly 2 decimals.\n- Base calculation: line amount = qty x unit_price; discount = subtotal x discount rate; tax = (subtotal - discount) x tax rate; total = subtotal - discount + tax. Rates default to 0 when no rule applies.\n- `format_money(amount: str, currency: str) -> str`\n  - Prefixes: NZD → 'NZ$', AUD → 'A$', USD → 'US$'.\n  - Always 2 decimals; a negative amount puts '-' before the prefix (e.g. '-NZ$5.00').\n  - Any other currency raises ValueError.\n\nRules in force:\n- Tax rate is 10% for every customer (stage 1).\n- Tier discount by customer['tier'] (stage 2): 'gold' 5%, 'silver' 2%, any other tier 0%.\n- Tax exemption (stage 2): if customer.get('tax_exempt') is True, tax is 0.00.\n- Rounding (CHANGED in stage 2):\n  - Do not round line amounts.\n  - Compute subtotal exactly, discount from the exact subtotal, and tax from (exact subtotal - exact discount).\n  - Round subtotal, discount and tax each to 2 decimals with ROUND_HALF_EVEN.\n  - total = rounded subtotal - rounded discount + rounded tax.\n\nSuperseded rule:\n- Stage 1 rounding was replaced in stage 2. It rounded each line amount half-up before summing, then rounded discount and tax half-up.\n\nFiles:\n- invoice/__init__.py exports compute_invoice and format_money.\n- invoice/core.py contains: r2 (half-even quantize to 0.01), TIERS dict, discount_rate(lines, customer, subtotal), tax_rate(customer) (returns 0 if exempt), compute_invoice, and PREFIX dict plus format_money. format_money uses a default quantize to 0.01 (context rounding, which is half-even).\n- /task/workspace/NOTES.md holds progress notes for stages 1 and 2.\n\nStatus:\n- Stage 1 passed 6/6 visible tests.\n- Stage 2 code has been written to core.py, but the visible test run output has not been seen yet.\n\nNext steps:\n1. Check the visible test results and fix any failures.\n2. Advance to stage 3, then stage 4, implementing each.\n3. Give the final answer."
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: "
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Money formatting (replaces the earlier format): format_money also uses comma thousands separators, for example format_money('1234.5', 'NZD') == 'NZ$1,234.50'. Prefixes, the minus sign position and unknown-currency errors are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (52 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Implement stage 3: bulk lines and thousands separators.\ncode:\np='/task/workspace/invoice/core.py'\nc=open(p).read()\nc=c.replace(\"sub=sum((Decimal(l['qty'])*Decimal(str(l['unit_price'])) for l in lines), Decimal('0'))\",\"sub=sum((Decimal(l['qty'])*Decimal(str(l['unit_price']))*(Decimal('0.90') if l['qty']>=100 else 1) for l in lines), Decimal('0'))\")\nc=c.replace(\"str(abs(a))\\n\",\"'{:,.2f}'.format(abs(a))\\n\")\nopen(p,'w').write(c)\nopen('/task/workspace/NOTES.md','a').write('Stage3 done: bulk qty>=100 x0.90, comma thousands in format_money.\\n')\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2000:])"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n............\n----------------------------------------------------------------------\nRan 12 tests in 0.001s\n\nOK\n\n"
+  }
+ ]
+}

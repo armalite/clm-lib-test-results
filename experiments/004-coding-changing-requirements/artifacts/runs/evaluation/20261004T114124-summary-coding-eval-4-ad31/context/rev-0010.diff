@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -50,6 +50,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.8s\n--- stdout ---\n\"\"\"Invoice core.\"\"\"\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ = Decimal('0.01')\n\ndef r2(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\nTIER = {'platinum': Decimal('0.10'), 'gold': Decimal('0.07'), 'silver': Decimal('0.03')}\n\ndef line_amount(line):\n    amt = Decimal(int(line['qty'])) * Decimal(str(line['unit_price']))\n    q = int(line['qty'])\n    if q >= 200:\n        amt = amt * Decimal('0.88')\n    elif q >= 50:\n        amt = amt * Decimal('0.95')\n    return r2(amt)\n\ndef discount_rate(customer):\n    return TIER.get(customer.get('tier'), Decimal('0'))\n\ndef tax_rate(customer):\n    return Decimal('0.10')\n\ndef validate(lines):\n    if not lines:\n        raise ValueError('empty lines')\n    for l in lines:\n        q = l.get('qty')\n        if isinstance(q, bool) or not isinstance(q, int) or q <= 0:\n            raise ValueError('bad qty')\n        try:\n            up = Decimal(str(l.get('unit_price')))\n        except Exception:\n            raise ValueError('bad price')\n        if not up.is_finite() or up < 0:\n            raise ValueError('negative price')\n\ndef compute_invoice(lines, customer):\n    validate(lines)\n    subtotal = sum((line_amount(l) for l in lines), Decimal('0'))\n    discount = r2(subtotal * discount_rate(customer))\n    tax = r2((subtotal - discount) * tax_rate(customer))\n    total = subtotal - discount + tax\n    return {k: str(r2(v)) for k, v in (('subtotal', subtotal), ('discount', discount), ('tax', tax), ('total', total))}\n\nPREFIX = {'NZD': 'NZ$', 'AUD': 'A$', 'USD': 'US$'}\n\ndef format_money(amount, currency):\n    if currency not in PREFIX:\n        raise ValueError('bad currency')\n    a = r2(Decimal(str(amount)))\n    sign = '-' if a < 0 else ''\n    return sign + PREFIX[currency] + str(abs(a))\n\n"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Rewrite core.py for stage 4: exact amounts with half-even rounding, tax exemption, and qty 0 lines skipped.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"    return r2(amt)\",\"    return amt\")\ns=s.replace(\"q <= 0:\",\"q < 0:\")\ns=s.replace(\"\"\"    subtotal = sum((line_amount(l) for l in lines), Decimal('0'))\n    discount = r2(subtotal * discount_rate(customer))\n    tax = r2((subtotal - discount) * tax_rate(customer))\n    total = subtotal - discount + tax\"\"\",\"\"\"    from decimal import ROUND_HALF_EVEN\n    he = lambda x: x.quantize(Q, rounding=ROUND_HALF_EVEN)\n    ex = sum((line_amount(l) for l in lines if l['qty'] != 0), Decimal('0'))\n    dex = ex * discount_rate(customer)\n    tex = Decimal('0') if customer.get('tax_exempt') is True else (ex - dex) * tax_rate(customer)\n    subtotal, discount, tax = he(ex), he(dex), he(tex)\n    total = subtotal - discount + tax\"\"\")\nopen(p,'w').write(s)\nopen('/task/workspace/NOTES.md','a').write('Stage4 done.\\n')\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.9s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

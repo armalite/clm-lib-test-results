@@ -1,0 +1,29 @@
+{
+ "number": 5,
+ "parent": 4,
+ "source": "runtime",
+ "step": 4,
+ "sha256": "8a354cdb499444f9a2dcc17bbe01d9883d666335ec21b0167d1d7d359ab5c5f0",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1+2 implemented in invoice/core.py (r2 half-up per line, bulk qty>=100 x0.90, TIER dict platinum10/gold7/silver3, TAX=0.10, validation ValueError). format_money stub exists (NotImplementedError) - likely later stage. Next: advance to stage 3."
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Implement stage 2 and compact context.\ncode:\ncode='''from decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef r2(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\nTIER={'platinum':Decimal('0.10'),'gold':Decimal('0.07'),'silver':Decimal('0.03')}\nTAX=Decimal('0.10')\n\ndef compute_invoice(lines, customer):\n    if not lines:\n        raise ValueError('empty lines')\n    sub=Decimal('0')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0:\n            raise ValueError('bad qty')\n        p=Decimal(str(l['unit_price']))\n        if p<0:\n            raise ValueError('negative price')\n        a=Decimal(q)*p\n        if q>=100:\n            a*=Decimal('0.90')\n        sub+=r2(a)\n    sub=r2(sub)\n    disc=r2(sub*TIER.get(customer.get('tier'),Decimal('0')))\n    tax=r2((sub-disc)*TAX)\n    total=sub-disc+tax\n    return {'subtotal':str(sub),'discount':str(disc),'tax':str(tax),'total':str(r2(total))}\n\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n'''\nopen('/task/workspace/invoice/core.py','w').write(code)\nimport subprocess,sys,json\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1+2 implemented in invoice/core.py (r2 half-up per line, bulk qty>=100 x0.90, TIER dict platinum10/gold7/silver3, TAX=0.10, validation ValueError). format_money stub exists (NotImplementedError) - likely later stage. Next: advance to stage 3.'}]}\njson.dump(ctx,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s4.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 4: revision 3 -> 4; entries 6 -> 1; body chars 4373 -> 247; removed [s1.act, s1.obs, s2.act, s2.obs, s3.act, s3.obs]; added [n1]; rewritten []"
+  }
+ ]
+}

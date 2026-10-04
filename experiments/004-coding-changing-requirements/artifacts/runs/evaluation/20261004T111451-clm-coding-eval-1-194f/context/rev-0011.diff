@@ -1,0 +1,19 @@
+--- rev-10
++++ rev-11
+@@ -30,6 +30,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.\n- [NEW] Money formatting: add format_money(amount: str, currency: str) -> str. Prefix 'NZD' with 'NZ$', 'AUD' with 'A$', 'USD' with 'US$'; always 2 decimals; a negative amount puts '-' before the prefix (for example '-NZ$5.00'); any other currency raises ValueError.\n- [CHANGED] Tax (replaces the flat 10% rate): the tax rate depends on customer['region']: 'NZ' 15%, 'AU' 10%, 'US' 0%, any other region 12%.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (11 lines)"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Implement stage 4: region tax, exemption, format_money.\ncode:\nimport re,subprocess,sys\np='/task/workspace/invoice/core.py'\ns=open(p).read()\nfor i,l in enumerate(s.splitlines()):\n    if 'tax_rate' in l or 'format_money' in l or 'def ' in l: print(i+1,l)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n5 def r2(x):\n8 def discount_rate(lines, customer, subtotal):\n12 def r2e(x):\n15 def tax_rate(customer):\n18 def line_amount(line):\n27 def validate(lines):\n41 def compute_invoice(lines, customer):\n45     tax=(subtotal-discount)*tax_rate(customer)\n51 def format_money(amount, currency):\nsubtotal': '735.60', 'tax': '72.09', 'total': '792.98'}\n?                                                     ^^  ^               ----\n\n+ {'discount': '14.71', 'subtotal': '735.60', 'tax': '0.00', 'total': '720.89'}\n?                                                     ^  ^              ++++\n\n\n======================================================================\nFAIL: test_tier_6 (test_invoice.TestInvoice.test_tier_6)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/task/fixtures/current-tests/test_invoice.py\", line 30, in test_tier_6\n    self.assertEqual(invoice.compute_invoice(*[[{'sku': 'SKU-511', 'qty': 2, 'unit_price': '79.36'}, {'sku': 'SKU-729', 'qty': 3, 'unit_price': '62.44'}], {'tier': 'gold', 'region': 'US'}]), {'subtotal': '346.04', 'discount': '17.30', 'tax': '0.00', 'total': '328.74'})\nAssertionError: {'subtotal': '346.04', 'discount': '17.30', 'tax': '32.87', 'total': '361.61'} != {'subtotal': '346.04', 'discount': '17.30', 'tax': '0.00', 'total': '328.74'}\n- {'discount': '17.30', 'subtotal': '346.04', 'tax': '32.87', 'total': '361.61'}\n?                                                     ^^ ^^              ^^ ^^\n\n+ {'discount': '17.30', 'subtotal': '346.04', 'tax': '0.00', 'total': '328.74'}\n?                                                     ^ ^^              ^^ ^^\n\n\n----------------------------------------------------------------------\nRan 14 tests in 0.009s\n\nFAILED (failures=7, errors=2)\n\n"
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-8
++++ rev-9
+@@ -25,6 +25,16 @@
+    "id": "s7.obs",
+    "role": "observation",
+    "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Tax (replaces the flat 10% rate): the tax rate depends on customer['region']: 'NZ' 15%, 'AU' 10%, 'US' 0%, any other region 12%.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s8.act",
++   "role": "assistant",
++   "body": "[step 8] execute\nthought: Implement stage 4; check line amount code first.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\nprint(s)"
++  },
++  {
++   "id": "s8.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.0s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef r2(x):\n    return Decimal(x).quantize(Q, rounding=ROUND_HALF_UP)\n\nTIER={'platinum':Decimal('0.10'),'gold':Decimal('0.07'),'silver':Decimal('0.03')}\n\ndef discount_rate(lines, customer):\n    return TIER.get(customer.get('tier'), Decimal('0'))\n\ndef tax_rate(customer):\n    if customer.get('tax_exempt') is True:\n        return Decimal('0')\n    return Decimal('0.10')\n\ndef validate(lines):\n    if not lines:\n        raise ValueError('empty')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0:\n            raise ValueError('qty')\n        if Decimal(l['unit_price'])<0:\n            raise ValueError('price')\n\ndef compute_invoice(lines, customer):\n    validate(lines)\n    subtotal=sum((r2(Decimal(l['qty'])*Decimal(l['unit_price'])) for l in lines), Decimal('0'))\n    discount=r2(subtotal*discount_rate(lines, customer))\n    tax=r2((subtotal-discount)*tax_rate(customer))\n    total=subtotal-discount+tax\n    return {k:str(r2(v)) for k,v in (('subtotal',subtotal),('discount',discount),('tax',tax),('total',total))}\n\nPREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n\ndef format_money(amount, currency):\n    if currency not in PREFIX:\n        raise ValueError(currency)\n    a=r2(Decimal(amount))\n    sign='-' if a<0 else ''\n    return sign+PREFIX[currency]+'{:,.2f}'.format(abs(a))\n\n"
+   }
+  ]
+ }

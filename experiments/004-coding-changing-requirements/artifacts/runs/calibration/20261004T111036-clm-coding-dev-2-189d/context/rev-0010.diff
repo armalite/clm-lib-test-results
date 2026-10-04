@@ -1,0 +1,46 @@
+--- rev-9
++++ rev-10
+@@ -4,42 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Stage1+2 done: invoice/core.py has r2, discount_rate (tier gold .05 silver .02), tax_rate (0.10 all), compute_invoice, format_money(PFX dict, comma thousands via {:,.2f}). Run tests via unittest discover -s /task/fixtures/current-tests."
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Apply stage 2 changes: tax 10%, comma separators.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"def tax_rate(customer):\\n    return Decimal('0')\",\"def tax_rate(customer):\\n    return Decimal('0.10')\")\ns=s.replace(\"return s+PFX[currency]+str(abs(a))\",\"return s+PFX[currency]+'{:,.2f}'.format(abs(a))\")\nopen(p,'w').write(s)\nimport json\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1+2 done: invoice/core.py has r2, discount_rate (tier gold .05 silver .02), tax_rate (0.10 all), compute_invoice, format_money(PFX dict, comma thousands via {:,.2f}). Run tests via unittest discover -s /task/fixtures/current-tests.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-2000:])"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=2.1s\n--- stdout ---\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.000s\n\nOK\n\n"
+-  },
+-  {
+-   "id": "s5.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 5: revision 5 -> 6; entries 6 -> 1; body chars 2762 -> 236; removed [s3.act, s3.obs, s3.rcpt, s4.act, s4.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s6.act",
+-   "role": "assistant",
+-   "body": "[step 6] advance\nthought: "
+-  },
+-  {
+-   "id": "s6.obs",
+-   "role": "observation",
+-   "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Validation: compute_invoice raises ValueError if lines is empty, if any qty is not a positive integer, or if any unit_price is negative.\n- [NEW] Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.\n- [CHANGED] Tier discount (replaces the earlier tier rates): 'platinum' 10%, 'gold' 7%, 'silver' 3%, any other tier 0%.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (54 lines)\n  stage-3/REQUIREMENTS.md (11 lines)"
+-  },
+-  {
+-   "id": "s7.act",
+-   "role": "assistant",
+-   "body": "[step 7] execute\nthought: View core.py to apply stage 3.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
+-  },
+-  {
+-   "id": "s7.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=2.0s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef r2(x):\n    return Decimal(x).quantize(Q, rounding=ROUND_HALF_UP)\n\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\n\ndef discount_rate(customer):\n    return TIER.get(customer.get('tier'),Decimal('0'))\n\ndef tax_rate(customer):\n    return Decimal('0.10')\n\ndef compute_invoice(lines, customer):\n    sub=sum((r2(int(l['qty'])*Decimal(str(l['unit_price']))) for l in lines),Decimal('0'))\n    sub=r2(sub)\n    disc=r2(sub*discount_rate(customer))\n    tax=r2((sub-disc)*tax_rate(customer))\n    tot=sub-disc+tax\n    return {k:str(r2(v)) for k,v in (('subtotal',sub),('discount',disc),('tax',tax),('total',tot))}\n\nPFX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n\ndef format_money(amount, currency):\n    if currency not in PFX: raise ValueError(currency)\n    a=r2(Decimal(str(amount)))\n    s='-' if a<0 else ''\n    return s+PFX[currency]+'{:,.2f}'.format(abs(a))\n\n"
++   "body": "Stages 1-3 done in invoice/core.py: r2, TIER dict (platinum .10 gold .07 silver .03), tax_rate 0.10 (0 if tax_exempt is True), compute_invoice validates (empty lines, qty positive int, unit_price>=0 -> ValueError), format_money PFX dict NZ$/A$/US$ with {:,.2f}. Tests: unittest discover -s /task/fixtures/current-tests."
+   }
+  ]
+ }

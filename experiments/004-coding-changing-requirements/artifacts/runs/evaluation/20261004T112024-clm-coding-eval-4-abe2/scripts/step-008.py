@@ -1,0 +1,7 @@
+p='/task/workspace/invoice/core.py';s=open(p).read()
+s=s.replace("    if l['qty']>=100: a*=Decimal('0.90')\n","    if l['qty']>=200: a*=Decimal('0.88')\n    elif l['qty']>=50: a*=Decimal('0.95')\n")
+s=s.replace("def format_money(amount, currency):\n    raise NotImplementedError\n","PFX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\ndef format_money(amount, currency):\n    if currency not in PFX: raise ValueError('currency')\n    d=r2(Decimal(str(amount)))\n    sign='-' if d<0 else ''\n    return sign+PFX[currency]+str(abs(d))\n")
+open(p,'w').write(s)
+import subprocess,sys,json
+r=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-2000:])
+json.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stages1-3 done in invoice/core.py: r2 half-up, line_amount bulk qty>=200 x0.88 elif >=50 x0.95, TIER dict platinum10/gold7/silver3 via discount_rate(customer,sub), tax_rate(customer)=0.10, compute_invoice validates (empty, qty positive int, price>=0 -> ValueError), returns str dict subtotal/discount/tax/total; format_money with PFX dict NZD/AUD/USD, sign before prefix. Next: advance to stage 4.'}]},open('/task/workspace/context.json','w'))

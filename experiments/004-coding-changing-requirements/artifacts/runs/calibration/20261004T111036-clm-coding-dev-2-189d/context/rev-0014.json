@@ -1,0 +1,59 @@
+{
+ "number": 14,
+ "parent": 13,
+ "source": "runtime",
+ "step": 11,
+ "sha256": "09378da2fa7c023e96ca46578bd9b00aa5ac6bd070e70ead6e10a29492b6f06e",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stages 1-3 done in invoice/core.py: r2, TIER dict (platinum .10 gold .07 silver .03), tax_rate 0.10 (0 if tax_exempt is True), compute_invoice validates (empty lines, qty positive int, unit_price>=0 -> ValueError), format_money PFX dict NZ$/A$/US$ with {:,.2f}. Tests: unittest discover -s /task/fixtures/current-tests."
+  },
+  {
+   "id": "s8.act",
+   "role": "assistant",
+   "body": "[step 8] execute\nthought: Apply stage 3 changes and compact context.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"TIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\",\"TIER={'platinum':Decimal('0.10'),'gold':Decimal('0.07'),'silver':Decimal('0.03')}\")\ns=s.replace(\"def tax_rate(customer):\\n    return Decimal('0.10')\",\"def tax_rate(customer):\\n    if customer.get('tax_exempt') is True: return Decimal('0')\\n    return Decimal('0.10')\")\ns=s.replace(\"def compute_invoice(lines, customer):\\n\",\"def compute_invoice(lines, customer):\\n    if not lines: raise ValueError('empty')\\n    for l in lines:\\n        q=l.get('qty')\\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError('qty')\\n        if Decimal(str(l.get('unit_price')))<0: raise ValueError('price')\\n\")\nopen(p,'w').write(s)\nimport json\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stages 1-3 done in invoice/core.py: r2, TIER dict (platinum .10 gold .07 silver .03), tax_rate 0.10 (0 if tax_exempt is True), compute_invoice validates (empty lines, qty positive int, unit_price>=0 -> ValueError), format_money PFX dict NZ$/A$/US$ with {:,.2f}. Tests: unittest discover -s /task/fixtures/current-tests.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-2000:])"
+  },
+  {
+   "id": "s8.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.1s\n--- stdout ---\n............\n----------------------------------------------------------------------\nRan 12 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s8.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 8: revision 9 -> 10; entries 8 -> 1; body chars 3344 -> 319; removed [s5.act, s5.obs, s5.rcpt, s6.act, s6.obs, s7.act, s7.obs]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s9.act",
+   "role": "assistant",
+   "body": "[step 9] advance\nthought: "
+  },
+  {
+   "id": "s9.obs",
+   "role": "observation",
+   "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Tax (replaces the flat 10% rate): the tax rate depends on customer['region']: 'NZ' 15%, 'AU' 10%, 'US' 0%, any other region 12%.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (10 lines)"
+  },
+  {
+   "id": "s10.act",
+   "role": "assistant",
+   "body": "[step 10] execute\nthought: Look at core.py to apply stage 4.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
+  },
+  {
+   "id": "s10.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.8s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef r2(x):\n    return Decimal(x).quantize(Q, rounding=ROUND_HALF_UP)\n\nTIER={'platinum':Decimal('0.10'),'gold':Decimal('0.07'),'silver':Decimal('0.03')}\n\ndef discount_rate(customer):\n    return TIER.get(customer.get('tier'),Decimal('0'))\n\ndef tax_rate(customer):\n    if customer.get('tax_exempt') is True: return Decimal('0')\n    return Decimal('0.10')\n\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError('empty')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError('qty')\n        if Decimal(str(l.get('unit_price')))<0: raise ValueError('price')\n    sub=sum((r2(int(l['qty'])*Decimal(str(l['unit_price']))) for l in lines),Decimal('0'))\n    sub=r2(sub)\n    disc=r2(sub*discount_rate(customer))\n    tax=r2((sub-disc)*tax_rate(customer))\n    tot=sub-disc+tax\n    return {k:str(r2(v)) for k,v in (('subtotal',sub),('discount',disc),('tax',tax),('total',tot))}\n\nPFX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n\ndef format_money(amount, currency):\n    if currency not in PFX: raise ValueError(currency)\n    a=r2(Decimal(str(amount)))\n    s='-' if a<0 else ''\n    return s+PFX[currency]+'{:,.2f}'.format(abs(a))\n\n"
+  },
+  {
+   "id": "s11.act",
+   "role": "assistant",
+   "body": "[step 11] execute\nthought: Apply stage 4: bulk discount and region tax (keeping exempt).\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"    return Decimal('0.10')\\n\",\"    return REG.get(customer.get('region'),Decimal('0.12'))\\n\\nREG={'NZ':Decimal('0.15'),'AU':Decimal('0.10'),'US':Decimal('0')}\\n\",1)\ns=s.replace(\"r2(int(l['qty'])*Decimal(str(l['unit_price'])))\",\"r2(int(l['qty'])*Decimal(str(l['unit_price']))*(Decimal('0.90') if int(l['qty'])>=100 else 1))\")\nopen(p,'w').write(s)\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-2500:])"
+  },
+  {
+   "id": "s11.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.9s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+  }
+ ]
+}

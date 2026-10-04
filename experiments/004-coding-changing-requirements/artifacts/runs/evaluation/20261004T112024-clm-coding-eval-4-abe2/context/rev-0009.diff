@@ -1,0 +1,19 @@
+--- rev-8
++++ rev-9
+@@ -30,6 +30,16 @@
+    "id": "s6.obs",
+    "role": "observation",
+    "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Money formatting: add format_money(amount: str, currency: str) -> str. Prefix 'NZD' with 'NZ$', 'AUD' with 'A$', 'USD' with 'US$'; always 2 decimals; a negative amount puts '-' before the prefix (for example '-NZ$5.00'); any other currency raises ValueError.\n- [CHANGED] Bulk lines (replaces the earlier bulk rule): qty >= 200 multiplies the line amount by 0.88; otherwise qty >= 50 multiplies it by 0.95; smaller lines are unchanged (before any line rounding).\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (54 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: View core.py relevant parts then implement stage 3.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n\"\"\"Invoice implementation.\"\"\"\nfrom decimal import Decimal, ROUND_HALF_UP\n\nC=Decimal('0.01')\ndef r2(x): return x.quantize(C, rounding=ROUND_HALF_UP)\n\nTIER={'platinum':Decimal('0.10'),'gold':Decimal('0.07'),'silver':Decimal('0.03')}\n\ndef line_amount(l):\n    a=Decimal(l['qty'])*Decimal(l['unit_price'])\n    if l['qty']>=100: a*=Decimal('0.90')\n    return r2(a)\n\ndef discount_rate(customer, subtotal):\n    return TIER.get(customer.get('tier'),Decimal(0))\n\ndef tax_rate(customer):\n    return Decimal('0.10')\n\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError('empty')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError('qty')\n        if Decimal(str(l.get('unit_price')))<0: raise ValueError('price')\n    sub=sum((line_amount(l) for l in lines),Decimal(0))\n    disc=r2(sub*discount_rate(customer,sub))\n    tax=r2((sub-disc)*tax_rate(customer))\n    tot=sub-disc+tax\n    return {k:str(r2(v)) for k,v in (('subtotal',sub),('discount',disc),('tax',tax),('total',tot))}\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n\n"
+   }
+  ]
+ }

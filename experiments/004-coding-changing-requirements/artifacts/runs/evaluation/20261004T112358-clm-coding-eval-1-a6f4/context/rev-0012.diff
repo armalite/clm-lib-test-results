@@ -1,0 +1,19 @@
+--- rev-11
++++ rev-12
+@@ -40,6 +40,16 @@
+    "id": "s9.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=0.9s\n--- stdout ---\n4 def r2(x): return Decimal(x).quantize(Q, rounding=ROUND_HALF_UP)\n6 def discount_rate(subtotal, customer):\n10 def tax_rate(customer):\n13 def line_amount(l):\n20 def validate(lines):\n29 def compute_invoice(lines, customer):\n33     tax=(sub-disc)*tax_rate(customer)\n34     rs,rd,rt=(Decimal(x).quantize(Q,rounding=ROUND_HALF_EVEN) for x in (sub,disc,tax))\n36     sub,disc,tax=rs,rd,rt\n37     return {k:str(v) for k,v in (('subtotal',sub),('discount',disc),('tax',tax),('total',tot))}\n39 def format_money(amount, currency):\n\"\"\"Invoice calculator package (implement the requirements in /task/fixtures/stage-*/).\"\"\"\n\nfrom .core import compute_invoice, format_money\n\n__all__ = [\"compute_invoice\", \"format_money\"]\n\n"
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Implement stage 4 by rewriting tax_rate and format_money.\ncode:\nimport re,subprocess,sys\np='/task/workspace/invoice/core.py';c=open(p).read()\nL=c.splitlines()\nprint('\\n'.join(L[9:12]));print('\\n'.join(L[38:]))\ni=c.index('def tax_rate(customer):');j=c.index('def line_amount')\nc=c[:i]+\"\"\"def tax_rate(customer):\n    cu=customer or {}\n    if cu.get('tax_exempt') is True: return Decimal('0')\n    return {'NZ':Decimal('0.15'),'AU':Decimal('0.10'),'US':Decimal('0')}.get(cu.get('region'),Decimal('0.12'))\n\n\"\"\"+c[j:]\nk=c.index('def format_money')\nc=c[:k]+\"\"\"def format_money(amount, currency):\n    pre={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n    if currency not in pre: raise ValueError('bad currency')\n    a=Decimal(str(amount)).quantize(Q,rounding=ROUND_HALF_EVEN)\n    s='-' if a<0 else ''\n    return s+pre[currency]+str(abs(a))\n\"\"\"\nopen(p,'w').write(c)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-2500:])"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\ndef tax_rate(customer):\n    return Decimal('0.10')\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

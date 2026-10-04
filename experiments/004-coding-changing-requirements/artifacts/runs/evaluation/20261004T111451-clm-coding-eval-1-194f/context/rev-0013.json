@@ -1,0 +1,29 @@
+{
+ "number": 13,
+ "parent": 12,
+ "source": "runtime",
+ "step": 10,
+ "sha256": "0cb5a6f41e3da844091ab36d4a1e52da83c69156b429a98b794a4c2cee0821fe",
+ "entries": [
+  {
+   "id": "sum1",
+   "role": "summary",
+   "body": "All 4 stages released. core.py: stages1-3 done; stage4 implemented in step 10 (tax_rate region NZ15/AU10/US0/else12, tax_exempt True->0, format_money NZ$/A$/US$ with -prefix, ValueError other). Check last obs test result; if OK, final."
+  },
+  {
+   "id": "s10.act",
+   "role": "assistant",
+   "body": "[step 10] execute\nthought: Implement region tax, exemption, format_money; compact context.\ncode:\nimport json,subprocess,sys\np='/task/workspace/invoice/core.py'\ns=open(p).read()\nls=s.splitlines()\nprint('\\n'.join(ls[14:17]));print('\\n'.join(ls[40:]))\ni=s.index('def tax_rate(customer):');j=s.index('def line_amount')\ns=s[:i]+\"\"\"def tax_rate(customer):\n    c=customer or {}\n    if c.get('tax_exempt') is True: return Decimal('0')\n    return {'NZ':Decimal('0.15'),'AU':Decimal('0.10'),'US':Decimal('0')}.get(c.get('region'),Decimal('0.12'))\n\n\"\"\"+s[j:]\ni=s.index('def format_money')\ns=s[:i]+\"\"\"def format_money(amount, currency):\n    pre={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n    if currency not in pre: raise ValueError('currency')\n    d=r2(Decimal(str(amount)))\n    sign='-' if d<0 else ''\n    return sign+pre[currency]+str(abs(d))\n\"\"\"\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])\nc={'format':'clm-context/v1','entries':[{'id':'sum1','role':'summary','body':'All 4 stages released. core.py: stages1-3 done; stage4 implemented in step 10 (tax_rate region NZ15/AU10/US0/else12, tax_exempt True->0, format_money NZ$/A$/US$ with -prefix, ValueError other). Check last obs test result; if OK, final.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s10.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\ndef tax_rate(customer):\n    return Decimal('0.10')\n\ndef compute_invoice(lines, customer):\n    validate(lines)\n    subtotal=sum((line_amount(l) for l in lines), Decimal('0'))\n    discount=subtotal*discount_rate(lines,customer,subtotal)\n    tax=(subtotal-discount)*tax_rate(customer)\n    subtotal,discount,tax=r2e(subtotal),r2e(discount),r2e(tax)\n    total=subtotal-discount+tax\n    return {k:str(r2e(v)) for k,v in dict(subtotal=subtotal,discount=discount,tax=tax,total=total).items()}\n\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s10.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 10: revision 11 -> 12; entries 8 -> 1; body chars 5917 -> 235; removed [s7.act, s7.obs, s7.rcpt, s8.act, s8.obs, s9.act, s9.obs]; added []; rewritten [sum1]"
+  }
+ ]
+}

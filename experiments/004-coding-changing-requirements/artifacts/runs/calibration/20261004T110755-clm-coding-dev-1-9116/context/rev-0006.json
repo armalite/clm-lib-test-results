@@ -1,0 +1,39 @@
+{
+ "number": 6,
+ "parent": 5,
+ "source": "runtime",
+ "step": 5,
+ "sha256": "3370962821e1536e79a9947b88fb7e6202aaaa0e4f1465b8390fa34f4a8e9a3c",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "summary",
+   "body": "invoice/core.py: _r (2dp half up), _validate, discount_rate(lines,customer,subtotal), tax_rate(customer), compute_invoice, format_money (NotImplemented). Stage1: per-line rounding, validation (empty, qty pos int, price>=0). Stage2 done: tier gold5%/silver2%; tax region NZ15 AU10 US0 else12. Next: advance to stage 3."
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Implement stage 2, compact context.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"\"\"def discount_rate(lines, customer, subtotal):\n    return Decimal('0')\"\"\",\"\"\"def discount_rate(lines, customer, subtotal):\n    return {'gold':Decimal('0.05'),'silver':Decimal('0.02')}.get(customer.get('tier'),Decimal('0'))\"\"\")\ns=s.replace(\"\"\"def tax_rate(customer):\n    return Decimal('0.10')\"\"\",\"\"\"def tax_rate(customer):\n    return {'NZ':Decimal('0.15'),'AU':Decimal('0.10'),'US':Decimal('0')}.get(customer.get('region'),Decimal('0.12'))\"\"\")\nopen(p,'w').write(s)\nimport subprocess,sys,json\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'summary','body':'invoice/core.py: _r (2dp half up), _validate, discount_rate(lines,customer,subtotal), tax_rate(customer), compute_invoice, format_money (NotImplemented). Stage1: per-line rounding, validation (empty, qty pos int, price>=0). Stage2 done: tier gold5%/silver2%; tax region NZ15 AU10 US0 else12. Next: advance to stage 3.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s4.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 4: revision 3 -> 4; entries 6 -> 1; body chars 4917 -> 317; removed [s1.act, s1.obs, s2.act, s2.obs, s3.act, s3.obs]; added [n1]; rewritten []"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: "
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Rounding (replaces the earlier rounding rule): do NOT round line amounts. Compute the subtotal, discount and tax exactly (discount from the exact subtotal; tax from the exact subtotal minus the exact discount), then round each of subtotal, discount and tax to 2 decimals using banker's rounding (half even); total = rounded subtotal - rounded discount + rounded tax.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (48 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
+  }
+ ]
+}

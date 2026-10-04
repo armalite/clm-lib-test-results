@@ -1,0 +1,19 @@
+--- rev-8
++++ rev-9
+@@ -25,6 +25,16 @@
+    "id": "s7.obs",
+    "role": "observation",
+    "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.\n- [CHANGED] Money formatting (replaces the earlier format): format_money also uses comma thousands separators, for example format_money('1234.5', 'NZD') == 'NZ$1,234.50'. Prefixes, the minus sign position and unknown-currency errors are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s8.act",
++   "role": "assistant",
++   "body": "[step 8] execute\nthought: Look at current format_money and tax code to modify.\ncode:\np='/task/workspace/invoice/core.py'\nfor i,l in enumerate(open(p).read().splitlines(),1):print(i,l)"
++  },
++  {
++   "id": "s8.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n1 \"\"\"Invoice core.\"\"\"\n2 from decimal import Decimal, ROUND_HALF_UP\n3 \n4 Q = Decimal('0.01')\n5 TIER = {'platinum': Decimal('0.10'), 'gold': Decimal('0.07'), 'silver': Decimal('0.03')}\n6 \n7 \n8 def r2(x):\n9     return x.quantize(Q, rounding=ROUND_HALF_UP)\n10 \n11 \n12 def compute_invoice(lines, customer):\n13     if not lines:\n14         raise ValueError('empty lines')\n15     sub = Decimal('0')\n16     for ln in lines:\n17         q = ln.get('qty')\n18         if not isinstance(q, int) or isinstance(q, bool) or q < 0:\n19             raise ValueError('bad qty')\n20         p = Decimal(str(ln.get('unit_price')))\n21         if p < 0:\n22             raise ValueError('negative price')\n23         if q == 0:\n24             continue\n25         amt = q * p\n26         if q >= 100:\n27             amt = amt * Decimal('0.90')\n28         sub += r2(amt)\n29     disc = r2(sub * TIER.get(customer.get('tier'), Decimal('0')))\n30     tax_rate = Decimal('0.10')\n31     tax = r2((sub - disc) * tax_rate)\n32     total = sub - disc + tax\n33     return {'subtotal': str(r2(sub)), 'discount': str(disc), 'tax': str(tax), 'total': str(r2(total))}\n34 \n35 \n36 PFX = {'NZD': 'NZ$', 'AUD': 'A$', 'USD': 'US$'}\n37 \n38 \n39 def format_money(amount, currency):\n40     if currency not in PFX:\n41         raise ValueError('bad currency')\n42     a = r2(Decimal(str(amount)))\n43     sign = '-' if a < 0 else ''\n44     return sign + PFX[currency] + str(abs(a))\n"
+   }
+  ]
+ }
