@@ -1,0 +1,36 @@
+--- rev-5
++++ rev-6
+@@ -4,32 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Stage1 done: core.py has compute_invoice with line_amount (bulk qty>=100 x0.90, r2 half-up), discount_rate (tier gold5/silver2), tax_rate (0), format_money stub. Spec: /task/fixtures/stage-1/REQUIREMENTS.md"
+-  },
+-  {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] execute\nthought: Implement stage 1 and compact context.\ncode:\nsrc='''from decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef r2(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\n\ndef line_amount(l, customer):\n    a=Decimal(l['qty'])*Decimal(str(l['unit_price']))\n    if l['qty']>=100:\n        a*=Decimal('0.90')\n    return r2(a)\n\ndef discount_rate(customer, subtotal, lines):\n    return TIER.get(customer.get('tier'),Decimal(0))\n\ndef tax_rate(customer, lines):\n    return Decimal(0)\n\ndef compute_invoice(lines, customer):\n    sub=sum((line_amount(l,customer) for l in lines),Decimal(0))\n    disc=r2(sub*discount_rate(customer,sub,lines))\n    tax=r2((sub-disc)*tax_rate(customer,lines))\n    tot=sub-disc+tax\n    return {k:str(r2(v)) for k,v in [('subtotal',sub),('discount',disc),('tax',tax),('total',tot)]}\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n'''\nopen('/task/workspace/invoice/core.py','w').write(src)\nimport subprocess,sys,json\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1 done: core.py has compute_invoice with line_amount (bulk qty>=100 x0.90, r2 half-up), discount_rate (tier gold5/silver2), tax_rate (0), format_money stub. Spec: /task/fixtures/stage-1/REQUIREMENTS.md'}]},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.8s\n--- stdout ---\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.000s\n\nOK\n\n"
+-  },
+-  {
+-   "id": "s3.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 3: revision 2 -> 3; entries 4 -> 1; body chars 4892 -> 206; removed [s1.act, s1.obs, s2.act, s2.obs]; added [n1]; rewritten []"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] advance\nthought: "
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 4 released.\n# Stage 2 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax: the tax rate is 10% for every customer.\n- [NEW] Validation: compute_invoice raises ValueError if lines is empty, if any qty is not a positive integer, or if any unit_price is negative.\n- [CHANGED] Tier discount (replaces the earlier tier rates): 'platinum' 10%, 'gold' 7%, 'silver' 3%, any other tier 0%.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (48 lines)\n  stage-2/REQUIREMENTS.md (11 lines)"
++   "body": "Stage1+2 done in invoice/core.py: compute_invoice -> validate(lines) (ValueError empty/qty non-pos-int/neg price), line_amount (bulk qty>=100 x0.90, r2 half-up), discount_rate (TIER platinum10/gold7/silver3), tax_rate 10% on (sub-disc), format_money stub. Specs /task/fixtures/stage-N/REQUIREMENTS.md"
+   }
+  ]
+ }

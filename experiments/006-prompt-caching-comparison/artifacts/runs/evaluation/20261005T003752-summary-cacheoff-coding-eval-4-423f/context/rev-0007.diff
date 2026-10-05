@@ -1,0 +1,19 @@
+--- rev-6
++++ rev-7
+@@ -60,6 +60,16 @@
+    "id": "s6.obs",
+    "role": "observation",
+    "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Money formatting: add format_money(amount: str, currency: str) -> str. Prefix 'NZD' with 'NZ$', 'AUD' with 'A$', 'USD' with 'US$'; always 2 decimals; a negative amount puts '-' before the prefix (for example '-NZ$5.00'); any other currency raises ValueError.\n- [CHANGED] Bulk lines (replaces the earlier bulk rule): qty >= 200 multiplies the line amount by 0.88; otherwise qty >= 50 multiplies it by 0.95; smaller lines are unchanged (before any line rounding).\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (54 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: Implement stage 3: format_money and new bulk rule.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"    if line['qty']>=100:\\n        amt*=Decimal('0.90')\\n\",\"    if line['qty']>=200:\\n        amt*=Decimal('0.88')\\n    elif line['qty']>=50:\\n        amt*=Decimal('0.95')\\n\")\ns=s.replace(\"def format_money(amount, currency):\\n    raise NotImplementedError\\n\",\"\"\"PREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n\ndef format_money(amount, currency):\n    if currency not in PREFIX:\n        raise ValueError('bad currency')\n    a=r2(Decimal(str(amount)))\n    sign='-' if a<0 else ''\n    return sign+PREFIX[currency]+str(abs(a))\n\"\"\")\nopen(p,'w').write(s)\nopen('/task/workspace/NOTES.md','a').write('stage3 done: format_money NZ$/A$/US$, bulk >=200 x0.88, >=50 x0.95.\\n')\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n............\n----------------------------------------------------------------------\nRan 12 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

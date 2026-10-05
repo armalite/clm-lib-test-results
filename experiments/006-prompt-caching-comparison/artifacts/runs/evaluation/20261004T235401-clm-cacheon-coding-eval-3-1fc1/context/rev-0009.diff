@@ -1,0 +1,24 @@
+--- rev-8
++++ rev-9
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "Stages1-3 in invoice/core.py: tax 10% (0 if tax_exempt is True); tier discount gold5%/silver2%; line amount qty*price, x0.90 if qty>=100; exact line amounts, round subtotal/discount/tax half-even, total=sum of rounded; format_money NZ$/A$/US$, comma thousands, ValueError else, -prefix negatives (half-even)."
++  },
++  {
++   "id": "s6.act",
++   "role": "assistant",
++   "body": "[step 6] execute\nthought: Implement stage 3: bulk discount and comma formatting.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"sub=sum((Decimal(str(l['qty']))*Decimal(str(l['unit_price'])) for l in lines), Decimal('0'))\",\"sub=sum((Decimal(str(l['qty']))*Decimal(str(l['unit_price']))*(Decimal('0.90') if Decimal(str(l['qty']))>=100 else 1) for l in lines), Decimal('0'))\")\ns=s.replace(\"PREFIX[currency]+str(abs(a))\",\"PREFIX[currency]+'{:,.2f}'.format(abs(a))\")\nopen(p,'w').write(s)\nimport subprocess,sys,json\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stages1-3 in invoice/core.py: tax 10% (0 if tax_exempt is True); tier discount gold5%/silver2%; line amount qty*price, x0.90 if qty>=100; exact line amounts, round subtotal/discount/tax half-even, total=sum of rounded; format_money NZ$/A$/US$, comma thousands, ValueError else, -prefix negatives (half-even).'}]},open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s6.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n............\n----------------------------------------------------------------------\nRan 12 tests in 0.001s\n\nOK\n\n"
++  },
++  {
++   "id": "s6.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 6: revision 7 -> 8; entries 6 -> 1; body chars 3066 -> 308; removed [s4.act, s4.obs, s4.rcpt, s5.act, s5.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

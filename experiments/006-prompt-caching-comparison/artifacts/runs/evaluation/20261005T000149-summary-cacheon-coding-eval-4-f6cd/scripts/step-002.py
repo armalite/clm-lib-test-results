@@ -1,0 +1,6 @@
+code='''from decimal import Decimal, ROUND_HALF_UP\nQ=Decimal('0.01')\ndef r2(x): return x.quantize(Q, rounding=ROUND_HALF_UP)\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\ndef compute_invoice(lines, customer):\n    sub=Decimal(0)\n    for l in lines:\n        a=Decimal(l['qty'])*Decimal(str(l['unit_price']))\n        if l['qty']>=100: a*=Decimal('0.90')\n        sub+=r2(a)\n    disc=r2(sub*TIER.get(customer.get('tier'),Decimal(0)))\n    taxrate=Decimal(0)\n    tax=r2((sub-disc)*taxrate)\n    tot=sub-disc+tax\n    return {'subtotal':str(r2(sub)),'discount':str(disc),'tax':str(tax),'total':str(r2(tot))}\n'''
+open('/task/workspace/invoice/core.py','w').write(code)
+print(open('/task/workspace/invoice/__init__.py').read())
+open('/task/workspace/NOTES.md','w').write('stage1 done: rounding, bulk>=100 x0.90, tier gold5 silver2. core.py\n')
+import subprocess,sys
+r=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])

@@ -1,0 +1,6 @@
+code='''"""Invoice calculator."""\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef r2(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\ndef line_amount(line):\n    amt=Decimal(int(line['qty']))*Decimal(str(line['unit_price']))\n    if int(line['qty'])>=100:\n        amt*=Decimal('0.90')\n    return r2(amt)\n\ndef discount_rate(subtotal, customer):\n    return Decimal('0')\n\ndef tax_rate(customer):\n    return Decimal('0.10')\n\ndef compute_invoice(lines, customer):\n    subtotal=sum((line_amount(l) for l in lines), Decimal('0'))\n    discount=r2(subtotal*discount_rate(subtotal, customer))\n    tax=r2((subtotal-discount)*tax_rate(customer))\n    total=subtotal-discount+tax\n    return {k:str(r2(v)) for k,v in [('subtotal',subtotal),('discount',discount),('tax',tax),('total',total)]}\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n'''
+open('/task/workspace/invoice/core.py','w').write(code)
+open('/task/workspace/NOTES.md','w').write('Stage1 done: round lines half-up, tax 10%, bulk qty>=100 x0.90 before rounding. core.py has discount_rate/tax_rate hooks.\n')
+import subprocess,sys
+r=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)
+print(r.stderr[-2000:])

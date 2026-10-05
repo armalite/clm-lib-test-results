@@ -1,0 +1,19 @@
+{
+ "number": 1,
+ "parent": 0,
+ "source": "runtime",
+ "step": 1,
+ "sha256": "15f7f5c683d2397fe4d447a92ef690741a243964e94b69a2d99f6e3f13c7a0d3",
+ "entries": [
+  {
+   "id": "s1.act",
+   "role": "assistant",
+   "body": "[step 1] execute\nthought: \ncode:\nimport os\nfor r,d,f in os.walk('/task'):\n  for x in f: print(os.path.join(r,x))\nprint(open('/task/fixtures/stage-1/REQUIREMENTS.md').read())\nfor x in os.listdir('/task/workspace/invoice'): print(x, open('/task/workspace/invoice/'+x).read())"
+  },
+  {
+   "id": "s1.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n/task/fixtures/stage-1/REQUIREMENTS.md\n/task/fixtures/current-tests/test_invoice.py\n/task/workspace/invoice/core.py\n/task/workspace/invoice/__init__.py\n# Stage 1 of 4 requirements\n\n## Package and API\n\nImplement the package `invoice` in /task/workspace/invoice/ (a starting skeleton is provided).\nStandard library only. Use `decimal.Decimal` arithmetic.\n\n- `invoice.compute_invoice(lines, customer) -> dict`\n  - `lines`: list of `{\"sku\": str, \"qty\": int, \"unit_price\": str}`. unit_price is a decimal\n    string such as \"12.50\"; it may have more than 2 decimal places (for example \"3.125\").\n  - `customer`: `{\"tier\": str, \"region\": str}` and optionally `\"tax_exempt\": bool`.\n  - Returns `{\"subtotal\": str, \"discount\": str, \"tax\": str, \"total\": str}`, each a string with\n    exactly 2 decimals, for example \"12.30\".\n- Base calculation (always in force): line amount = qty x unit_price; subtotal = sum of line\n  amounts; discount = subtotal x discount rate; tax = (subtotal - discount) x tax rate;\n  total = subtotal - discount + tax. With no discount rule in force the discount rate is 0; with\n  no tax rule in force the tax rate is 0.\n\n## Rules introduced in stage 1\n\n- [NEW] Rounding: round each line amount to 2 decimals (half up) before summing; compute discount from the rounded subtotal and round it to 2 decimals (half up); compute tax from (subtotal - discount) and round it to 2 decimals (half up); total = subtotal - discount + tax.\n- [NEW] Tax: the tax rate is 10% for every customer.\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\ncore.py \"\"\"Implementation goes here.\"\"\"\n\nfrom decimal import Decimal  # noqa: F401\n\n\ndef compute_invoice(lines, customer):\n    raise NotImplementedError\n\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n\n__init__.py \"\"\"Invoice calculator package (implement the requirements in /task/fixtures/stage-*/).\"\"\"\n\nfrom .core import compute_invoice, format_money\n\n__all__ = [\"compute_invoice\", \"format_money\"]\n\n"
+  }
+ ]
+}

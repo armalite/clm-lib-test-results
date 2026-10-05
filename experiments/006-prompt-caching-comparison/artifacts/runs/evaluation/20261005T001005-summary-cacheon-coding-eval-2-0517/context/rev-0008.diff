@@ -1,0 +1,19 @@
+--- rev-7
++++ rev-8
+@@ -25,6 +25,16 @@
+    "id": "s6.obs",
+    "role": "observation",
+    "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Tier discount (replaces the earlier tier rates): 'platinum' 10%, 'gold' 7%, 'silver' 3%, any other tier 0%.\n- [CHANGED] Validation (replaces the earlier qty rule): qty 0 is now allowed and such a line is skipped entirely; a negative qty still raises ValueError; an empty lines list or a negative unit_price still raises ValueError.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (54 lines)\n  stage-3/REQUIREMENTS.md (11 lines)"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: Look at current core.py compute_invoice to apply stage 3 changes.\ncode:\nprint(open('/task/workspace/invoice/core.py').read()[:2500])"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef _r(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\n\ndef compute_invoice(lines, customer):\n    if not lines:\n        raise ValueError('empty lines')\n    sub=Decimal('0')\n    for l in lines:\n        q=l.get('qty')\n        if not isinstance(q,int) or isinstance(q,bool) or q<=0:\n            raise ValueError('bad qty')\n        p=Decimal(str(l['unit_price']))\n        if p<0:\n            raise ValueError('negative price')\n        sub+=_r(q*p)\n    sub=_r(sub)\n    disc=_r(sub*TIER.get(customer.get('tier'),Decimal('0')))\n    taxrate=Decimal('0.10')\n    tax=_r((sub-disc)*taxrate)\n    total=sub-disc+tax\n    return {k:str(_r(v)) for k,v in (('subtotal',sub),('discount',disc),('tax',tax),('total',total))}\n\n\nPFX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n\ndef format_money(amount, currency):\n    if currency not in PFX:\n        raise ValueError('bad currency')\n    a=_r(Decimal(str(amount)))\n    sign='-' if a<0 else ''\n    return sign+PFX[currency]+str(abs(a))\n\n"
+   }
+  ]
+ }

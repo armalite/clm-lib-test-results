@@ -1,0 +1,1453 @@
+diff --git a/src/clm_lib/budget.py b/src/clm_lib/budget.py
+index 31479ce..b52532c 100644
+--- a/src/clm_lib/budget.py
++++ b/src/clm_lib/budget.py
+@@ -42,17 +42,27 @@ class ModelPrice:
+     retrieved: str
+ 
+     def cost(self, usage: Usage) -> float:
++        """USD for provider-reported usage. ``input_tokens`` is the uncached remainder only;
++        cache writes and reads are separate fields (never double-counted). Writes reported as
++        1-hour TTL are priced at the 1-hour rate, all other writes at the 5-minute rate."""
+         m = 1_000_000
++        writes_1h = usage.cache_creation_1h or 0
++        writes_5m = usage.cache_creation_input_tokens - writes_1h
+         return (
+             usage.input_tokens * self.input / m
+-            + usage.cache_creation_input_tokens * self.cache_write_5m / m
++            + writes_5m * self.cache_write_5m / m
++            + writes_1h * self.cache_write_1h / m
+             + usage.cache_read_input_tokens * self.cache_read / m
+             + usage.output_tokens * self.output / m
+         )
+ 
+-    def max_cost(self, input_tokens_upper: int, max_output_tokens: int) -> float:
+-        # Assume every input token is billed at the highest input-side rate.
++    def max_cost(
++        self, input_tokens_upper: int, max_output_tokens: int, cache_ttl: str | None = None
++    ) -> float:
++        # Assume every input token is billed at the highest input-side rate that can apply.
+         worst_in = max(self.input, self.cache_write_5m)
++        if cache_ttl == "1h":
++            worst_in = max(worst_in, self.cache_write_1h)
+         return (input_tokens_upper * worst_in + max_output_tokens * self.output) / 1_000_000
+ 
+ 
+diff --git a/src/clm_lib/cli.py b/src/clm_lib/cli.py
+index 6f50498..29c99ea 100644
+--- a/src/clm_lib/cli.py
++++ b/src/clm_lib/cli.py
+@@ -374,7 +374,10 @@ def _live_runner(cfg: Config, max_usd: float | None) -> Runner:
+ def cmd_run(args: argparse.Namespace) -> int:
+     cfg = _config(args)
+     runner = _live_runner(cfg, args.max_usd)
+-    res = runner.run(generate(args.task), args.mode, label=args.label or "single run")
++    caching = None if args.caching == "config" else args.caching == "on"
++    res = runner.run(
++        generate(args.task), args.mode, label=args.label or "single run", caching=caching
++    )
+     _print_result(res)
+     return 0
+ 
+@@ -442,6 +445,51 @@ def code_state() -> dict[str, Any]:
+     }
+ 
+ 
++# Williams design for four conditions: each condition appears once in every position, and
++# each ordered pair of adjacent conditions occurs once across the four rows.
++WILLIAMS_4 = ((0, 1, 3, 2), (1, 2, 0, 3), (2, 3, 1, 0), (3, 0, 2, 1))
++
++
++def parse_conditions(text: str) -> list[tuple[str, bool]]:
++    """``summary:off,summary:on,clm:off,clm:on`` -> [(mode, caching), ...]."""
++    out = []
++    for part in text.split(","):
++        mode, _, cache = part.strip().partition(":")
++        if mode not in ("summary", "clm") or cache not in ("on", "off"):
++            raise ValueError(f"bad condition {part!r}; expected <summary|clm>:<on|off>")
++        out.append((mode, cache == "on"))
++    if len(set(out)) != len(out):
++        raise ValueError("conditions must be distinct")
++    return out
++
++
++def condition_schedule(
++    tasks: list[str], reps: int, conditions: list[tuple[str, bool]]
++) -> list[dict[str, Any]]:
++    """Four-condition run order: for task index i and repetition r, Williams row (i + r - 1)
++    mod 4. Repetitions are outer, tasks inner, as in the two-arm matrix."""
++    if len(conditions) != 4:
++        raise ValueError("the condition schedule needs exactly four conditions")
++    rows = []
++    for rep in range(1, reps + 1):
++        for index, task in enumerate(tasks):
++            row = WILLIAMS_4[(index + rep - 1) % 4]
++            for position, c in enumerate(row):
++                mode, caching = conditions[c]
++                rows.append(
++                    {
++                        "task": task,
++                        "rep": rep,
++                        "block": (rep - 1) * len(tasks) + index,
++                        "position": position,
++                        "williams_row": (index + rep - 1) % 4,
++                        "mode": mode,
++                        "caching": "on" if caching else "off",
++                    }
++                )
++    return rows
++
++
+ def run_matrix(
+     runner: Runner,
+     cfg: Config,
+@@ -450,12 +498,14 @@ def run_matrix(
+     out: Path,
+     stamp: str,
+     order: str = "pair",
++    conditions: list[tuple[str, bool]] | None = None,
+ ) -> tuple[list[dict[str, Any]], int]:
+     """Sequential comparison matrix; returns (cells, exit code). Never parallel.
+ 
+     ``order`` sets which arm runs first in each matched pair: "pair" alternates by pair index
+     (the original scheme), "balanced" alternates by instance index plus repetition, so repeated
+-    runs of one instance also alternate.
++    runs of one instance also alternate. With ``conditions`` (mode, caching) the four-condition
++    Williams schedule is used instead (``order`` is then "williams").
+     """
+     from .prompts import PROMPT_VERSION
+     from .tasks import scorer_version_for
+@@ -463,7 +513,7 @@ def run_matrix(
+     patch = source_patch()
+     if patch:
+         out.with_suffix(".patch").write_text(patch)
+-    frozen = {
++    frozen: dict[str, Any] = {
+         "source_patch": out.with_suffix(".patch").name if patch else None,
+         "source_patch_sha256": hashlib.sha256(patch.encode()).hexdigest() if patch else None,
+         "model": runner.provider.model,
+@@ -473,7 +523,10 @@ def run_matrix(
+         "generator_version": sorted({generate(t).generator_version for t in tasks}),
+         # Per-task scorer versions (coding tasks use their own evaluator).
+         "scorer_version": sorted({scorer_version_for(generate(t)) for t in tasks}),
+-        "mode_order": order,
++        "mode_order": "williams" if conditions else order,
++        "conditions": [f"{m}:{'on' if c else 'off'}" for m, c in conditions]
++        if conditions
++        else None,
+         "tasks": tasks,
+         "reps": reps,
+         "summary_policy": cfg.baseline.policy,
+@@ -481,60 +534,67 @@ def run_matrix(
+         "code_state": code_state(),
+     }
+     cells: list[dict[str, Any]] = []
+-    pair = 0
+     stopped = ""
+     exit_code = 0
++    schedule = condition_schedule(tasks, reps, conditions) if conditions else []
++    if conditions:
++        frozen["schedule"] = schedule
++    plan: list[list[dict[str, Any]]] = []  # one list of cells per matched block
+     for rep in range(1, reps + 1):
+         for index, task in enumerate(tasks):
+-            parity = pair if order == "pair" else index + rep - 1
++            if conditions:
++                block = (rep - 1) * len(tasks) + index
++                plan.append([dict(r) for r in schedule if r["block"] == block])
++                continue
++            parity = len(plan) if order == "pair" else index + rep - 1
+             arms = ["summary", "clm"] if parity % 2 == 0 else ["clm", "summary"]
+-            for mode in arms:
+-                cell: dict[str, Any] = {
+-                    "task": task,
+-                    "rep": rep,
+-                    "mode": mode,
+-                    "pair": pair,
+-                    "order": arms,
+-                }
+-                if not stopped and runner.ledger.remaining_usd < cfg.budget.min_run_reserve_usd:
+-                    stopped = (
+-                        f"remaining ${runner.ledger.remaining_usd:.4f} below per-run reserve "
+-                        f"${cfg.budget.min_run_reserve_usd:.2f}"
+-                    )
+-                if stopped:
+-                    cell.update(status="missing", reason=stopped)
+-                else:
+-                    res = runner.run(
+-                        generate(task), mode, label=f"compare {stamp} pair {pair} rep {rep}"
+-                    )
+-                    _print_result(res)
+-                    m = res.metrics
+-                    cell.update(
+-                        run_id=res.run_id,
+-                        status=res.status,
+-                        outcome=m["score"]["outcome"],
+-                        strict=m["score"]["strict_success"],
+-                        cost_usd=m["cost"]["incurred_usd"],
+-                        valid=m["valid_for_comparison"],
+-                    )
+-                    if res.status in COMPARE_HALT:
+-                        stopped = f"{COMPARE_HALT[res.status]} in run {res.run_id}"
+-                        if res.status == "accounting_bound_violated":
+-                            exit_code = 4
+-                cells.append(cell)
+-                out.write_text(
+-                    json.dumps(
+-                        {
+-                            "comparison": stamp,
+-                            "frozen": frozen,
+-                            "frozen_prompt_version": PROMPT_VERSION,
+-                            "halted": stopped or None,
+-                            "cells": cells,
+-                        },
+-                        indent=1,
+-                    )
++            plan.append([{"task": task, "rep": rep, "mode": m, "order": arms} for m in arms])
++    for pair, block_cells in enumerate(plan):
++        for cell in block_cells:
++            task, rep, mode = cell["task"], cell["rep"], cell["mode"]
++            caching = None if "caching" not in cell else cell["caching"] == "on"
++            cell["pair"] = pair
++            if not stopped and runner.ledger.remaining_usd < cfg.budget.min_run_reserve_usd:
++                stopped = (
++                    f"remaining ${runner.ledger.remaining_usd:.4f} below per-run reserve "
++                    f"${cfg.budget.min_run_reserve_usd:.2f}"
++                )
++            if stopped:
++                cell.update(status="missing", reason=stopped)
++            else:
++                res = runner.run(
++                    generate(task),
++                    mode,
++                    label=f"compare {stamp} pair {pair} rep {rep}",
++                    caching=caching,
++                )
++                _print_result(res)
++                m = res.metrics
++                cell.update(
++                    run_id=res.run_id,
++                    status=res.status,
++                    outcome=m["score"]["outcome"],
++                    strict=m["score"]["strict_success"],
++                    cost_usd=m["cost"]["incurred_usd"],
++                    valid=m["valid_for_comparison"],
++                )
++                if res.status in COMPARE_HALT:
++                    stopped = f"{COMPARE_HALT[res.status]} in run {res.run_id}"
++                    if res.status == "accounting_bound_violated":
++                        exit_code = 4
++            cells.append(cell)
++            out.write_text(
++                json.dumps(
++                    {
++                        "comparison": stamp,
++                        "frozen": frozen,
++                        "frozen_prompt_version": PROMPT_VERSION,
++                        "halted": stopped or None,
++                        "cells": cells,
++                    },
++                    indent=1,
+                 )
+-            pair += 1
++            )
+     return cells, exit_code
+ 
+ 
+@@ -545,7 +605,8 @@ def cmd_compare(args: argparse.Namespace) -> int:
+     stamp = f"{datetime.now(UTC):%Y%m%dT%H%M%S}"
+     out = _runs_dir(cfg) / "comparisons" / f"{stamp}.json"
+     out.parent.mkdir(parents=True, exist_ok=True)
+-    cells, code = run_matrix(runner, cfg, tasks, args.reps, out, stamp, args.order)
++    conditions = parse_conditions(args.conditions) if args.conditions else None
++    cells, code = run_matrix(runner, cfg, tasks, args.reps, out, stamp, args.order, conditions)
+     done = sum(1 for c in cells if c["status"] != "missing")
+     print(f"comparison {stamp}: {done}/{len(cells)} cells run; record {out}")
+     if code:
+@@ -629,6 +690,12 @@ def build_parser() -> argparse.ArgumentParser:
+     r.add_argument("--task", choices=sorted(INSTANCES), default="dev")
+     r.add_argument("--label", default="")
+     r.add_argument("--max-usd", type=float, default=None)
++    r.add_argument(
++        "--caching",
++        choices=("config", "on", "off"),
++        default="config",
++        help="prompt caching for this run (default: request.prompt_caching from the config)",
++    )
+     r.set_defaults(func=cmd_run)
+ 
+     g = sub.add_parser(
+@@ -648,6 +715,12 @@ def build_parser() -> argparse.ArgumentParser:
+         default="pair",
+         help="arm order: alternate by pair index (default) or by instance and repetition",
+     )
++    c.add_argument(
++        "--conditions",
++        default="",
++        help="four conditions mode:caching, e.g. summary:off,summary:on,clm:off,clm:on "
++        "(Williams order; needs request.layout = blocks/1)",
++    )
+     c.set_defaults(func=cmd_compare)
+ 
+     rp = sub.add_parser("report", help="markdown report from recorded runs and the ledger")
+diff --git a/src/clm_lib/config.py b/src/clm_lib/config.py
+index 2b8939b..ff5e4e3 100644
+--- a/src/clm_lib/config.py
++++ b/src/clm_lib/config.py
+@@ -48,6 +48,21 @@ class BaselineConfig:
+     summary_min_chars: int = 600
+ 
+ 
++@dataclass
++class RequestConfig:
++    # "single-user/1": experiments 001-005 (one system string; one user string with <task>,
++    # <runtime_status>, then <working_context>). "blocks/1": experiment 006 (text content
++    # blocks; stable task first, one block per context entry, runtime status last).
++    layout: str = "single-user/1"
++    # Provider prompt caching (blocks/1 only): explicit 5-minute breakpoints on the task block
++    # and on the last working-context block; off sends no cache_control at all.
++    prompt_caching: bool = False
++    cache_ttl: str = "5m"
++    # "run-tag/1": a fixed-length random per-run tag is the first system block, so cache
++    # prefixes (and any cache entry) are unique to the run. "none": no tag.
++    run_isolation: str = "none"
++
++
+ @dataclass
+ class BudgetConfig:
+     ceiling_usd: float = 10.0
+@@ -71,6 +86,7 @@ class Config:
+     baseline: BaselineConfig = field(default_factory=BaselineConfig)
+     budget: BudgetConfig = field(default_factory=BudgetConfig)
+     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
++    request: RequestConfig = field(default_factory=RequestConfig)
+     runs_dir: str = "runs"
+ 
+     def to_dict(self) -> dict[str, Any]:
+@@ -95,6 +111,7 @@ def load_config(path: Path | None) -> Config:
+         "baseline": BaselineConfig,
+         "budget": BudgetConfig,
+         "sandbox": SandboxConfig,
++        "request": RequestConfig,
+     }
+     kwargs: dict[str, Any] = {}
+     for key, cls in sections.items():
+@@ -104,4 +121,22 @@ def load_config(path: Path | None) -> Config:
+         kwargs["runs_dir"] = str(data.pop("runs_dir"))
+     if data:
+         raise ValueError(f"unknown config sections: {sorted(data)}")
+-    return Config(**kwargs)
++    cfg = Config(**kwargs)
++    validate_request(cfg.request)
++    return cfg
++
++
++LAYOUTS = ("single-user/1", "blocks/1")
++
++
++def validate_request(r: RequestConfig) -> None:
++    if r.layout not in LAYOUTS:
++        raise ValueError(f"request.layout must be one of {LAYOUTS}")
++    if r.run_isolation not in ("none", "run-tag/1"):
++        raise ValueError("request.run_isolation must be 'none' or 'run-tag/1'")
++    if r.cache_ttl not in ("5m", "1h"):
++        raise ValueError("request.cache_ttl must be '5m' or '1h'")
++    if r.prompt_caching and r.layout == "single-user/1":
++        raise ValueError("prompt caching requires request.layout = 'blocks/1'")
++    if r.run_isolation != "none" and r.layout == "single-user/1":
++        raise ValueError("run isolation requires request.layout = 'blocks/1'")
+diff --git a/src/clm_lib/export.py b/src/clm_lib/export.py
+index 138554e..3516908 100644
+--- a/src/clm_lib/export.py
++++ b/src/clm_lib/export.py
+@@ -247,6 +247,27 @@ def _metrics_row(run_id: str, role: str, src: Path, charged: float) -> dict[str,
+         prompt_version=m.get("prompt_version"),
+         fixture_sha256=m.get("fixture_sha256"),
+     )
++    rq = m.get("request") or {}
++    u = m["usage_provider_reported"]
++    row.update(
++        # Request layout and caching condition (single-user/1 and off before experiment 006).
++        request_layout=rq.get("layout", "single-user/1"),
++        prompt_caching=rq.get("prompt_caching", "off"),
++        cache_ttl=rq.get("cache_ttl"),
++        run_isolation=rq.get("run_isolation", "none"),
++        cache_read_input_tokens=u.get("cache_read_input_tokens", 0),
++        cache_creation_input_tokens=u.get("cache_creation_input_tokens", 0),
++        first_call_cache_read_tokens=(rq.get("first_call_cache") or {}).get(
++            "cache_read_input_tokens"
++        ),
++        provider_latency_s=rq.get("provider_latency_s"),
++    )
++    for kind, k in sorted((rq.get("by_kind") or {}).items()):
++        row[f"{kind}_cost_usd"] = k["cost_usd"]
++        row[f"{kind}_cache_read_tokens"] = k["cache_read_input_tokens"]
++        row[f"{kind}_cache_creation_tokens"] = k["cache_creation_input_tokens"]
++        row[f"{kind}_uncached_input_tokens"] = k["input_tokens_uncached"]
++        row[f"{kind}_latency_s"] = k["latency_s"]
+     for k, v in (m.get("management") or {}).items():
+         row[f"mgmt_{k}"] = json.dumps(v) if isinstance(v, (dict, list)) else v
+     return row
+diff --git a/src/clm_lib/prompts.py b/src/clm_lib/prompts.py
+index 7bbac35..48a6cfd 100644
+--- a/src/clm_lib/prompts.py
++++ b/src/clm_lib/prompts.py
+@@ -167,6 +167,50 @@ def render_entries(entries: tuple[Entry, ...] | list[Entry]) -> str:
+     return "\n".join(lines)
+ 
+ 
++RUN_TAG_FORMAT = "run-ref: {tag}\n"  # tag: 32 random hex chars, so the block length is fixed
++
++
++def run_tag_block(tag: str) -> str:
++    if len(tag) != 32 or any(c not in "0123456789abcdef" for c in tag):
++        raise ValueError("run tag must be 32 lowercase hex characters")
++    return RUN_TAG_FORMAT.format(tag=tag)
++
++
++def entry_lines(entries: tuple[Entry, ...] | list[Entry]) -> list[str]:
++    """One escaped JSON line per entry (same text as render_entries, without joining)."""
++    return render_entries(entries).split("\n") if entries else []
++
++
++def render_user_blocks(
++    task: str, status: str, entries: tuple[Entry, ...] | list[Entry]
++) -> tuple[list[str], list[int]]:
++    """Layout blocks/1: (text blocks, indices of cache breakpoint candidates).
++
++    Stable content first: the task block (which opens <working_context>), then one block per
++    context entry, then the changing runtime status. Breakpoint candidates are the task block
++    and the last entry block, so an unchanged prefix of entries can be reused as it grows.
++    """
++    blocks = [f"<task>\n{task.strip()}\n</task>\n\n<working_context>\n"]
++    blocks += [line + "\n" for line in entry_lines(entries)]
++    breakpoints = [0] if len(blocks) == 1 else [0, len(blocks) - 1]
++    blocks.append(f"</working_context>\n\n<runtime_status>\n{status.strip()}\n</runtime_status>\n")
++    return blocks, breakpoints
++
++
++def summary_user_blocks(
++    task: str, entries: list[Entry], max_chars: int
++) -> tuple[list[str], list[int]]:
++    """Layout blocks/1 for summary requests, with the same breakpoint convention."""
++    blocks = [f"<task>\n{task.strip()}\n</task>\n\n<transcript_to_summarise>\n"]
++    blocks += [line + "\n" for line in entry_lines(entries)]
++    breakpoints = [0] if len(blocks) == 1 else [0, len(blocks) - 1]
++    blocks.append(
++        "</transcript_to_summarise>\n\n"
++        f"Write the replacement summary now, at most {max_chars} characters."
++    )
++    return blocks, breakpoints
++
++
+ def render_user(task: str, status: str, entries: tuple[Entry, ...] | list[Entry]) -> str:
+     body = render_entries(entries)
+     return (
+diff --git a/src/clm_lib/provider.py b/src/clm_lib/provider.py
+index 24c037a..1fad802 100644
+--- a/src/clm_lib/provider.py
++++ b/src/clm_lib/provider.py
+@@ -68,6 +68,61 @@ class ModelRequest:
+     max_tokens: int
+     purpose: str  # "action" | "repair" | "summary" | "smoke"
+     json_schema: dict[str, Any] | None = None
++    # Layout blocks/1: the same text split into content blocks (system and user are their
++    # concatenations). None keeps the single-string layout of experiments 001-005.
++    system_blocks: tuple[str, ...] | None = None
++    user_blocks: tuple[str, ...] | None = None
++    # Indices into user_blocks that get a cache breakpoint when cache_ttl is set.
++    cache_breakpoints: tuple[int, ...] = ()
++    cache_ttl: str | None = None  # "5m" / "1h": prompt caching on; None: off
++
++    @classmethod
++    def from_blocks(
++        cls,
++        system_blocks: list[str] | tuple[str, ...],
++        user_blocks: list[str] | tuple[str, ...],
++        max_tokens: int,
++        purpose: str,
++        json_schema: dict[str, Any] | None = None,
++        cache_breakpoints: list[int] | tuple[int, ...] = (),
++        cache_ttl: str | None = None,
++    ) -> ModelRequest:
++        if any(not b for b in (*system_blocks, *user_blocks)):
++            raise ValueError("content blocks must be non-empty")
++        return cls(
++            system="".join(system_blocks),
++            user="".join(user_blocks),
++            max_tokens=max_tokens,
++            purpose=purpose,
++            json_schema=json_schema,
++            system_blocks=tuple(system_blocks),
++            user_blocks=tuple(user_blocks),
++            cache_breakpoints=tuple(cache_breakpoints),
++            cache_ttl=cache_ttl,
++        )
++
++
++def message_body(req: ModelRequest, model: str) -> dict[str, Any]:
++    """Messages API body (without output_config). Shared by real and scripted providers."""
++    if req.user_blocks is None or req.system_blocks is None:
++        return {
++            "model": model,
++            "max_tokens": req.max_tokens,
++            "system": req.system,
++            "messages": [{"role": "user", "content": req.user}],
++        }
++    content: list[dict[str, Any]] = []
++    for i, text in enumerate(req.user_blocks):
++        block: dict[str, Any] = {"type": "text", "text": text}
++        if req.cache_ttl is not None and i in req.cache_breakpoints:
++            block["cache_control"] = {"type": "ephemeral", "ttl": req.cache_ttl}
++        content.append(block)
++    return {
++        "model": model,
++        "max_tokens": req.max_tokens,
++        "system": [{"type": "text", "text": t} for t in req.system_blocks],
++        "messages": [{"role": "user", "content": content}],
++    }
+ 
+ 
+ @dataclass
+@@ -77,15 +132,22 @@ class Usage:
+     cache_read_input_tokens: int = 0
+     cache_creation_input_tokens: int = 0
+     thinking_tokens: int | None = None  # included in output_tokens when reported
++    # Provider breakdown of cache_creation_input_tokens by TTL, when reported.
++    cache_creation_5m: int | None = None
++    cache_creation_1h: int | None = None
+ 
+     def to_dict(self) -> dict[str, int | None]:
+-        return {
++        out: dict[str, int | None] = {
+             "input_tokens": self.input_tokens,
+             "output_tokens": self.output_tokens,
+             "cache_read_input_tokens": self.cache_read_input_tokens,
+             "cache_creation_input_tokens": self.cache_creation_input_tokens,
+             "thinking_tokens": self.thinking_tokens,
+         }
++        if self.cache_creation_5m is not None or self.cache_creation_1h is not None:
++            out["cache_creation_5m"] = self.cache_creation_5m
++            out["cache_creation_1h"] = self.cache_creation_1h
++        return out
+ 
+ 
+ @dataclass
+@@ -169,12 +231,7 @@ class AnthropicProvider:
+         }
+ 
+     def payload(self, req: ModelRequest) -> dict[str, Any]:
+-        body: dict[str, Any] = {
+-            "model": self.model,
+-            "max_tokens": req.max_tokens,
+-            "system": req.system,
+-            "messages": [{"role": "user", "content": req.user}],
+-        }
++        body = message_body(req, self.model)
+         output_config: dict[str, Any] = {}
+         if self.effort:
+             output_config["effort"] = self.effort
+@@ -232,12 +289,19 @@ class AnthropicProvider:
+             ) from exc
+         u = msg.usage
+         details = getattr(u, "output_tokens_details", None)
++        creation = getattr(u, "cache_creation", None)
+         usage = Usage(
+             input_tokens=u.input_tokens or 0,
+             output_tokens=u.output_tokens or 0,
+             cache_read_input_tokens=getattr(u, "cache_read_input_tokens", None) or 0,
+             cache_creation_input_tokens=getattr(u, "cache_creation_input_tokens", None) or 0,
+             thinking_tokens=getattr(details, "thinking_tokens", None) if details else None,
++            cache_creation_5m=getattr(creation, "ephemeral_5m_input_tokens", None)
++            if creation
++            else None,
++            cache_creation_1h=getattr(creation, "ephemeral_1h_input_tokens", None)
++            if creation
++            else None,
+         )
+         text = "".join(b.text for b in msg.content if getattr(b, "type", None) == "text")
+         if msg.stop_reason == "refusal":
+@@ -274,12 +338,7 @@ class ScriptedProvider:
+         return {"provider": self.name, "model": self.model, "note": "scripted test double"}
+ 
+     def payload(self, req: ModelRequest) -> dict[str, Any]:
+-        return {
+-            "model": self.model,
+-            "max_tokens": req.max_tokens,
+-            "system": req.system,
+-            "messages": [{"role": "user", "content": req.user}],
+-        }
++        return message_body(req, self.model)
+ 
+     def complete(self, req: ModelRequest) -> ModelResponse:
+         index = len(self.requests)
+diff --git a/src/clm_lib/report.py b/src/clm_lib/report.py
+index d6fafd7..2366054 100644
+--- a/src/clm_lib/report.py
++++ b/src/clm_lib/report.py
+@@ -267,7 +267,11 @@ def build_report(
+         "`setting=value` correction). Coding tasks: deterministic evaluator checks "
+         f"({', '.join(coding_scorers) or 'none'}); the recorded score is the current score.",
+         "",
+-        "| run | label | mode | task | status | outcome (recorded) | outcome (current scorer) | strict (current) | components: cause/remedy/value/evidence, or coding checks by category | calls (act/rep/sum/retry) | exec | edits ok/unch/rej | summaries | pressure steps | in/out tokens | peak req tok (rep) | bound held | cost $ | elapsed s |",
++        "Mode shows the request layout and caching condition for runs with layout `blocks/1` "
++        "(experiment 006 onwards); earlier runs used `single-user/1` without caching. Tokens are "
++        "uncached input / cache reads / cache writes / output.",
++        "",
++        "| run | label | mode | task | status | outcome (recorded) | outcome (current scorer) | strict (current) | components: cause/remedy/value/evidence, or coding checks by category | calls (act/rep/sum/retry) | exec | edits ok/unch/rej | summaries | pressure steps | in/cache read/cache write/out tokens | peak req tok (rep) | bound held | cost $ | elapsed s |",
+         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+     ]
+     rescored: dict[str, dict[str, Any] | None] = {}
+@@ -298,13 +302,18 @@ def build_report(
+             )
+         u = m["usage_provider_reported"]
+         n, held = bound_checks(run_dir)
++        rq = m.get("request") or {}
++        mode = m["mode"]
++        if rq.get("layout", "single-user/1") != "single-user/1":
++            mode = f"{mode} ({rq['layout']}, caching {rq.get('prompt_caching', 'off')})"
+         lines.append(
+-            f"| {m['run_id']} | {m.get('label', '')} | {m['mode']} | {m['task']} | {m['status']} | "
++            f"| {m['run_id']} | {m.get('label', '')} | {mode} | {m['task']} | {m['status']} | "
+             f"{sc['outcome']} | {rs['outcome'] if rs else 'no answer'} | "
+             f"{rs['strict_success'] if rs else False} | {comp_str} | {c['provider_calls']} ({c['action_calls']}/"
+             f"{c['repair_calls']}/{c['summary_calls']}/{c['api_retries']}) | {c['executions']} | "
+             f"{c['edits_accepted_changed']}/{c['edits_unchanged_write']}/{c['edits_rejected']} | "
+             f"{c['summaries_applied']} | {c['pressure_steps']} | {u['input_tokens_uncached']}/"
++            f"{u.get('cache_read_input_tokens', 0)}/{u.get('cache_creation_input_tokens', 0)}/"
+             f"{u['output_tokens']} | {m['peak_request_input_tokens_reported']} | {held}/{n} | "
+             f"{m['cost']['incurred_usd']:.4f} | {m['elapsed_s']} |"
+         )
+@@ -344,17 +353,23 @@ def build_report(
+             f"## Comparison {comp['comparison']} (prompt {comp.get('frozen_prompt_version')})",
+             "",
+         ]
+-        for arm in ("summary", "clm"):
++        arms: list[tuple[str, str | None]] = []
++        for cell in comp["cells"]:
++            key = (cell["mode"], cell.get("caching"))
++            if key not in arms:
++                arms.append(key)
++        for arm, caching in sorted(arms, key=lambda a: (a[0] != "summary", str(a[1]))):
+             ms = [
+                 (summaries[c["run_id"]], rescored.get(c["run_id"]))
+                 for c in comp["cells"]
+-                if c["mode"] == arm and c.get("run_id")
++                if c["mode"] == arm and c.get("caching") == caching and c.get("run_id")
+             ]
+             if not ms:
+                 continue
+             k = len(ms)
++            label = arm if caching is None else f"{arm}, caching {caching}"
+             lines.append(
+-                f"- {arm}: {k} runs; strict success recorded "
++                f"- {label}: {k} runs; strict success recorded "
+                 f"{sum(m['score']['strict_success'] for m, _ in ms)}/{k}, current scorer "
+                 f"{sum(bool(r and r['strict_success']) for _, r in ms)}/{k}; mean cost "
+                 f"${sum(m['cost']['incurred_usd'] for m, _ in ms) / k:.4f}; mean calls "
+@@ -362,6 +377,9 @@ def build_report(
+                 f"{sum(m['counts']['edits_accepted_changed'] for m, _ in ms)}; summaries "
+                 f"{sum(m['counts']['summaries_applied'] for m, _ in ms)}; mean input tokens "
+                 f"{sum(m['usage_provider_reported']['input_tokens_uncached'] for m, _ in ms) / k:.0f}"
++                f"; mean cache read/write tokens "
++                f"{sum(m['usage_provider_reported'].get('cache_read_input_tokens', 0) for m, _ in ms) / k:.0f}/"
++                f"{sum(m['usage_provider_reported'].get('cache_creation_input_tokens', 0) for m, _ in ms) / k:.0f}"
+             )
+         lines.append("")
+         lines += [
+@@ -370,7 +388,8 @@ def build_report(
+         ]
+         for cell in comp["cells"]:
+             lines.append(
+-                f"| {cell['pair']} | {cell['task']} | {cell['rep']} | {cell['mode']} | {cell['status']} | "
++                f"| {cell['pair']} | {cell['task']} | {cell['rep']} | {cell['mode']}"
++                f"{' (caching ' + cell['caching'] + ')' if cell.get('caching') else ''} | {cell['status']} | "
+                 f"{cell.get('outcome', '-')} | {cell.get('strict', '-')} | "
+                 f"{cell.get('cost_usd', 0):.4f} | {cell.get('run_id', cell.get('reason', ''))} |"
+             )
+diff --git a/src/clm_lib/runner.py b/src/clm_lib/runner.py
+index 14fbf2f..ccba31f 100644
+--- a/src/clm_lib/runner.py
++++ b/src/clm_lib/runner.py
+@@ -46,6 +46,9 @@ from .prompts import (
+     SUMMARY_SYSTEM_TOKEN_TAIL_CODING,
+     render_entries,
+     render_user,
++    render_user_blocks,
++    run_tag_block,
++    summary_user_blocks,
+     system_prompt,
+ )
+ from .provider import (
+@@ -126,6 +129,8 @@ class _Usage:
+     cost_usd: float = 0.0
+     reserved_usd_total: float = 0.0
+     assumed_cost_usd: float = 0.0
++    # Per call kind (action, repair, summary): calls, tokens, cost and provider latency.
++    by_kind: dict[str, dict[str, float]] = field(default_factory=dict)
+ 
+ 
+ INCIDENT_FIELDS = ("root_cause", "required_value", "remedy", "evidence_refs")
+@@ -214,16 +219,32 @@ class Runner:
+             )
+ 
+     # ------------------------------------------------------------------ run
+-    def run(self, task: TaskInstance, mode: str, label: str = "") -> RunResult:
++    def run(
++        self, task: TaskInstance, mode: str, label: str = "", caching: bool | None = None
++    ) -> RunResult:
++        """``caching`` overrides ``request.prompt_caching`` for this run (four-condition runs)."""
+         if mode not in MODES:
+             raise ValueError(f"mode must be one of {MODES}")
+-        run_id = f"{datetime.now(UTC):%Y%m%dT%H%M%S}-{mode}-{task.spec.name}-{secrets.token_hex(2)}"
+-        return _Run(self, task, mode, run_id, label).execute()
++        req = self.cfg.request
++        on = req.prompt_caching if caching is None else caching
++        if on and req.layout != "blocks/1":
++            raise ValueError("prompt caching requires request.layout = 'blocks/1'")
++        # blocks/1 run ids carry the caching condition so the four conditions stay distinct.
++        cond = f"-cache{'on' if on else 'off'}" if req.layout == "blocks/1" else ""
++        stamp = f"{datetime.now(UTC):%Y%m%dT%H%M%S}"
++        run_id = f"{stamp}-{mode}{cond}-{task.spec.name}-{secrets.token_hex(2)}"
++        return _Run(self, task, mode, run_id, label, on).execute()
+ 
+ 
+ class _Run:
+     def __init__(
+-        self, runner: Runner, task: TaskInstance, mode: str, run_id: str, label: str
++        self,
++        runner: Runner,
++        task: TaskInstance,
++        mode: str,
++        run_id: str,
++        label: str,
++        caching: bool = False,
+     ) -> None:
+         self.r = runner
+         self.cfg = runner.cfg
+@@ -283,6 +304,21 @@ class _Run:
+             tail_tokens=self.policy.tail_tokens,
+             task_kind=task.kind,
+         )
++        # Request layout, caching and run isolation (SPEC section 17).
++        rq = self.cfg.request
++        self.layout = rq.layout
++        self.blocks_layout = rq.layout == "blocks/1"
++        self.cache_ttl: str | None = rq.cache_ttl if caching else None
++        # Random, fixed-length, carries no task information; never reused across runs.
++        self.run_tag = secrets.token_hex(16) if rq.run_isolation == "run-tag/1" else None
++        self.system_prefix = [run_tag_block(self.run_tag)] if self.run_tag else []
++        self.prompt_system = self.system
++        if self.blocks_layout:
++            self.system = "".join([*self.system_prefix, self.prompt_system])
++        self.last_render: tuple[str, list[str], list[int]] | None = None
++        self.prev_blocks: dict[str, list[str]] = {}
++        self.call_seq = 0
++        self.first_call_cache: dict[str, int] | None = None
+ 
+     # --------------------------------------------------------------- helpers
+     @property
+@@ -322,11 +358,104 @@ class _Run:
+         entries: tuple[Entry, ...] | None = None,
+     ) -> tuple[str, int]:
+         ents = self.store.entries if entries is None else entries
+-        user = render_user(self.task.prompt, self.status_text(0, pressure, recovery), ents)
++        user = self.render(self.status_text(0, pressure, recovery), ents)
+         est = self.est_tokens(self.system, user)
+-        user = render_user(self.task.prompt, self.status_text(est, pressure, recovery), ents)
++        user = self.render(self.status_text(est, pressure, recovery), ents)
+         return user, self.est_tokens(self.system, user)
+ 
++    def render(self, status: str, ents: tuple[Entry, ...]) -> str:
++        if not self.blocks_layout:
++            return render_user(self.task.prompt, status, ents)
++        blocks, bps = render_user_blocks(self.task.prompt, status, ents)
++        user = "".join(blocks)
++        self.last_render = (user, blocks, bps)
++        return user
++
++    def action_request(
++        self, user: str, purpose: str, schema: dict[str, Any], note: str = ""
++    ) -> ModelRequest:
++        """The action (or repair) request for ``user``, in this run's layout."""
++        if not self.blocks_layout:
++            return ModelRequest(
++                self.system, user + note, self.lim.max_output_tokens, purpose, schema
++            )
++        assert self.last_render is not None and self.last_render[0] == user
++        _, blocks, bps = self.last_render
++        return ModelRequest.from_blocks(
++            [*self.system_prefix, self.prompt_system],
++            [*blocks, note] if note else blocks,
++            self.lim.max_output_tokens,
++            purpose,
++            schema,
++            bps,
++            self.cache_ttl,
++        )
++
++    def request_settings(self) -> dict[str, Any]:
++        rq = self.cfg.request
++        return {
++            "layout": self.layout,
++            "prompt_caching": "on" if self.cache_ttl else "off",
++            "cache_ttl": self.cache_ttl,
++            "breakpoints": "task block + last working-context block (blocks/1)"
++            if self.cache_ttl
++            else None,
++            "run_isolation": rq.run_isolation,
++            "run_tag": self.run_tag,
++        }
++
++    def request_summary(self) -> dict[str, Any]:
++        u = self.u
++        total_in = u.input_tokens + u.cache_read_input_tokens + u.cache_creation_input_tokens
++        return {
++            **self.request_settings(),
++            "first_call_cache": self.first_call_cache,
++            "by_kind": u.by_kind,
++            "total_input_tokens_all_kinds": total_in,
++            "cache_read_share_of_input": round(u.cache_read_input_tokens / total_in, 4)
++            if total_in
++            else 0.0,
++            "provider_latency_s": round(sum(k["latency_s"] for k in u.by_kind.values()), 3),
++        }
++
++    def prefix_evidence(self, req: ModelRequest, kind: str) -> dict[str, Any]:
++        """How much of this request's leading content repeats the previous request of the
++        same family (action/repair vs summary), by blocks and characters. This is evidence
++        for interpreting cache reads; it is not itself a cache measurement."""
++        flat = (
++            [*req.system_blocks, *req.user_blocks]
++            if req.system_blocks is not None and req.user_blocks is not None
++            else [req.system, req.user]
++        )
++        family = "summary" if kind == "summary" else "action"
++        prev = self.prev_blocks.get(family)
++        self.prev_blocks[family] = flat
++        n_sys = len(req.system_blocks) if req.system_blocks is not None else 1
++        out: dict[str, Any] = {
++            "family": family,
++            "blocks": len(flat),
++            "system_blocks": n_sys,
++            "breakpoint_blocks": [n_sys + i for i in req.cache_breakpoints]
++            if req.cache_ttl
++            else [],
++            "previous": prev is not None,
++        }
++        if prev is not None:
++            k = 0
++            while k < min(len(prev), len(flat)) and prev[k] == flat[k]:
++                k += 1
++            out["common_blocks"] = k
++            out["first_changed_block"] = k if k < len(flat) else None
++            common_chars = sum(len(b) for b in flat[:k])
++            if k < min(len(prev), len(flat)):  # partial match inside the first changed block
++                a, b = prev[k], flat[k]
++                j = 0
++                while j < min(len(a), len(b)) and a[j] == b[j]:
++                    j += 1
++                common_chars += j
++            out["common_prefix_chars"] = common_chars
++        return out
++
+     # ------------------------------------------------------------ provider
+     def call(self, req: ModelRequest, kind: str, meta: dict[str, Any]) -> ModelResponse:
+         retries = self.cfg.provider.api_retries
+@@ -337,7 +466,10 @@ class _Run:
+                 )
+             payload = self.r.provider.payload(req)
+             bound = input_token_bound(payload)
+-            reserve = self.r.price.max_cost(bound, req.max_tokens) if self.r.price else 0.0
++            reserve = (
++                self.r.price.max_cost(bound, req.max_tokens, req.cache_ttl) if self.r.price else 0.0
++            )
++            prefix = self.prefix_evidence(req, kind)
+             try:
+                 res = self.r.ledger.reserve(reserve, self.run_id, kind, bound)
+             except BudgetExhausted as exc:
+@@ -355,6 +487,9 @@ class _Run:
+                     "reserved_usd": reserve,
+                     "context_revision": self.store.current.number,
+                     "context_sha256": self.store.current.sha256,
++                    "layout": self.layout,
++                    "cache_ttl": req.cache_ttl,
++                    "prefix": prefix,
+                     **meta,
+                 },
+             )
+@@ -375,6 +510,7 @@ class _Run:
+             self.u.reserved_usd_total += reserve
+             self.u.est_input_tokens += est
+             self.peak_req_est = max(self.peak_req_est, est)
++            t_call = time.monotonic()
+             try:
+                 resp = self.r.provider.complete(req)
+             except BaseException as exc:
+@@ -402,9 +538,17 @@ class _Run:
+                     cost_basis=entry["cost_basis"],
+                 )
+                 raise
++            latency = round(time.monotonic() - t_call, 3)
+             cost = self.r.price.cost(resp.usage) if self.r.price else 0.0
+             entry = self.r.ledger.settle(res, actual_usd=cost, status="ok", usage=resp.usage)
+             self._add_usage(resp, cost, req)
++            self._add_kind_usage(kind, resp, cost, latency)
++            self.call_seq += 1
++            if self.call_seq == 1:
++                self.first_call_cache = {
++                    "cache_read_input_tokens": resp.usage.cache_read_input_tokens,
++                    "cache_creation_input_tokens": resp.usage.cache_creation_input_tokens,
++                }
+             reported = (
+                 resp.usage.input_tokens
+                 + resp.usage.cache_read_input_tokens
+@@ -422,6 +566,8 @@ class _Run:
+                 usage_source=resp.usage_source,
+                 cost_usd=round(cost, 6),
+                 ledger_charged_usd=entry["charged_usd"],
++                latency_s=latency,
++                prefix=prefix,
+                 input_token_bound=bound,
+                 bound_held=reported <= bound and resp.usage.output_tokens <= req.max_tokens,
+             )
+@@ -466,6 +612,28 @@ class _Run:
+             cost_basis=entry["cost_basis"],
+         )
+ 
++    def _add_kind_usage(self, kind: str, resp: ModelResponse, cost: float, latency: float) -> None:
++        k = self.u.by_kind.setdefault(
++            kind,
++            {
++                "calls": 0,
++                "input_tokens_uncached": 0,
++                "cache_read_input_tokens": 0,
++                "cache_creation_input_tokens": 0,
++                "output_tokens": 0,
++                "cost_usd": 0.0,
++                "latency_s": 0.0,
++            },
++        )
++        u = resp.usage
++        k["calls"] += 1
++        k["input_tokens_uncached"] += u.input_tokens
++        k["cache_read_input_tokens"] += u.cache_read_input_tokens
++        k["cache_creation_input_tokens"] += u.cache_creation_input_tokens
++        k["output_tokens"] += u.output_tokens
++        k["cost_usd"] = round(k["cost_usd"] + cost, 6)
++        k["latency_s"] = round(k["latency_s"] + latency, 3)
++
+     def _add_usage(self, resp: ModelResponse, cost: float, req: ModelRequest) -> None:
+         u = resp.usage
+         self.u.input_tokens += u.input_tokens
+@@ -506,6 +674,17 @@ class _Run:
+                 limit,
+                 system=SUMMARY_SYSTEM_TOKEN_TAIL_CODING if self.task.kind == "coding" else None,
+             )
++            if self.blocks_layout:
++                ub, bps = summary_user_blocks(self.task.prompt, older, limit)
++                req = ModelRequest.from_blocks(
++                    [*self.system_prefix, req.system],
++                    ub,
++                    req.max_tokens,
++                    "summary",
++                    None,
++                    bps,
++                    self.cache_ttl,
++                )
+             resp = self.call(
+                 req,
+                 "summary",
+@@ -924,9 +1103,14 @@ class _Run:
+                     "recovery": recovery,
+                 }
+             )
+-            req = ModelRequest(self.system, user, self.lim.max_output_tokens, "action", schema)
++            req = self.action_request(user, "action", schema)
+             resp = self.call(req, "action", {"pressure": pressure, "recovery": recovery})
+             self.timeline[-1]["reported_input_tokens"] = self.last_reported_input
++            self.timeline[-1]["cache_read_input_tokens"] = resp.usage.cache_read_input_tokens
++            self.timeline[-1]["cache_creation_input_tokens"] = (
++                resp.usage.cache_creation_input_tokens
++            )
++            self.timeline[-1]["uncached_input_tokens"] = resp.usage.input_tokens
+             action, err = parse_action(resp.text, self.lim.max_code_chars, staged, fields)
+             if action is None:
+                 self.trace.event(
+@@ -937,9 +1121,7 @@ class _Run:
+                     f"{' (output token limit reached)' if resp.stop_reason == 'max_tokens' else ''}. "
+                     "Reply again with exactly one JSON object; keep code short.\n</runtime_status>\n"
+                 )
+-                repair = ModelRequest(
+-                    self.system, user + note, self.lim.max_output_tokens, "repair", schema
+-                )
++                repair = self.action_request(user, "repair", schema, note)
+                 resp = self.call(repair, "repair", {"error": err})
+                 action, err = parse_action(resp.text, self.lim.max_code_chars, staged, fields)
+                 if action is None:
+@@ -1044,8 +1226,9 @@ class _Run:
+             "stages": self.task.n_stages,
+             "prompt_version": PROMPT_VERSION,
+             "summary_policy": self.policy.policy if self.mode == "summary" else None,
+-            "system_prompt_sha256": sha256_text(self.system),
++            "system_prompt_sha256": sha256_text(self.prompt_system),
+             "task_prompt_sha256": sha256_text(self.task.prompt),
++            "request": self.request_settings(),
+             "provider": self.r.provider.describe(),
+             "price": self.r.price.__dict__ if self.r.price else None,
+             "executor": self.r.executor.describe(),
+@@ -1254,6 +1437,7 @@ class _Run:
+             },
+             "peak_request_tokens_est": self.peak_req_est,
+             "peak_request_input_tokens_reported": self.peak_req_reported,
++            "request": self.request_summary(),
+             "peak_working_context_chars": self.peak_ctx_chars,
+             "context_revisions": len(self.store.revisions) - 1,
+             "helpers": self.helper_summary(),
+diff --git a/configs/exp006.toml b/configs/exp006.toml
+new file mode 100644
+index 0000000..f3b4b2a
+--- /dev/null
++++ b/configs/exp006.toml
+@@ -0,0 +1,58 @@
++# Experiment 006 configuration (prompt-caching comparison on the experiment-004 coding task):
++# experiment 004's settings (token-tail/1 baseline, 8K whole-request budget, same model/effort,
++# max_calls 30, max_output_tokens 4096) plus request layout blocks/1, explicit 5-minute cache
++# breakpoints when a run has caching on, and a random per-run tag (run-tag/1) in every
++# condition. Caching on/off is set per run by `compare --conditions` (or `run --caching`); the
++# config default is off. The ledger ceiling is the one authorised for this experiment (spend at
++# start USD 19.932944 + USD 30). Use only this config for experiment-006 live commands.
++# All limits are recorded in every run and shared by all four conditions.
++runs_dir = "runs"
++
++[provider]
++name = "anthropic"
++model = "claude-opus-5-5"     # verified via the models endpoint by `clm-lib doctor --probe`
++base_url = ""                 # empty: SDK default (or ANTHROPIC_BASE_URL)
++effort = "low"                # output_config.effort; thinking cannot be disabled on this model
++structured_output = true      # output_config.format json_schema for actions
++timeout_s = 120
++api_retries = 2               # runtime-level retries; SDK retries are disabled
++
++[limits]
++max_calls = 30                # per task: actions + repairs + summaries + API retries
++max_output_tokens = 4096
++exec_timeout_s = 30
++output_cap_chars = 6000       # per stream
++context_budget_tokens = 8000  # whole request input
++pressure_ratio = 0.70
++recovery_reserve_tokens = 1000
++spill_min_chars = 1500
++initial_chars_per_token = 3.0
++max_code_chars = 20000
++
++[baseline]
++policy = "token-tail/1"     # experiment 003; experiments 001/002 used "fixed-tail/1"
++tail_entries = 4
++summary_max_chars = 3000
++summary_retries = 1
++tail_ratio = 0.15            # token-tail/1: verbatim recent-entry allowance (fraction of budget)
++newest_ratio = 0.25          # token-tail/1: newest entry kept verbatim if it fits this fraction
++target_ratio = 0.50          # token-tail/1: desired request size after compaction
++summary_min_chars = 600
++
++[budget]
++ceiling_usd = 49.932944            # total live-validation ceiling; ledger keeps the lowest ever set
++min_run_reserve_usd = 0.75    # compare: do not start a run with less remaining
++ledger = "runs/ledger.json"
++prices = "configs/prices.toml"
++
++[sandbox]
++image = "python:3.12-slim"
++memory = "512m"
++cpus = 1.0
++pids_limit = 128
++
++[request]
++layout = "blocks/1"           # stable task first, one block per context entry, status last
++prompt_caching = false        # per-run override in the four-condition comparison
++cache_ttl = "5m"
++run_isolation = "run-tag/1"   # random 32-hex tag as the first system block of every request
+diff --git a/tests/test_caching.py b/tests/test_caching.py
+new file mode 100644
+index 0000000..7ea89d4
+--- /dev/null
++++ b/tests/test_caching.py
+@@ -0,0 +1,377 @@
++"""Experiment 006: request layout blocks/1, prompt-caching controls, run isolation and
++cache-aware accounting. Provider caching itself is simulated here (CachingProvider); live
++cache behaviour is measured in calibration, not in these tests."""
++
++from __future__ import annotations
++
++import copy
++import hashlib
++import json
++from dataclasses import dataclass, field, replace
++from pathlib import Path
++from typing import Any
++
++import pytest
++
++from clm_lib.budget import Ledger, ModelPrice
++from clm_lib.cli import WILLIAMS_4, condition_schedule, parse_conditions, run_matrix
++from clm_lib.config import Config, RequestConfig, load_config
++from clm_lib.prompts import render_user
++from clm_lib.provider import ModelRequest, ModelResponse, ScriptedProvider, Usage
++from clm_lib.runner import Runner
++from clm_lib.tasks import generate
++
++from .conftest import FINAL, TEST_PRICE, FakeExecutor, execute, working_block, working_ids
++
++REPO = Path(__file__).resolve().parents[1]
++ADVANCE = {"action": "advance"}
++CODING_FINAL = {"action": "final", "answer": {"summary": "done"}}
++
++
++def blocks_cfg(caching: bool = True, **limits: Any) -> Config:
++    cfg = Config()
++    cfg.request = RequestConfig(
++        layout="blocks/1", prompt_caching=caching, run_isolation="run-tag/1"
++    )
++    cfg.baseline.policy = "token-tail/1"
++    for k, v in limits.items():
++        setattr(cfg.limits, k, v)
++    return cfg
++
++
++def strip_cache(payload: dict[str, Any]) -> dict[str, Any]:
++    p = copy.deepcopy(payload)
++    for msg in p["messages"]:
++        if isinstance(msg["content"], list):
++            for block in msg["content"]:
++                block.pop("cache_control", None)
++    return p
++
++
++def saved_payloads(run_dir: Path) -> list[dict[str, Any]]:
++    return [json.loads(p.read_text()) for p in sorted((run_dir / "requests").glob("*.json"))]
++
++
++@dataclass
++class CachingProvider(ScriptedProvider):
++    """Scripted double that simulates prefix caching: entries are written at breakpoints and
++    read by a 20-block lookback, as the provider documents. Tokens = chars // 3."""
++
++    cache: set[str] = field(default_factory=set)
++
++    def complete(self, req: ModelRequest) -> ModelResponse:
++        resp = super().complete(req)
++        if req.system_blocks is None or req.user_blocks is None:
++            return resp
++        flat = [*req.system_blocks, *req.user_blocks]
++        offset = len(req.system_blocks)
++        marks = [offset + i for i in req.cache_breakpoints] if req.cache_ttl else []
++
++        def key(n: int) -> str:
++            return hashlib.sha256("\0".join(flat[: n + 1]).encode()).hexdigest()
++
++        def toks(n: int) -> int:
++            return sum(len(b) for b in flat[: n + 1]) // 3
++
++        total = sum(len(b) for b in flat) // 3
++        hit = -1
++        for m in marks:
++            for q in range(m, max(-1, m - 20), -1):
++                if key(q) in self.cache:
++                    hit = max(hit, q)
++                    break
++        read = toks(hit) if hit >= 0 else 0
++        last = max(marks) if marks else -1
++        write = max(0, toks(last) - read) if last >= 0 else 0
++        for m in marks:
++            self.cache.add(key(m))
++        usage = Usage(
++            input_tokens=total - read - write,
++            output_tokens=resp.usage.output_tokens,
++            cache_read_input_tokens=read,
++            cache_creation_input_tokens=write,
++            cache_creation_5m=write,
++            cache_creation_1h=0,
++        )
++        return replace(resp, usage=usage, usage_source="scripted-estimate")
++
++
++def make(
++    tmp_path: Path, cfg: Config, script: list[Any], provider: Any = None, executor: Any = None
++) -> tuple[Runner, Any]:
++    prov = provider or CachingProvider(list(script))
++    runner = Runner(
++        cfg,
++        prov,
++        executor or FakeExecutor(),
++        Ledger.open(tmp_path / "ledger.json", 100.0),
++        TEST_PRICE,
++        live=False,
++        runs_dir=tmp_path / "runs",
++        sleep=lambda s: None,
++    )
++    return runner, prov
++
++
++# ------------------------------------------------------------- historical behaviour
++def test_historical_configs_keep_the_single_user_layout(tmp_path: Path) -> None:
++    for name in ("default", "exp003", "exp004", "exp005"):
++        r = load_config(REPO / "configs" / f"{name}.toml").request
++        assert (r.layout, r.prompt_caching, r.run_isolation) == ("single-user/1", False, "none")
++    runner, prov = make(tmp_path, Config(), [execute("print(1)"), FINAL], ScriptedProvider([]))
++    prov.script.extend([execute("print(1)"), FINAL])
++    res = runner.run(generate("dev"), "clm")
++    first = saved_payloads(res.run_dir)[0]["payload"]
++    assert isinstance(first["system"], str) and isinstance(first["messages"][0]["content"], str)
++    assert "cache_control" not in json.dumps(first) and "run-ref:" not in json.dumps(first)
++    req = prov.requests[1]
++    assert req.user_blocks is None and req.user.index("<runtime_status>") < req.user.index(
++        "<working_context>"
++    )
++    assert "-cache" not in res.run_id
++    assert res.metrics["request"]["layout"] == "single-user/1"
++    with pytest.raises(ValueError, match="blocks/1"):
++        runner.run(generate("dev"), "clm", caching=True)
++
++
++def test_invalid_request_settings_are_rejected(tmp_path: Path) -> None:
++    bad = tmp_path / "bad.toml"
++    bad.write_text("[request]\nprompt_caching = true\n")
++    with pytest.raises(ValueError, match="blocks/1"):
++        load_config(bad)
++    bad.write_text('[request]\nlayout = "blocks/2"\n')
++    with pytest.raises(ValueError, match="layout"):
++        load_config(bad)
++
++
++# ------------------------------------------------------------- layout and controls
++def test_blocks_layout_puts_stable_content_first_and_status_last(tmp_path: Path) -> None:
++    runner, prov = make(tmp_path, blocks_cfg(), [execute("print('x')"), FINAL])
++    runner.run(generate("dev"), "clm")
++    req = prov.requests[1]
++    assert req.user_blocks is not None and req.system_blocks is not None
++    assert req.user_blocks[0].startswith("<task>") and req.user_blocks[0].endswith(
++        "<working_context>\n"
++    )
++    assert req.user_blocks[-1].startswith("</working_context>\n\n<runtime_status>")
++    # One block per entry; the joined text has the same working context as before.
++    ids = working_ids(req.user)
++    assert len(req.user_blocks) == len(ids) + 2
++    assert req.cache_breakpoints == (0, len(ids))
++    entries_text = "".join(req.user_blocks[1:-1])
++    assert working_block(req.user) + "\n" == entries_text
++    status = req.user_blocks[-1].split("<runtime_status>\n", 1)[1].split("\n</runtime_status>")[0]
++    old = render_user(generate("dev").prompt, status, runner_entries(req))
++    assert sorted(old) == sorted(req.user)  # same characters, reordered sections
++
++
++def runner_entries(req: ModelRequest) -> list[Any]:
++    from clm_lib.context import Entry
++
++    return [Entry(**json.loads(b)) for b in req.user_blocks[1:-1]]  # type: ignore[index]
++
++
++def test_caching_on_and_off_differ_only_in_cache_control(tmp_path: Path) -> None:
++    script = [execute("print('a')"), execute("print('b')"), FINAL]
++    on_runner, _ = make(tmp_path / "on", blocks_cfg(True), list(script))
++    off_runner, _ = make(tmp_path / "off", blocks_cfg(False), list(script))
++    on = on_runner.run(generate("dev"), "clm")
++    off = off_runner.run(generate("dev"), "clm")
++    assert "-cacheon-" in on.run_id and "-cacheoff-" in off.run_id
++    p_on = [r["payload"] for r in saved_payloads(on.run_dir)]
++    p_off = [r["payload"] for r in saved_payloads(off.run_dir)]
++    assert len(p_on) == len(p_off) == 3
++    tag_on = p_on[0]["system"][0]["text"].split()[1]
++    tag_off = p_off[0]["system"][0]["text"].split()[1]
++    for a, b in zip(p_on, p_off, strict=True):
++        b = json.loads(json.dumps(b).replace(tag_off, tag_on))  # only the random tag differs
++        assert strip_cache(a) == b
++        assert "cache_control" not in json.dumps(b)
++        marked = [i for i, blk in enumerate(a["messages"][0]["content"]) if "cache_control" in blk]
++        assert marked[0] == 0 and len(marked) == (2 if len(a["messages"][0]["content"]) > 2 else 1)
++        assert all(
++            blk["cache_control"] == {"type": "ephemeral", "ttl": "5m"}
++            for blk in a["messages"][0]["content"]
++            if "cache_control" in blk
++        )
++        assert "cache_control" not in a["messages"][0]["content"][-1]  # status never cached
++    assert on.metrics["request"]["prompt_caching"] == "on"
++    assert off.metrics["request"]["prompt_caching"] == "off"
++    assert off.metrics["usage_provider_reported"]["cache_read_input_tokens"] == 0
++    assert off.metrics["usage_provider_reported"]["cache_creation_input_tokens"] == 0
++
++
++def test_run_tag_is_stable_within_a_run_and_unique_across_runs(tmp_path: Path) -> None:
++    cfg = blocks_cfg(True, max_calls=30)
++    cfg.limits.context_budget_tokens = 4000  # force summaries
++    big = "print('x' * 2400)"
++    script = [execute(big) for _ in range(6)] + [FINAL]
++
++    def step(req: ModelRequest) -> Any:
++        return "summary text " * 60 if req.purpose == "summary" else script.pop(0)
++
++    tags = []
++    for i in range(2):
++        runner, _ = make(
++            tmp_path / str(i), cfg, [step] * 20, executor=FakeExecutor(outputs=["y" * 2400] * 9)
++        )
++        script[:] = [execute(big) for _ in range(6)] + [FINAL]
++        res = runner.run(generate("dev"), "summary")
++        payloads = saved_payloads(res.run_dir)
++        kinds = {p["meta"]["kind"] for p in payloads}
++        assert "summary" in kinds and "action" in kinds
++        first_blocks = {p["payload"]["system"][0]["text"] for p in payloads}
++        assert len(first_blocks) == 1  # identical first block in every request of the run
++        tag = res.metrics["request"]["run_tag"]
++        assert first_blocks == {f"run-ref: {tag}\n"} and len(tag) == 32
++        assert "dev" not in tag and "summary" not in tag
++        tags.append(tag)
++    assert tags[0] != tags[1]
++
++
++# ------------------------------------------------------------- accounting
++def test_cache_aware_cost_and_reservation() -> None:
++    p = ModelPrice("m", 4.0, 5.0, 8.0, 0.2, 20.0, "s", "d")
++    u = Usage(
++        input_tokens=1000,
++        output_tokens=100,
++        cache_read_input_tokens=10_000,
++        cache_creation_input_tokens=2000,
++        cache_creation_5m=2000,
++        cache_creation_1h=0,
++    )
++    expected = (1000 * 4 + 2000 * 5 + 10_000 * 0.2 + 100 * 20) / 1e6
++    assert p.cost(u) == pytest.approx(expected)
++    u1h = replace(u, cache_creation_5m=500, cache_creation_1h=1500)
++    assert p.cost(u1h) == pytest.approx((1000 * 4 + 500 * 5 + 1500 * 8 + 2000 + 2000) / 1e6)
++    # Reservations assume every input token at the dearest applicable input-side rate.
++    assert p.max_cost(10_000, 100) == pytest.approx((10_000 * 5 + 100 * 20) / 1e6)
++    assert p.max_cost(10_000, 100, "1h") == pytest.approx((10_000 * 8 + 100 * 20) / 1e6)
++
++
++def test_cached_tokens_count_toward_budget_and_are_settled_per_kind(tmp_path: Path) -> None:
++    script = [execute("print('a' * 300)"), execute("print('b' * 300)"), FINAL]
++    runner, _ = make(tmp_path, blocks_cfg(True), script)
++    res = runner.run(generate("dev"), "clm")
++    events = [json.loads(x) for x in (res.run_dir / "events.jsonl").read_text().splitlines()]
++    responses = [e for e in events if e["event"] == "response"]
++    assert responses[0]["usage"]["cache_read_input_tokens"] == 0  # cold start
++    assert responses[0]["usage"]["cache_creation_input_tokens"] > 0
++    assert responses[1]["usage"]["cache_read_input_tokens"] > 0  # reuse within the run
++    tl = res.metrics["management"]["timeline"]
++    for t, r in zip(tl, responses, strict=True):
++        u = r["usage"]
++        total = u["input_tokens"] + u["cache_read_input_tokens"] + u["cache_creation_input_tokens"]
++        assert t["reported_input_tokens"] == total  # cached tokens occupy the budget too
++        assert t["cache_read_input_tokens"] == u["cache_read_input_tokens"]
++    assert res.metrics["peak_request_input_tokens_reported"] == max(
++        t["reported_input_tokens"] for t in tl
++    )
++    led = json.loads((tmp_path / "ledger.json").read_text())
++    charged = sum(e["charged_usd"] for e in led["entries"])
++    assert charged == pytest.approx(res.metrics["cost"]["incurred_usd"], abs=1e-6)
++    by_kind = res.metrics["request"]["by_kind"]
++    assert by_kind["action"]["calls"] == 3
++    assert by_kind["action"]["cost_usd"] == pytest.approx(charged, abs=1e-5)
++    assert (
++        sum(e["usage"]["cache_read_input_tokens"] for e in led["entries"])
++        == (res.metrics["usage_provider_reported"]["cache_read_input_tokens"])
++    )
++    assert res.metrics["request"]["first_call_cache"]["cache_read_input_tokens"] == 0
++
++
++def test_summary_requests_use_the_same_layout_and_caching(tmp_path: Path) -> None:
++    cfg = blocks_cfg(True, max_calls=30)
++    cfg.limits.context_budget_tokens = 4000
++    big = "print('x' * 2400)"
++    queue = [execute(big) for _ in range(6)] + [FINAL]
++
++    def step(req: ModelRequest) -> Any:
++        return "summary text " * 60 if req.purpose == "summary" else queue.pop(0)
++
++    runner, prov = make(tmp_path, cfg, [step] * 20, executor=FakeExecutor(outputs=["y" * 2400] * 9))
++    res = runner.run(generate("dev"), "summary")
++    sums = [r for r in prov.requests if r.purpose == "summary"]
++    assert sums and res.metrics["counts"]["summaries_applied"] >= 1
++    s = sums[0]
++    assert s.cache_ttl == "5m" and s.system_blocks is not None and s.user_blocks is not None
++    assert s.system_blocks[0].startswith("run-ref: ")
++    assert s.user_blocks[0].endswith("<transcript_to_summarise>\n")
++    assert s.user_blocks[-1].startswith("</transcript_to_summarise>")
++    assert s.cache_breakpoints == (0, len(s.user_blocks) - 2)
++    assert "summary" in res.metrics["request"]["by_kind"]
++    # After a summary, the next action request repeats only the stable prefix.
++    payloads = saved_payloads(res.run_dir)
++    after = next(
++        p
++        for i, p in enumerate(payloads)
++        if p["meta"]["kind"] == "action" and payloads[i - 1]["meta"]["kind"] == "summary"
++    )
++    pre = after["meta"]["prefix"]
++    assert pre["family"] == "action" and pre["first_changed_block"] == pre["system_blocks"] + 1
++
++
++@pytest.mark.docker
++def test_context_edits_still_shape_the_next_request_under_blocks_layout(
++    tmp_path: Path,
++) -> None:
++    from clm_lib.executor import DockerExecutor
++
++    marker = "'UNIQ' + 'MARK-6c'"
++    script = [
++        execute(f"print({marker})\nprint('pad ' * 50)"),
++        execute(
++            "import json\nd = json.load(open('context.json'))\n"
++            f"d['entries'] = [e for e in d['entries'] if {marker} not in e['body']]\n"
++            "json.dump(d, open('context.json', 'w'))\nprint('edited')\n"
++        ),
++        FINAL,
++    ]
++    runner, prov = make(tmp_path, blocks_cfg(True), script, executor=DockerExecutor())
++    res = runner.run(generate("dev"), "clm")
++    assert res.status == "completed" and res.metrics["counts"]["edits_accepted_changed"] == 1
++    r2, r3 = prov.requests[1], prov.requests[2]
++    assert "UNIQMARK-6c" in working_block(r2.user) and "UNIQMARK-6c" not in r3.user
++    assert "s1.obs" not in working_ids(r3.user)
++    # Evidence of the changed prefix: the edit removed the first entry block (s1.act kept).
++    pre = saved_payloads(res.run_dir)[2]["meta"]["prefix"]
++    assert pre["first_changed_block"] == pre["system_blocks"] + 2
++    events = [json.loads(x) for x in (res.run_dir / "events.jsonl").read_text().splitlines()]
++    resp3 = [e for e in events if e["event"] == "response"][2]
++    assert resp3["usage"]["cache_read_input_tokens"] > 0  # the unchanged prefix is still read
++
++
++# ------------------------------------------------------------- four-condition schedule
++def test_williams_schedule_balances_positions_and_instances() -> None:
++    conds = parse_conditions("summary:off,summary:on,clm:off,clm:on")
++    tasks = ["coding-eval-1", "coding-eval-2", "coding-eval-3", "coding-eval-4"]
++    sched = condition_schedule(tasks, 3, conds)
++    assert len(sched) == 48
++    by_pos: dict[tuple[str, str, int], int] = {}
++    for row in sched:
++        k = (row["mode"], row["caching"], row["position"])
++        by_pos[k] = by_pos.get(k, 0) + 1
++    assert set(by_pos.values()) == {3} and len(by_pos) == 16  # each condition 3x per position
++    for task in tasks:
++        rows = {r["williams_row"] for r in sched if r["task"] == task}
++        assert len(rows) == 3  # each instance sees three different orders
++    pairs = set()
++    for row in WILLIAMS_4:
++        pairs |= {(row[i], row[i + 1]) for i in range(3)}
++    assert len(pairs) == 12  # every ordered adjacent pair once
++    with pytest.raises(ValueError):
++        parse_conditions("summary:off,summary:off")
++
++
++def test_four_condition_matrix_runs_each_condition(tmp_path: Path) -> None:
++    cfg = blocks_cfg(False)
++    runner, _ = make(tmp_path, cfg, [FINAL] * 40)
++    conds = parse_conditions("summary:off,summary:on,clm:off,clm:on")
++    out = tmp_path / "c.json"
++    cells, code = run_matrix(runner, cfg, ["heldout-1", "dev"], 2, out, "t", conditions=conds)
++    assert code == 0 and len(cells) == 16
++    rec = json.loads(out.read_text())
++    assert rec["frozen"]["mode_order"] == "williams" and len(rec["frozen"]["schedule"]) == 16
++    for cell in cells:
++        assert f"-cache{cell['caching']}-" in cell["run_id"]
++        assert cell["run_id"].split("-")[1] == cell["mode"]

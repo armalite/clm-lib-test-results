@@ -1,0 +1,29 @@
+{
+ "number": 6,
+ "parent": 5,
+ "source": "runtime",
+ "step": 4,
+ "sha256": "f7eb15af39d6c591e35b6d492200d134cf94c40bff06e63c0341a2be6302f928",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "invoice/core.py: r2 half-up line rounding, bulk qty>=100 x0.90, tier platinum10/gold7/silver3%, tax 10% on (sub-disc), validation (empty lines, qty positive int, price>=0 -> ValueError). format_money unimplemented. Stage 2 released; implemented in step 4."
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Implement stage 2 and compact context.\ncode:\nimport json,subprocess,sys\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"TIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\",\"TIER={'platinum':Decimal('0.10'),'gold':Decimal('0.07'),'silver':Decimal('0.03')}\")\ns=s.replace(\"Decimal('0'))\\n    tot\",\"Decimal('0.10'))\\n    tot\")\ns=s.replace(\"    sub=Decimal('0')\\n\",\"    if not lines: raise ValueError('empty')\\n    for l in lines:\\n        q=l.get('qty')\\n        if not isinstance(q,int) or isinstance(q,bool) or q<=0: raise ValueError('qty')\\n        if Decimal(str(l['unit_price']))<0: raise ValueError('price')\\n    sub=Decimal('0')\\n\",1)\nopen(p,'w').write(s)\nprint(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'invoice/core.py: r2 half-up line rounding, bulk qty>=100 x0.90, tier platinum10/gold7/silver3%, tax 10% on (sub-disc), validation (empty lines, qty positive int, price>=0 -> ValueError). format_money unimplemented. Stage 2 released; implemented in step 4.'}]},open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef r2(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\nTIER={'platinum':Decimal('0.10'),'gold':Decimal('0.07'),'silver':Decimal('0.03')}\n\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError('empty')\n    for l in lines:\n        q=l.get('qty')\n        if not isinstance(q,int) or isinstance(q,bool) or q<=0: raise ValueError('qty')\n        if Decimal(str(l['unit_price']))<0: raise ValueError('price')\n    sub=Decimal('0')\n    for l in lines:\n        a=Decimal(l['qty'])*Decimal(str(l['unit_price']))\n        if l['qty']>=100: a*=Decimal('0.90')\n        sub+=r2(a)\n    disc=r2(sub*TIER.get(customer.get('tier'),Decimal('0')))\n    tax=r2((sub-disc)*Decimal('0.10'))\n    tot=sub-disc+tax\n    return {'subtotal':str(r2(sub)),'discount':str(disc),'tax':str(tax),'total':str(r2(tot))}\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s4.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 6 -> 1; body chars 2471 -> 255; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

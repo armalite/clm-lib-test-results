@@ -1,0 +1,1 @@
+for n in (1,2,3):print(open(f'/task/fixtures/stage-{n}/REQUIREMENTS.md').read()[:1800])

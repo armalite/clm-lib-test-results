@@ -1,0 +1,36 @@
+--- rev-7
++++ rev-8
+@@ -4,32 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Stage1+2 in core.py: compute_invoice exact then HALF_EVEN round s/d/t; tier gold5 silver2; tax_exempt True->0; tax 10%; format_money PREFIX NZ$/A$/US$ HALF_UP, ValueError unknown. Next: advance."
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] execute\nthought: \ncode:\nimport json,subprocess,sys\nsrc='''from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN\n\nQ=Decimal('0.01')\n\ndef _r(x):\n    return Decimal(x).quantize(Q, rounding=ROUND_HALF_EVEN)\n\nTAX_RATE=Decimal('0.10')\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\n\ndef _discount_rate(lines, customer, subtotal):\n    return TIER.get(customer.get('tier'), Decimal('0'))\n\ndef _tax_rate(customer):\n    if customer.get('tax_exempt') is True: return Decimal('0')\n    return TAX_RATE\n\ndef compute_invoice(lines, customer):\n    sub=sum((Decimal(str(l['qty']))*Decimal(str(l['unit_price'])) for l in lines), Decimal('0'))\n    disc=sub*_discount_rate(lines, customer, sub)\n    tax=(sub-disc)*_tax_rate(customer)\n    s,d,t=_r(sub),_r(disc),_r(tax)\n    return {'subtotal':str(s),'discount':str(d),'tax':str(t),'total':str(_r(s-d+t))}\n\nPREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n\ndef format_money(amount, currency):\n    if currency not in PREFIX: raise ValueError(currency)\n    a=Decimal(str(amount)).quantize(Q, rounding=ROUND_HALF_UP)\n    sign='-' if a<0 else ''\n    return sign+PREFIX[currency]+str(abs(a))\n'''\nopen('/task/workspace/invoice/core.py','w').write(src)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1+2 in core.py: compute_invoice exact then HALF_EVEN round s/d/t; tier gold5 silver2; tax_exempt True->0; tax 10%; format_money PREFIX NZ$/A$/US$ HALF_UP, ValueError unknown. Next: advance.'}]},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
+-  },
+-  {
+-   "id": "s4.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 6 -> 1; body chars 2962 -> 194; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] advance\nthought: "
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Money formatting (replaces the earlier format): format_money also uses comma thousands separators, for example format_money('1234.5', 'NZD') == 'NZ$1,234.50'. Prefixes, the minus sign position and unknown-currency errors are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (52 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
++   "body": "Stage1-3 in core.py: compute_invoice exact (line amt, qty>=100 x0.90 via _line) then HALF_EVEN round s/d/t; tier gold5 silver2 (_discount_rate); tax_exempt True->0; tax 10%; format_money PREFIX NZ$/A$/US$ HALF_UP, comma thousands {:,.2f}, sign before prefix, ValueError unknown."
+   }
+  ]
+ }

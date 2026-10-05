@@ -1,0 +1,19 @@
+--- rev-7
++++ rev-8
+@@ -30,6 +30,16 @@
+    "id": "s5.obs",
+    "role": "observation",
+    "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Money formatting (replaces the earlier format): format_money also uses comma thousands separators, for example format_money('1234.5', 'NZD') == 'NZ$1,234.50'. Prefixes, the minus sign position and unknown-currency errors are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (52 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s6.act",
++   "role": "assistant",
++   "body": "[step 6] execute\nthought: Look at current format_money and implement stage 3.\ncode:\nimport subprocess\nprint(subprocess.run(['grep','-n','','/task/workspace/invoice/core.py'],capture_output=True,text=True).stdout[-3000:])"
++  },
++  {
++   "id": "s6.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n1:from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN\n2:\n3:Q=Decimal('0.01')\n4:\n5:def _r(x):\n6:    return Decimal(x).quantize(Q, rounding=ROUND_HALF_UP)\n7:\n8:def tax_rate(customer):\n9:    if customer.get('tax_exempt') is True: return Decimal('0')\n10:    return Decimal('0.10')\n11:\n12:def discount_rate(customer, subtotal):\n13:    return {'gold':Decimal('0.05'),'silver':Decimal('0.02')}.get(customer.get('tier'),Decimal('0'))\n14:\n15:def _he(x):\n16:    return Decimal(x).quantize(Q, rounding=ROUND_HALF_EVEN)\n17:\n18:def compute_invoice(lines, customer):\n19:    sub=sum((Decimal(str(l['qty']))*Decimal(str(l['unit_price'])) for l in lines), Decimal('0'))\n20:    disc=sub*discount_rate(customer, sub)\n21:    tax=(sub-disc)*tax_rate(customer)\n22:    rs,rd,rt=_he(sub),_he(disc),_he(tax)\n23:    tot=rs-rd+rt\n24:    return {'subtotal':str(rs),'discount':str(rd),'tax':str(rt),'total':str(tot)}\n25:\n26:PREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n27:\n28:def format_money(amount, currency):\n29:    if currency not in PREFIX: raise ValueError(currency)\n30:    a=_r(Decimal(str(amount)))\n31:    s='-' if a<0 else ''\n32:    return s+PREFIX[currency]+str(abs(a))\n\n"
+   }
+  ]
+ }

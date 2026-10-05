@@ -1,0 +1,19 @@
+--- rev-0
++++ rev-1
+@@ -1,4 +1,15 @@
+ {
+  "format": "clm-context/v1",
+- "entries": []
++ "entries": [
++  {
++   "id": "s1.act",
++   "role": "assistant",
++   "body": "[step 1] execute\nthought: \ncode:\nimport os\nprint(open('/task/fixtures/stage-1/REQUIREMENTS.md').read())\nfor r,d,f in os.walk('/task/workspace/invoice'):print(r,f)\nfor f in os.listdir('/task/fixtures/current-tests'):print(f)\nprint(open('/task/workspace/invoice/__init__.py').read()[:1500])"
++  },
++  {
++   "id": "s1.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n# Stage 1 of 4 requirements\n\n## Package and API\n\nImplement the package `invoice` in /task/workspace/invoice/ (a starting skeleton is provided).\nStandard library only. Use `decimal.Decimal` arithmetic.\n\n- `invoice.compute_invoice(lines, customer) -> dict`\n  - `lines`: list of `{\"sku\": str, \"qty\": int, \"unit_price\": str}`. unit_price is a decimal\n    string such as \"12.50\"; it may have more than 2 decimal places (for example \"3.125\").\n  - `customer`: `{\"tier\": str, \"region\": str}` and optionally `\"tax_exempt\": bool`.\n  - Returns `{\"subtotal\": str, \"discount\": str, \"tax\": str, \"total\": str}`, each a string with\n    exactly 2 decimals, for example \"12.30\".\n- Base calculation (always in force): line amount = qty x unit_price; subtotal = sum of line\n  amounts; discount = subtotal x discount rate; tax = (subtotal - discount) x tax rate;\n  total = subtotal - discount + tax. With no discount rule in force the discount rate is 0; with\n  no tax rule in force the tax rate is 0.\n\n## Rules introduced in stage 1\n\n- [NEW] Rounding: round each line amount to 2 decimals (half up) before summing; compute discount from the rounded subtotal and round it to 2 decimals (half up); compute tax from (subtotal - discount) and round it to 2 decimals (half up); total = subtotal - discount + tax.\n- [NEW] Tier discount: discount rate by customer['tier']: 'gold' 5%, 'silver' 2%, any other tier 0%.\n- [NEW] Validation: compute_invoice raises ValueError if lines is empty, if any qty is not a positive integer, or if any unit_price is negative.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\n/task/workspace/invoice ['core.py', '__init__.py']\ntest_invoice.py\n\"\"\"Invoice calculator package (implement the requirements in /task/fixtures/stage-*/).\"\"\"\n\nfrom .core import compute_invoice, format_money\n\n__all__ = [\"compute_invoice\", \"format_money\"]\n\n"
++  }
++ ]
+ }

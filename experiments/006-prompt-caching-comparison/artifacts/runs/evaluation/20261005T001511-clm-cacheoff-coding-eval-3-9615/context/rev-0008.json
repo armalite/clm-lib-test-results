@@ -1,0 +1,49 @@
+{
+ "number": 8,
+ "parent": 7,
+ "source": "runtime",
+ "step": 6,
+ "sha256": "e9ee5c3e5b88005d309284f141d8f0b3a034604301a1e41a175d898afc53ee1b",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1+2 done in invoice/core.py: discount_rate tier gold 5%/silver 2%; tax_exempt True->tax 0; exact sums then half-even round (_b) of subtotal/discount/tax, total=sum of rounded; tax_rate(customer)=0.10; format_money (NZ$/A$/US$, -prefix, half-up _r, ValueError). Reqs at /task/fixtures/stage-N/REQUIREMENTS.md. Next: advance to stage 3."
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Implement stage 2 and compact context.\ncode:\nimport subprocess,sys,json\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"from decimal import Decimal, ROUND_HALF_UP\",\"from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN\")\ns=s.replace(\"\"\"def discount_rate(lines, customer, subtotal):\n    return Decimal('0')\"\"\",\"\"\"def discount_rate(lines, customer, subtotal):\n    return {'gold':Decimal('0.05'),'silver':Decimal('0.02')}.get((customer or {}).get('tier'),Decimal('0'))\n\ndef _b(x):\n    return x.quantize(Q, rounding=ROUND_HALF_EVEN)\"\"\")\nold=s[s.index('def compute_invoice'):s.index('_P=')]\nnew='''def compute_invoice(lines, customer):\n    customer=customer or {}\n    sub=sum((int(l['qty'])*Decimal(str(l['unit_price'])) for l in lines), Decimal('0'))\n    disc=sub*discount_rate(lines, customer, sub)\n    tax=(sub-disc)*tax_rate(customer)\n    if customer.get('tax_exempt') is True:\n        tax=Decimal('0')\n    rs,rd,rt=_b(sub),_b(disc),_b(tax)\n    total=rs-rd+rt\n    return {'subtotal':str(rs),'discount':str(rd),'tax':str(rt),'total':str(total)}\n\n'''\ns=s.replace(old,new)\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1+2 done in invoice/core.py: discount_rate tier gold 5%/silver 2%; tax_exempt True->tax 0; exact sums then half-even round (_b) of subtotal/discount/tax, total=sum of rounded; tax_rate(customer)=0.10; format_money (NZ$/A$/US$, -prefix, half-up _r, ValueError). Reqs at /task/fixtures/stage-N/REQUIREMENTS.md. Next: advance to stage 3.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s4.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 6 -> 1; body chars 3120 -> 339; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: "
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Money formatting (replaces the earlier format): format_money also uses comma thousands separators, for example format_money('1234.5', 'NZD') == 'NZ$1,234.50'. Prefixes, the minus sign position and unknown-currency errors are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (52 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Look at current core.py before stage 3 changes.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN\n\nQ=Decimal('0.01')\n\ndef _r(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\ndef discount_rate(lines, customer, subtotal):\n    return {'gold':Decimal('0.05'),'silver':Decimal('0.02')}.get((customer or {}).get('tier'),Decimal('0'))\n\ndef _b(x):\n    return x.quantize(Q, rounding=ROUND_HALF_EVEN)\n\ndef tax_rate(customer):\n    return Decimal('0.10')\n\ndef compute_invoice(lines, customer):\n    customer=customer or {}\n    sub=sum((int(l['qty'])*Decimal(str(l['unit_price'])) for l in lines), Decimal('0'))\n    disc=sub*discount_rate(lines, customer, sub)\n    tax=(sub-disc)*tax_rate(customer)\n    if customer.get('tax_exempt') is True:\n        tax=Decimal('0')\n    rs,rd,rt=_b(sub),_b(disc),_b(tax)\n    total=rs-rd+rt\n    return {'subtotal':str(rs),'discount':str(rd),'tax':str(rt),'total':str(total)}\n\n_P={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n\ndef format_money(amount, currency):\n    if currency not in _P:\n        raise ValueError(currency)\n    a=_r(Decimal(str(amount)))\n    s='-' if a<0 else ''\n    return s+_P[currency]+str(abs(a))\n\n"
+  }
+ ]
+}

@@ -1,0 +1,29 @@
+{
+ "number": 4,
+ "parent": 3,
+ "source": "runtime",
+ "step": 3,
+ "sha256": "ba412720360b099780d12e1f136c464e17e41d0a353442d5143179a4a393a176",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1 done: invoice/core.py implements compute_invoice (round lines half-up, tier gold5%/silver2%, validation qty pos int, price>=0, nonempty). Hooks discount_rate(lines,customer,sub), tax_rate(lines,customer), validate. format_money(amount,currency) stub NotImplemented (exported in __init__). Tests at /task/fixtures/current-tests."
+  },
+  {
+   "id": "s3.act",
+   "role": "assistant",
+   "body": "[step 3] execute\nthought: Write implementation and compact context.\ncode:\nimport json,subprocess,sys\nsrc='''from decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef _r(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\n\ndef discount_rate(lines, customer, subtotal):\n    return TIER.get(customer.get('tier'), Decimal('0'))\n\ndef tax_rate(lines, customer):\n    return Decimal('0')\n\ndef validate(lines, customer):\n    if not lines:\n        raise ValueError('empty')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0:\n            raise ValueError('qty')\n        try:\n            p=Decimal(str(l.get('unit_price')))\n        except Exception:\n            raise ValueError('price')\n        if not p.is_finite() or p<0:\n            raise ValueError('price')\n\ndef compute_invoice(lines, customer):\n    validate(lines, customer)\n    sub=sum((_r(l['qty']*Decimal(str(l['unit_price']))) for l in lines), Decimal('0'))\n    disc=_r(sub*discount_rate(lines,customer,sub))\n    tax=_r((sub-disc)*tax_rate(lines,customer))\n    tot=sub-disc+tax\n    return {k:str(_r(v)) for k,v in (('subtotal',sub),('discount',disc),('tax',tax),('total',tot))}\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n'''\nopen('/task/workspace/invoice/core.py','w').write(src)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])\nctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1 done: invoice/core.py implements compute_invoice (round lines half-up, tier gold5%/silver2%, validation qty pos int, price>=0, nonempty). Hooks discount_rate(lines,customer,sub), tax_rate(lines,customer), validate. format_money(amount,currency) stub NotImplemented (exported in __init__). Tests at /task/fixtures/current-tests.'}]}\njson.dump(ctx,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s3.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.000s\n\nOK\n\n"
+  },
+  {
+   "id": "s3.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 3: revision 2 -> 3; entries 4 -> 1; body chars 4945 -> 334; removed [s1.act, s1.obs, s2.act, s2.obs]; added [n1]; rewritten []"
+  }
+ ]
+}

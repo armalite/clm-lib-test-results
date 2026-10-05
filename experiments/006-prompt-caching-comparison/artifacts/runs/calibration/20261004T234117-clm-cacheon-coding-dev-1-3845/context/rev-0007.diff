@@ -1,0 +1,19 @@
+--- rev-6
++++ rev-7
+@@ -30,6 +30,16 @@
+    "id": "s5.obs",
+    "role": "observation",
+    "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Rounding (replaces the earlier rounding rule): do NOT round line amounts. Compute the subtotal, discount and tax exactly (discount from the exact subtotal; tax from the exact subtotal minus the exact discount), then round each of subtotal, discount and tax to 2 decimals using banker's rounding (half even); total = rounded subtotal - rounded discount + rounded tax.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (48 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s6.act",
++   "role": "assistant",
++   "body": "[step 6] execute\nthought: Inspect core.py to implement stage 3.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
++  },
++  {
++   "id": "s6.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.1s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef _r(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\ndef compute_invoice(lines, customer):\n    if not lines:\n        raise ValueError('empty lines')\n    sub=Decimal('0')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0:\n            raise ValueError('bad qty')\n        p=Decimal(str(l['unit_price']))\n        if p<0:\n            raise ValueError('negative price')\n        sub+=_r(q*p)\n    disc=_r(sub*{'gold':Decimal('0.05'),'silver':Decimal('0.02')}.get(customer.get('tier'),Decimal('0')))\n    rate={'NZ':Decimal('0.15'),'AU':Decimal('0.10'),'US':Decimal('0')}.get(customer.get('region'),Decimal('0.12'))\n    tax=_r((sub-disc)*rate)\n    tot=sub-disc+tax\n    return {'subtotal':str(_r(sub)),'discount':str(disc),'tax':str(tax),'total':str(_r(tot))}\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n\n"
+   }
+  ]
+ }

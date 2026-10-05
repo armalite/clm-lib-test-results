@@ -1,0 +1,39 @@
+{
+ "number": 7,
+ "parent": 6,
+ "source": "runtime",
+ "step": 5,
+ "sha256": "54b211d74bf28c9085f2bfa55c1a413dc7fd43c2b0919dc59a09274ec8dec835",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stages1-2 done in invoice/core.py: r2 half-up per line, tier discount gold5%/silver2% via discount_rate(customer,subtotal), tax_rate(customer)=10% on (sub-disc), ValueError validation (empty, qty non-positive int/bool, negative price). format_money(amount,currency) via PREFIX dict NZD NZ$/AUD A$/USD US$, 2dp, -before prefix, else ValueError. Next: advance."
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Implement stage 2: tax 10%, format_money.\ncode:\nimport subprocess,sys,json,re\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"def tax_rate(customer):\\n    return Decimal('0')\",\"def tax_rate(customer):\\n    return Decimal('0.10')\")\ns=s[:s.index('def format_money')]+'''PREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n\ndef format_money(amount, currency):\n    if currency not in PREFIX:\n        raise ValueError('bad currency')\n    a=r2(Decimal(str(amount)))\n    sign='-' if a<0 else ''\n    return sign+PREFIX[currency]+str(abs(a))\n'''\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2000:])\nctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stages1-2 done in invoice/core.py: r2 half-up per line, tier discount gold5%/silver2% via discount_rate(customer,subtotal), tax_rate(customer)=10% on (sub-disc), ValueError validation (empty, qty non-positive int/bool, negative price). format_money(amount,currency) via PREFIX dict NZD NZ$/AUD A$/USD US$, 2dp, -before prefix, else ValueError. Next: advance.'}]}\njson.dump(ctx,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s4.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 6 -> 1; body chars 3045 -> 358; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: "
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Tier discount (replaces the earlier tier rates): 'platinum' 10%, 'gold' 7%, 'silver' 3%, any other tier 0%.\n- [CHANGED] Validation (replaces the earlier qty rule): qty 0 is now allowed and such a line is skipped entirely; a negative qty still raises ValueError; an empty lines list or a negative unit_price still raises ValueError.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (54 lines)\n  stage-3/REQUIREMENTS.md (11 lines)"
+  }
+ ]
+}

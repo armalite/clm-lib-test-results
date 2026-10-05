@@ -1,0 +1,44 @@
+{
+ "number": 9,
+ "parent": 8,
+ "source": "runtime",
+ "step": 8,
+ "sha256": "a8caad2424c9e036d0759340d3be65add43c78a56c0dbeecb3d7ad6c5b8bb7a5",
+ "entries": [
+  {
+   "id": "sum1",
+   "role": "summary",
+   "body": "Summary of progress so far (task: `invoice` package, 4 stages; stage 2 just released, stages 3 and 4 still to come):\n\n**Files**\n- /task/workspace/invoice/__init__.py exports `compute_invoice` and `format_money`.\n- /task/workspace/invoice/core.py contains:\n  - `Q = Decimal('0.01')` and helper `_r(x)`, which quantizes with ROUND_HALF_UP (stage 1 behaviour).\n  - `_discount_rate(lines, customer, subtotal)`, which currently returns 0.\n  - `_tax_rate(customer)`, which returns Decimal('0.10').\n  - `compute_invoice`, which still rounds each line half up, sums, computes discount and tax with half-up rounding, and returns a dict of 2-decimal strings.\n  - `PREFIX` dict and `format_money`.\n- /task/workspace/NOTES.md holds the stage 1 notes.\n\n**Test status**\n- After stage 1, all 6 visible tests passed.\n- Stage 2 tests (current-tests/test_invoice.py, 46 lines) have not been run yet.\n\n**Requirements in force**\n- Base API (stage 1):\n  - `compute_invoice(lines, customer) -> dict`.\n  - `lines`: list of `{sku, qty:int, unit_price:str}`; unit_price may have more than 2 decimal places.\n  - `customer`: `{tier, region, optional tax_exempt: bool}`.\n  - Returns `{subtotal, discount, tax, total}`, each a string with exactly 2 decimals.\n  - discount = subtotal × discount rate; tax = (subtotal − discount) × tax rate; total = subtotal − discount + tax.\n  - Use Decimal only; standard library only.\n- Tax (stage 1): rate is 10% for every customer.\n- format_money (stage 1): `format_money(amount: str, currency: str) -> str`.\n  - Prefixes: NZD → 'NZ$', AUD → 'A$', USD → 'US$'.\n  - Always 2 decimals.\n  - A negative amount puts '-' before the prefix, e.g. '-NZ$5.00'.\n  - Any other currency raises ValueError.\n- Tier discount (NEW, stage 2): by customer['tier']: 'gold' 5%, 'silver' 2%, any other tier 0%.\n- Tax exemption (NEW, stage 2): if customer.get('tax_exempt') is True, tax = 0.00 regardless of rate.\n- Rounding (CHANGED, stage 2): replaces the stage 1 rule.\n  - Do not round line amounts.\n  - Compute subtotal, discount (from the exact subtotal) and tax (from exact subtotal − exact discount) exactly.\n  - Then round each of subtotal, discount and tax to 2 decimals with ROUND_HALF_EVEN.\n  - total = rounded subtotal − rounded discount + rounded tax.\n\n**Superseded rule**\n- Stage 1 rounding (round each line half up, discount from the rounded subtotal, half up throughout) was replaced in stage 2.\n- format_money rounding mode is unspecified; it currently uses half up. Check the stage 2 tests to confirm.\n\n**Next steps**\n1. Implement the stage 2 rules in core.py: tier rates in `_discount_rate`, the tax_exempt check, and the half-even exact-computation rounding.\n2. Run the tests.\n3. Update NOTES.md.\n4. Advance through stages 3 and 4 (each lists only changes).\n5. Give the final answer once all 4 stages are released."
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Implement stage 2 and update notes.\ncode:\nsrc=open('/task/workspace/invoice/core.py').read()\nsrc=src.replace('from decimal import Decimal, ROUND_HALF_UP','from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN')\nstart=src.index('def _discount_rate');end=src.index('PREFIX =')\nnew='''def _e(x):\n    return x.quantize(Q, rounding=ROUND_HALF_EVEN)\n\n\ndef _discount_rate(lines, customer, subtotal):\n    return {'gold': Decimal('0.05'), 'silver': Decimal('0.02')}.get(customer.get('tier'), Decimal('0'))\n\n\ndef _tax_rate(customer):\n    if customer.get('tax_exempt') is True:\n        return Decimal('0')\n    return Decimal('0.10')\n\n\ndef compute_invoice(lines, customer):\n    sub = sum((int(l['qty']) * Decimal(str(l['unit_price'])) for l in lines), Decimal('0'))\n    disc = sub * _discount_rate(lines, customer, sub)\n    tax = (sub - disc) * _tax_rate(customer)\n    s, d, t = _e(sub), _e(disc), _e(tax)\n    total = s - d + t\n    return {'subtotal': str(s), 'discount': str(d), 'tax': str(t), 'total': str(_e(total))}\n\n\n'''\nsrc=src[:start]+new+src[end:]\nopen('/task/workspace/invoice/core.py','w').write(src)\nopen('/task/workspace/NOTES.md','a').write('Stage2 done: tier gold5/silver2, tax_exempt True->0, rounding exact then half-even each of sub/disc/tax.\\n')\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s7.act",
+   "role": "assistant",
+   "body": "[step 7] advance\nthought: "
+  },
+  {
+   "id": "s7.obs",
+   "role": "observation",
+   "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Money formatting (replaces the earlier format): format_money also uses comma thousands separators, for example format_money('1234.5', 'NZD') == 'NZ$1,234.50'. Prefixes, the minus sign position and unknown-currency errors are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (52 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
+  },
+  {
+   "id": "s8.act",
+   "role": "assistant",
+   "body": "[step 8] execute\nthought: Implement stage 3: bulk discount and thousands separators.\ncode:\nsrc=open('/task/workspace/invoice/core.py').read()\nsrc=src.replace(\"sum((int(l['qty']) * Decimal(str(l['unit_price'])) for l in lines), Decimal('0'))\",\"sum(((int(l['qty']) * Decimal(str(l['unit_price'])) * (Decimal('0.90') if int(l['qty'])>=100 else 1)) for l in lines), Decimal('0'))\")\nopen('/task/workspace/invoice/core.py','w').write(src)\ni=src.index('def format_money');print(src[i:])"
+  },
+  {
+   "id": "s8.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.0s\n--- stdout ---\ndef format_money(amount, currency):\n    if currency not in PREFIX:\n        raise ValueError(currency)\n    a = _r(Decimal(str(amount)))\n    sign = '-' if a < 0 else ''\n    return sign + PREFIX[currency] + str(abs(a))\n\n"
+  }
+ ]
+}

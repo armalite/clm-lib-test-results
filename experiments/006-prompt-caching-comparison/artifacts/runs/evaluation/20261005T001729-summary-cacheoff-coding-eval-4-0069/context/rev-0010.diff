@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -50,6 +50,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.0s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ = Decimal(\"0.01\")\n\ndef _r(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\nTIER = {\"platinum\": Decimal(\"0.10\"), \"gold\": Decimal(\"0.07\"), \"silver\": Decimal(\"0.03\")}\n\ndef compute_invoice(lines, customer):\n    if not lines:\n        raise ValueError(\"empty lines\")\n    for l in lines:\n        q = l.get(\"qty\")\n        if not isinstance(q, int) or isinstance(q, bool) or q <= 0:\n            raise ValueError(\"bad qty\")\n        if Decimal(str(l[\"unit_price\"])) < 0:\n            raise ValueError(\"negative price\")\n    sub = Decimal(\"0\")\n    for l in lines:\n        amt = Decimal(l[\"qty\"]) * Decimal(str(l[\"unit_price\"]))\n        if l[\"qty\"] >= 200:\n            amt *= Decimal(\"0.88\")\n        elif l[\"qty\"] >= 50:\n            amt *= Decimal(\"0.95\")\n        sub += _r(amt)\n    disc = _r(sub * TIER.get(customer.get(\"tier\"), Decimal(\"0\")))\n    rate = Decimal(\"0.10\")\n    tax = _r((sub - disc) * rate)\n    total = sub - disc + tax\n    return {\"subtotal\": str(_r(sub)), \"discount\": str(disc), \"tax\": str(tax), \"total\": str(_r(total))}\n\n\nPREF = {\"NZD\": \"NZ$\", \"AUD\": \"A$\", \"USD\": \"US$\"}\n\ndef format_money(amount, currency):\n    if currency not in PREF:\n        raise ValueError(\"bad currency\")\n    a = _r(Decimal(str(amount)))\n    sign = \"-\" if a < 0 else \"\"\n    return sign + PREF[currency] + str(abs(a))\n\n"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Rewrite compute_invoice for stage 4.\ncode:\np='/task/workspace/invoice/core.py';s=open(p).read()\ni=s.index('def compute_invoice');j=s.index('PREF = ')\nnew='''from decimal import ROUND_HALF_EVEN\n\ndef _e(x):\n    return x.quantize(Q, rounding=ROUND_HALF_EVEN)\n\ndef compute_invoice(lines, customer):\n    if not lines:\n        raise ValueError(\"empty lines\")\n    for l in lines:\n        q = l.get(\"qty\")\n        if not isinstance(q, int) or isinstance(q, bool) or q < 0:\n            raise ValueError(\"bad qty\")\n        if Decimal(str(l[\"unit_price\"])) < 0:\n            raise ValueError(\"negative price\")\n    sub = Decimal(\"0\")\n    for l in lines:\n        if l[\"qty\"] == 0:\n            continue\n        amt = Decimal(l[\"qty\"]) * Decimal(str(l[\"unit_price\"]))\n        if l[\"qty\"] >= 200:\n            amt *= Decimal(\"0.88\")\n        elif l[\"qty\"] >= 50:\n            amt *= Decimal(\"0.95\")\n        sub += amt\n    disc = sub * TIER.get(customer.get(\"tier\"), Decimal(\"0\"))\n    rate = Decimal(\"0.10\")\n    tax = (sub - disc) * rate\n    if customer.get(\"tax_exempt\") is True:\n        tax = Decimal(\"0\")\n    rs, rd, rt = _e(sub), _e(disc), _e(tax)\n    total = rs - rd + rt\n    return {\"subtotal\": str(rs), \"discount\": str(rd), \"tax\": str(rt), \"total\": str(_e(total))}\n\n\n'''\ns=s[:i]+new+s[j:]\nopen(p,'w').write(s)\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-2000:])"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

@@ -1,0 +1,54 @@
+{
+ "number": 13,
+ "parent": 12,
+ "source": "runtime",
+ "step": 11,
+ "sha256": "55620ae4e456cacd24e4fe132575521f4e9788cb78eb583dea47ca53c4330624",
+ "entries": [
+  {
+   "id": "sum2",
+   "role": "summary",
+   "body": "Summary of progress so far (stage 3 of 4 released; stage 4 not yet released):\n\nTask setup\n- Package: /task/workspace/invoice/. Standard library only, Decimal arithmetic.\n- Run tests: subprocess.run([sys.executable,\"-m\",\"unittest\",\"discover\",\"-s\",\"/task/fixtures/current-tests\"], cwd=\"/task/workspace\").\n- Release the next stage with {\"action\":\"advance\"}.\n- Finish with {\"action\":\"final\",\"answer\":{\"summary\":\"...\"}} only after all 4 stages are released.\n\nAPI (stage 1)\n- compute_invoice(lines, customer) -> dict.\n  - lines: list of {\"sku\",\"qty\":int,\"unit_price\":str}. unit_price may have more than 2 decimals.\n  - customer: {\"tier\",\"region\"}, optional \"tax_exempt\": bool.\n  - Returns {\"subtotal\",\"discount\",\"tax\",\"total\"}, each a string with exactly 2 decimals.\n- Calculation:\n  - line amount = qty x unit_price; subtotal = sum of line amounts.\n  - discount = subtotal x tier rate; tax = (subtotal - discount) x tax rate.\n  - total = subtotal - discount + tax.\n- __init__.py exports compute_invoice and format_money.\n\nRules in force\n- Rounding (stage 1): round each line amount to 2 decimals, half up, before summing. Discount is computed from the rounded subtotal and rounded half up. Tax is rounded half up.\n- Bulk lines (CHANGED in stage 3), applied before line rounding:\n  - qty >= 200: line amount x 0.88;\n  - else qty >= 50: line amount x 0.95;\n  - smaller lines unchanged.\n  - Superseded stage-1 rule: qty >= 100 gave x 0.90.\n- Tier discount (CHANGED in stage 2): platinum 10%, gold 7%, silver 3%, others 0%.\n  - Superseded stage-1 rates: gold 5%, silver 2%.\n- Tax (stage 2): 10% for every customer. Region and tax_exempt have no effect yet. Tax was 0 in stage 1.\n- Validation (stage 2): raise ValueError if lines is empty, any qty is not a positive int (bool rejected), or any unit_price is negative.\n- format_money (NEW in stage 3): format_money(amount: str, currency: str) -> str.\n  - Prefixes: 'NZD' -> 'NZ$', 'AUD' -> 'A$', 'USD' -> 'US$'.\n  - Always 2 decimals.\n  - A negative amount puts '-' before the prefix, e.g. '-NZ$5.00'.\n  - Any other currency raises ValueError.\n  - Tests: format_money('34952.56','NZD') == 'NZ$34952.56'; format_money('33029.07','USD') == 'US$33029.07'.\n  - This replaces the old one-argument format_money(x) helper.\n\nFiles\n- /task/workspace/invoice/core.py contains:\n  - r2 (quantize 0.01, ROUND_HALF_UP);\n  - TIER dict and TAX = Decimal('0.10');\n  - compute_invoice, implementing the stage-2 rules. It still uses the old bulk rule (q >= 100 -> 0.90).\n  - format_money(x), still the old one-argument version.\n- /task/workspace/NOTES.md holds a progress log.\n\nTest status\n- Stage 2: all 10 tests passed.\n- Stage 3: tests are not yet run. Expect failures in test_bulk_7 (qty 250, expects subtotal 598.76), test_bulk_8 (qty 120, expects 1283.64) and the format_money tests until core.py is updated.\n\nRemaining work\n- Update core.py: new bulk rule and the new format_money(amount, currency).\n- Run the tests and confirm they pass.\n- Advance to stage 4, implement its changes, then submit the final answer."
+  },
+  {
+   "id": "s8.act",
+   "role": "assistant",
+   "body": "[step 8] execute\nthought: Update bulk rule and format_money per stage 3, then run tests.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"        if q>=100: a*=Decimal('0.90')\\n\",\"        if q>=200: a*=Decimal('0.88')\\n        elif q>=50: a*=Decimal('0.95')\\n\")\ni=s.index('def format_money')\ns=s[:i]+'''PREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\ndef format_money(amount, currency):\n    if currency not in PREFIX: raise ValueError('unsupported currency')\n    d=r2(Decimal(str(amount)))\n    sign='-' if d<0 else ''\n    return sign+PREFIX[currency]+str(abs(d))\n'''\nopen(p,'w').write(s)\nopen('/task/workspace/NOTES.md','a').write('\\nStage3: bulk 200->0.88, 50->0.95; format_money(amount,currency) NZ$/A$/US$, neg -prefix, else ValueError.\\n')\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])"
+  },
+  {
+   "id": "s8.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.8s\n--- stdout ---\n............\n----------------------------------------------------------------------\nRan 12 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s9.act",
+   "role": "assistant",
+   "body": "[step 9] advance\nthought: "
+  },
+  {
+   "id": "s9.obs",
+   "role": "observation",
+   "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.\n- [CHANGED] Rounding (replaces the earlier rounding rule): do NOT round line amounts. Compute the subtotal, discount and tax exactly (discount from the exact subtotal; tax from the exact subtotal minus the exact discount), then round each of subtotal, discount and tax to 2 decimals using banker's rounding (half even); total = rounded subtotal - rounded discount + rounded tax.\n- [CHANGED] Validation (replaces the earlier qty rule): qty 0 is now allowed and such a line is skipped entirely; a negative qty still raises ValueError; an empty lines list or a negative unit_price still raises ValueError.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (11 lines)"
+  },
+  {
+   "id": "s10.act",
+   "role": "assistant",
+   "body": "[step 10] execute\nthought: View core.py compute_invoice then rewrite for stage 4.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
+  },
+  {
+   "id": "s10.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\nQ=Decimal('0.01')\ndef r2(x): return x.quantize(Q, rounding=ROUND_HALF_UP)\nTIER={'platinum':Decimal('0.10'),'gold':Decimal('0.07'),'silver':Decimal('0.03')}\nTAX=Decimal('0.10')\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError('empty lines')\n    sub=Decimal(0)\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError('bad qty')\n        p=Decimal(str(l['unit_price']))\n        if p<0: raise ValueError('negative price')\n        a=Decimal(q)*p\n        if q>=200: a*=Decimal('0.88')\n        elif q>=50: a*=Decimal('0.95')\n        sub+=r2(a)\n    disc=r2(sub*TIER.get(customer.get('tier'),Decimal(0)))\n    tax=r2((sub-disc)*TAX)\n    tot=sub-disc+tax\n    return {'subtotal':str(r2(sub)),'discount':str(disc),'tax':str(tax),'total':str(r2(tot))}\n\nPREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\ndef format_money(amount, currency):\n    if currency not in PREFIX: raise ValueError('unsupported currency')\n    d=r2(Decimal(str(amount)))\n    sign='-' if d<0 else ''\n    return sign+PREFIX[currency]+str(abs(d))\n\n"
+  },
+  {
+   "id": "s11.act",
+   "role": "assistant",
+   "body": "[step 11] execute\nthought: Rewrite compute_invoice for stage 4 and run tests.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ni=s.index('def compute_invoice');j=s.index('PREFIX=')\nnew='''from decimal import ROUND_HALF_EVEN\ndef re2(x): return x.quantize(Q, rounding=ROUND_HALF_EVEN)\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError('empty lines')\n    sub=Decimal(0)\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<0: raise ValueError('bad qty')\n        p=Decimal(str(l['unit_price']))\n        if p<0: raise ValueError('negative price')\n        if q==0: continue\n        a=Decimal(q)*p\n        if q>=200: a*=Decimal('0.88')\n        elif q>=50: a*=Decimal('0.95')\n        sub+=a\n    disc=sub*TIER.get(customer.get('tier'),Decimal(0))\n    tax=(sub-disc)*TAX\n    if customer.get('tax_exempt') is True: tax=Decimal(0)\n    rs,rd,rt=re2(sub),re2(disc),re2(tax)\n    return {'subtotal':str(rs),'discount':str(rd),'tax':str(rt),'total':str(re2(rs-rd+rt))}\n\n'''\ns=s[:i]+new+s[j:]\nopen(p,'w').write(s)\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])"
+  },
+  {
+   "id": "s11.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.8s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+  }
+ ]
+}

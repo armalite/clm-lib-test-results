@@ -1,0 +1,19 @@
+--- rev-8
++++ rev-9
+@@ -40,6 +40,16 @@
+    "id": "s7.obs",
+    "role": "observation",
+    "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Validation: compute_invoice raises ValueError if lines is empty, if any qty is not a positive integer, or if any unit_price is negative.\n- [CHANGED] Tax (replaces the flat 10% rate): the tax rate depends on customer['region']: 'NZ' 15%, 'AU' 10%, 'US' 0%, any other region 12%.\n- [CHANGED] Bulk lines (replaces the earlier bulk rule): qty >= 200 multiplies the line amount by 0.88; otherwise qty >= 50 multiplies it by 0.95; smaller lines are unchanged (before any line rounding).\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (11 lines)"
++  },
++  {
++   "id": "s8.act",
++   "role": "assistant",
++   "body": "[step 8] execute\nthought: Implement stage 4: validation, regional tax, new bulk tiers. First view core.py.\ncode:\np='/task/workspace/invoice/core.py'\nprint(open(p).read())"
++  },
++  {
++   "id": "s8.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN\nQ=Decimal('0.01')\ndef _r(x, m=ROUND_HALF_EVEN): return x.quantize(Q, rounding=m)\n\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\ndef _discount_rate(lines, customer, subtotal):\n    return TIER.get(customer.get('tier'), Decimal('0'))\n\ndef _tax_rate(customer):\n    if customer.get('tax_exempt') is True: return Decimal('0')\n    return Decimal('0.10')\n\ndef _line(l):\n    q=int(l['qty']); a=q*Decimal(str(l['unit_price']))\n    if q>=100: a=a*Decimal('0.90')\n    return a\n\ndef compute_invoice(lines, customer):\n    sub=sum((_line(l) for l in lines), Decimal('0'))\n    disc=sub*_discount_rate(lines, customer, sub)\n    tax=(sub-disc)*_tax_rate(customer)\n    s,d,t=_r(sub),_r(disc),_r(tax)\n    total=s-d+t\n    return {k:str(_r(v)) for k,v in dict(subtotal=s,discount=d,tax=t,total=total).items()}\n\nPREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\ndef format_money(amount, currency):\n    if currency not in PREFIX: raise ValueError(currency)\n    a=_r(Decimal(str(amount)), ROUND_HALF_UP)\n    s='-' if a<0 else ''\n    return f\"{s}{PREFIX[currency]}{abs(a):,.2f}\"\n\n"
+   }
+  ]
+ }

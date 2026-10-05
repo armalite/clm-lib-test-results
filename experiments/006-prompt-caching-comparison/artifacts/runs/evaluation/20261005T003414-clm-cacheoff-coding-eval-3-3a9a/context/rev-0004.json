@@ -1,0 +1,39 @@
+{
+ "number": 4,
+ "parent": 3,
+ "source": "runtime",
+ "step": 3,
+ "sha256": "43f448f03093fe93563dd88856a8a171291307b0c3d49937e3de8ceffb0edd57",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1 done: core.py has _r round, _discount_rate(lines,customer,subtotal)=0, _tax_rate(customer)=0.10, format_money PREFIX dict. Tests run via unittest discover."
+  },
+  {
+   "id": "s2.act",
+   "role": "assistant",
+   "body": "[step 2] execute\nthought: \ncode:\nimport json,subprocess,sys\nsrc='''from decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef _r(x):\n    return Decimal(x).quantize(Q, rounding=ROUND_HALF_UP)\n\nTAX_RATE=Decimal('0.10')\n\ndef _discount_rate(lines, customer, subtotal):\n    return Decimal('0')\n\ndef _tax_rate(customer):\n    return TAX_RATE\n\ndef compute_invoice(lines, customer):\n    subtotal=sum((_r(Decimal(l['qty'])*Decimal(str(l['unit_price']))) for l in lines), Decimal('0'))\n    subtotal=_r(subtotal)\n    discount=_r(subtotal*_discount_rate(lines, customer, subtotal))\n    tax=_r((subtotal-discount)*_tax_rate(customer))\n    total=subtotal-discount+tax\n    return {'subtotal':str(subtotal),'discount':str(discount),'tax':str(tax),'total':str(_r(total))}\n\nPREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n\ndef format_money(amount, currency):\n    if currency not in PREFIX: raise ValueError(currency)\n    a=_r(Decimal(str(amount)))\n    sign='-' if a<0 else ''\n    return sign+PREFIX[currency]+str(abs(a))\n'''\nopen('/task/workspace/invoice/core.py','w').write(src)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2000:])\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1 done: core.py has _r round, _discount_rate(lines,customer,subtotal)=0, _tax_rate(customer)=0.10, format_money PREFIX dict. Tests run via unittest discover.'}]},open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s2.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.6s\n--- stdout ---\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.000s\n\nOK\n\n"
+  },
+  {
+   "id": "s2.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 2655 -> 162; removed [s1.act, s1.obs]; added [n1]; rewritten []"
+  },
+  {
+   "id": "s3.act",
+   "role": "assistant",
+   "body": "[step 3] advance\nthought: "
+  },
+  {
+   "id": "s3.obs",
+   "role": "observation",
+   "body": "Stage 2 of 4 released.\n# Stage 2 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tier discount: discount rate by customer['tier']: 'gold' 5%, 'silver' 2%, any other tier 0%.\n- [NEW] Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.\n- [CHANGED] Rounding (replaces the earlier rounding rule): do NOT round line amounts. Compute the subtotal, discount and tax exactly (discount from the exact subtotal; tax from the exact subtotal minus the exact discount), then round each of subtotal, discount and tax to 2 decimals using banker's rounding (half even); total = rounded subtotal - rounded discount + rounded tax.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (46 lines)\n  stage-2/REQUIREMENTS.md (11 lines)"
+  }
+ ]
+}

@@ -1,0 +1,5 @@
+import json,subprocess,sys
+open('/task/workspace/invoice/core.py','w').write('''from decimal import Decimal, ROUND_HALF_UP\nQ=Decimal('0.01')\ndef r2(x): return x.quantize(Q, rounding=ROUND_HALF_UP)\n\ndef compute_invoice(lines, customer):\n    sub=Decimal(0)\n    for l in lines:\n        a=Decimal(l['qty'])*Decimal(l['unit_price'])\n        if l['qty']>=100: a*=Decimal('0.90')\n        sub+=r2(a)\n    disc=r2(sub*Decimal(0))\n    tax=r2((sub-disc)*Decimal('0.10'))\n    tot=sub-disc+tax\n    return {k:str(r2(v)) for k,v in [('subtotal',sub),('discount',disc),('tax',tax),('total',tot)]}\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n''')
+ctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1 done: core.py has compute_invoice (line round half-up, bulk qty>=100 x0.90, tax 10%, discount 0). format_money unimplemented. Reqs in /task/fixtures/stage-N/REQUIREMENTS.md.'}]}
+json.dump(ctx,open('/task/workspace/context.json','w'))
+r=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])

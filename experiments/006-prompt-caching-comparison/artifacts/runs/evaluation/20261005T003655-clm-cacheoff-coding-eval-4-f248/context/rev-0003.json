@@ -1,0 +1,29 @@
+{
+ "number": 3,
+ "parent": 2,
+ "source": "runtime",
+ "step": 2,
+ "sha256": "32bc94370da10769f245663ef7ad77867607fabc02d31d6b70285e2ba4b57146",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1 done in invoice/core.py: compute_invoice with _r half-up, bulk qty>=100 x0.90, TIER dict gold .05 silver .02, tax rate 0 placeholder. format_money unimplemented."
+  },
+  {
+   "id": "s2.act",
+   "role": "assistant",
+   "body": "[step 2] execute\nthought: \ncode:\ncode='''from decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef _r(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\nTIER={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\n\ndef compute_invoice(lines, customer):\n    sub=Decimal('0')\n    for l in lines:\n        a=Decimal(l['qty'])*Decimal(str(l['unit_price']))\n        if l['qty']>=100:\n            a*=Decimal('0.90')\n        sub+=_r(a)\n    disc=_r(sub*TIER.get(customer.get('tier'),Decimal('0')))\n    tax=_r((sub-disc)*Decimal('0'))\n    tot=sub-disc+tax\n    return {k:str(_r(v)) for k,v in [('subtotal',sub),('discount',disc),('tax',tax),('total',tot)]}\n\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n'''\nopen('/task/workspace/invoice/core.py','w').write(code)\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2000:])\nimport json\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1 done in invoice/core.py: compute_invoice with _r half-up, bulk qty>=100 x0.90, TIER dict gold .05 silver .02, tax rate 0 placeholder. format_money unimplemented.'}]},open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s2.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.000s\n\nOK\n\n"
+  },
+  {
+   "id": "s2.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 2501 -> 168; removed [s1.act, s1.obs]; added [n1]; rewritten []"
+  }
+ ]
+}

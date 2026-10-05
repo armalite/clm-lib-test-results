@@ -1,0 +1,19 @@
+--- rev-10
++++ rev-11
+@@ -60,6 +60,16 @@
+    "id": "s9.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.2s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN\n\nQ = Decimal('0.01')\n\n\ndef _r(x, mode=ROUND_HALF_EVEN):\n    return x.quantize(Q, rounding=mode)\n\n\ndef discount_rate(lines, customer, subtotal):\n    return {'gold': Decimal('0.05'), 'silver': Decimal('0.02')}.get(customer.get('tier'), Decimal('0'))\n\n\ndef tax_rate(customer):\n    if customer.get('tax_exempt') is True:\n        return Decimal('0')\n    return Decimal('0.10')\n\n\ndef compute_invoice(lines, customer):\n    sub = sum(((int(l['qty']) * Decimal(str(l['unit_price']))) * (Decimal('0.90') if int(l['qty']) >= 100 else 1) for l in lines), Decimal('0'))\n    disc = sub * discount_rate(lines, customer, sub)\n    tax = (sub - disc) * tax_rate(customer)\n    s, d, t = _r(sub), _r(disc), _r(tax)\n    total = s - d + t\n    return {'subtotal': str(s), 'discount': str(d), 'tax': str(t), 'total': str(_r(total))}\n\n\nPREFIX = {'NZD': 'NZ$', 'AUD': 'A$', 'USD': 'US$'}\n\n\ndef format_money(amount, currency):\n    if currency not in PREFIX:\n        raise ValueError(currency)\n    a = _r(Decimal(str(amount)), ROUND_HALF_UP)\n    sign = '-' if a < 0 else ''\n    return f\"{sign}{PREFIX[currency]}{abs(a):,.2f}\"\n\n"
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Rewrite compute_invoice for stage 4: validation, regional tax, and the new bulk tiers.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\na=s.index('def tax_rate')\nb=s.index('PREFIX =')\nnew='''def tax_rate(customer):\n    if customer.get('tax_exempt') is True:\n        return Decimal('0')\n    return {'NZ': Decimal('0.15'), 'AU': Decimal('0.10'), 'US': Decimal('0')}.get(customer.get('region'), Decimal('0.12'))\n\n\ndef _bulk(q):\n    if q >= 200:\n        return Decimal('0.88')\n    if q >= 50:\n        return Decimal('0.95')\n    return Decimal('1')\n\n\ndef compute_invoice(lines, customer):\n    if not lines:\n        raise ValueError('empty lines')\n    sub = Decimal('0')\n    for l in lines:\n        q = l.get('qty')\n        if isinstance(q, bool) or not isinstance(q, int) or q <= 0:\n            raise ValueError('bad qty')\n        p = Decimal(str(l['unit_price']))\n        if p < 0:\n            raise ValueError('negative price')\n        sub += q * p * _bulk(q)\n    disc = sub * discount_rate(lines, customer, sub)\n    tax = (sub - disc) * tax_rate(customer)\n    s, d, t = _r(sub), _r(disc), _r(tax)\n    total = s - d + t\n    return {'subtotal': str(s), 'discount': str(d), 'tax': str(t), 'total': str(_r(total))}\n\n\n'''\ns=s[:a]+new+s[b:]\nopen(p,'w').write(s)\nopen('/task/workspace/NOTES.md','a').write('Stage4 done.\\n')\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

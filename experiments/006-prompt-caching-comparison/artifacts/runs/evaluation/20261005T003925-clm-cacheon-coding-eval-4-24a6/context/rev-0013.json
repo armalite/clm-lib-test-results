@@ -1,0 +1,29 @@
+{
+ "number": 13,
+ "parent": 12,
+ "source": "runtime",
+ "step": 10,
+ "sha256": "f05e9487a78fd859119bc600134d72c69cb827a664b91c369d452c36211783b6",
+ "entries": [
+  {
+   "id": "sum1",
+   "role": "summary",
+   "body": "All 4 stages released. Stage4 implemented in invoice/core.py: tax_exempt, banker rounding on exact sub/disc/tax, qty0 skipped. Next: final if tests OK."
+  },
+  {
+   "id": "s10.act",
+   "role": "assistant",
+   "body": "[step 10] execute\nthought: Implement stage 4 and compact context.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"\"\"        if isinstance(q,bool) or not isinstance(q,int) or q<=0:\n            raise ValueError('bad qty')\"\"\",\"\"\"        if isinstance(q,bool) or not isinstance(q,int) or q<0:\n            raise ValueError('bad qty')\"\"\")\ns=s.replace(\"\"\"        a=Decimal(q)*p\"\"\",\"\"\"        if q==0:\n            continue\n        a=Decimal(q)*p\"\"\")\ns=s.replace(\"\"\"        sub+=r2(a)\n    disc=r2(sub*TIER.get(customer.get('tier'),Decimal('0')))\n    tax=r2((sub-disc)*TAX)\n    tot=sub-disc+tax\n    return {'subtotal':str(r2(sub)),'discount':str(disc),'tax':str(tax),'total':str(r2(tot))}\"\"\",\"\"\"        sub+=a\n    disc=sub*TIER.get(customer.get('tier'),Decimal('0'))\n    tax=Decimal('0') if customer.get('tax_exempt') is True else (sub-disc)*TAX\n    rs,rd,rt=b2(sub),b2(disc),b2(tax)\n    return {'subtotal':str(rs),'discount':str(rd),'tax':str(rt),'total':str(rs-rd+rt)}\"\"\")\ns=s.replace(\"from decimal import Decimal, ROUND_HALF_UP\",\"from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN\")\ns=s.replace(\"TIER=\",\"def b2(x):\\n    return x.quantize(Q, rounding=ROUND_HALF_EVEN)\\n\\nTIER=\",1)\nopen(p,'w').write(s)\nimport subprocess,sys,json\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])\nn='All 4 stages released. Stage4 implemented in invoice/core.py: tax_exempt, banker rounding on exact sub/disc/tax, qty0 skipped. Next: final if tests OK.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'sum1','role':'summary','body':n}]},open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s10.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s10.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 10: revision 11 -> 12; entries 8 -> 1; body chars 4580 -> 151; removed [s7.act, s7.obs, s7.rcpt, s8.act, s8.obs, s9.act, s9.obs]; added []; rewritten [sum1]"
+  }
+ ]
+}

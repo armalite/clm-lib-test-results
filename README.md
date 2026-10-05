@@ -19,10 +19,11 @@ Each experiment documents its own methods, model, context budget and settings in
 | [003](experiments/003-robust-summary-comparison/README.md) | The same staged investigations, against a more robust summary baseline | Both methods managed context and both got 6/6 strict successes. CLM remained about 25% cheaper and 28% faster, matching the baseline's spending on summary calls. |
 | [004](experiments/004-coding-changing-requirements/README.md) | Coding an invoice package while requirements are added and replaced over four stages, against the robust baseline | Both methods managed context and both got 12/12 strict successes, with no regressions or stale rules. CLM was about 25% cheaper, matching the baseline's spending on summary calls. |
 | [005](experiments/005-harder-coding-accuracy/README.md) | A harder version of 004: interacting rules, partial changes, 6 or 8 stages | Stopped after calibration: both methods passed every hidden check in all 8 calibration runs at both difficulty levels, so by the pre-registered rule the accuracy comparison was not run. No claim about correctness. |
+| [006](experiments/006-prompt-caching-comparison/README.md) | The experiment-004 coding task with and without provider prompt caching, for both methods (4 conditions, 48 runs) | All runs strictly successful. With caching on, CLM was about 35% cheaper than the baseline (27% with caching off) and about 20% faster either way; caching cut each method's cost by about a third. |
 
 ### Methods compared in experiments 001 and 002
 
-Experiments 003–005 used a different, more robust baseline; see their READMEs.
+Experiments 003–006 used a different, more robust baseline; see their READMEs.
 
 Both experiments compared two context-management approaches. The model was the same (`claude-opus-5-5`, effort `low`), as were the 8,000-token budget per model request and the limits:
 - **Summary baseline:** a policy we implemented; the same Claude model writes the summaries it asks for. When a model request reaches about 70% of its budget, Claude is asked to summarise the older working-context entries, and the summary replaces them. The four most recent entries are kept unchanged.
@@ -70,13 +71,23 @@ Both experiments compared two context-management approaches. The model was the s
 - **Main finding:** no informative accuracy comparison was possible at these levels, and no claim is made about correctness. In calibration, CLM was cheaper in all 4 matched pairs.
 - **Most important limitation:** the task stayed below the model's ability. Likely reasons: rules were kept in the code, requirements stayed rereadable, and visible tests covered every rule in force.
 
+### [006 – Prompt-caching comparison](experiments/006-prompt-caching-comparison/README.md)
+
+- **Problem:** does CLM's cost and speed advantage persist when both methods can use ordinary provider prompt caching? This is not the paper's suffix-cache reuse.
+- **Design:** {baseline, CLM} × {caching off, on} on the experiment-004 coding task. Its 4 evaluation instances were reused with fresh runs, 3 repetitions each, giving 48 runs in a Williams order.
+  - **Layout:** the stable task comes first, then one block per context entry, then the status, shared by all conditions.
+  - **Caching:** explicit 5-minute breakpoints when caching is on.
+  - **Isolation:** a random per-run tag keeps every run's cache cold and private.
+- **Headline:** 48/48 strict successes.
+  - **Cost:** with caching on, CLM was **35% cheaper** (USD 0.136 vs 0.208, in 12 of 12 blocks); with caching off, 27% cheaper (0.223 vs 0.305).
+  - **Time:** about 20% faster either way.
+  - **Caching within each method:** it cut cost by 32% (baseline) and 39% (CLM), with no change in elapsed time.
+- **Main finding:** the advantage persisted and widened, because the baseline's separate summary calls gained almost nothing from caching.
+- **Most important limitation:** one synthetic workload with reused instances, one model, and one layout and caching policy.
+
 ## Planned experiments
 
-These are draft plans only: nothing has been run, and their settings, sample sizes and budgets are not agreed.
-
-| Experiment | Question | Status |
-| --- | --- | --- |
-| [006](experiments/006-prompt-caching-comparison/README.md) | Does CLM's efficiency advantage persist with ordinary provider prompt caching? | draft plan; not implemented |
+None at the moment.
 
 ## Navigating the raw evidence
 

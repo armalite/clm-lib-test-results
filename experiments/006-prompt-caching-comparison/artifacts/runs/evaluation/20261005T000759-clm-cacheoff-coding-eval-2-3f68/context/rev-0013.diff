@@ -1,0 +1,19 @@
+--- rev-12
++++ rev-13
+@@ -30,6 +30,16 @@
+    "id": "s9.obs",
+    "role": "observation",
+    "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.\n- [CHANGED] Money formatting (replaces the earlier format): format_money also uses comma thousands separators, for example format_money('1234.5', 'NZD') == 'NZ$1,234.50'. Prefixes, the minus sign position and unknown-currency errors are unchanged.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Look at core.py relevant parts.\ncode:\nimport re\ns=open('/task/workspace/invoice/core.py').read()\nfor i,l in enumerate(s.split('\\n'),1):\n    if re.search(r'tax|format|PREFIX|return|def ',l): print(i,l)"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.0s\n--- stdout ---\n5 def _r(x):\n6     return x.quantize(Q, rounding=ROUND_HALF_UP)\n10 def discount_rate(lines, customer, subtotal):\n11     return TIER.get(customer.get('tier'), Decimal('0'))\n13 def tax_rate(lines, customer):\n14     return Decimal('0.10')\n16 def validate(lines, customer):\n30 def line_amount(l):\n34     return a\n36 def compute_invoice(lines, customer):\n40     tax=_r((sub-disc)*tax_rate(lines,customer))\n41     tot=sub-disc+tax\n42     return {k:str(_r(v)) for k,v in (('subtotal',sub),('discount',disc),('tax',tax),('total',tot))}\n44 PREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n46 def format_money(amount, currency):\n47     if currency not in PREFIX:\n51     return sign+PREFIX[currency]+str(abs(a))\n"
+   }
+  ]
+ }

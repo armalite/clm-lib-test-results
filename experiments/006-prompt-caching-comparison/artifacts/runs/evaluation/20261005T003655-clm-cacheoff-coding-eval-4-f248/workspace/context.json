@@ -1,0 +1,25 @@
+{
+ "format": "clm-context/v1",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "All 4 stages released. Stage 4 applied in core.py (banker rounding of exact sub/disc/tax, qty 0 skipped, tax_exempt). Check test result then final."
+  },
+  {
+   "id": "s10.act",
+   "role": "assistant",
+   "body": "[step 10] execute\nthought: Apply stage 4 changes, run tests, compact context.\ncode:\nimport json,subprocess,sys\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ni=s.index('def compute_invoice');j=s.index('PFX=')\nnew='''from decimal import ROUND_HALF_EVEN\n\ndef _b(x):\n    return x.quantize(Q, rounding=ROUND_HALF_EVEN)\n\ndef compute_invoice(lines, customer):\n    if not lines:\n        raise ValueError('empty')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<0:\n            raise ValueError('qty')\n        if Decimal(str(l.get('unit_price')))<0:\n            raise ValueError('price')\n    sub=Decimal('0')\n    for l in lines:\n        if l['qty']==0:\n            continue\n        a=Decimal(l['qty'])*Decimal(str(l['unit_price']))\n        if l['qty']>=200:\n            a*=Decimal('0.88')\n        elif l['qty']>=50:\n            a*=Decimal('0.95')\n        sub+=a\n    disc=sub*TIER.get(customer.get('tier'),Decimal('0'))\n    tax=(sub-disc)*Decimal('0.10')\n    if customer.get('tax_exempt') is True:\n        tax=Decimal('0')\n    rs,rd,rt=_b(sub),_b(disc),_b(tax)\n    return {'subtotal':str(rs),'discount':str(rd),'tax':str(rt),'total':str(rs-rd+rt)}\n\n\n'''\nopen(p,'w').write(s[:i]+new+s[j:])\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'All 4 stages released. Stage 4 applied in core.py (banker rounding of exact sub/disc/tax, qty 0 skipped, tax_exempt). Check test result then final.'}]},open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s10.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s10.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 10: revision 12 -> 13; entries 8 -> 1; body chars 4554 -> 147; removed [s7.act, s7.obs, s7.rcpt, s8.act, s8.obs, s9.act, s9.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

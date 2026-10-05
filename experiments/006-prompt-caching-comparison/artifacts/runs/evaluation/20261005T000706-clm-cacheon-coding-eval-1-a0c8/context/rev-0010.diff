@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -30,6 +30,16 @@
+    "id": "s7.obs",
+    "role": "observation",
+    "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.\n- [NEW] Money formatting: add format_money(amount: str, currency: str) -> str. Prefix 'NZD' with 'NZ$', 'AUD' with 'A$', 'USD' with 'US$'; always 2 decimals; a negative amount puts '-' before the prefix (for example '-NZ$5.00'); any other currency raises ValueError.\n- [CHANGED] Tax (replaces the flat 10% rate): the tax rate depends on customer['region']: 'NZ' 15%, 'AU' 10%, 'US' 0%, any other region 12%.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (11 lines)"
++  },
++  {
++   "id": "s8.act",
++   "role": "assistant",
++   "body": "[step 8] execute\nthought: Implement stage 4 and run tests.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"    tax=(sub-disc)*Decimal('0.10')\",\"    c=customer if isinstance(customer,dict) else {}\\n    tr={'NZ':Decimal('0.15'),'AU':Decimal('0.10'),'US':Decimal(0)}.get(c.get('region'),Decimal('0.12'))\\n    if c.get('tax_exempt') is True: tr=Decimal(0)\\n    tax=(sub-disc)*tr\")\ns=s.replace(\"def format_money(amount, currency):\\n    raise NotImplementedError\",\"def format_money(amount, currency):\\n    pre={'NZD':'NZ$','AUD':'A$','USD':'US$'}\\n    if currency not in pre: raise ValueError('currency')\\n    a=r2(Decimal(str(amount)))\\n    neg=a<0\\n    return ('-' if neg else '')+pre[currency]+str(abs(a))\")\nopen(p,'w').write(s)\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-2000:])"
++  },
++  {
++   "id": "s8.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

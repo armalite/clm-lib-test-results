@@ -1,0 +1,24 @@
+--- rev-7
++++ rev-8
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "Stage1: compute_invoice(lines,customer)->dict subtotal/discount/tax/total 2dp str; tax 10% all. Stage2: ValueError on empty lines/non-positive-int qty/negative price; bulk qty>=200 x0.88, >=50 x0.95. Stage3: tier discount gold 5% silver 2% else 0; CHANGED rounding: exact sub/disc/tax, round each half-even, total=rs-rd+rt. All in invoice/core.py (_validate,_bulk,_tier_rate,_tax_rate,_r). format_money stub unimplemented. Stage 3 implemented; check test result then advance."
++  },
++  {
++   "id": "s6.act",
++   "role": "assistant",
++   "body": "[step 6] execute\nthought: Implement stage 3 and compact context.\ncode:\ncode='''from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN\n\nQ=Decimal('0.01')\n\ndef _r(x):\n    return x.quantize(Q, rounding=ROUND_HALF_EVEN)\n\ndef _validate(lines):\n    if not lines:\n        raise ValueError('empty lines')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0:\n            raise ValueError('bad qty')\n        try:\n            p=Decimal(str(l['unit_price']))\n        except Exception:\n            raise ValueError('bad price')\n        if not p.is_finite() or p<0:\n            raise ValueError('negative price')\n\ndef _bulk(q):\n    if q>=200: return Decimal('0.88')\n    if q>=50: return Decimal('0.95')\n    return Decimal('1')\n\nTIERS={'gold':Decimal('0.05'),'silver':Decimal('0.02')}\n\ndef _tier_rate(customer):\n    t=(customer or {}).get('tier') if isinstance(customer,dict) else None\n    return TIERS.get(t,Decimal('0'))\n\ndef _tax_rate(customer):\n    return Decimal('0.10')\n\ndef compute_invoice(lines, customer):\n    _validate(lines)\n    sub=Decimal('0')\n    for l in lines:\n        q=l['qty']\n        sub+=Decimal(q)*Decimal(str(l['unit_price']))*_bulk(q)\n    disc=sub*_tier_rate(customer)\n    tax=(sub-disc)*_tax_rate(customer)\n    rs,rd,rt=_r(sub),_r(disc),_r(tax)\n    return {'subtotal':str(rs),'discount':str(rd),'tax':str(rt),'total':str(rs-rd+rt)}\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n'''\nopen('/task/workspace/invoice/core.py','w').write(code)\nimport subprocess,sys,json\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: compute_invoice(lines,customer)->dict subtotal/discount/tax/total 2dp str; tax 10% all. Stage2: ValueError on empty lines/non-positive-int qty/negative price; bulk qty>=200 x0.88, >=50 x0.95. Stage3: tier discount gold 5% silver 2% else 0; CHANGED rounding: exact sub/disc/tax, round each half-even, total=rs-rd+rt. All in invoice/core.py (_validate,_bulk,_tier_rate,_tax_rate,_r). format_money stub unimplemented. Stage 3 implemented; check test result then advance.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s6.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
++  },
++  {
++   "id": "s6.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 6: revision 6 -> 7; entries 6 -> 1; body chars 3630 -> 475; removed [s4.act, s4.obs, s4.rcpt, s5.act, s5.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

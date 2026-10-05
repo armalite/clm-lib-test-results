@@ -1,0 +1,19 @@
+--- rev-13
++++ rev-14
+@@ -40,6 +40,16 @@
+    "id": "s10.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.0s\n--- stdout ---\n5 def _r(x):\n6     return x.quantize(Q, rounding=ROUND_HALF_UP)\n10 def discount_rate(lines, customer, subtotal):\n11     return TIER.get(customer.get('tier'), Decimal('0'))\n13 def tax_rate(lines, customer):\n14     return Decimal('0.10')\n16 def validate(lines, customer):\n30 def line_amount(l):\n34     return a\n36 def compute_invoice(lines, customer):\n40     tax=_r((sub-disc)*tax_rate(lines,customer))\n41     tot=sub-disc+tax\n42     return {k:str(_r(v)) for k,v in (('subtotal',sub),('discount',disc),('tax',tax),('total',tot))}\n44 PREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n46 def format_money(amount, currency):\n47     if currency not in PREFIX:\n51     return sign+PREFIX[currency]+str(abs(a))\n"
++  },
++  {
++   "id": "s11.act",
++   "role": "assistant",
++   "body": "[step 11] execute\nthought: Apply stage 4: tax exemption and comma formatting.\ncode:\nimport subprocess,sys\np='/task/workspace/invoice/core.py'\ns=open(p).read()\nprint(s.split('\\n')[45:52])\ns=s.replace(\"def tax_rate(lines, customer):\\n    return Decimal('0.10')\",\"def tax_rate(lines, customer):\\n    if customer.get('tax_exempt') is True:\\n        return Decimal('0')\\n    return Decimal('0.10')\")\ns=s.replace(\"str(abs(a))\",\"'{:,.2f}'.format(_r(abs(Decimal(str(a)))))\")\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])"
++  },
++  {
++   "id": "s11.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n['def format_money(amount, currency):', '    if currency not in PREFIX:', \"        raise ValueError('currency')\", '    a=_r(Decimal(str(amount)))', \"    sign='-' if a<0 else ''\", '    return sign+PREFIX[currency]+str(abs(a))', '']\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

@@ -1,0 +1,1 @@
+print(open('/task/workspace/invoice/core.py').read()[:2500])

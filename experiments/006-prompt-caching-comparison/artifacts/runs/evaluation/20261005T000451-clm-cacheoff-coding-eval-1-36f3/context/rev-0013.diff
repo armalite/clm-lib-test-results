@@ -1,0 +1,19 @@
+--- rev-12
++++ rev-13
+@@ -30,6 +30,16 @@
+    "id": "s9.obs",
+    "role": "observation",
+    "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.\n- [NEW] Money formatting: add format_money(amount: str, currency: str) -> str. Prefix 'NZD' with 'NZ$', 'AUD' with 'A$', 'USD' with 'US$'; always 2 decimals; a negative amount puts '-' before the prefix (for example '-NZ$5.00'); any other currency raises ValueError.\n- [CHANGED] Tax (replaces the flat 10% rate): the tax rate depends on customer['region']: 'NZ' 15%, 'AU' 10%, 'US' 0%, any other region 12%.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (11 lines)"
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Implement stage 4: region tax, exemption, format_money.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\nimport re\ni=s.index('def tax_rate'); j=s.index('\\n\\n\\n',i)\ns=s[:i]+\"\"\"def tax_rate(customer=None):\n    c = customer or {}\n    if c.get('tax_exempt') is True:\n        return Decimal('0')\n    return {'NZ': Decimal('0.15'), 'AU': Decimal('0.10'), 'US': Decimal('0')}.get(c.get('region'), Decimal('0.12'))\"\"\"+s[j:]\ni=s.index('def format_money')\ns=s[:i]+\"\"\"def format_money(amount, currency):\n    pre = {'NZD': 'NZ$', 'AUD': 'A$', 'USD': 'US$'}.get(currency)\n    if pre is None:\n        raise ValueError('unknown currency')\n    a = Decimal(str(amount)).quantize(Q, rounding=ROUND_HALF_UP)\n    sign = '-' if a < 0 else ''\n    return sign + pre + str(abs(a))\n\"\"\"\nopen(p,'w').write(s)\nprint(open('/task/workspace/invoice/__init__.py').read())\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2500:])"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=3.1s\n--- stdout ---\n\"\"\"Invoice calculator package (implement the requirements in /task/fixtures/stage-*/).\"\"\"\n\nfrom .core import compute_invoice, format_money\n\n__all__ = [\"compute_invoice\", \"format_money\"]\n\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

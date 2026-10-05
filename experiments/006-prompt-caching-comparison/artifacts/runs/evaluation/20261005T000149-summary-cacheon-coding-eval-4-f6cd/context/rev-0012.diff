@@ -1,0 +1,19 @@
+--- rev-11
++++ rev-12
+@@ -25,6 +25,16 @@
+    "id": "s9.obs",
+    "role": "observation",
+    "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.\n- [CHANGED] Rounding (replaces the earlier rounding rule): do NOT round line amounts. Compute the subtotal, discount and tax exactly (discount from the exact subtotal; tax from the exact subtotal minus the exact discount), then round each of subtotal, discount and tax to 2 decimals using banker's rounding (half even); total = rounded subtotal - rounded discount + rounded tax.\n- [CHANGED] Validation (replaces the earlier qty rule): qty 0 is now allowed and such a line is skipped entirely; a negative qty still raises ValueError; an empty lines list or a negative unit_price still raises ValueError.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (11 lines)"
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: View core.py compute_invoice then rewrite for stage 4.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\nQ=Decimal('0.01')\ndef r2(x): return x.quantize(Q, rounding=ROUND_HALF_UP)\nTIER={'platinum':Decimal('0.10'),'gold':Decimal('0.07'),'silver':Decimal('0.03')}\nTAX=Decimal('0.10')\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError('empty lines')\n    sub=Decimal(0)\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0: raise ValueError('bad qty')\n        p=Decimal(str(l['unit_price']))\n        if p<0: raise ValueError('negative price')\n        a=Decimal(q)*p\n        if q>=200: a*=Decimal('0.88')\n        elif q>=50: a*=Decimal('0.95')\n        sub+=r2(a)\n    disc=r2(sub*TIER.get(customer.get('tier'),Decimal(0)))\n    tax=r2((sub-disc)*TAX)\n    tot=sub-disc+tax\n    return {'subtotal':str(r2(sub)),'discount':str(disc),'tax':str(tax),'total':str(r2(tot))}\n\nPREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\ndef format_money(amount, currency):\n    if currency not in PREFIX: raise ValueError('unsupported currency')\n    d=r2(Decimal(str(amount)))\n    sign='-' if d<0 else ''\n    return sign+PREFIX[currency]+str(abs(d))\n\n"
+   }
+  ]
+ }

@@ -1,0 +1,29 @@
+{
+ "number": 5,
+ "parent": 4,
+ "source": "runtime",
+ "step": 4,
+ "sha256": "f5cf5a00378ed002739972ba08d558a5cdd74e0a86d438f4366314cd4a5e2e06",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1: compute_invoice(lines,customer)->dict subtotal/discount/tax/total 2dp str; round line amounts half-up, discount from rounded subtotal rounded, tax=(sub-disc)*rate rounded; tax 10% all. Stage2: ValueError on empty lines/non-positive-int qty/negative price; bulk qty>=200 x0.88, >=50 x0.95. Implemented in invoice/core.py (_validate,_bulk,_r). format_money stub unimplemented. Stage 2 done; next: advance."
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Implement stage 2 and compact context.\ncode:\ncode='''from decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef _r(x):\n    return x.quantize(Q, rounding=ROUND_HALF_UP)\n\ndef _validate(lines):\n    if not lines:\n        raise ValueError('empty lines')\n    for l in lines:\n        q=l.get('qty')\n        if isinstance(q,bool) or not isinstance(q,int) or q<=0:\n            raise ValueError('bad qty')\n        try:\n            p=Decimal(str(l['unit_price']))\n        except Exception:\n            raise ValueError('bad price')\n        if not p.is_finite() or p<0:\n            raise ValueError('negative price')\n\ndef _bulk(q):\n    if q>=200: return Decimal('0.88')\n    if q>=50: return Decimal('0.95')\n    return Decimal('1')\n\ndef compute_invoice(lines, customer):\n    _validate(lines)\n    sub=Decimal('0')\n    for l in lines:\n        q=l['qty']\n        a=Decimal(q)*Decimal(str(l['unit_price']))*_bulk(q)\n        sub+=_r(a)\n    disc=_r(sub*Decimal('0'))\n    tax=_r((sub-disc)*Decimal('0.10'))\n    tot=sub-disc+tax\n    return {'subtotal':str(_r(sub)),'discount':str(disc),'tax':str(tax),'total':str(_r(tot))}\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n'''\nopen('/task/workspace/invoice/core.py','w').write(code)\nimport subprocess,sys,json\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: compute_invoice(lines,customer)->dict subtotal/discount/tax/total 2dp str; round line amounts half-up, discount from rounded subtotal rounded, tax=(sub-disc)*rate rounded; tax 10% all. Stage2: ValueError on empty lines/non-positive-int qty/negative price; bulk qty>=200 x0.88, >=50 x0.95. Implemented in invoice/core.py (_validate,_bulk,_r). format_money stub unimplemented. Stage 2 done; next: advance.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.000s\n\nOK\n\n"
+  },
+  {
+   "id": "s4.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 4: revision 3 -> 4; entries 6 -> 1; body chars 4206 -> 411; removed [s1.act, s1.obs, s2.act, s2.obs, s3.act, s3.obs]; added [n1]; rewritten []"
+  }
+ ]
+}

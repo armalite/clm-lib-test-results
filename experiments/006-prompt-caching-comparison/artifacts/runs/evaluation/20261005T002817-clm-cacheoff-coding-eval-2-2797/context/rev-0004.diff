@@ -1,0 +1,40 @@
+--- rev-3
++++ rev-4
+@@ -2,34 +2,9 @@
+  "format": "clm-context/v1",
+  "entries": [
+   {
+-   "id": "s1.act",
+-   "role": "assistant",
+-   "body": "[step 1] execute\nthought: \ncode:\nimport subprocess\nprint(subprocess.run('cat /task/fixtures/stage-1/REQUIREMENTS.md; ls -R /task/workspace/invoice /task/fixtures/current-tests; cat /task/workspace/invoice/*.py | head -50',shell=True,capture_output=True,text=True).stdout[:5000])"
+-  },
+-  {
+-   "id": "s1.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n# Stage 1 of 4 requirements\n\n## Package and API\n\nImplement the package `invoice` in /task/workspace/invoice/ (a starting skeleton is provided).\nStandard library only. Use `decimal.Decimal` arithmetic.\n\n- `invoice.compute_invoice(lines, customer) -> dict`\n  - `lines`: list of `{\"sku\": str, \"qty\": int, \"unit_price\": str}`. unit_price is a decimal\n    string such as \"12.50\"; it may have more than 2 decimal places (for example \"3.125\").\n  - `customer`: `{\"tier\": str, \"region\": str}` and optionally `\"tax_exempt\": bool`.\n  - Returns `{\"subtotal\": str, \"discount\": str, \"tax\": str, \"total\": str}`, each a string with\n    exactly 2 decimals, for example \"12.30\".\n- Base calculation (always in force): line amount = qty x unit_price; subtotal = sum of line\n  amounts; discount = subtotal x discount rate; tax = (subtotal - discount) x tax rate;\n  total = subtotal - discount + tax. With no discount rule in force the discount rate is 0; with\n  no tax rule in force the tax rate is 0.\n\n## Rules introduced in stage 1\n\n- [NEW] Rounding: round each line amount to 2 decimals (half up) before summing; compute discount from the rounded subtotal and round it to 2 decimals (half up); compute tax from (subtotal - discount) and round it to 2 decimals (half up); total = subtotal - discount + tax.\n- [NEW] Tier discount: discount rate by customer['tier']: 'gold' 5%, 'silver' 2%, any other tier 0%.\n- [NEW] Validation: compute_invoice raises ValueError if lines is empty, if any qty is not a positive integer, or if any unit_price is negative.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n/task/fixtures/current-tests:\ntest_invoice.py\n\n/task/workspace/invoice:\n__init__.py\ncore.py\n\"\"\"Invoice calculator package (implement the requirements in /task/fixtures/stage-*/).\"\"\"\n\nfrom .core import compute_invoice, format_money\n\n__all__ = [\"compute_invoice\", \"format_money\"]\n\"\"\"Implementation goes here.\"\"\"\n\nfrom decimal import Decimal  # noqa: F401\n\n\ndef compute_invoice(lines, customer):\n    raise NotImplementedError\n\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n\n"
+-  },
+-  {
+-   "id": "s2.act",
+-   "role": "assistant",
+-   "body": "[step 2] execute\nthought: \ncode:\nimport subprocess,sys\nprint(subprocess.run('grep -n format_money -A5 /task/fixtures/current-tests/test_invoice.py | head -30',shell=True,capture_output=True,text=True).stdout)\nopen('/task/workspace/invoice/core.py','w').write('''from decimal import Decimal, ROUND_HALF_UP\nQ=Decimal(\"0.01\")\ndef r(x): return x.quantize(Q,rounding=ROUND_HALF_UP)\nRATES={\"gold\":Decimal(\"0.05\"),\"silver\":Decimal(\"0.02\")}\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError(\"empty\")\n    sub=Decimal(0)\n    for l in lines:\n        q=l.get(\"qty\")\n        if not isinstance(q,int) or isinstance(q,bool) or q<=0: raise ValueError(\"qty\")\n        p=Decimal(str(l[\"unit_price\"]))\n        if p<0: raise ValueError(\"price\")\n        sub+=r(q*p)\n    d=r(sub*RATES.get(customer.get(\"tier\"),Decimal(0)))\n    t=r((sub-d)*Decimal(0))\n    return {\"subtotal\":str(r(sub)),\"discount\":str(d),\"tax\":str(t),\"total\":str(r(sub-d+t))}\ndef format_money(amount, currency):\n    raise NotImplementedError\n''')\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])"
+-  },
+-  {
+-   "id": "s2.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.000s\n\nOK\n\n"
+-  },
+-  {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] advance\nthought: "
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 4 released.\n# Stage 2 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax: the tax rate is 10% for every customer.\n- [NEW] Money formatting: add format_money(amount: str, currency: str) -> str. Prefix 'NZD' with 'NZ$', 'AUD' with 'A$', 'USD' with 'US$'; always 2 decimals; a negative amount puts '-' before the prefix (for example '-NZ$5.00'); any other currency raises ValueError.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (48 lines)\n  stage-2/REQUIREMENTS.md (10 lines)"
++   "id": "n1",
++   "role": "note",
++   "body": "core.py: r()=quantize half-up; RATES tier dict; compute_invoice validation+tier discount+tax via `t=r((sub-d)*Decimal(\"0.10\"))`; format_money with PFX dict. Stage1 rules: line rounding, gold5/silver2, ValueError on empty/bad qty/neg price. Stage2: tax 10%, format_money NZ$/A$/US$, -prefix, else ValueError. Stage 2 done when tests pass; next: advance."
+   }
+  ]
+ }

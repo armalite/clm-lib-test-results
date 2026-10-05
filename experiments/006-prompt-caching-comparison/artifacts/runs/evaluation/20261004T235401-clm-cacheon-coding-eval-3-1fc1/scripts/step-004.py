@@ -1,0 +1,27 @@
+code='''from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
+Q=Decimal('0.01')
+def r2(x):
+    return Decimal(x).quantize(Q, rounding=ROUND_HALF_EVEN)
+def tax_rate(customer):
+    return Decimal('0.10')
+TIERS={'gold':Decimal('0.05'),'silver':Decimal('0.02')}
+def discount_rate(customer, subtotal):
+    return TIERS.get(customer.get('tier'),Decimal('0'))
+def compute_invoice(lines, customer):
+    sub=sum((Decimal(str(l['qty']))*Decimal(str(l['unit_price'])) for l in lines), Decimal('0'))
+    disc=sub*discount_rate(customer, sub)
+    tax=Decimal('0') if customer.get('tax_exempt') is True else (sub-disc)*tax_rate(customer)
+    s,d,t=r2(sub),r2(disc),r2(tax)
+    return {'subtotal':str(s),'discount':str(d),'tax':str(t),'total':str(s-d+t)}
+PREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}
+def format_money(amount, currency):
+    if currency not in PREFIX:
+        raise ValueError(currency)
+    a=r2(Decimal(str(amount)))
+    return ('-' if a<0 else '')+PREFIX[currency]+str(abs(a))
+'''
+open('/task/workspace/invoice/core.py','w').write(code)
+import subprocess,sys,json
+p=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)
+print(p.stderr[-2500:])
+json.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stages1-2 in invoice/core.py: tax 10% (0 if tax_exempt is True); tier discount gold5%/silver2%; exact line amounts, round subtotal/discount/tax half-even, total=sum of rounded; format_money NZ$/A$/US$, ValueError else, -prefix negatives (format uses r2=half-even now).'}]},open('/task/workspace/context.json','w'))

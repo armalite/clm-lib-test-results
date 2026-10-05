@@ -1,0 +1,29 @@
+{
+ "number": 3,
+ "parent": 2,
+ "source": "runtime",
+ "step": 2,
+ "sha256": "39ecef9d66013d771c0bf8d79593978f975ec046430a72a1663b52b8986d5ae4",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1 done: core.py has _r round, _discount_rate(lines,customer,subtotal)=0, _tax_rate(customer)=0.10, format_money PREFIX dict. Tests run via unittest discover."
+  },
+  {
+   "id": "s2.act",
+   "role": "assistant",
+   "body": "[step 2] execute\nthought: \ncode:\nimport json,subprocess,sys\nsrc='''from decimal import Decimal, ROUND_HALF_UP\n\nQ=Decimal('0.01')\n\ndef _r(x):\n    return Decimal(x).quantize(Q, rounding=ROUND_HALF_UP)\n\nTAX_RATE=Decimal('0.10')\n\ndef _discount_rate(lines, customer, subtotal):\n    return Decimal('0')\n\ndef _tax_rate(customer):\n    return TAX_RATE\n\ndef compute_invoice(lines, customer):\n    subtotal=sum((_r(Decimal(l['qty'])*Decimal(str(l['unit_price']))) for l in lines), Decimal('0'))\n    subtotal=_r(subtotal)\n    discount=_r(subtotal*_discount_rate(lines, customer, subtotal))\n    tax=_r((subtotal-discount)*_tax_rate(customer))\n    total=subtotal-discount+tax\n    return {'subtotal':str(subtotal),'discount':str(discount),'tax':str(tax),'total':str(_r(total))}\n\nPREFIX={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n\ndef format_money(amount, currency):\n    if currency not in PREFIX: raise ValueError(currency)\n    a=_r(Decimal(str(amount)))\n    sign='-' if a<0 else ''\n    return sign+PREFIX[currency]+str(abs(a))\n'''\nopen('/task/workspace/invoice/core.py','w').write(src)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2000:])\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1 done: core.py has _r round, _discount_rate(lines,customer,subtotal)=0, _tax_rate(customer)=0.10, format_money PREFIX dict. Tests run via unittest discover.'}]},open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s2.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.6s\n--- stdout ---\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.000s\n\nOK\n\n"
+  },
+  {
+   "id": "s2.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 2655 -> 162; removed [s1.act, s1.obs]; added [n1]; rewritten []"
+  }
+ ]
+}

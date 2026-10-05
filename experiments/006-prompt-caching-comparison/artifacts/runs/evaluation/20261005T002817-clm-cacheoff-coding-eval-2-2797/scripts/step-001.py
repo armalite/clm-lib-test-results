@@ -1,0 +1,2 @@
+import subprocess
+print(subprocess.run('cat /task/fixtures/stage-1/REQUIREMENTS.md; ls -R /task/workspace/invoice /task/fixtures/current-tests; cat /task/workspace/invoice/*.py | head -50',shell=True,capture_output=True,text=True).stdout[:5000])

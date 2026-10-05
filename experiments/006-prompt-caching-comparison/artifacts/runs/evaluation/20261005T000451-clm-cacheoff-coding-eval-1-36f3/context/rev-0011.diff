@@ -1,0 +1,24 @@
+--- rev-10
++++ rev-11
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "invoice/core.py: line_amount exact (bulk qty>=200 x0.88, elif >=50 x0.95), validate(lines) ValueError on empty/bad qty/neg price, discount_rate tier gold5% silver2%, tax_rate()=0.10, compute_invoice: exact sums then half-even round sub/disc/tax, total=sum of rounded; returns 2dp strings. format_money stub. Stages 1-3 implemented."
++  },
++  {
++   "id": "s8.act",
++   "role": "assistant",
++   "body": "[step 8] execute\nthought: Implement stage 3: tier discount, exact computation with half-even rounding at end.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"from decimal import Decimal, ROUND_HALF_UP\",\"from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN\")\ns=s.replace(\"\"\"        amt = amt * Decimal('0.95')\n    return r2(amt)\"\"\",\"\"\"        amt = amt * Decimal('0.95')\n    return amt\"\"\")\ns=s.replace(\"\"\"def discount_rate(subtotal, lines, customer):\n    return Decimal('0')\"\"\",\"\"\"def discount_rate(subtotal, lines, customer):\n    tier = (customer or {}).get('tier')\n    return {'gold': Decimal('0.05'), 'silver': Decimal('0.02')}.get(tier, Decimal('0'))\"\"\")\ni=s.index('def compute_invoice'); j=s.index('def format_money')\ns=s[:i]+\"\"\"def he(x):\n    return Decimal(x).quantize(Q, rounding=ROUND_HALF_EVEN)\n\n\ndef compute_invoice(lines, customer):\n    validate(lines)\n    sub = sum((line_amount(l, customer) for l in lines), Decimal('0'))\n    disc = sub * discount_rate(sub, lines, customer)\n    tax = (sub - disc) * tax_rate(customer)\n    rs, rd, rt = he(sub), he(disc), he(tax)\n    total = rs - rd + rt\n    return {'subtotal': str(rs), 'discount': str(rd), 'tax': str(rt), 'total': str(total.quantize(Q))}\n\n\n\"\"\"+s[j:]\ns=s.replace(\"Decimal(line['unit_price'])\",\"Decimal(str(line['unit_price']))\")\nopen(p,'w').write(s)\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[{'id':'n1','role':'note','body':'invoice/core.py: line_amount exact (bulk qty>=200 x0.88, elif >=50 x0.95), validate(lines) ValueError on empty/bad qty/neg price, discount_rate tier gold5% silver2%, tax_rate()=0.10, compute_invoice: exact sums then half-even round sub/disc/tax, total=sum of rounded; returns 2dp strings. format_money stub. Stages 1-3 implemented.'}]\njson.dump(c,open('/task/workspace/context.json','w'))\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2000:])"
++  },
++  {
++   "id": "s8.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
++  },
++  {
++   "id": "s8.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 8: revision 9 -> 10; entries 8 -> 1; body chars 4701 -> 331; removed [s5.act, s5.obs, s5.rcpt, s6.act, s6.obs, s7.act, s7.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

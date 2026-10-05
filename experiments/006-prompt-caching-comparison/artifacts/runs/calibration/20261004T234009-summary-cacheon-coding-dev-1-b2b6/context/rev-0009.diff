@@ -1,0 +1,19 @@
+--- rev-8
++++ rev-9
+@@ -35,6 +35,16 @@
+    "id": "s7.obs",
+    "role": "observation",
+    "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Money formatting: add format_money(amount: str, currency: str) -> str. Prefix 'NZD' with 'NZ$', 'AUD' with 'A$', 'USD' with 'US$'; always 2 decimals; a negative amount puts '-' before the prefix (for example '-NZ$5.00'); any other currency raises ValueError.\n- [CHANGED] Tier discount (replaces the earlier tier rates): 'platinum' 10%, 'gold' 7%, 'silver' 3%, any other tier 0%.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (54 lines)\n  stage-4/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s8.act",
++   "role": "assistant",
++   "body": "[step 8] execute\nthought: Implement stage 4: format_money and new tier rates.\ncode:\nimport re\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ni=s.index('def format_money')\nj=s.find('\\ndef ',i+5)\nnew='''def format_money(amount, currency):\n    pre={'NZD':'NZ$','AUD':'A$','USD':'US$'}\n    if currency not in pre: raise ValueError('unsupported currency')\n    d=Decimal(str(amount)).quantize(Q,rounding=ROUND_HALF_EVEN)\n    sign='-' if d<0 else ''\n    return sign+pre[currency]+str(abs(d))\n'''\ns=s[:i]+new+(s[j:] if j!=-1 else '')\nopen(p,'w').write(s)\nfor l in s.splitlines():\n    if 'gold' in l or 'silver' in l: print(l)\n"
++  },
++  {
++   "id": "s8.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n    return {'gold':Decimal('0.05'),'silver':Decimal('0.02')}.get(customer.get('tier'),Decimal('0'))\n"
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-6
++++ rev-7
+@@ -30,6 +30,16 @@
+    "id": "s5.obs",
+    "role": "observation",
+    "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Bulk lines: a line with qty >= 100 has its line amount multiplied by 0.90 (before any line rounding).\n- [CHANGED] Tier discount (replaces the earlier tier rates): 'platinum' 10%, 'gold' 7%, 'silver' 3%, any other tier 0%.\n- [CHANGED] Validation (replaces the earlier qty rule): qty 0 is now allowed and such a line is skipped entirely; a negative qty still raises ValueError; an empty lines list or a negative unit_price still raises ValueError.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (54 lines)\n  stage-3/REQUIREMENTS.md (11 lines)"
++  },
++  {
++   "id": "s6.act",
++   "role": "assistant",
++   "body": "[step 6] execute\nthought: View core.py to implement stage 3.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
++  },
++  {
++   "id": "s6.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nfrom decimal import Decimal, ROUND_HALF_UP\nQ=Decimal(\"0.01\")\ndef r(x): return x.quantize(Q,rounding=ROUND_HALF_UP)\nRATES={\"gold\":Decimal(\"0.05\"),\"silver\":Decimal(\"0.02\")}\ndef compute_invoice(lines, customer):\n    if not lines: raise ValueError(\"empty\")\n    sub=Decimal(0)\n    for l in lines:\n        q=l.get(\"qty\")\n        if not isinstance(q,int) or isinstance(q,bool) or q<=0: raise ValueError(\"qty\")\n        p=Decimal(str(l[\"unit_price\"]))\n        if p<0: raise ValueError(\"price\")\n        sub+=r(q*p)\n    d=r(sub*RATES.get(customer.get(\"tier\"),Decimal(0)))\n    t=r((sub-d)*Decimal(\"0.10\"))\n    return {\"subtotal\":str(r(sub)),\"discount\":str(d),\"tax\":str(t),\"total\":str(r(sub-d+t))}\nPFX={\"NZD\":\"NZ$\",\"AUD\":\"A$\",\"USD\":\"US$\"}\ndef format_money(amount, currency):\n    if currency not in PFX: raise ValueError(\"currency\")\n    a=r(Decimal(str(amount)))\n    return (\"-\" if a<0 else \"\")+PFX[currency]+str(abs(a))\n\n"
+   }
+  ]
+ }

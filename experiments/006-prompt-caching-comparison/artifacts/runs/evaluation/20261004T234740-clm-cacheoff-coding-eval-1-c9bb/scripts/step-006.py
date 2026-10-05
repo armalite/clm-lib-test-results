@@ -1,0 +1,55 @@
+code='''from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
+
+Q=Decimal('0.01')
+
+def _r(x):
+    return x.quantize(Q, rounding=ROUND_HALF_EVEN)
+
+def _validate(lines):
+    if not lines:
+        raise ValueError('empty lines')
+    for l in lines:
+        q=l.get('qty')
+        if isinstance(q,bool) or not isinstance(q,int) or q<=0:
+            raise ValueError('bad qty')
+        try:
+            p=Decimal(str(l['unit_price']))
+        except Exception:
+            raise ValueError('bad price')
+        if not p.is_finite() or p<0:
+            raise ValueError('negative price')
+
+def _bulk(q):
+    if q>=200: return Decimal('0.88')
+    if q>=50: return Decimal('0.95')
+    return Decimal('1')
+
+TIERS={'gold':Decimal('0.05'),'silver':Decimal('0.02')}
+
+def _tier_rate(customer):
+    t=(customer or {}).get('tier') if isinstance(customer,dict) else None
+    return TIERS.get(t,Decimal('0'))
+
+def _tax_rate(customer):
+    return Decimal('0.10')
+
+def compute_invoice(lines, customer):
+    _validate(lines)
+    sub=Decimal('0')
+    for l in lines:
+        q=l['qty']
+        sub+=Decimal(q)*Decimal(str(l['unit_price']))*_bulk(q)
+    disc=sub*_tier_rate(customer)
+    tax=(sub-disc)*_tax_rate(customer)
+    rs,rd,rt=_r(sub),_r(disc),_r(tax)
+    return {'subtotal':str(rs),'discount':str(rd),'tax':str(rt),'total':str(rs-rd+rt)}
+
+def format_money(amount, currency):
+    raise NotImplementedError
+'''
+open('/task/workspace/invoice/core.py','w').write(code)
+import subprocess,sys,json
+r=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)
+print(r.stderr[-1500:])
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1: compute_invoice(lines,customer)->dict subtotal/discount/tax/total 2dp str; tax 10% all. Stage2: ValueError on empty lines/non-positive-int qty/negative price; bulk qty>=200 x0.88, >=50 x0.95. Stage3: tier discount gold 5% silver 2% else 0; CHANGED rounding: exact sub/disc/tax, round each half-even, total=rs-rd+rt. All in invoice/core.py (_validate,_bulk,_tier_rate,_tax_rate,_r). format_money stub unimplemented. Stage 3 implemented; check test result then advance.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

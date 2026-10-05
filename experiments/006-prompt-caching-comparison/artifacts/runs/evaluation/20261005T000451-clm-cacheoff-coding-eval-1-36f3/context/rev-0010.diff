@@ -1,0 +1,46 @@
+--- rev-9
++++ rev-10
+@@ -4,42 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "invoice/core.py: line_amount (stage2 bulk: qty>=200 x0.88, elif >=50 x0.95; round half up 2dp), validate(lines) ValueError on empty/non-positive-int qty/negative price, discount_rate()=0, tax_rate()=0.10, compute_invoice returns dict of 2dp strings subtotal/discount/tax/total. format_money stub. Stages 1-2 implemented. Tests: unittest discover -s /task/fixtures/current-tests cwd /task/workspace."
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Implement stage 2 changes and compact context.\ncode:\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"\"\"    if line['qty'] >= 100:\n        amt = amt * Decimal('0.90')\"\"\",\"\"\"    if line['qty'] >= 200:\n        amt = amt * Decimal('0.88')\n    elif line['qty'] >= 50:\n        amt = amt * Decimal('0.95')\"\"\")\ns=s.replace(\"\"\"def compute_invoice(lines, customer):\n\"\"\",\"\"\"def validate(lines):\n    if not lines:\n        raise ValueError('empty lines')\n    for l in lines:\n        q = l.get('qty')\n        if isinstance(q, bool) or not isinstance(q, int) or q <= 0:\n            raise ValueError('bad qty')\n        if Decimal(str(l.get('unit_price'))) < 0:\n            raise ValueError('negative price')\n\n\ndef compute_invoice(lines, customer):\n    validate(lines)\n\"\"\")\nopen(p,'w').write(s)\nimport json\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'invoice/core.py: line_amount (stage2 bulk: qty>=200 x0.88, elif >=50 x0.95; round half up 2dp), validate(lines) ValueError on empty/non-positive-int qty/negative price, discount_rate()=0, tax_rate()=0.10, compute_invoice returns dict of 2dp strings subtotal/discount/tax/total. format_money stub. Stages 1-2 implemented. Tests: unittest discover -s /task/fixtures/current-tests cwd /task/workspace.'}]},open('/task/workspace/context.json','w'))\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-2000:])"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n\n"
+-  },
+-  {
+-   "id": "s5.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 5: revision 5 -> 6; entries 6 -> 1; body chars 3066 -> 398; removed [s3.act, s3.obs, s3.rcpt, s4.act, s4.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s6.act",
+-   "role": "assistant",
+-   "body": "[step 6] advance\nthought: "
+-  },
+-  {
+-   "id": "s6.obs",
+-   "role": "observation",
+-   "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tier discount: discount rate by customer['tier']: 'gold' 5%, 'silver' 2%, any other tier 0%.\n- [CHANGED] Rounding (replaces the earlier rounding rule): do NOT round line amounts. Compute the subtotal, discount and tax exactly (discount from the exact subtotal; tax from the exact subtotal minus the exact discount), then round each of subtotal, discount and tax to 2 decimals using banker's rounding (half even); total = rounded subtotal - rounded discount + rounded tax.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (48 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
+-  },
+-  {
+-   "id": "s7.act",
+-   "role": "assistant",
+-   "body": "[step 7] execute\nthought: Look at core.py to implement stage 3.\ncode:\nprint(open('/task/workspace/invoice/core.py').read())"
+-  },
+-  {
+-   "id": "s7.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.1s\n--- stdout ---\n\"\"\"Invoice calculator.\"\"\"\nfrom decimal import Decimal, ROUND_HALF_UP\n\nQ = Decimal('0.01')\n\n\ndef r2(x):\n    return Decimal(x).quantize(Q, rounding=ROUND_HALF_UP)\n\n\ndef line_amount(line, customer):\n    amt = Decimal(line['qty']) * Decimal(line['unit_price'])\n    if line['qty'] >= 200:\n        amt = amt * Decimal('0.88')\n    elif line['qty'] >= 50:\n        amt = amt * Decimal('0.95')\n    return r2(amt)\n\n\ndef discount_rate(subtotal, lines, customer):\n    return Decimal('0')\n\n\ndef tax_rate(customer):\n    return Decimal('0.10')\n\n\ndef validate(lines):\n    if not lines:\n        raise ValueError('empty lines')\n    for l in lines:\n        q = l.get('qty')\n        if isinstance(q, bool) or not isinstance(q, int) or q <= 0:\n            raise ValueError('bad qty')\n        if Decimal(str(l.get('unit_price'))) < 0:\n            raise ValueError('negative price')\n\n\ndef compute_invoice(lines, customer):\n    validate(lines)\n    subtotal = sum((line_amount(l, customer) for l in lines), Decimal('0'))\n    subtotal = r2(subtotal)\n    discount = r2(subtotal * discount_rate(subtotal, lines, customer))\n    tax = r2((subtotal - discount) * tax_rate(customer))\n    total = subtotal - discount + tax\n    return {k: str(r2(v)) for k, v in (('subtotal', subtotal), ('discount', discount), ('tax', tax), ('total', total))}\n\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n\n"
++   "body": "invoice/core.py: line_amount exact (bulk qty>=200 x0.88, elif >=50 x0.95), validate(lines) ValueError on empty/bad qty/neg price, discount_rate tier gold5% silver2%, tax_rate()=0.10, compute_invoice: exact sums then half-even round sub/disc/tax, total=sum of rounded; returns 2dp strings. format_money stub. Stages 1-3 implemented."
+   }
+  ]
+ }

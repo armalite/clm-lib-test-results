@@ -1,0 +1,1 @@
+s=open('/task/workspace/invoice/core.py').read();print(s)

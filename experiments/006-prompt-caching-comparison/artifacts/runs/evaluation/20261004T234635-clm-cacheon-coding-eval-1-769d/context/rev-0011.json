@@ -1,0 +1,39 @@
+{
+ "number": 11,
+ "parent": 10,
+ "source": "runtime",
+ "step": 8,
+ "sha256": "38927c56f1cfa43b3543d9db1351b6db3d466b1d680b911f38402f5aef0be776",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stages1-3 done in invoice/core.py: compute_invoice (validation ValueError: empty lines, qty not positive int, negative unit_price; bulk qty>=200 x0.88 elif >=50 x0.95 per line, no line rounding; tier discount gold 5% silver 2% else 0 on exact subtotal; tax 10% of exact sub-disc; round sub/disc/tax half-even; total=sum of rounded; returns str dict subtotal/discount/tax/total). format_money unimplemented. Reqs in /task/fixtures/stage-N/REQUIREMENTS.md. Next: advance to stage 4 if tests pass."
+  },
+  {
+   "id": "s7.act",
+   "role": "assistant",
+   "body": "[step 7] execute\nthought: Implement stage 3 rounding + tier discount, run tests, compact context.\ncode:\nimport json,subprocess,sys\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace('ROUND_HALF_UP','ROUND_HALF_EVEN')\ns=s.replace('        sub+=r2(a)\\n    disc=r2(sub*Decimal(0))\\n    tax=r2((sub-disc)*Decimal(\\'0.10\\'))\\n    tot=sub-disc+tax\\n','        sub+=a\\n    rate={\\'gold\\':Decimal(\\'0.05\\'),\\'silver\\':Decimal(\\'0.02\\')}.get((customer or {}).get(\\'tier\\'),Decimal(0))\\n    d=sub*rate\\n    t=(sub-d)*Decimal(\\'0.10\\')\\n    sub,disc,tax=r2(sub),r2(d),r2(t)\\n    tot=sub-disc+tax\\n')\nopen(p,'w').write(s)\nctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stages1-3 done in invoice/core.py: compute_invoice (validation ValueError: empty lines, qty not positive int, negative unit_price; bulk qty>=200 x0.88 elif >=50 x0.95 per line, no line rounding; tier discount gold 5% silver 2% else 0 on exact subtotal; tax 10% of exact sub-disc; round sub/disc/tax half-even; total=sum of rounded; returns str dict subtotal/discount/tax/total). format_money unimplemented. Reqs in /task/fixtures/stage-N/REQUIREMENTS.md. Next: advance to stage 4 if tests pass.'}]}\njson.dump(ctx,open('/task/workspace/context.json','w'))\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])"
+  },
+  {
+   "id": "s7.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.9s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s7.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 7: revision 8 -> 9; entries 8 -> 1; body chars 5735 -> 494; removed [s4.act, s4.obs, s4.rcpt, s5.act, s5.obs, s6.act, s6.obs]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s8.act",
+   "role": "assistant",
+   "body": "[step 8] advance\nthought: "
+  },
+  {
+   "id": "s8.obs",
+   "role": "observation",
+   "body": "Stage 4 of 4 released.\n# Stage 4 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tax exemption: if customer.get('tax_exempt') is True, tax is 0.00 whatever the rate.\n- [NEW] Money formatting: add format_money(amount: str, currency: str) -> str. Prefix 'NZD' with 'NZ$', 'AUD' with 'A$', 'USD' with 'US$'; always 2 decimals; a negative amount puts '-' before the prefix (for example '-NZ$5.00'); any other currency raises ValueError.\n- [CHANGED] Tax (replaces the flat 10% rate): the tax rate depends on customer['region']: 'NZ' 15%, 'AU' 10%, 'US' 0%, any other region 12%.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (60 lines)\n  stage-4/REQUIREMENTS.md (11 lines)"
+  }
+ ]
+}

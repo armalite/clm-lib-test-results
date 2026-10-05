@@ -1,0 +1,19 @@
+--- rev-12
++++ rev-13
+@@ -40,6 +40,16 @@
+    "id": "s10.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.3s\n--- stdout ---\n7 def r2(x):\n11 def discount_rate(lines, customer, subtotal):\n16 def tax_rate(customer):\n20 def line_amount(line):\n30 def validate(lines):\n45 def compute_invoice(lines, customer):\n49     tax = (subtotal - disc) * tax_rate(customer)\n50     subtotal, discount, tax = r2(subtotal), r2(disc), r2(tax)\n51     total = subtotal - discount + tax\n52     return {k: str(r2(v)) for k, v in (('subtotal', subtotal), ('discount', discount), ('tax', tax), ('total', total))}\n55 def format_money(amount, currency):\n"
++  },
++  {
++   "id": "s11.act",
++   "role": "assistant",
++   "body": "[step 11] execute\nthought: Implement stage 4: region tax, exemption, format_money.\ncode:\nimport re,subprocess,sys\np='/task/workspace/invoice/core.py'\ns=open(p).read()\nls=s.splitlines()\nprint('\\n'.join(ls[15:19]));print('\\n'.join(ls[54:]))\ni=s.index('def tax_rate(customer):');j=s.index('def line_amount')\ns=s[:i]+\"\"\"def tax_rate(customer):\n    c = customer or {}\n    if c.get('tax_exempt') is True:\n        return Decimal('0')\n    return {'NZ': Decimal('0.15'), 'AU': Decimal('0.10'), 'US': Decimal('0')}.get(c.get('region'), Decimal('0.12'))\n\n\n\"\"\"+s[j:]\nk=s.index('def format_money')\ns=s[:k]+\"\"\"def format_money(amount, currency):\n    pre = {'NZD': 'NZ$', 'AUD': 'A$', 'USD': 'US$'}\n    if currency not in pre:\n        raise ValueError('unsupported currency: %r' % (currency,))\n    a = r2(Decimal(str(amount)))\n    sign = '-' if a < 0 else ''\n    return '%s%s%s' % (sign, pre[currency], format(abs(a), '.2f'))\n\"\"\"\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-2500:])"
++  },
++  {
++   "id": "s11.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.6s\n--- stdout ---\ndef tax_rate(customer):\n    return Decimal('0.10')\n\n\ndef format_money(amount, currency):\n    raise NotImplementedError\n..............\n----------------------------------------------------------------------\nRan 14 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }

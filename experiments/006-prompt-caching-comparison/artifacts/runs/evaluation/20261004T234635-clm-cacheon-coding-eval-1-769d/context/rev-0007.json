@@ -1,0 +1,39 @@
+{
+ "number": 7,
+ "parent": 6,
+ "source": "runtime",
+ "step": 5,
+ "sha256": "08b1f61cefdf03d3e26a8a5588d08350919ecbc6f40d907cea7e83ae863c8b2a",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1+2 done in invoice/core.py: compute_invoice (validation ValueError: empty lines, qty not positive int, negative unit_price; bulk qty>=200 x0.88 elif >=50 x0.95; line round half-up; tax 10%; discount 0; returns str dict subtotal/discount/tax/total). format_money unimplemented. Reqs in /task/fixtures/stage-N/REQUIREMENTS.md. Next: advance to stage 3."
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Implement stage 2 changes, run tests, compact context.\ncode:\nimport json,subprocess,sys\np='/task/workspace/invoice/core.py'\ns=open(p).read()\ns=s.replace(\"\"\"    sub=Decimal(0)\n    for l in lines:\n        a=Decimal(l['qty'])*Decimal(l['unit_price'])\n        if l['qty']>=100: a*=Decimal('0.90')\n\"\"\",\"\"\"    if not lines: raise ValueError('empty lines')\n    sub=Decimal(0)\n    for l in lines:\n        q=l.get('qty')\n        if not isinstance(q,int) or isinstance(q,bool) or q<=0: raise ValueError('bad qty')\n        up=Decimal(str(l['unit_price']))\n        if up<0: raise ValueError('negative price')\n        a=Decimal(q)*up\n        if q>=200: a*=Decimal('0.88')\n        elif q>=50: a*=Decimal('0.95')\n\"\"\")\nopen(p,'w').write(s)\nctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Stage1+2 done in invoice/core.py: compute_invoice (validation ValueError: empty lines, qty not positive int, negative unit_price; bulk qty>=200 x0.88 elif >=50 x0.95; line round half-up; tax 10%; discount 0; returns str dict subtotal/discount/tax/total). format_money unimplemented. Reqs in /task/fixtures/stage-N/REQUIREMENTS.md. Next: advance to stage 3.'}]}\njson.dump(ctx,open('/task/workspace/context.json','w'))\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.9s\n--- stdout ---\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s4.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 6 -> 1; body chars 2472 -> 356; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: "
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 4 released.\n# Stage 3 of 4 requirements\n\nOnly the changes are listed. Every earlier requirement that is not replaced below remains in force.\n\n## Changes\n\n- [NEW] Tier discount: discount rate by customer['tier']: 'gold' 5%, 'silver' 2%, any other tier 0%.\n- [CHANGED] Rounding (replaces the earlier rounding rule): do NOT round line amounts. Compute the subtotal, discount and tax exactly (discount from the exact subtotal; tax from the exact subtotal minus the exact discount), then round each of subtotal, discount and tax to 2 decimals using banker's rounding (half even); total = rounded subtotal - rounded discount + rounded tax.\n\nVisible tests for all rules now in force: /task/fixtures/current-tests/test_invoice.py (this file is updated at each stage).\n\nNew files:\n  current-tests/test_invoice.py (48 lines)\n  stage-3/REQUIREMENTS.md (10 lines)"
+  }
+ ]
+}
