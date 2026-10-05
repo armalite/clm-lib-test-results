@@ -1,0 +1,79 @@
+{
+ "number": 36,
+ "parent": 35,
+ "source": "runtime",
+ "step": 26,
+ "sha256": "7a16fe9f966c896c07c53354e075023f1278e24b60eba4199b2aa51c9ac9a540",
+ "entries": [
+  {
+   "id": "n0",
+   "role": "note",
+   "body": "ctx.py has load/save/reset(notes). R1: ledger-svc CERT_EXPIRED peer=sso.example.net round-01/logs/ledger-svc.log:14-21. slow query WARNs noise. round-01/changes.md:4 CHG-113 APPLIED search-api http.max_inflight=-1 (possible BAD_CONFIG_ROLLOUT, no errors yet). CHG-109 proposed only."
+  },
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R2: board.md:3 Thread A CERT_EXPIRED ledger-svc+inventory-svc ongoing. inventory-svc.log:10-19 cert errors; ledger-svc.log:20-28. CHG-117 proposed only. No search-api errors yet. Next: advance to R3."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R3: board empty (no change). CHG-125 APPLIED retry budget=1 (benign). cert errors continue inventory-svc.log:9-18,39-57,71; ledger-svc.log:23-43,61-69. No search-api errors. Next: advance to R4."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R4: board.md:3 Thread A mitigated (CHG-136 APPLIED changes.md:4 mitigation ledger-svc). board.md:4 Thread B checkout-api UPSTREAM_RATE_LIMIT ongoing (verify logs). board.md:5 Thread D DISK_PRESSURE search-api ongoing; search-api.log:12-62 disk WARN 92-98%. Follow-ups OPEN board.md:6-8 CUSTOMER_COMMS, POSTMORTEM_DRAFT, CAPACITY_REVIEW."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4 check: checkout-api.log has NO 429s; heap usage high WARNs lines 18-20,35-44,60,86-90 (rss up to 3821) -> possibly MEMORY_LEAK rather than the board claim; verify in later rounds. Next: advance to R5."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board.md:3 DATA_BACKFILL OPEN. checkout-api heap WARNs continue lines 6-77 (no 429s). search-api disk WARN 91-98% lines 14-76. inventory/ledger no errors (cert mitigated). Next: advance to R6."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board.md:3 CUSTOMER_COMMS CLOSED. CHG-147 APPLIED TLS ticket rotation (benign). checkout-api heap WARNs lines 17-66 (no 429). search-api disk WARN 91-97% lines 6-74. Next: advance to R7."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board.md:3 Thread A RESOLVED. board.md:4 Thread C search-api failures ongoing -> logs show BAD_CONFIG_ROLLOUT http.max_inflight=-1 search-api.log:17-58 (traces to round-01/changes.md:4 CHG-113). board.md:5 Thread D DISK_PRESSURE false alarm. board.md:6 VENDOR_TICKET OPEN. checkout-api heap WARNs continue lines 6-67 (MEMORY_LEAK likely, board says rate limit). Next: advance to R8."
+  },
+  {
+   "id": "n8",
+   "role": "note",
+   "body": "R8: board.md:3 Thread B cause revised MEMORY_LEAK (checkout-api heap WARN log line 9). payments-svc also heap WARNs lines 13,24 (maybe part of Thread B? check later). board.md:4 Thread C search-api still restarting; config errors search-api.log:2,5. board.md:5 VENDOR_TICKET CLOSED. CHG-160 proposed only. Next: advance to R9."
+  },
+  {
+   "id": "s25.act",
+   "role": "assistant",
+   "body": "[step 25] execute\nthought: Save R8 notes and compact.\ncode:\nimport ctx\nc=ctx.load()\nnotes=[e['body'] for e in c['entries'] if e['role']=='note']\nnotes.append('R8: board.md:3 Thread B cause revised MEMORY_LEAK (checkout-api heap WARN log line 9). payments-svc also heap WARNs lines 13,24 (maybe part of Thread B? check later). board.md:4 Thread C search-api still restarting; config errors search-api.log:2,5. board.md:5 VENDOR_TICKET CLOSED. CHG-160 proposed only. Next: advance to R9.')\nctx.reset(notes)\nprint('ok')"
+  },
+  {
+   "id": "s25.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s25.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 25: revision 33 -> 34; entries 15 -> 9; body chars 6700 -> 2312; removed [s22.act, s22.obs, s22.rcpt, s23.act, s23.obs, s24.act, s24.obs]; added [n8]; rewritten []"
+  },
+  {
+   "id": "s26.act",
+   "role": "assistant",
+   "body": "[step 26] advance\nthought: "
+  },
+  {
+   "id": "s26.obs",
+   "role": "observation",
+   "body": "Stage 9 of 10 released.\nRound 9 of 10 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (4 lines)\n  round-09/changes.md (3 lines)\n  round-09/logs/checkout-api.log (69 lines)\n  round-09/logs/inventory-svc.log (76 lines)\n  round-09/logs/ledger-svc.log (77 lines)\n  round-09/logs/payments-svc.log (81 lines)\n  round-09/logs/search-api.log (62 lines)"
+  }
+ ]
+}

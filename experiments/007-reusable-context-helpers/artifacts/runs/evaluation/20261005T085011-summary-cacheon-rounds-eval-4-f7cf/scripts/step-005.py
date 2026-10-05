@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('R2: Thread A DB_POOL_EXHAUSTED inventory-svc+notify-worker ongoing round-02/board.md:3; logs round-02/logs/inventory-svc.log:3, notify-worker.log:6\n')
+print(open('/task/workspace/notes.md').read())

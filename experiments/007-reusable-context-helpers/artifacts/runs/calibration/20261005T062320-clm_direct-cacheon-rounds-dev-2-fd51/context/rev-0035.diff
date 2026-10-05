@@ -1,0 +1,24 @@
+--- rev-34
++++ rev-35
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: CHG-107 APPLIED retry budget GETs=1 (round-01/changes.md:3). slow query WARNs = noise. inventory-svc DNS SERVFAIL host=rates.internal round-01/logs/inventory-svc.log:7,20.\nR2: board Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing (round-02/board.md:3). CHG-120 APPLIED search-api http.max_inflight=-1 (round-02/changes.md:3) watch BAD_CONFIG (no search errs seen R2). CHG-121 auth no config. checkout DNS errs round-02/logs/checkout-api.log:8,24; inventory round-02/logs/inventory-svc.log:8,12.\nR3: board Thread B auth-svc DB_POOL_EXHAUSTED ongoing (round-03/board.md:3) BUT logs show CERT_EXPIRED peer=sso.example.net round-03/logs/auth-svc.log:6,9,15..72. DNS continues checkout round-03/logs/checkout-api.log:33,74; inventory round-03/logs/inventory-svc.log:3,50. CHG-126 PROPOSED only.\nR4: board empty (no changes). CERT_EXPIRED sso.example.net now also shipping-svc round-04/logs/shipping-svc.log:3,20,66; auth round-04/logs/auth-svc.log:6,77. DNS continues checkout round-04/logs/checkout-api.log:1,71; inventory round-04/logs/inventory-svc.log:32,75. No search errs.\nR5: Thread A mitigated round-05/board.md:3 after CHG-143 APPLIED inventory-svc (round-05/changes.md:3); no DNS errs R5. Thread B adds shipping-svc (round-05/board.md:4). Follow-ups OPEN VENDOR_TICKET (board:5), ALERT_TUNING (board:6). CERT errs auth round-05/logs/auth-svc.log:2,8; shipping round-05/logs/shipping-svc.log:9,11.\nR6: board adds Follow-up OPEN RUNBOOK_UPDATE (round-06/board.md:3). CHG-144 APPLIED log sampling (noise). CERT continues auth round-06/logs/auth-svc.log:4,79; shipping round-06/logs/shipping-svc.log:1,64. No DNS/search errs. Next: advance to R7.\nR7: Thread B cause revised CERT_EXPIRED (round-07/board.md:3). Thread D UPSTREAM_RATE_LIMIT search-api ongoing (round-07/board.md:4); 429 tax-provider round-07/logs/search-api.log:4,5,20. CERT auth round-07/logs/auth-svc.log:1,16,24; shipping round-07/logs/shipping-svc.log:10,11,23. Next: advance to R8.\nR8: board (round-08/board.md): Thread A resolved :3; Thread B mitigated :4; Thread C search-api failures cause unknown ongoing :5; Follow-up OPEN DATA_BACKFILL :6; CLOSED VENDOR_TICKET :7. search-api config validation failed http.max_inflight=-1 (CHG-120 BAD_CONFIG) lines [2, 5, 10, 26, 42, 44, 59, 68, 72]; 429 lines [1, 12, 14, 20, 25, 66]. CERT auth round-08/logs/auth-svc.log:8,61; shipping round-08/logs/shipping-svc.log:50,60. No DNS. Next: advance R9."
++  },
++  {
++   "id": "s25.act",
++   "role": "assistant",
++   "body": "[step 25] execute\nthought: Record R8 and get search-api line numbers for 429 vs config errors, then compact.\ncode:\nimport json,re\nL=open('/task/fixtures/round-08/logs/search-api.log').readlines()\na=[i for i,l in enumerate(L,1) if '429' in l];b=[i for i,l in enumerate(L,1) if 'config validation' in l]\nprint(a,b)\nc=json.load(open('/task/workspace/context.json'))\nfor e in c['entries']:\n    if e['id']=='n1':\n        e['body']+=\"\\nR8: board (round-08/board.md): Thread A resolved :3; Thread B mitigated :4; Thread C search-api failures cause unknown ongoing :5; Follow-up OPEN DATA_BACKFILL :6; CLOSED VENDOR_TICKET :7. search-api config validation failed http.max_inflight=-1 (CHG-120 BAD_CONFIG) lines %s; 429 lines %s. CERT auth round-08/logs/auth-svc.log:8,61; shipping round-08/logs/shipping-svc.log:50,60. No DNS. Next: advance R9.\"%(b,a)\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s25.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n[1, 12, 14, 20, 25, 66] [2, 5, 10, 26, 42, 44, 59, 68, 72]\n"
++  },
++  {
++   "id": "s25.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 25: revision 33 -> 34; entries 8 -> 1; body chars 5368 -> 2427; removed [s22.act, s22.obs, s22.rcpt, s23.act, s23.obs, s24.act, s24.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

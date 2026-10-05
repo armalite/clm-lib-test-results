@@ -1,0 +1,24 @@
+--- rev-41
++++ rev-42
+@@ -50,6 +50,21 @@
+    "id": "n10",
+    "role": "note",
+    "body": "R9: round-09/board.md:3 Thread C still ongoing (pods restarting). changes.md:3 CHG-166 APPLIED retry budget (noise). auth-svc.log:22,55 shipping-svc.log:28,56 cert_expired (tapering). search-api.log:1-76 22 errs (config validation max_inflight lines 2,9..; 429 lines 1,5..). checkout/inventory clean. R9 done; next: advance."
++  },
++  {
++   "id": "s29.act",
++   "role": "assistant",
++   "body": "[step 29] execute\nthought: Inspect round 10 board/changes and non-routine log lines; compact context.\ncode:\nimport json,re,glob\nb='/task/fixtures/round-10/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor p in sorted(glob.glob(b+'logs/*.log')):\n  n=p.split('/')[-1];hits=[]\n  for i,l in enumerate(open(p),1):\n    if re.search(r'certificate|SERVFAIL|429|max_inflight|ERROR',l):hits.append(i)\n  print(n,len(hits),hits[:12])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[x for x in c['entries'] if x['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s29.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 10\nboard.md 2 \nboard.md 3 - Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\nboard.md 4 - Follow-up CLOSED DATA_BACKFILL.\nchanges.md 1 # Change log: round 10\nchanges.md 2 \nchanges.md 3 - CHG-175 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc.log 2 [10, 17]\ncheckout-api.log 0 []\ninventory-svc.log 0 []\nsearch-api.log 9 [1, 4, 7, 8, 20, 30, 50, 54, 60]\nshipping-svc.log 2 [3, 60]\n"
++  },
++  {
++   "id": "s29.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 29: revision 40 -> 41; entries 15 -> 10; body chars 4301 -> 3034; removed [s27.act, s27.obs, s27.rcpt, s28.act, s28.obs]; added []; rewritten []"
+   }
+  ]
+ }

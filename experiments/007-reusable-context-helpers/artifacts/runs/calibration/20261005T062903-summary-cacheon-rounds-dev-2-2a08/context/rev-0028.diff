@@ -1,0 +1,49 @@
+--- rev-27
++++ rev-28
+@@ -2,44 +2,9 @@
+  "format": "clm-context/v1",
+  "entries": [
+   {
+-   "id": "sum6",
++   "id": "sum7",
+    "role": "summary",
+-   "body": "Rounds 1-5 of 11 read; round 6 released (board.md 3 lines, changes.md 3 lines). Its read was started at step 17; output not seen yet. Rounds 07-11 still to come.\n- R1 changes.md:3 CHG-107 APPLIED: GET retry budget=1.\n- R2 changes.md:3 CHG-120 APPLIED: build 8.59.8 to search-api, http.max_inflight=-1. Possible BAD_CONFIG_ROLLOUT; cite if search-api errors appear (0 so far through R5).\n- R3 CHG-126 PROPOSED, not applied; ignore.\n- Thread A: DNS_RESOLUTION (rates.internal SERVFAIL) on inventory-svc and checkout-api. Status mitigated, set by round-05/board.md:3 after CHG-143 (round-05/changes.md:3).\n  - Refs: round-01/logs/inventory-svc.log:7-90; round-02/logs/checkout-api.log:8-59; round-04/logs/checkout-api.log:1-71; round-04/logs/inventory-svc.log:32-75.\n  - R5 logs show 0 errors.\n- Thread B: auth-svc and shipping-svc (round-05/board.md:4), ongoing (round-03/board.md:3).\n  - Board suspects DB_POOL_EXHAUSTED, but logs show CERT_EXPIRED (peer=sso.example.net).\n  - Refs: round-03/logs/auth-svc.log:6-26; round-04/logs/shipping-svc.log:3-66; round-05/logs/auth-svc.log:2-64; round-05/logs/shipping-svc.log:9-65.\n  - Watch for a board correction.\n- Follow-ups OPEN: VENDOR_TICKET (round-05/board.md:5), ALERT_TUNING (round-05/board.md:6).\n- Notes file: /task/workspace/notes.md.\n- Next: read R6, advance to R11, then give the final answer."
+-  },
+-  {
+-   "id": "s17.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n# Incident board: updates in round 06\n\n- Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\n\n# Change log: round 06\n\n- CHG-144 APPLIED: log sampling for /v1/health reduced to 1%\n\nauth-svc.log 10 [4] [79]\n   {\"ts\":\"2026-09-14T13:02:17Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\ncheckout-api.log 0 [] []\n first {\"ts\":\"2026-09-14T13:02:02Z\",\"level\":\"INFO\",\"svc\":\"checkout-api\",\"msg\":\"gc cycle\",\"pause_ms\":9}\ninventory-svc.log 0 [] []\n first {\"ts\":\"2026-09-14T13:00:59Z\",\"level\":\"INFO\",\"svc\":\"inventory-svc\",\"msg\":\"health ok\",\"probe\":\"readiness\"}\nsearch-api.log 0 [] []\n first {\"ts\":\"2026-09-14T13:00:54Z\",\"level\":\"INFO\",\"svc\":\"search-api\",\"msg\":\"heartbeat\",\"uptime_s\":76131}\nshipping-svc.log 6 [1] [64]\n   {\"ts\":\"2026-09-14T13:00:12Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n"
+-  },
+-  {
+-   "id": "s18.act",
+-   "role": "assistant",
+-   "body": "[step 18] execute\nthought: Save round 6 notes.\ncode:\nopen('/task/workspace/notes.md','a').write('\\nR6: board.md:3 OPEN RUNBOOK_UPDATE. CHG-144 log sampling (noise). Log format now JSON. CERT errors auth-svc.log:4-79, shipping-svc.log:1-64. others 0 errors.\\n')\nprint('ok')"
+-  },
+-  {
+-   "id": "s18.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s19.act",
+-   "role": "assistant",
+-   "body": "[step 19] advance\nthought: "
+-  },
+-  {
+-   "id": "s19.obs",
+-   "role": "observation",
+-   "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/logs/auth-svc.log (66 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (59 lines)\n  round-07/logs/search-api.log (69 lines)\n  round-07/logs/shipping-svc.log (67 lines)"
+-  },
+-  {
+-   "id": "s20.act",
+-   "role": "assistant",
+-   "body": "[step 20] execute\nthought: Read round 7 board and scan logs for errors.\ncode:\nimport os,re\nb='/task/fixtures/round-07/'\nprint(open(b+'board.md').read())\nfor f in sorted(os.listdir(b+'logs')):\n    L=open(b+'logs/'+f).read().splitlines()\n    e=[i+1 for i,l in enumerate(L) if re.search(r'ERROR|WARN',l)]\n    print(f,len(e),e[:1],e[-1:])\n    if e: print('  ',L[e[0]-1][:220])\n    else: print(' first',L[0][:160])\n"
+-  },
+-  {
+-   "id": "s20.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 07\n\n- Thread B root cause revised: an expired TLS certificate on a dependency (CERT_EXPIRED); this supersedes the earlier suspicion of DB_POOL_EXHAUSTED.\n- Thread D opened: an upstream provider rejecting requests with 429 alerts (UPSTREAM_RATE_LIMIT) on search-api. Status: ongoing.\n\nauth-svc.log 20 [1] [64]\n   {\"ts\":\"2026-09-14T14:00:33Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\ncheckout-api.log 12 [1] [62]\n   {\"ts\":\"2026-09-14T14:00:16Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"slow query\",\"ms\":239,\"table\":\"orders\"}\ninventory-svc.log 15 [1] [59]\n   {\"ts\":\"2026-09-14T14:00:17Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":353,\"table\":\"orders\"}\nsearch-api.log 27 [1] [69]\n   {\"ts\":\"2026-09-14T14:00:18Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":444,\"table\":\"orders\"}\nshipping-svc.log 23 [6] [66]\n   {\"ts\":\"2026-09-14T14:04:04Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"slow query\",\"ms\":429,\"table\":\"orders\"}\n"
++   "body": "Rounds 1-7 of 11 read (R7 board read; logs only scanned at the first-hit level). Rounds 08-11 still to come.\n- Log format: JSON since R6, e.g. {\"ts\",\"level\",\"svc\",\"msg\",\"peer\",\"reason\"}. Error string: \"tls handshake failed\", reason certificate_expired. WARN \"slow query\" lines with a table=orders field look like noise.\n- R1 changes.md:3 CHG-107 APPLIED: GET retry budget=1.\n- R2 changes.md:3 CHG-120 APPLIED: build 8.59.8 to search-api, http.max_inflight=-1. Possible BAD_CONFIG_ROLLOUT link to Thread D; check.\n- R3 CHG-126 PROPOSED, not applied; ignore.\n- R6 changes.md:3 CHG-144 APPLIED: log sampling for /v1/health at 1% (noise).\n- Thread A: DNS_RESOLUTION (rates.internal SERVFAIL) on inventory-svc and checkout-api. Status mitigated, set by round-05/board.md:3 after CHG-143 (round-05/changes.md:3).\n  - Refs: round-01/logs/inventory-svc.log:7-90; round-02/logs/checkout-api.log:8-59; round-04/logs/checkout-api.log:1-71; round-04/logs/inventory-svc.log:32-75.\n  - 0 errors in R5-R6.\n- Thread B: CERT_EXPIRED (peer=sso.example.net) on auth-svc and shipping-svc. Status ongoing (round-03/board.md:3).\n  - Cause revised by round-07/board.md:3; supersedes DB_POOL_EXHAUSTED.\n  - Services set by round-05/board.md:4.\n  - Refs: round-03/logs/auth-svc.log:6-26; round-04/logs/shipping-svc.log:3-66; round-05/logs/auth-svc.log:2-64; round-05/logs/shipping-svc.log:9-65; round-06/logs/auth-svc.log:4-79; round-06/logs/shipping-svc.log:1-64; round-07/logs/auth-svc.log:1-64.\n- Thread D: UPSTREAM_RATE_LIMIT on search-api, ongoing, opened by round-07/board.md:4.\n  - round-07/logs/search-api.log has 27 ERROR/WARN lines (1-69).\n  - Need to grep for 429 lines to get refs. Also check whether the logs actually point to BAD_CONFIG_ROLLOUT from CHG-120.\n- Follow-ups OPEN:\n  - VENDOR_TICKET (round-05/board.md:5)\n  - ALERT_TUNING (round-05/board.md:6)\n  - RUNBOOK_UPDATE (round-06/board.md:3)\n- None closed yet.\n- Notes file: /task/workspace/notes.md (R7 not yet appended).\n- Next:\n  - Grep R7 search-api and shipping-svc logs for 429 and cert errors; record line ranges.\n  - Append R7 to notes.\n  - Advance through R11, then give the final answer."
+   },
+   {
+    "id": "s21.act",

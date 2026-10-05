@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty; CHG-112 APPLIED log sampling /v1/health 1% (noise). auth-svc heap warn r01 auth-svc.log:3,14,32,35,40,46,60,61.'},{'id':'n2','role':'note','body':'R2: board.md:3 Thread A MEMORY_LEAK auth-svc (+payments-svc) ongoing; board.md:4 follow-up OPEN CUSTOMER_COMMS. changes.md:3 CHG-120 APPLIED inventory-svc build 7.30.0 sets retry.backoff_ms=0 (suspicious, watch inventory); changes.md:4 CHG-121 ledger no config. Logs: auth heap warns lines 5-76, payments heap warns lines 5-48 (rss fluctuating). Filter used: skip request ok|heartbeat|gc |health ok|slow query. Next: advance to round 3.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

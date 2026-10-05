@@ -1,0 +1,59 @@
+{
+ "number": 31,
+ "parent": 30,
+ "source": "runtime",
+ "step": 21,
+ "sha256": "72062a6ef6e3037cdc4833087e202a78744a9151858868b04c775f19cfde23c7",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. changes.md:3 CHG-107 APPLIED retry budget GETs=1. slow query WARNs in all services = background noise. inventory-svc DNS SERVFAIL host=rates.internal lines 7,20,50,54,57,62,65,85,86,89,90 (round-01/logs/inventory-svc.log). Helper: from h import scan; scan(n) prints non-noise lines."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 Thread A DNS_RESOLUTION inventory-svc + checkout-api (status line truncated, check). changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (watch BAD_CONFIG). changes.md:4 CHG-121 auth-svc no config. checkout-api DNS SERVFAIL rates.internal lines 8,24,29,38,46,59; inventory lines 8-74."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread B auth-svc suspected DB_POOL_EXHAUSTED ongoing, BUT logs show auth-svc tls certificate_expired peer=sso.example.net (round-03/logs/auth-svc.log 6,9,15,21,25,26,33,48,64,72) -> likely CERT_EXPIRED. changes.md:3 CHG-126 PROPOSED (ignore). DNS rates.internal continues checkout-api 33-74, inventory 3-50. Next: advance to round 4."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board empty. auth-svc cert_expired sso.example.net lines 6-77; shipping-svc ALSO cert_expired sso lines 3-66 (round-04/logs/shipping-svc.log) -> CERT incident services auth-svc+shipping-svc. DNS rates.internal continues checkout-api 1-71, inventory 32-75. Next: advance to round 5."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board.md:3 Thread A (DNS) mitigated; board.md:4 Thread B adds shipping-svc; board.md:5 OPEN VENDOR_TICKET; board.md:6 OPEN ALERT_TUNING. changes.md:3 CHG-143 APPLIED mitigation thread A inventory-svc. DNS lines gone in r5. cert_expired continues auth-svc 2-64, shipping-svc 9-65. Next: advance to round 6."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board.md:3 OPEN RUNBOOK_UPDATE. changes.md:3 CHG-144 log sampling (noise). cert_expired continues auth-svc 4-79, shipping-svc 1-64. No new incidents. Next: advance to round 7."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board.md:3 Thread B cause revised CERT_EXPIRED (auth-svc+shipping-svc). board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing; search-api 429 upstream=tax-provider lines [4, 5, 20, 22, 25, 47, 64, 66, 69] (round-07/logs/search-api.log). cert_expired auth-svc 1-64 continues. Next: advance to round 8."
+  },
+  {
+   "id": "s21.act",
+   "role": "assistant",
+   "body": "[step 21] execute\nthought: Record R7 note, check search-api 429 lines and whether DB/other in r7, compact context.\ncode:\nimport json,re\nt=open('/task/fixtures/round-07/logs/search-api.log').read().splitlines()\nl=[i+1 for i,x in enumerate(t) if '429' in x]\nprint('429',l[:40])\nimport os\nfor f in os.listdir('/task/fixtures/round-07/logs'):\n  s=open('/task/fixtures/round-07/logs/'+f).read().splitlines()\n  e=[i+1 for i,x in enumerate(s) if 'certificate_expired' in x or 'cert' in x and 'tls' in x]\n  print(f,len(s),e[:3],e[-1:] if e else '')\nprint(os.path.exists('/task/fixtures/round-07/changes.md'))\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\nc['entries'].append({'id':'n7','role':'note','body':'R7: board.md:3 Thread B cause revised CERT_EXPIRED (auth-svc+shipping-svc). board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing; search-api 429 upstream=tax-provider lines '+str(l[:12])+' (round-07/logs/search-api.log). cert_expired auth-svc 1-64 continues. Next: advance to round 8.'})\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s21.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n429 [4, 5, 20, 22, 25, 47, 64, 66, 69]\nshipping-svc.log 67 [10, 11, 23] [66]\ncheckout-api.log 72 [] \nauth-svc.log 66 [1, 16, 24] [64]\ninventory-svc.log 59 [] \nsearch-api.log 69 [] \nFalse\n"
+  },
+  {
+   "id": "s21.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 21: revision 29 -> 30; entries 9 -> 7; body chars 4790 -> 2038; removed [s20.act, s20.obs, s20.rcpt]; added [n7]; rewritten []"
+  }
+ ]
+}

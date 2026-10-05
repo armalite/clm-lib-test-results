@@ -1,0 +1,2 @@
+import ctx
+d=ctx.load();d['entries']=[{'id':'n1','role':'note','body':'ctx.py has load/save/keep_notes(note_id,body). R1: board empty; CHG-112 APPLIED log sampling /v1/health 1% (noise). Logs auth/inventory/ledger/payments/pricing only background WARN slow query + auth heap warn (rss fluctuates, not leak yet). No incidents yet.'}];ctx.save(d);print('ok')

@@ -1,0 +1,19 @@
+--- rev-25
++++ rev-26
+@@ -60,6 +60,16 @@
+    "id": "s20.obs",
+    "role": "observation",
+    "body": "Stage 8 of 10 released.\nRound 8 of 10 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (5 lines)\n  round-08/changes.md (3 lines)\n  round-08/logs/auth-svc.log (71 lines)\n  round-08/logs/checkout-api.log (65 lines)\n  round-08/logs/notify-worker.log (79 lines)\n  round-08/logs/payments-svc.log (87 lines)\n  round-08/logs/search-api.log (62 lines)"
++  },
++  {
++   "id": "s21.act",
++   "role": "assistant",
++   "body": "[step 21] execute\nthought: Inspect R8 compactly.\ncode:\nimport os,re\nfrom collections import defaultdict\nb='/task/fixtures/round-08/'\nout=[]\nfor f in ['board.md','changes.md']:\n  if not os.path.exists(b+f): continue\n  for i,l in enumerate(open(b+f),1):\n    if l.strip() and not l.startswith('#'): out.append(f'{f} {i} {l.rstrip()}')\nnoise=re.compile(r'slow query|gc cycle|request ok|heartbeat|health ok')\nfor f in sorted(os.listdir(b+'logs')):\n  d=defaultdict(list)\n  for i,l in enumerate(open(b+'logs/'+f),1):\n    if noise.search(l): continue\n    k=re.sub(r'\\d+','N',l.split(' ',3)[-1])[:70]\n    d[k].append(i)\n  for k,v in d.items(): out.append(f'{f} {v[0]}-{v[-1]} {len(v)} {k.strip()}')\ns='\\n'.join(out);print(s)\nopen('/task/workspace/notes.md','a').write('\\nR8 raw:\\n'+s+'\\n')"
++  },
++  {
++   "id": "s21.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nboard.md 3 - Thread A status: resolved (no recurrence for two hours).\nboard.md 4 - Thread B root cause revised: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT); this supersedes the earlier suspicion of CACHE_STAMPEDE.\nboard.md 5 - Thread C opened: request failures on some notify-worker pods; cause not yet identified. Status: ongoing.\nchanges.md 3 - CHG-159 PROPOSED: move batch jobs to off-peak window (not applied)\ncheckout-api.log 1-54 9 N\",\"upstream\":\"fx-rates\",\"retry_after_s\":N}\nnotify-worker.log 5-72 6 failed\",\"key\":\"http.max_inflight\",\"value\":\"N\",\"build\":\"N.N.N\"}\npayments-svc.log 2-83 13 N\",\"upstream\":\"fx-rates\",\"retry_after_s\":N}\n"
+   }
+  ]
+ }

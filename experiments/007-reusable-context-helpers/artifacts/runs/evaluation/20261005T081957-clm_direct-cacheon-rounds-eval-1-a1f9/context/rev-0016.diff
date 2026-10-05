@@ -1,0 +1,45 @@
+--- rev-15
++++ rev-16
+@@ -17,39 +17,9 @@
+    "body": "R3: board empty (no change). changes.md:3 CHG-124 PROPOSED (ignore). Lag WARNs payments(3-55) ledger(20-61) still fluctuating 20k-87k, no errors elsewhere. Next: advance to R4."
+   },
+   {
+-   "id": "s9.act",
+-   "role": "assistant",
+-   "body": "[step 9] execute\nthought: Compact context with R3 findings.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\ne=[x for x in c['entries'] if x['id'] in('n1','n2')]\ne.append({'id':'n3','role':'note','body':'R3: board empty (no change). changes.md:3 CHG-124 PROPOSED (ignore). Lag WARNs payments(3-55) ledger(20-61) still fluctuating 20k-87k, no errors elsewhere. Next: advance to R4.'})\nc['entries']=e\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s9.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.5s"
+-  },
+-  {
+-   "id": "s9.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 9: revision 11 -> 12; entries 9 -> 3; body chars 4171 -> 863; removed [s6.act, s6.obs, s6.rcpt, s7.act, s7.obs, s8.act, s8.obs]; added [n3]; rewritten []"
+-  },
+-  {
+-   "id": "s10.act",
+-   "role": "assistant",
+-   "body": "[step 10] advance\nthought: "
+-  },
+-  {
+-   "id": "s10.obs",
+-   "role": "observation",
+-   "body": "Stage 4 of 11 released.\nRound 4 of 11 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (4 lines)\n  round-04/changes.md (3 lines)\n  round-04/logs/auth-svc.log (65 lines)\n  round-04/logs/ledger-svc.log (77 lines)\n  round-04/logs/payments-svc.log (74 lines)\n  round-04/logs/search-api.log (59 lines)\n  round-04/logs/shipping-svc.log (86 lines)"
+-  },
+-  {
+-   "id": "s11.act",
+-   "role": "assistant",
+-   "body": "[step 11] execute\nthought: Inspect R4 board, changes, and non-noise log lines.\ncode:\nimport re\nb='/task/fixtures/round-04/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nimport os\nfor f in sorted(os.listdir(b+'logs')):\n  for i,l in enumerate(open(b+'logs/'+f),1):\n    if ('INFO' in l) or 'slow query' in l: continue\n    print(f,i,l.rstrip()[:150])"
+-  },
+-  {
+-   "id": "s11.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 04\nboard.md 2 \nboard.md 3 - Thread B opened: errors in shipping-svc. Suspected cause: database connection pool exhausted (DB_POOL_EXHAUSTED). Status: ongoing.\nboard.md 4 - Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\nchanges.md 1 # Change log: round 04\nchanges.md 2 \nchanges.md 3 - CHG-133 APPLIED: dashboard panels for p99 latency added\nledger-svc.log 28 2026-09-14T11:18:41Z WARN  ledger-svc consumer lag topic=stock-updates lag=33224\nledger-svc.log 53 2026-09-14T11:40:57Z WARN  ledger-svc consumer lag topic=stock-updates lag=32120\nledger-svc.log 60 2026-09-14T11:48:33Z WARN  ledger-svc consumer lag topic=stock-updates lag=71455\nledger-svc.log 65 2026-09-14T11:52:26Z WARN  ledger-svc consumer lag topic=stock-updates lag=68165\nledger-svc.log 73 2026-09-14T11:57:41Z WARN  ledger-svc consumer lag topic=stock-updates lag=45436\nledger-svc.log 74 2026-09-14T11:57:56Z WARN  ledger-svc consumer lag topic=stock-updates lag=59648\nledger-svc.log 77 2026-09-14T11:59:16Z WARN  ledger-svc consumer lag topic=stock-updates lag=48587\npayments-svc.log 27 2026-09-14T11:17:14Z WARN  payments-svc consumer lag topic=stock-updates lag=54465\npayments-svc.log 30 2026-09-14T11:20:38Z WARN  payments-svc consumer lag topic=stock-updates lag=22614\npayments-svc.log 51 2026-09-14T11:43:55Z WARN  payments-svc consumer lag topic=stock-updates lag=80203\npayments-svc.log 52 2026-09-14T11:44:44Z WARN  payments-svc consumer lag topic=stock-updates lag=61459\npayments-svc.log 55 2026-09-14T11:44:51Z WARN  payments-svc consumer lag topic=stock-updates lag=46016\npayments-svc.log 71 2026-09-14T11:58:51Z WARN  payments-svc consumer lag topic=stock-updates lag=32279\npayments-svc.log 72 2026-09-14T11:59:11Z WARN  payments-svc consumer lag topic=stock-updates lag=40994\nshipping-svc.log 1 2026-09-14T11:00:43Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 2 2026-09-14T11:00:44Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 4 2026-09-14T11:02:10Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 13 2026-09-14T11:06:46Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 17 2026-09-14T11:08:04Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 18 2026-09-14T11:09:16Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 24 2026-09-14T11:11:06Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 40 2026-09-14T11:25:11Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 41 2026-09-14T11:25:30Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 48 2026-09-14T11:33:10Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 55 2026-09-14T11:39:23Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 75 2026-09-14T11:53:38Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 85 2026-09-14T11:58:06Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\n"
++   "id": "n4",
++   "role": "note",
++   "body": "R4: board.md:3 Thread B shipping-svc DB_POOL_EXHAUSTED ongoing (board guess; logs disagree). board.md:4 follow-up OPEN RUNBOOK_UPDATE. changes CHG-133 dashboards (noise). shipping-svc.log ERRORs tls handshake failed peer=sso.example.net certificate_expired lines 1-85 (e.g. 1,2,4,13,85) -> real cause CERT_EXPIRED. No DB pool errors seen. Lag WARNs payments(27-72) ledger(28-77) still fluctuating 22k-80k. Next: advance to R5."
+   }
+  ]
+ }

@@ -1,0 +1,59 @@
+--- rev-26
++++ rev-27
+@@ -2,54 +2,9 @@
+  "format": "clm-context/v1",
+  "entries": [
+   {
+-   "id": "sum5",
++   "id": "sum6",
+    "role": "summary",
+-   "body": "Rounds 1-5 of 10 released; 6-10 pending. R5 notes were being saved at step 15 (write not confirmed).\n\nLog format: `2026-09-14THH:MM:SSZ LEVEL <svc> <msg> key=val`. Ignore slow query, gc cycle, request ok, heartbeat, health ok.\n\nChanges:\n- CHG-108 PROPOSED in R1, no effect.\n- CHG-116 (health sampling 1%) and CHG-121 (payments 8.56.0, no config change) are irrelevant.\n- CHG-120 APPLIED: notify-worker 8.56.0 sets http.max_inflight=0 (round-02/changes.md:4). Possible BAD_CONFIG_ROLLOUT; cite it if that becomes a thread.\n- CHG-125 dashboards, CHG-133 and CHG-138 TLS ticket rotation: irrelevant.\n- CHG-143 APPLIED: thread A mitigation on auth-svc (round-05/changes.md:4).\n\nFollow-ups OPEN: ALERT_TUNING (round-02/board.md:3), RUNBOOK_UPDATE (round-02/board.md:4), VENDOR_TICKET (round-02/board.md:5), CAPACITY_REVIEW (round-05/board.md:5).\n\nThread A:\n- Cause DB_POOL_EXHAUSTED; services auth-svc, search-api.\n- Status mitigated (round-05/board.md:3). No pool errors in R5 logs.\n- Log format: `WARN <svc> db pool exhausted wait_ms=N in_use=X/X`.\n- Refs: round-02/logs/auth-svc.log:1-25; round-03/logs/search-api.log:1-14; round-04/logs/auth-svc.log:7-39; round-05/changes.md:4.\n\nThread B:\n- Opened round-04/board.md:3 with suspected cause CACHE_STAMPEDE; status ongoing.\n- Services payments-svc, plus checkout-api (round-05/board.md:4).\n- Logs show `upstream returned 429 upstream=fx-rates retry_after_s=N`, so the true cause is likely UPSTREAM_RATE_LIMIT. Watch for a board correction.\n- Refs: round-04/logs/payments-svc.log:1-45; round-05/logs/payments-svc.log:13-73; round-05/logs/checkout-api.log:21-65.\n\nNext: advance through R10, inspecting each round. Submit the final answer only after R10."
+-  },
+-  {
+-   "id": "s15.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s16.act",
+-   "role": "assistant",
+-   "body": "[step 16] advance\nthought: "
+-  },
+-  {
+-   "id": "s16.obs",
+-   "role": "observation",
+-   "body": "Stage 6 of 10 released.\nRound 6 of 10 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (4 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/auth-svc.log (58 lines)\n  round-06/logs/checkout-api.log (81 lines)\n  round-06/logs/notify-worker.log (63 lines)\n  round-06/logs/payments-svc.log (79 lines)\n  round-06/logs/search-api.log (61 lines)"
+-  },
+-  {
+-   "id": "s17.act",
+-   "role": "assistant",
+-   "body": "[step 17] execute\nthought: Inspect R6 compactly, append notes.\ncode:\nimport os,re\nfrom collections import defaultdict\nb='/task/fixtures/round-06/'\nout=[]\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):\n    if l.strip() and not l.startswith('#'): out.append(f'{f} {i} {l.rstrip()}')\nnoise=re.compile(r'slow query|gc cycle|request ok|heartbeat|health ok')\nfor f in sorted(os.listdir(b+'logs')):\n  d=defaultdict(list)\n  for i,l in enumerate(open(b+'logs/'+f),1):\n    if noise.search(l): continue\n    k=re.sub(r'\\d+','N',l.split(' ',3)[-1])[:70]\n    d[k].append(i)\n  for k,v in d.items(): out.append(f'{f} {v[0]}-{v[-1]} {len(v)} {k.strip()}')\ns='\\n'.join(out);print(s)\nopen('/task/workspace/notes.md','a').write('\\nR6 raw:\\n'+s+'\\n')"
+-  },
+-  {
+-   "id": "s17.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=3.0s\n--- stdout ---\nboard.md 3 - Follow-up CLOSED ALERT_TUNING.\nboard.md 4 - Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\nchanges.md 3 - CHG-147 APPLIED: retry budget for idempotent GETs set to 1\ncheckout-api.log 19-77 6 upstream returned N upstream=fx-rates retry_after_s=N\npayments-svc.log 3-76 11 upstream returned N upstream=fx-rates retry_after_s=N\n"
+-  },
+-  {
+-   "id": "s18.act",
+-   "role": "assistant",
+-   "body": "[step 18] advance\nthought: "
+-  },
+-  {
+-   "id": "s18.obs",
+-   "role": "observation",
+-   "body": "Stage 7 of 10 released.\nRound 7 of 10 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (2 lines)\n  round-07/logs/auth-svc.log (79 lines)\n  round-07/logs/checkout-api.log (70 lines)\n  round-07/logs/notify-worker.log (63 lines)\n  round-07/logs/payments-svc.log (83 lines)\n  round-07/logs/search-api.log (65 lines)"
+-  },
+-  {
+-   "id": "s19.act",
+-   "role": "assistant",
+-   "body": "[step 19] execute\nthought: Inspect R7 compactly and append notes.\ncode:\nimport os,re\nfrom collections import defaultdict\nb='/task/fixtures/round-07/'\nout=[]\nfor f in ['board.md','changes.md']:\n  if not os.path.exists(b+f): continue\n  for i,l in enumerate(open(b+f),1):\n    if l.strip() and not l.startswith('#'): out.append(f'{f} {i} {l.rstrip()}')\nnoise=re.compile(r'slow query|gc cycle|request ok|heartbeat|health ok')\nfor f in sorted(os.listdir(b+'logs')):\n  d=defaultdict(list)\n  for i,l in enumerate(open(b+'logs/'+f),1):\n    if noise.search(l): continue\n    k=re.sub(r'\\d+','N',l.split(' ',3)[-1])[:70]\n    d[k].append(i)\n  for k,v in d.items(): out.append(f'{f} {v[0]}-{v[-1]} {len(v)} {k.strip()}')\ns='\\n'.join(out);print(s)\nopen('/task/workspace/notes.md','a').write('\\nR7 raw:\\n'+s+'\\n')"
+-  },
+-  {
+-   "id": "s19.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.5s\n--- stdout ---\ncheckout-api.log 11-66 12 upstream returned N upstream=fx-rates retry_after_s=N\npayments-svc.log 1-82 10 upstream returned N upstream=fx-rates retry_after_s=N\n"
++   "body": "Rounds 1-7 of 10 released; 8-10 pending. Notes are in /task/workspace/notes.md, with R6 and R7 appended.\n\nLog format: `2026-09-14THH:MM:SSZ LEVEL <svc> <msg> key=val`. Ignore slow query, gc cycle, request ok, heartbeat, health ok.\n\nChanges:\n- CHG-120 APPLIED: notify-worker http.max_inflight=0 (round-02/changes.md:4). Possible BAD_CONFIG_ROLLOUT, but no thread yet.\n- CHG-143 APPLIED: thread A mitigation (round-05/changes.md:4).\n- CHG-147 APPLIED (round-06/changes.md:3): retry budget set to 1.\n- All other change records are irrelevant.\n\nFollow-ups:\n- OPEN: RUNBOOK_UPDATE (round-02/board.md:4), VENDOR_TICKET (round-02/board.md:5), CAPACITY_REVIEW (round-05/board.md:5), CUSTOMER_COMMS (round-06/board.md:4).\n- CLOSED: ALERT_TUNING (round-06/board.md:3).\n\nThread A:\n- DB_POOL_EXHAUSTED; auth-svc, search-api; mitigated (round-05/board.md:3).\n- Refs: round-02/logs/auth-svc.log:1-25; round-03/logs/search-api.log:1-14; round-04/logs/auth-svc.log:7-39; round-05/changes.md:4.\n\nThread B:\n- Board cause CACHE_STAMPEDE (round-04/board.md:3), status ongoing; payments-svc, checkout-api (round-05/board.md:4).\n- Logs show fx-rates 429s, so the true cause is likely UPSTREAM_RATE_LIMIT. Watch for a board correction.\n- Refs: round-06/logs/payments-svc.log:3-76; round-07/logs/payments-svc.log:1-82; round-07/logs/checkout-api.log:11-66.\n\nNext: advance and inspect R8-R10, then submit the final answer."
+   },
+   {
+    "id": "s20.act",

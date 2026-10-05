@@ -1,0 +1,24 @@
+--- rev-54
++++ rev-55
+@@ -45,6 +45,21 @@
+    "id": "n9",
+    "role": "note",
+    "body": "R9: Thread B cause revised DNS_RESOLUTION (round-09/board.md:3). Thread C inventory-svc failures cause unknown ongoing (board.md:4). Thread D closed false alarm (board.md:5). Follow-up OPEN POSTMORTEM_DRAFT (board.md:6). inventory-svc config validation ERRORs (round-09/logs/inventory-svc.log:2,15,28) -> likely BAD_CONFIG_ROLLOUT from CHG-120 (round-02/changes.md:3). DNS continues ledger (round-09/logs/ledger-svc.log:3,9) pricing (round-09/logs/pricing-svc.log:3,14)."
++  },
++  {
++   "id": "s33.act",
++   "role": "assistant",
++   "body": "[step 33] execute\nthought: Read spilled R10 observation compactly and prune s32 entries.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))\nt=open('/task/workspace/spill/s32.obs.txt').read()\nls=t.splitlines()\nfor l in ls:\n  if l.startswith('board') or l.startswith('changes'):print(l[:180])\nimport collections\nd=collections.defaultdict(list)\nfor l in ls:\n  p=l.split(' ',2)\n  if len(p)>2 and p[0].endswith('.log'):d[p[0]].append((p[1],p[2][:90]))\nfor k,v in d.items():print(k,len(v),[x[0] for x in v][:8],v[0][1])"
++  },
++  {
++   "id": "s33.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 10\nboard.md 2 \nboard.md 3 - Thread C note: failing pods still restarting; investigation continues.\nchanges.md 1 # Change log: round 10\nchanges.md 2 \nchanges.md 3 - CHG-170 PROPOSED: move batch jobs to off-peak window (not applied)\ninventory-svc.log 6 ['13', '19', '32', '34', '41', '50'] {\"ts\":\"2026-09-14T17:11:16Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"config validatio\nledger-svc.log 10 ['2', '7', '17', '24', '31', '55', '57', '63'] {\"ts\":\"2026-09-14T17:00:25Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\npricing-svc.log 12 ['1', '10', '12', '20', '23', '25', '32', '38'] {\"ts\":\"2026-09-14T17:01:03Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\"\n"
++  },
++  {
++   "id": "s33.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 33: revision 53 -> 54; entries 12 -> 9; body chars 3384 -> 2552; removed [s32.act, s32.obs, s32.rcpt]; added []; rewritten []"
+   }
+  ]
+ }

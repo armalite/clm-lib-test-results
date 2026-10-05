@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('\nR8: board.md:3 A resolved; :4 B mitigated; :5 C opened search-api ongoing; :6 CAPACITY_REVIEW OPEN. search-api config validation errors log:24-84 (likely BAD_CONFIG_ROLLOUT CHG-113 r01/changes.md:4). B 429 auth:29,40 ship:41,42.\n')
+l=open('/task/fixtures/round-08/logs/search-api.log').readlines();print(l[23][:200])

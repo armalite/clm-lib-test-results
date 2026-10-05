@@ -1,0 +1,1 @@
+open('/task/workspace/notes.md','a').write('R6: board.md:3 RUNBOOK_UPDATE open. CHG-144 APPLIED (log sampling, irrelevant). Log format now JSON (use level field). auth/shipping still CERT; others clean.\n');print('ok')

@@ -1,0 +1,24 @@
+--- rev-33
++++ rev-34
+@@ -35,6 +35,21 @@
+    "id": "n7",
+    "role": "note",
+    "body": "R7: board.md:3 Thread B cause revised CERT_EXPIRED (auth-svc+shipping-svc). board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing; search-api 429 upstream=tax-provider lines [4, 5, 20, 22, 25, 47, 64, 66, 69] (round-07/logs/search-api.log). cert_expired auth-svc 1-64 continues. Next: advance to round 8."
++  },
++  {
++   "id": "s23.act",
++   "role": "assistant",
++   "body": "[step 23] execute\nthought: Read round 8 board and scan logs; compact context.\ncode:\nimport json,os\nb='/task/fixtures/round-08/'\nprint(open(b+'board.md').read())\nfor f in sorted(os.listdir(b+'logs')):\n  s=open(b+'logs/'+f).read().splitlines()\n  for k in ['certificate_expired','429','SERVFAIL','pool','OOM','disk','lag','config']:\n    e=[i+1 for i,x in enumerate(s) if k in x]\n    if e: print(f,k,len(e),e[:4],e[-1])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s23.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.7s\n--- stdout ---\n# Incident board: updates in round 08\n\n- Thread A status: resolved (no recurrence for two hours).\n- Thread B status: mitigated (workaround in place; permanent fix pending).\n- Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\n- Follow-up OPEN DATA_BACKFILL: backfill of records missed during the incident.\n- Follow-up CLOSED VENDOR_TICKET.\n\nauth-svc.log certificate_expired 2 [8, 61] 61\nsearch-api.log 429 6 [1, 12, 14, 20] 66\nsearch-api.log config 9 [2, 5, 10, 26] 72\nshipping-svc.log certificate_expired 2 [50, 60] 60\n"
++  },
++  {
++   "id": "s23.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 23: revision 32 -> 33; entries 12 -> 7; body chars 3921 -> 2038; removed [s21.act, s21.obs, s21.rcpt, s22.act, s22.obs]; added []; rewritten []"
+   }
+  ]
+ }

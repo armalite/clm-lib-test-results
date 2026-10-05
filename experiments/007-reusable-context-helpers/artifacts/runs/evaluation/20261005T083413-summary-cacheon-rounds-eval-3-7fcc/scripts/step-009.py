@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('\nR3: board empty. CHG-125 APPLIED retry budget GET=1 (round-03/changes.md:3?). Cert errors continue: inventory r3 lines 9,13,18 (9 errs); ledger r3 23,24,32 (10 errs). No search errors.\n')
+print('ok')

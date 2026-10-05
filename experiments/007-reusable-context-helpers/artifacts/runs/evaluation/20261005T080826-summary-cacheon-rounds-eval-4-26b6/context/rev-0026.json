@@ -1,0 +1,44 @@
+{
+ "number": 26,
+ "parent": 25,
+ "source": "summary",
+ "step": 21,
+ "sha256": "31f7a054aec0dd7053d3e369329bcf232d8daf5d48d93e3cfd6cc5e4ca99d90f",
+ "entries": [
+  {
+   "id": "sum6",
+   "role": "summary",
+   "body": "Summary (round 6 of 11 released; rounds 07-11 still to release via {\"action\":\"advance\"}):\n\nLog format: \"2026-09-14T11:02:24Z WARN  inventory-svc db pool exhausted wait_ms=1403 in_use=10/10\". Ignore \"slow query\" lines. The format may change.\n\nChanges:\n- r01/changes.md:4 CHG-113 APPLIED: search-api cache.ttl_s=-1, not linked to any incident yet.\n- r05/changes.md:3 CHG-137 APPLIED: TLS ticket rotation hourly.\n- r05/changes.md:4 CHG-143 APPLIED: thread A mitigation.\n- CHG-107 (r01:3) and CHG-142 (r06:3) are PROPOSED only.\n\nThreads:\n- A: DB_POOL_EXHAUSTED, inventory-svc and notify-worker. MITIGATED per round-05/board.md:3.\n  - Evidence: round-02 inventory-svc.log:3-78, notify-worker.log:6-57; round-04 inventory-svc.log:3-84.\n  - No pool errors in r05 or r06.\n- B: opened round-04/board.md:3. Board says suspected MEMORY_LEAK, ongoing; services auth-svc and shipping-svc (round-05/board.md:4).\n  - Logs show only tax-provider 429s, so expect a revision to UPSTREAM_RATE_LIMIT.\n  - r06 429 lines: auth-svc.log:8-88 (13 lines); shipping-svc.log:11-88 (13 lines).\n- D: CACHE_STAMPEDE closed as a false alarm (round-05/board.md:5). Exclude it.\n\nFollow-ups: VENDOR_TICKET OPEN (round-04/board.md:4).\n\nNotes: /task/workspace/notes.md is appended through R5; R6 still needs appending.\n\nNext: advance, then print board, changes and non-noise lines each round. Submit final after round 11."
+  },
+  {
+   "id": "s18.act",
+   "role": "assistant",
+   "body": "[step 18] execute\nthought: \ncode:\nopen('/task/workspace/notes.md','a').write('\\nR6: board no updates. CHG-142 PROPOSED. 429s auth-svc.log:8-88 (8,23,34,36,41,45,61,68,70,71,79,86,88) shipping-svc.log:11-88 (11,23,27,29,32,46,47,58,62,67,78,83,88).\\n')\nprint('ok')"
+  },
+  {
+   "id": "s18.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.7s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s19.act",
+   "role": "assistant",
+   "body": "[step 19] advance\nthought: "
+  },
+  {
+   "id": "s19.obs",
+   "role": "observation",
+   "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (3 lines)\n  round-07/logs/auth-svc.log (83 lines)\n  round-07/logs/inventory-svc.log (78 lines)\n  round-07/logs/notify-worker.log (59 lines)\n  round-07/logs/search-api.log (62 lines)\n  round-07/logs/shipping-svc.log (67 lines)"
+  },
+  {
+   "id": "s20.act",
+   "role": "assistant",
+   "body": "[step 20] execute\nthought: \ncode:\nimport glob,re\nb='/task/fixtures/round-07/'\nfor f in ['board.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob(b+'logs/*')):\n  n=f.split('/')[-1];c={}\n  for i,l in enumerate(open(f),1):\n    if 'slow query' in l: continue\n    if re.search('WARN|ERROR|warn|error',l):\n      k=re.sub(r'\\d+','N',l[20:90]);c.setdefault(k,[]).append(i)\n  for k,v in c.items():print(n,k,v[:15],len(v))\nprint(open(b+'logs/auth-svc.log').readline()[:120])"
+  },
+  {
+   "id": "s20.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.7s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 07\nboard.md 2 \nboard.md 3 - Thread B root cause revised: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT); this supersedes the earlier suspicion of MEMORY_LEAK.\nauth-svc.log :N:NZ\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"upstream returned N [3, 11, 17, 23, 24, 34, 38, 44, 56, 67, 73, 76] 12\nshipping-svc.log :N:NZ\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"upstream returned [15, 16, 20, 29, 33, 34, 36, 48, 50] 9\n{\"ts\":\"2026-09-14T14:00:19Z\",\"level\":\"INFO\",\"svc\":\"auth-svc\",\"msg\":\"gc cycle\",\"pause_ms\":37}\n\n"
+  }
+ ]
+}

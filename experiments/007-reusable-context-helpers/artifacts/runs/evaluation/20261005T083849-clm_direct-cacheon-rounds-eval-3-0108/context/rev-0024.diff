@@ -1,0 +1,19 @@
+--- rev-23
++++ rev-24
+@@ -30,6 +30,16 @@
+    "id": "s17.obs",
+    "role": "observation",
+    "body": "Stage 6 of 10 released.\nRound 6 of 10 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (3 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/checkout-api.log (67 lines)\n  round-06/logs/inventory-svc.log (63 lines)\n  round-06/logs/ledger-svc.log (69 lines)\n  round-06/logs/payments-svc.log (78 lines)\n  round-06/logs/search-api.log (77 lines)"
++  },
++  {
++   "id": "s18.act",
++   "role": "assistant",
++   "body": "[step 18] execute\nthought: Inspect round 6 board, changes, and error/warn lines.\ncode:\nimport re,glob\nb='/task/fixtures/round-06/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor p in sorted(glob.glob(b+'logs/*.log')):\n  L=open(p).read().splitlines();n=p.split('/')[-1]\n  hits=[(i,l) for i,l in enumerate(L,1) if re.search(r'ERROR|WARN|429|disk|heap|cert|dns',l,re.I) and 'slow query' not in l]\n  print(n,len(hits))\n  for i,l in hits[:3]+hits[-2:]:print(' ',i,l[:150])"
++  },
++  {
++   "id": "s18.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.8s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 2 \nboard.md 3 - Follow-up CLOSED CUSTOMER_COMMS.\nchanges.md 1 # Change log: round 06\nchanges.md 2 \nchanges.md 3 - CHG-147 APPLIED: TLS session ticket rotation set to hourly\ncheckout-api.log 8\n  17 2026-09-14T13:13:20Z WARN  checkout-api heap usage high rss_mb=2454 gc_pause_ms=613\n  24 2026-09-14T13:21:50Z WARN  checkout-api heap usage high rss_mb=3445 gc_pause_ms=1304\n  35 2026-09-14T13:31:21Z WARN  checkout-api heap usage high rss_mb=2167 gc_pause_ms=1084\n  61 2026-09-14T13:56:55Z WARN  checkout-api heap usage high rss_mb=2595 gc_pause_ms=739\n  66 2026-09-14T13:59:33Z WARN  checkout-api heap usage high rss_mb=2331 gc_pause_ms=993\ninventory-svc.log 0\nledger-svc.log 0\npayments-svc.log 0\nsearch-api.log 8\n  6 2026-09-14T13:06:12Z WARN  search-api disk usage high path=/var/data used_pct=91\n  22 2026-09-14T13:14:59Z WARN  search-api disk usage high path=/var/data used_pct=96\n  28 2026-09-14T13:19:38Z WARN  search-api disk usage high path=/var/data used_pct=97\n  46 2026-09-14T13:37:06Z WARN  search-api disk usage high path=/var/data used_pct=92\n  74 2026-09-14T13:56:00Z WARN  search-api disk usage high path=/var/data used_pct=97\n"
+   }
+  ]
+ }

@@ -1,0 +1,24 @@
+--- rev-39
++++ rev-40
+@@ -35,6 +35,21 @@
+    "id": "n7",
+    "role": "note",
+    "body": "R7: Thread B adds pricing-svc, cause/status unchanged (round-07/board.md:3). Thread D CERT_EXPIRED inventory-svc ongoing (board.md:4); logs tls certificate_expired peer=partner-gw (round-07/logs/inventory-svc.log:7,8,12,21). DNS SERVFAIL continues ledger (round-07/logs/ledger-svc.log:4-21) and pricing (round-07/logs/pricing-svc.log:6-16). CHG-151 PROPOSED only. Next: advance to R8."
++  },
++  {
++   "id": "s25.act",
++   "role": "assistant",
++   "body": "[step 25] execute\nthought: Read spill compactly and prune context.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))\nb='/task/fixtures/round-08/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip()[:160])\nimport re,os\nfor f in sorted(os.listdir(b+'logs')):\n  hits=[i for i,l in enumerate(open(b+'logs/'+f),1) if re.search(r'ERROR|SERVFAIL|expired|429|OOM|backoff',l)]\n  print(f,hits[:12])\n  if hits:print(open(b+'logs/'+f).readlines()[hits[0]-1][:160])"
++  },
++  {
++   "id": "s25.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.7s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 08\nboard.md 2 \nchanges.md 1 # Change log: round 08\nchanges.md 2 \nchanges.md 3 - CHG-156 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc.log []\ninventory-svc.log [6, 16, 18, 24, 57, 66, 73, 77, 78]\n{\"ts\":\"2026-09-14T15:05:37Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"partner-gw\",\"reason\":\"certificate_expired\"}\n\nledger-svc.log [2, 13, 14, 29, 34, 36, 64]\n{\"ts\":\"2026-09-14T15:01:22Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n\npayments-svc.log [49]\n{\"ts\":\"2026-09-14T15:45:01Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"slow query\",\"ms\":429,\"table\":\"items\"}\n\npricing-svc.log [4, 14, 31, 39, 42, 51]\n{\"ts\":\"2026-09-14T15:01:55Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n\n"
++  },
++  {
++   "id": "s25.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 25: revision 38 -> 39; entries 14 -> 7; body chars 3706 -> 1824; removed [s22.act, s22.obs, s22.rcpt, s23.act, s23.obs, s24.act, s24.obs]; added []; rewritten []"
+   }
+  ]
+ }

@@ -1,0 +1,39 @@
+--- rev-10
++++ rev-11
+@@ -2,34 +2,9 @@
+  "format": "clm-context/v1",
+  "entries": [
+   {
+-   "id": "sum2",
++   "id": "sum3",
+    "role": "summary",
+-   "body": "Summary of work so far (rounds 1-2 of 10 released; rounds 3-10 still to be released):\n\nLog format (may change in later rounds): `2026-09-14THH:MM:SSZ LEVEL  <service> <message> key=val ...`\n- Examples: `INFO  auth-svc heartbeat uptime_s=N`, `INFO  <svc> request ok route=... status=200 ms=N`, `INFO  <svc> health ok probe=readiness`, `WARN  <svc> slow query ms=NNN table=events|orders|items`, `INFO  <svc> gc cycle pause_ms=N`.\n- Baseline noise: slow query WARNs (ms about 200-445) and gc cycle INFO lines appear in every service. They are not incidents.\n\nRound 1 (/task/fixtures/round-01/):\n- board.md was empty.\n- changes.md: CHG-108 PROPOSED, raise HPA max replicas for search tier. Not applied, so no effect.\n- Logs showed only noise.\n\nRound 2 (/task/fixtures/round-02/):\n- board.md opened three follow-ups. No incident threads exist yet.\n  - Follow-up OPEN ALERT_TUNING (board.md:3)\n  - Follow-up OPEN RUNBOOK_UPDATE (board.md:4)\n  - Follow-up OPEN VENDOR_TICKET (board.md:5)\n- changes.md:\n  - CHG-116 APPLIED: log sampling for /v1/health reduced to 1% (changes.md:3). This may explain fewer health lines.\n  - CHG-120 APPLIED: build 8.56.0 rolled out to notify-worker; sets `http.max_inflight=0` (changes.md:4). This is a suspicious invalid value and a likely future BAD_CONFIG_ROLLOUT on notify-worker. Watch for it.\n  - CHG-121 APPLIED: build 8.56.0 rolled out to payments-svc; no config changes (changes.md:5).\n- auth-svc shows a new signal: `WARN  auth-svc db pool exhausted wait_ms=N in_use=X/X`.\n  - Lines: round-02/logs/auth-svc.log:1, 3, 15, 22, 23, 25, 44, 65, 69.\n  - wait_ms ranges 807-2877; in_use varies 10/10, 12/12, 16/16, 20/20.\n  - This is a candidate DB_POOL_EXHAUSTED incident on auth-svc, not yet on the board.\n- Other services in round 2: no new error patterns were seen in the scanned output.\n  - The output was truncated after search-api.log line 39.\n  - Still need to check the rest of search-api.log (lines 39-70) for non-noise lines, excluding gc/slow query/ok/heartbeat.\n  - notify-worker showed no errors yet despite CHG-120.\n\nCurrent state:\n- Incident threads: none on the board. Candidate: auth-svc DB_POOL_EXHAUSTED.\n- Open follow-ups: ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET.\n- Closed follow-ups: none.\n\nNotes file: /task/workspace/notes.md has R1 notes. Append R2 notes.\n\nNext steps:\n1. Finish scanning round-02 search-api.log from line 39 on, filtering out gc cycle lines too.\n2. Advance to round 3.\n3. In each round, read board.md (deltas; the latest update for a thread wins) and changes.md (only APPLIED changes count).\n4. Scan logs for new patterns or format changes.\n5. Track per incident: cause, any superseded cause, services, status with its setting record, follow-ups and file:line evidence. Cite the change record when a cause traces back to one (e.g. round-02/changes.md:4 for CHG-120).\n6. Give the final answer only after round 10 is released."
+-  },
+-  {
+-   "id": "s6.act",
+-   "role": "assistant",
+-   "body": "[step 6] execute\nthought: Finish scanning round-02 search-api and append notes.\ncode:\nimport re\nfor i,l in enumerate(open('/task/fixtures/round-02/logs/search-api.log'),1):\n    if i>=39 and not re.search(r'gc cycle|slow query|request ok|heartbeat|health ok',l): print(i,l.rstrip())\nopen('/task/workspace/notes.md','a').write('\\nR2: follow-ups OPEN ALERT_TUNING(b:3),RUNBOOK_UPDATE(b:4),VENDOR_TICKET(b:5). CHG-120 APPLIED notify-worker max_inflight=0 (changes.md:4). auth-svc db pool exhausted lines 1,3,15,22,23,25,44,65,69.\\n')"
+-  },
+-  {
+-   "id": "s6.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s"
+-  },
+-  {
+-   "id": "s7.act",
+-   "role": "assistant",
+-   "body": "[step 7] advance\nthought: "
+-  },
+-  {
+-   "id": "s7.obs",
+-   "role": "observation",
+-   "body": "Stage 3 of 10 released.\nRound 3 of 10 released. New files are under /task/fixtures/round-03/.\n\nNew files:\n  round-03/board.md (3 lines)\n  round-03/changes.md (3 lines)\n  round-03/logs/auth-svc.log (64 lines)\n  round-03/logs/checkout-api.log (78 lines)\n  round-03/logs/notify-worker.log (70 lines)\n  round-03/logs/payments-svc.log (74 lines)\n  round-03/logs/search-api.log (82 lines)"
+-  },
+-  {
+-   "id": "s8.act",
+-   "role": "assistant",
+-   "body": "[step 8] execute\nthought: Read round 3 board, changes, and non-noise log lines.\ncode:\nimport re,glob\nb='/task/fixtures/round-03/'\nfor f in ['board.md','changes.md']:\n    for i,l in enumerate(open(b+f),1): print(f,i,l.rstrip())\nfor p in sorted(glob.glob(b+'logs/*.log')):\n    for i,l in enumerate(open(p),1):\n        if not re.search(r'gc cycle|slow query|request ok|heartbeat|health ok',l): print(p.split('/')[-1],i,l.rstrip()[:150])"
++   "body": "Rounds 1-3 of 10 released; 4-10 not yet. Round 3 files (board 3 lines, changes 3 lines, 5 logs) not yet inspected. The step 8 output was not shown, so rerun it.\n\nLog format: `2026-09-14THH:MM:SSZ LEVEL <svc> <msg> key=val`. Noise to ignore: slow query, gc cycle, request ok, heartbeat, health ok.\n\nR1:\n- Board empty.\n- CHG-108 PROPOSED (no effect).\n\nR2:\n- Follow-ups OPEN: ALERT_TUNING (board.md:3), RUNBOOK_UPDATE (board.md:4), VENDOR_TICKET (board.md:5).\n- CHG-116 APPLIED: health log sampling cut to 1% (changes.md:3).\n- CHG-120 APPLIED: notify-worker build 8.56.0 sets http.max_inflight=0 (round-02/changes.md:4). Likely future BAD_CONFIG_ROLLOUT; cite this record.\n- CHG-121 APPLIED: payments-svc build 8.56.0, no config change (changes.md:5).\n- auth-svc candidate DB_POOL_EXHAUSTED, not yet on the board.\n  - Format: `WARN auth-svc db pool exhausted wait_ms=N in_use=X/X`\n  - Lines: round-02/logs/auth-svc.log:1,3,15,22,23,25,44,65,69\n- search-api scan finished; no new patterns.\n- No incident threads yet.\n\nNotes are in /task/workspace/notes.md (R1-R2).\n\nNext:\n1. Read R3 board, changes and filtered logs; append notes.\n2. Advance through round 10, tracking cause, superseded cause, services, status record, follow-ups and refs.\n3. Give the final answer only after round 10."
+   },
+   {
+    "id": "s8.obs",

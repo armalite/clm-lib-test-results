@@ -1,0 +1,46 @@
+--- rev-20
++++ rev-21
+@@ -4,42 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "R1: CHG-113 APPLIED auth-svc cache.ttl_s=-1 (round-01/changes.md:4) suspect BAD_CONFIG (no auth errors seen r1-r4). payments lag r01 payments-svc.log:7,9. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc ongoing. lag r02 payments-svc.log:3-40, ledger-svc.log:5-77. CHG-117 TLS hourly noise. R3: board empty; CHG-124 PROPOSED; lag r03 payments-svc.log:3-55 ledger-svc.log:20-61; slow queries = noise. R4: board.md:3 Thread B shipping-svc suspected DB_POOL (but logs show CERT_EXPIRED peer=sso.example.net shipping-svc.log:1-13, 13 hits); board.md:4 RUNBOOK_UPDATE OPEN; lag continues r04 payments-svc.log:27-52 ledger-svc.log:28-65; CHG-133 dashboards irrelevant. ctx.py load/save/setnote/prune(keep)."
+-  },
+-  {
+-   "id": "s13.act",
+-   "role": "assistant",
+-   "body": "[step 13] execute\nthought: Save R4 notes and prune.\ncode:\nimport ctx\nctx.prune(keep=())\nctx.setnote('notes','R1: CHG-113 APPLIED auth-svc cache.ttl_s=-1 (round-01/changes.md:4) suspect BAD_CONFIG (no auth errors seen r1-r4). payments lag r01 payments-svc.log:7,9. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc ongoing. lag r02 payments-svc.log:3-40, ledger-svc.log:5-77. CHG-117 TLS hourly noise. R3: board empty; CHG-124 PROPOSED; lag r03 payments-svc.log:3-55 ledger-svc.log:20-61; slow queries = noise. R4: board.md:3 Thread B shipping-svc suspected DB_POOL (but logs show CERT_EXPIRED peer=sso.example.net shipping-svc.log:1-13, 13 hits); board.md:4 RUNBOOK_UPDATE OPEN; lag continues r04 payments-svc.log:27-52 ledger-svc.log:28-65; CHG-133 dashboards irrelevant. ctx.py load/save/setnote/prune(keep).')\nfor i,l in enumerate(open('/task/fixtures/round-04/logs/shipping-svc.log'),1):\n    if 'pool' in l.lower(): print(i,l.strip()[:150])"
+-  },
+-  {
+-   "id": "s13.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.6s"
+-  },
+-  {
+-   "id": "s13.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 13: revision 16 -> 17; entries 10 -> 1; body chars 4728 -> 713; removed [s9.act, s9.obs, s9.rcpt, s10.act, s10.obs, s11.act, s11.obs, s12.act, s12.obs]; added []; rewritten [notes]"
+-  },
+-  {
+-   "id": "s14.act",
+-   "role": "assistant",
+-   "body": "[step 14] advance\nthought: "
+-  },
+-  {
+-   "id": "s14.obs",
+-   "role": "observation",
+-   "body": "Stage 5 of 11 released.\nRound 5 of 11 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (3 lines)\n  round-05/changes.md (3 lines)\n  round-05/logs/auth-svc.log (67 lines)\n  round-05/logs/ledger-svc.log (61 lines)\n  round-05/logs/payments-svc.log (73 lines)\n  round-05/logs/search-api.log (84 lines)\n  round-05/logs/shipping-svc.log (70 lines)"
+-  },
+-  {
+-   "id": "s15.act",
+-   "role": "assistant",
+-   "body": "[step 15] execute\nthought: Inspect round 5 board, changes, and key log signals.\ncode:\nimport re\nb='/task/fixtures/round-05/'\nfor f in ['board.md','changes.md']:\n    for i,l in enumerate(open(b+f),1): print(f,i,l.strip()[:200])\nimport os\nfor s in sorted(os.listdir(b+'logs')):\n    L=open(b+'logs/'+s).read().splitlines()\n    hits=[(i,l) for i,l in enumerate(L,1) if re.search(r'error|warn|lag|cert|429|pool|oom|memory|disk|dns|ttl|miss',l,re.I)]\n    print(s,len(hits))\n    for i,l in hits[:4]+hits[-2:]: print(' ',i,l[:160])"
+-  },
+-  {
+-   "id": "s15.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 05\nboard.md 2 \nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nchanges.md 1 # Change log: round 05\nchanges.md 2 \nchanges.md 3 - CHG-143 APPLIED: mitigation for thread A deployed to payments-svc\nauth-svc.log 10\n  13 2026-09-14T12:10:39Z WARN  auth-svc slow query ms=345 table=items\n  19 2026-09-14T12:13:21Z WARN  auth-svc slow query ms=285 table=items\n  24 2026-09-14T12:15:56Z WARN  auth-svc slow query ms=381 table=items\n  26 2026-09-14T12:16:54Z WARN  auth-svc slow query ms=440 table=items\n  61 2026-09-14T12:53:10Z WARN  auth-svc slow query ms=403 table=orders\n  66 2026-09-14T12:58:50Z WARN  auth-svc slow query ms=283 table=events\nledger-svc.log 13\n  2 2026-09-14T12:01:49Z WARN  ledger-svc slow query ms=341 table=events\n  4 2026-09-14T12:03:48Z WARN  ledger-svc slow query ms=424 table=events\n  16 2026-09-14T12:13:07Z WARN  ledger-svc slow query ms=428 table=items\n  19 2026-09-14T12:15:21Z WARN  ledger-svc slow query ms=341 table=orders\n  56 2026-09-14T12:54:12Z WARN  ledger-svc slow query ms=279 table=events\n  61 2026-09-14T12:58:40Z WARN  ledger-svc slow query ms=334 table=events\npayments-svc.log 21\n  2 2026-09-14T12:02:56Z WARN  payments-svc slow query ms=417 table=orders\n  7 2026-09-14T12:05:47Z WARN  payments-svc slow query ms=253 table=events\n  10 2026-09-14T12:07:57Z WARN  payments-svc slow query ms=421 table=orders\n  12 2026-09-14T12:08:58Z WARN  payments-svc slow query ms=300 table=items\n  70 2026-09-14T12:56:24Z WARN  payments-svc slow query ms=332 table=orders\n  71 2026-09-14T12:57:51Z WARN  payments-svc slow query ms=339 table=orders\nsearch-api.log 20\n  5 2026-09-14T12:04:31Z WARN  search-api slow query ms=205 table=events\n  7 2026-09-14T12:04:48Z WARN  search-api slow query ms=339 table=items\n  8 2026-09-14T12:05:11Z WARN  search-api slow query ms=329 table=orders\n  14 2026-09-14T12:10:24Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\n  79 2026-09-14T12:55:22Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\n  81 2026-09-14T12:57:30Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 17\n  1 2026-09-14T12:00:08Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\n  2 2026-09-14T12:01:34Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\n  5 2026-09-14T12:02:33Z WARN  shipping-svc slow query ms=210 table=items\n  12 2026-09-14T12:06:18Z WARN  shipping-svc slow query ms=290 table=items\n  60 2026-09-14T12:49:54Z WARN  shipping-svc slow query ms=351 table=orders\n  69 2026-09-14T12:59:55Z WARN  shipping-svc slow query ms=328 table=events\n"
++   "body": "R1: CHG-113 APPLIED auth-svc cache.ttl_s=-1 (round-01/changes.md:4) suspect BAD_CONFIG (no auth errors seen r1-r5). payments lag r01 payments-svc.log:7,9. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc. lag r02 payments-svc.log:3-40, ledger-svc.log:5-77. CHG-117 TLS hourly noise. R3: CHG-124 PROPOSED; slow queries=noise. R4: board.md:3 Thread B shipping-svc suspected DB_POOL (logs show CERT_EXPIRED peer=sso.example.net shipping-svc.log:1-13); board.md:4 RUNBOOK_UPDATE OPEN. R5: board.md:3 Thread A mitigated; changes.md:3 CHG-143 APPLIED payments mitigation; CERT_EXPIRED now also search-api (r05 search-api.log:14-81) and shipping-svc.log:1-2. ctx.py load/save/setnote/prune(keep)."
+   }
+  ]
+ }

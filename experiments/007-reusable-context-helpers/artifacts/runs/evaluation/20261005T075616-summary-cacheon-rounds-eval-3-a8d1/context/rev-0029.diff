@@ -1,0 +1,69 @@
+--- rev-28
++++ rev-29
+@@ -2,64 +2,9 @@
+  "format": "clm-context/v1",
+  "entries": [
+   {
+-   "id": "sum5",
++   "id": "sum6",
+    "role": "summary",
+-   "body": "Rounds 1-6 of 10 released; rounds 7-10 still to come.\n\nLog format: `<ISO ts> LEVEL  <service> <msg> key=val`. \"slow query ms=\" WARNs are noise. Notes are in /task/workspace/notes.md.\n\nChanges:\n- r01:3 CHG-109 PROPOSED (HPA search).\n- r01:4 CHG-113 APPLIED: 4.16.4 to search-api, http.max_inflight=-1. Possible BAD_CONFIG.\n- r01:5 CHG-114 APPLIED: 4.16.4 to checkout-api.\n- r02:3 CHG-117 PROPOSED.\n- r03:3 CHG-125 and r04:3 CHG-133 APPLIED: retry budget.\n- r04:4 CHG-136 APPLIED: thread A mitigation to ledger.\n- r06:3 CHG-147 APPLIED: TLS session ticket rotation hourly.\n\nThreads:\n- A: CERT_EXPIRED (sso.example.net). Services: ledger-svc, inventory-svc. Mitigated, set by round-04/board.md:3. Refs: r01 ledger:14-40; r02 ledger:20-28; r02 inventory:10-26; r03 inventory:9-18; r03 ledger:23-43.\n- B: checkout-api, ongoing (r04 board:4). Board suspects UPSTREAM_RATE_LIMIT, but logs show \"heap usage high rss_mb gc_pause_ms\": r04:18-90, r05:6-77, r06:17-66. Likely MEMORY_LEAK.\n- D: DISK_PRESSURE, search-api, ongoing (r04 board:5). \"disk usage high path=/var/data used_pct\": r04:12-62, r05:14-76, r06:6-74.\n\nFollow-ups:\n- Open: POSTMORTEM_DRAFT, CAPACITY_REVIEW (r04 board:6-8); DATA_BACKFILL (r05 board:3).\n- Closed: CUSTOMER_COMMS (r06 board:3).\n\nNext: advance and scan each round through round 10."
+-  },
+-  {
+-   "id": "s18.act",
+-   "role": "assistant",
+-   "body": "[step 18] execute\nthought: Save round 6 notes then advance next.\ncode:\nopen('/task/workspace/notes.md','a').write('\\nR6: FU CLOSED CUSTOMER_COMMS (round-06/board.md:3). CHG-147 APPLIED TLS ticket rotation (r06 changes:3). checkout heap 17-66; search disk 6-74.\\n')\nprint('ok')"
+-  },
+-  {
+-   "id": "s18.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s19.act",
+-   "role": "assistant",
+-   "body": "[step 19] advance\nthought: "
+-  },
+-  {
+-   "id": "s19.obs",
+-   "role": "observation",
+-   "body": "Stage 7 of 10 released.\nRound 7 of 10 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (6 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (66 lines)\n  round-07/logs/ledger-svc.log (55 lines)\n  round-07/logs/payments-svc.log (79 lines)\n  round-07/logs/search-api.log (74 lines)"
+-  },
+-  {
+-   "id": "s20.act",
+-   "role": "assistant",
+-   "body": "[step 20] execute\nthought: Read round 7 board and scan logs.\ncode:\nimport re,glob\nfrom collections import defaultdict\nfor i,l in enumerate(open('/task/fixtures/round-07/board.md'),1): print('board',i,l.rstrip())\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n  d=defaultdict(list)\n  for i,l in enumerate(open(f),1):\n    if re.search(r'WARN|ERROR|429|restart|OOM|cert|disk|heap',l,re.I) and 'slow query' not in l:\n      m=re.sub(r'=\\S+','=',l.split(None,3)[-1].strip())[:70]; d[m].append(i)\n  for m,v in d.items(): print(f.split('/')[-1],v[0],v[-1],len(v),m)"
+-  },
+-  {
+-   "id": "s20.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nboard 1 # Incident board: updates in round 07\nboard 2 \nboard 3 - Thread A status: resolved (no recurrence for two hours).\nboard 4 - Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\nboard 5 - Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\nboard 6 - Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\ncheckout-api.log 6 67 13 heap usage high rss_mb= gc_pause_ms=\nsearch-api.log 17 58 9 config validation failed key= value= build=\n"
+-  },
+-  {
+-   "id": "s21.act",
+-   "role": "assistant",
+-   "body": "[step 21] execute\nthought: Save round 7 notes.\ncode:\nopen('/task/workspace/notes.md','a').write('\\nR7: A RESOLVED (round-07/board.md:3). Thread C opened search-api ongoing (board:4); logs search 17-58 config validation failed -> BAD_CONFIG_ROLLOUT (CHG-113 r01 changes:4). D closed false alarm (board:5). FU OPEN VENDOR_TICKET (board:6). checkout heap 6-67.\\n')\nimport re\nfor i,l in enumerate(open('/task/fixtures/round-07/logs/search-api.log'),1):\n  if 'config validation' in l: print(i,l.strip()[:160]); break"
+-  },
+-  {
+-   "id": "s21.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.6s\n--- stdout ---\n17 2026-09-14T14:12:20Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4\n"
+-  },
+-  {
+-   "id": "s22.act",
+-   "role": "assistant",
+-   "body": "[step 22] advance\nthought: "
+-  },
+-  {
+-   "id": "s22.obs",
+-   "role": "observation",
+-   "body": "Stage 8 of 10 released.\nRound 8 of 10 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (5 lines)\n  round-08/changes.md (3 lines)\n  round-08/logs/checkout-api.log (75 lines)\n  round-08/logs/inventory-svc.log (78 lines)\n  round-08/logs/ledger-svc.log (75 lines)\n  round-08/logs/payments-svc.log (64 lines)\n  round-08/logs/search-api.log (89 lines)"
+-  },
+-  {
+-   "id": "s23.act",
+-   "role": "assistant",
+-   "body": "[step 23] execute\nthought: Scan round 8.\ncode:\nimport re,glob\nfrom collections import defaultdict\nfor fn in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-08/'+fn),1): print(fn,i,l.rstrip())\nfor f in sorted(glob.glob('/task/fixtures/round-08/logs/*.log')):\n  d=defaultdict(list)\n  for i,l in enumerate(open(f),1):\n    if re.search(r'WARN|ERROR|429|restart|OOM|cert|disk|heap',l,re.I) and 'slow query' not in l:\n      m=re.sub(r'=\\S+','=',l.split(None,3)[-1].strip())[:70]; d[m].append(i)\n  for m,v in d.items(): print(f.split('/')[-1],v[0],v[-1],len(v),m)"
++   "body": "Rounds 1-8 of 10 released; round 8 has not been read yet (the board/changes/log scan in step 23 had no output yet). Rounds 9-10 are still to come.\n\nLog format: `<ISO ts> LEVEL <service> <msg> key=val`. \"slow query ms=\" WARNs are noise. Notes are in /task/workspace/notes.md (up to R7).\n\nChanges:\n- r01 changes:3 CHG-109 PROPOSED (HPA for search).\n- r01 changes:4 CHG-113 APPLIED: build 4.16.4 to search-api, http.max_inflight=-1.\n- r01:5 CHG-114 APPLIED: 4.16.4 to checkout-api.\n- r02:3 CHG-117 PROPOSED.\n- r03:3 CHG-125 and r04:3 CHG-133 APPLIED: retry budget.\n- r04:4 CHG-136 APPLIED: thread A mitigation to ledger.\n- r06:3 CHG-147 APPLIED: TLS session ticket rotation hourly.\n\nThreads:\n- A: CERT_EXPIRED (sso.example.net) on ledger-svc and inventory-svc. Status RESOLVED, set by round-07/board.md:3 (earlier mitigated per r04 board:3). Refs: r01 ledger:14-40; r02 ledger:20-28; r02 inventory:10-26; r03 inventory:9-18; r03 ledger:23-43.\n- B: checkout-api, ongoing (r04 board:4). Board suspects UPSTREAM_RATE_LIMIT, but logs show only \"heap usage high rss_mb gc_pause_ms\": r04:18-90, r05:6-77, r06:17-66, r07:6-67. Likely MEMORY_LEAK.\n- C: search-api, ongoing (round-07/board.md:4), cause not yet named by the board. Logs: \"config validation failed key=http.max_inflight value=-1 build=4.16.4\" at r07 search-api:17-58. Points to BAD_CONFIG_ROLLOUT; cite CHG-113 (r01 changes:4).\n- D: DISK_PRESSURE on search-api, closed as a false alarm (round-07/board.md:5); exclude from the answer.\n\nFollow-ups:\n- Open: POSTMORTEM_DRAFT, CAPACITY_REVIEW (r04 board:6-8); DATA_BACKFILL (r05 board:3); VENDOR_TICKET (r07 board:6).\n- Closed: CUSTOMER_COMMS (r06 board:3).\n\nNext: re-run the round 8 scan (board, changes, logs), record notes, then advance through rounds 9 and 10 and submit the final answer."
+   },
+   {
+    "id": "s23.obs",

@@ -1,0 +1,110 @@
+{
+ "meta": {
+  "kind": "summary",
+  "step": 12,
+  "attempt": 0,
+  "est_input_tokens": 4159,
+  "input_token_bound": 10763,
+  "reserved_usd": 0.135735,
+  "context_revision": 14,
+  "context_sha256": "1771c0805f8013096eee600e5233853810128a35416c30c58627312c01cdaf37",
+  "layout": "blocks/1",
+  "cache_ttl": "5m",
+  "prefix": {
+   "family": "summary",
+   "blocks": 10,
+   "system_blocks": 2,
+   "breakpoint_blocks": [
+    2,
+    8
+   ],
+   "previous": true,
+   "common_blocks": 3,
+   "first_changed_block": 3,
+   "common_prefix_chars": 3510
+  },
+  "summary_policy": "token-tail/1",
+  "older_entries": [
+   "sum3",
+   "s7.obs",
+   "s8.act",
+   "s8.obs",
+   "s9.act",
+   "s9.obs"
+  ],
+  "kept_tail": [
+   "s10.act",
+   "s10.obs",
+   "s11.act",
+   "s11.obs"
+  ],
+  "summary_attempt": 0,
+  "requested_max_chars": 912,
+  "forced": false
+ },
+ "sha256": "9d3b9a0fc0185a98c18998475f1754c4b76190e326f82185d1397c16e357fd53",
+ "payload": {
+  "model": "claude-opus-5-5",
+  "max_tokens": 4096,
+  "system": [
+   {
+    "type": "text",
+    "text": "run-ref: 903f1c3b9af5551fa675e53e3422680c\n"
+   },
+   {
+    "type": "text",
+    "text": "You compress an agent's working transcript. The agent is\ninvestigating a multi-service production incident whose evidence arrives in hourly rounds, and will\nkeep working after your summary replaces the entries below. The transcript may include an earlier\nsummary: carry its facts forward. Preserve, exactly and verbatim where relevant:\n- each incident thread: its current cause and any superseded cause, affected services, current\n  status and the record that set it;\n- follow-up items opened and closed, with their codes;\n- early facts that may matter later (change records, builds, configuration values);\n- every file:line reference needed as evidence, and observed log formats;\n- open questions and the next planned steps, including rounds still to be released.\nDrop repetition and raw log dumps. Use compact bullet points. Plain text only. Stay within the\nrequested length; it is set so the agent has room to continue."
+   }
+  ],
+  "messages": [
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "text",
+      "text": "<task>\nProduction incident investigation across several services. Evidence arrives in\n11 hourly rounds. Only round 1 is available now, under /task/fixtures/round-01/.\n\nEach round directory holds:\n- logs/<service>.log: that hour's structured service logs (the log format may change).\n- board.md: the incident board's updates during that hour. An update lists only what\n  changed; anything it does not mention is unchanged. The latest update for a thread wins.\n- changes.md (some rounds): change records. APPLIED changes took effect; PROPOSED did not.\n\nReply {\"action\": \"advance\"} to release the next round. Released rounds never change and stay\nreadable. A final answer is accepted only after all 11 rounds are released.\n\nFinal answer (all fields required):\n  {\"action\": \"final\", \"answer\": {\n     \"incidents\": [{\"cause\": \"<CAUSE_CODE>\", \"services\": [\"<service>\", ...],\n                    \"status\": \"ongoing|mitigated|resolved\",\n                    \"evidence_refs\": [\"round-NN/<file>:<line>\", ...]}, ...],\n     \"unresolved\": [\"<FOLLOW_UP_CODE>\", ...],\n     \"summary\": \"<short free text>\"}}\n- incidents: every real incident at the end of the final round (not false alarms), one entry\n  per incident, with its current cause, all affected services and its current status.\n- evidence_refs: path:line references (relative to /task/fixtures, ranges up to 20 lines as\n  path:a-b) supporting the incident's current cause and current status; when the cause traces\n  back to an earlier change record, cite that record too.\n- unresolved: follow-up items still open at the end of the final round.\n\nCause codes:\n  DB_POOL_EXHAUSTED: database connection pool exhausted\n  CACHE_STAMPEDE: cache miss storm after mass expiry\n  CERT_EXPIRED: an expired TLS certificate on a dependency\n  DNS_RESOLUTION: DNS lookups failing for a dependency\n  QUEUE_BACKLOG: message consumer lag growing\n  MEMORY_LEAK: process memory growing until restarts\n  UPSTREAM_RATE_LIMIT: an upstream provider rejecting requests with 429\n  DISK_PRESSURE: a data volume running out of space\n  BAD_CONFIG_ROLLOUT: a configuration value shipped by a rollout is invalid\nFollow-up codes:\n  CUSTOMER_COMMS: customer communication about the impact\n  DATA_BACKFILL: backfill of records missed during the incident\n  CAPACITY_REVIEW: capacity review of the affected tier\n  ALERT_TUNING: tuning of noisy or late alerts\n  VENDOR_TICKET: a ticket open with an external vendor\n  POSTMORTEM_DRAFT: drafting the postmortem\n  RUNBOOK_UPDATE: updating the runbook\n</task>\n\n<transcript_to_summarise>\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"sum3\", \"role\": \"summary\", \"body\": \"R1-2 of 11 done; R3 released (unread), R4-11 pending.\\nLog fmt: `2026-09-14THH:MM:SSZ LEVEL \\u003csvc> \\u003cmsg> k=v`; noise: request ok|health ok|heartbeat|gc cycle|slow query. May change.\\nR1 changes.md: :3 CHG-107 PROPOSED; :4 CHG-113 APPLIED search-api build 8.23.7 cache.ttl_s=-1 (likely BAD_CONFIG/STAMPEDE src); :5 CHG-114 APPLIED auth-svc.\\nThread A: DB_POOL_EXHAUSTED, inventory-svc+notify-worker, ongoing (round-02/board.md:3). Refs: round-02/logs/inventory-svc.log:3-19, round-02/logs/notify-worker.log:6-14, round-01/logs/inventory-svc.log:5-9.\\nFollow-ups: none.\\nNotes: /task/workspace/notes.md.\\nNext: read R3 board+filtered logs, advance to R11, final.\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s7.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.3s\\n--- stdout ---\\n# Incident board: updates in round 03\\n\\n- Thread D opened: cache miss storm after mass expiry alerts (CACHE_STAMPEDE) on auth-svc. Status: ongoing.\\n\\nauth-svc.log 1 2026-09-14T10:01:34Z WARN  auth-svc cache miss storm key_prefix=sku: misses_per_s=2148\\nauth-svc.log 15 2026-09-14T10:11:04Z WARN  auth-svc cache miss storm key_prefix=price: misses_per_s=3137\\nauth-svc.log 16 2026-09-14T10:11:31Z WARN  auth-svc cache miss storm key_prefix=user: misses_per_s=1042\\nauth-svc.log 18 2026-09-14T10:13:20Z WARN  auth-svc cache miss storm key_prefix=user: misses_per_s=3960\\nauth-svc.log 24 2026-09-14T10:23:23Z WARN  auth-svc cache miss storm key_prefix=sku: misses_per_s=2889\\nauth-svc.log 43 2026-09-14T10:38:11Z WARN  auth-svc cache miss storm key_prefix=sku: misses_per_s=1522\\ninventory-svc.log 12 2026-09-14T10:08:39Z WARN  inventory-svc db pool exhausted wait_ms=2708 in_use=20/20\\ninventory-svc.log 22 2026-09-14T10:16:49Z WARN  inventory-svc db pool exhausted wait_ms=2778 in_use=12/12\\ninventory-svc.log 30 2026-09-14T10:21:42Z WARN  inventory-svc db pool exhausted wait_ms=1967 in_use=10/10\\ninventory-svc.log 49 2026-09-14T10:36:06Z WARN  inventory-svc db pool exhausted wait_ms=2570 in_use=16/16\\ninventory-svc.log 54 2026-09-14T10:40:00Z WARN  inventory-svc db pool exhausted wait_ms=2473 in_use=20/20\\ninventory-svc.log 63 2026-09-14T10:43:28Z WARN  inventory-svc db pool exhausted wait_ms=2402 in_use=12/12\\ninventory-svc.log 76 2026-09-14T10:57:17Z WARN  inventory-svc db pool exhausted wait_ms=1187 in_use=12/12\\nnotify-worker.log 4 2026-09-14T10:02:30Z WARN  notify-worker db pool exhausted wait_ms=2027 in_use=20/20\\nnotify-worker.log 11 2026-09-14T10:08:20Z WARN  notify-worker db pool exhausted wait_ms=1350 in_use=16/16\\nnotify-worker.log 13 2026-09-14T10:08:46Z WARN  notify-worker db pool exhausted wait_ms=1685 in_use=10/10\\nnotify-worker.log 16 2026-09-14T10:10:52Z WARN  notify-worker db pool exhausted wait_ms=1937 in_use=16/16\\nnotify-worker.log 23 2026-09-14T10:17:14Z WARN  notify-worker db pool exhausted wait_ms=1987 in_use=10/10\\nnotify-worker.log 28 2026-09-14T10:19:14Z WARN  notify-worker db pool exhausted wait_ms=1932 in_use=16/16\\nnotify-worker.log 35 2026-09-14T10:24:18Z WARN  notify-worker db pool exhausted wait_ms=1608 in_use=16/16\\nnotify-worker.log 55 2026-09-14T10:40:07Z WARN  notify-worker db pool exhausted wait_ms=1419 in_use=20/20\\nnotify-worker.log 62 2026-09-14T10:47:11Z WARN  notify-worker db pool exhausted wait_ms=2073 in_use=12/12\\nnotify-worker.log 67 2026-09-14T10:52:59Z WARN  notify-worker db pool exhausted wait_ms=2279 in_use=20/20\\nnotify-worker.log 71 2026-09-14T10:54:40Z WARN  notify-worker db pool exhausted wait_ms=2629 in_use=10/10\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s8.act\", \"role\": \"assistant\", \"body\": \"[step 8] execute\\nthought: Save R3 notes then advance.\\ncode:\\nopen('/task/workspace/notes.md','a').write('\\\\nR3: board.md:3 Thread D CACHE_STAMPEDE auth-svc ongoing; refs round-03/logs/auth-svc.log:1-18. Thread A continues: round-03/logs/inventory-svc.log:12-30, round-03/logs/notify-worker.log:4-23.\\\\n')\\nprint('ok')\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s8.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.5s\\n--- stdout ---\\nok\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s9.act\", \"role\": \"assistant\", \"body\": \"[step 9] advance\\nthought: \"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s9.obs\", \"role\": \"observation\", \"body\": \"Stage 4 of 11 released.\\nRound 4 of 11 released. New files are under /task/fixtures/round-04/.\\n\\nNew files:\\n  round-04/board.md (4 lines)\\n  round-04/logs/auth-svc.log (101 lines)\\n  round-04/logs/inventory-svc.log (89 lines)\\n  round-04/logs/notify-worker.log (74 lines)\\n  round-04/logs/search-api.log (69 lines)\\n  round-04/logs/shipping-svc.log (79 lines)\"}\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "</transcript_to_summarise>\n\nWrite the replacement summary now, at most 912 characters."
+     }
+    ]
+   }
+  ],
+  "output_config": {
+   "effort": "low"
+  }
+ }
+}

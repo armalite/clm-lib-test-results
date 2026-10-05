@@ -1,0 +1,25 @@
+--- rev-46
++++ rev-47
+@@ -47,19 +47,9 @@
+    "body": "R9: board.md:3 Thread B cause DNS_RESOLUTION confirmed; board.md:4 Thread C inventory-svc ongoing cause unknown (likely BAD_CONFIG_ROLLOUT CHG-120 r02 changes.md:3); board.md:5 Thread D false alarm; board.md:6 POSTMORTEM_DRAFT OPEN. ledger/pricing dns errors continue (ledger :3-, pricing :3-). inventory config validation failed retry.backoff_ms=0 build 7.30.0 r09 inventory-svc.log:2,15,28,29,42-71 -> BAD_CONFIG_ROLLOUT. Next: advance to round 10."
+   },
+   {
+-   "id": "s31.act",
+-   "role": "assistant",
+-   "body": "[step 31] execute\nthought: Inspect round 10 board/changes and key errors; compact context.\ncode:\nimport json,re\nb='/task/fixtures/round-10/'\nfor f in ['board.md','changes.md']:\n    for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nskip=re.compile(r'request ok|heartbeat|gc |health ok|slow query|heap',re.I)\nfor s in ['auth-svc','inventory-svc','ledger-svc','payments-svc','pricing-svc']:\n    ls=[(i,l.strip()) for i,l in enumerate(open(b+'logs/'+s+'.log'),1) if not skip.search(l)]\n    print(s,len(ls),[i for i,_ in ls][:30])\n    for i,l in ls[:2]:print(' ',i,l[:150])\np='/task/workspace/context.json'\nd=json.load(open(p))\nd['entries']=[e for e in d['entries'] if e['id'].startswith('n')]\njson.dump(d,open(p,'w'))"
+-  },
+-  {
+-   "id": "s31.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 10\nboard.md 2 \nboard.md 3 - Thread C note: failing pods still restarting; investigation continues.\nchanges.md 1 # Change log: round 10\nchanges.md 2 \nchanges.md 3 - CHG-170 PROPOSED: move batch jobs to off-peak window (not applied)\nauth-svc 0 []\ninventory-svc 6 [13, 19, 32, 34, 41, 50]\n  13 {\"ts\":\"2026-09-14T17:11:16Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"7.30\n  19 {\"ts\":\"2026-09-14T17:15:16Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"7.30\nledger-svc 10 [2, 7, 17, 24, 31, 55, 57, 63, 72, 81]\n  2 {\"ts\":\"2026-09-14T17:00:25Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n  7 {\"ts\":\"2026-09-14T17:05:24Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\npayments-svc 0 []\npricing-svc 12 [1, 10, 12, 20, 23, 25, 32, 38, 43, 44, 47, 54]\n  1 {\"ts\":\"2026-09-14T17:01:03Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n  10 {\"ts\":\"2026-09-14T17:08:54Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n"
+-  },
+-  {
+-   "id": "s31.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 31: revision 44 -> 45; entries 14 -> 9; body chars 3422 -> 2310; removed [s29.act, s29.obs, s29.rcpt, s30.act, s30.obs]; added []; rewritten []"
++   "id": "n10",
++   "role": "note",
++   "body": "R10: board.md:3 Thread C pods still restarting (ongoing). changes CHG-170 PROPOSED noise. inventory config validation failed inventory-svc.log:13,19,32,34,41,50; ledger dns :2-81; pricing dns :1-54. Next: advance to round 11."
+   }
+  ]
+ }

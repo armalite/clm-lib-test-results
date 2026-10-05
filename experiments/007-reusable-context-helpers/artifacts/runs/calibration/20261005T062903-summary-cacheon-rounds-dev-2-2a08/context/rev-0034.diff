@@ -1,0 +1,49 @@
+--- rev-33
++++ rev-34
+@@ -2,44 +2,9 @@
+  "format": "clm-context/v1",
+  "entries": [
+   {
+-   "id": "sum7",
++   "id": "sum8",
+    "role": "summary",
+-   "body": "Rounds 1-7 of 11 read (R7 board read; logs only scanned at the first-hit level). Rounds 08-11 still to come.\n- Log format: JSON since R6, e.g. {\"ts\",\"level\",\"svc\",\"msg\",\"peer\",\"reason\"}. Error string: \"tls handshake failed\", reason certificate_expired. WARN \"slow query\" lines with a table=orders field look like noise.\n- R1 changes.md:3 CHG-107 APPLIED: GET retry budget=1.\n- R2 changes.md:3 CHG-120 APPLIED: build 8.59.8 to search-api, http.max_inflight=-1. Possible BAD_CONFIG_ROLLOUT link to Thread D; check.\n- R3 CHG-126 PROPOSED, not applied; ignore.\n- R6 changes.md:3 CHG-144 APPLIED: log sampling for /v1/health at 1% (noise).\n- Thread A: DNS_RESOLUTION (rates.internal SERVFAIL) on inventory-svc and checkout-api. Status mitigated, set by round-05/board.md:3 after CHG-143 (round-05/changes.md:3).\n  - Refs: round-01/logs/inventory-svc.log:7-90; round-02/logs/checkout-api.log:8-59; round-04/logs/checkout-api.log:1-71; round-04/logs/inventory-svc.log:32-75.\n  - 0 errors in R5-R6.\n- Thread B: CERT_EXPIRED (peer=sso.example.net) on auth-svc and shipping-svc. Status ongoing (round-03/board.md:3).\n  - Cause revised by round-07/board.md:3; supersedes DB_POOL_EXHAUSTED.\n  - Services set by round-05/board.md:4.\n  - Refs: round-03/logs/auth-svc.log:6-26; round-04/logs/shipping-svc.log:3-66; round-05/logs/auth-svc.log:2-64; round-05/logs/shipping-svc.log:9-65; round-06/logs/auth-svc.log:4-79; round-06/logs/shipping-svc.log:1-64; round-07/logs/auth-svc.log:1-64.\n- Thread D: UPSTREAM_RATE_LIMIT on search-api, ongoing, opened by round-07/board.md:4.\n  - round-07/logs/search-api.log has 27 ERROR/WARN lines (1-69).\n  - Need to grep for 429 lines to get refs. Also check whether the logs actually point to BAD_CONFIG_ROLLOUT from CHG-120.\n- Follow-ups OPEN:\n  - VENDOR_TICKET (round-05/board.md:5)\n  - ALERT_TUNING (round-05/board.md:6)\n  - RUNBOOK_UPDATE (round-06/board.md:3)\n- None closed yet.\n- Notes file: /task/workspace/notes.md (R7 not yet appended).\n- Next:\n  - Grep R7 search-api and shipping-svc logs for 429 and cert errors; record line ranges.\n  - Append R7 to notes.\n  - Advance through R11, then give the final answer."
+-  },
+-  {
+-   "id": "s21.act",
+-   "role": "assistant",
+-   "body": "[step 21] execute\nthought: Check round 7 ERROR lines by msg per service, and save notes.\ncode:\nimport os,re,json,collections\nb='/task/fixtures/round-07/'\nfor f in sorted(os.listdir(b+'logs')):\n    L=open(b+'logs/'+f).read().splitlines()\n    c=collections.defaultdict(list)\n    for i,l in enumerate(L):\n        if 'ERROR' in l:\n            m=re.search(r'\"msg\":\"([^\"]*)\"',l); c[m.group(1) if m else l[:60]].append(i+1)\n    print(f,{k:(len(v),v[0],v[-1]) for k,v in c.items()})\nopen('/task/workspace/notes.md','a').write('\\nR7: board.md:3 ThreadB cause revised CERT_EXPIRED. board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing. slow query WARNs everywhere (noise?).\\n')\n"
+-  },
+-  {
+-   "id": "s21.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nauth-svc.log {'tls handshake failed': (10, 1, 64)}\ncheckout-api.log {}\ninventory-svc.log {}\nsearch-api.log {'upstream returned 429': (8, 4, 66)}\nshipping-svc.log {'tls handshake failed': (12, 10, 66)}\n"
+-  },
+-  {
+-   "id": "s22.act",
+-   "role": "assistant",
+-   "body": "[step 22] execute\nthought: Save R7 refs to notes, then advance.\ncode:\nopen('/task/workspace/notes.md','a').write('R7 refs: search-api.log:4-66 (429, 8 errs); shipping-svc.log:10-66 tls; auth-svc.log:1-64 tls.\\n');print('ok')"
+-  },
+-  {
+-   "id": "s22.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.7s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s23.act",
+-   "role": "assistant",
+-   "body": "[step 23] advance\nthought: "
+-  },
+-  {
+-   "id": "s23.obs",
+-   "role": "observation",
+-   "body": "Stage 8 of 11 released.\nRound 8 of 11 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (7 lines)\n  round-08/logs/auth-svc.log (61 lines)\n  round-08/logs/checkout-api.log (75 lines)\n  round-08/logs/inventory-svc.log (58 lines)\n  round-08/logs/search-api.log (75 lines)\n  round-08/logs/shipping-svc.log (65 lines)"
+-  },
+-  {
+-   "id": "s24.act",
+-   "role": "assistant",
+-   "body": "[step 24] execute\nthought: Read R8 board and summarize log errors.\ncode:\nimport os,re,collections\nb='/task/fixtures/round-08/'\nprint(open(b+'board.md').read())\nfor f in sorted(os.listdir(b+'logs')):\n    L=open(b+'logs/'+f).read().splitlines()\n    c=collections.defaultdict(list)\n    for i,l in enumerate(L):\n        if 'ERROR' in l:\n            m=re.search(r'\"msg\":\"([^\"]*)\"',l); c[m.group(1) if m else l[:60]].append(i+1)\n    print(f,{k:(len(v),v[0],v[-1]) for k,v in c.items()})\n"
++   "body": "R1-7 read; R8 released (board 7 lines; logs auth 61, checkout 75, inventory 58, search 75, shipping 65), not yet read. R9-11 to come.\n- Logs JSON since R6: {\"ts\",\"level\",\"svc\",\"msg\",\"peer\",\"reason\"}. WARN \"slow query\" table=orders = noise.\n- Changes: R1 CHG-107 APPLIED GET retry=1. R2 changes.md:3 CHG-120 APPLIED search-api 8.59.8 http.max_inflight=-1 (possible BAD_CONFIG link to D). R3 CHG-126 PROPOSED. R6 CHG-144 health log sampling (noise).\n- A: DNS_RESOLUTION; inventory-svc, checkout-api; mitigated round-05/board.md:3 via CHG-143 round-05/changes.md:3. Refs r01 inventory:7-90; r02 checkout:8-59; r04 checkout:1-71, inventory:32-75. 0 errors R5-R7.\n- B: CERT_EXPIRED (sso.example.net, \"tls handshake failed\"); auth-svc, shipping-svc (round-05/board.md:4); ongoing round-03/board.md:3; cause round-07/board.md:3 supersedes DB_POOL_EXHAUSTED. Refs r03-r07 auth/shipping; r07 auth:1-64, shipping:10-66.\n- D: UPSTREAM_RATE_LIMIT search-api, ongoing round-07/board.md:4; r07 search-api:4-66 (\"upstream returned 429\").\n- Open follow-ups: VENDOR_TICKET r05 board:5, ALERT_TUNING r05:6, RUNBOOK_UPDATE r06:3. None closed.\n- Notes: /task/workspace/notes.md (R7 appended).\n- Next: read R8 board and logs, then advance to R11 and give the final answer."
+   },
+   {
+    "id": "s24.obs",

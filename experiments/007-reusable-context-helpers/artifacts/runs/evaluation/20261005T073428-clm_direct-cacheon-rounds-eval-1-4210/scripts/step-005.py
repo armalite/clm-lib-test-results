@@ -1,0 +1,3 @@
+import json
+n='R1: board empty. r01 changes.md:3 CHG-112 APPLIED TLS ticket rotation hourly; :4 CHG-113 APPLIED auth-svc build 4.51.3 sets cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT); :5 CHG-114 shipping-svc 4.51.3 no config. R1 logs: slow query WARN noise; payments lag fluctuating. Services: shipping-svc auth-svc payments-svc ledger-svc search-api.\nR2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc ongoing. changes.md:3 CHG-117 APPLIED TLS rotation hourly. Logs: lag stock-updates fluctuating 20k-88k in payments-svc (3-40) and ledger-svc (5-77), not clearly growing (board may be wrong). No errors elsewhere.'
+json.dump({'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':n}]},open('/task/workspace/context.json','w'))

@@ -1,0 +1,19 @@
+--- rev-35
++++ rev-36
+@@ -30,6 +30,16 @@
+    "id": "s27.obs",
+    "role": "observation",
+    "body": "Stage 9 of 11 released.\nRound 9 of 11 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (6 lines)\n  round-09/changes.md (3 lines)\n  round-09/logs/auth-svc.log (67 lines)\n  round-09/logs/ledger-svc.log (60 lines)\n  round-09/logs/payments-svc.log (58 lines)\n  round-09/logs/search-api.log (64 lines)\n  round-09/logs/shipping-svc.log (76 lines)"
++  },
++  {
++   "id": "s28.act",
++   "role": "assistant",
++   "body": "[step 28] execute\nthought: Read round 9 board, changes, grouped non-INFO logs.\ncode:\nimport json,re,collections\nb='/task/fixtures/round-09/'\nfor f in ['board.md','changes.md']:\n    for i,l in enumerate(open(b+f),1):\n        if l.strip(): print(f,i,l.rstrip())\nimport os\nfor f in sorted(os.listdir(b+'logs')):\n    g=collections.OrderedDict()\n    for i,l in enumerate(open(b+'logs/'+f),1):\n        try:\n            d=json.loads(l); lv=d.get('level'); m=d.get('msg'); ex={k:v for k,v in d.items() if k not in('ts','level','svc','msg','ms','table')}\n        except Exception:\n            p=l.split(); lv=p[1] if len(p)>1 else ''; m=' '.join(p[3:6]); ex=''\n        if lv in('INFO','DEBUG') or 'slow query' in str(m): continue\n        k=(lv,m,str(ex)); g.setdefault(k,[]).append(i)\n    for k,v in g.items(): print(f,k,[len(v),v[0],v[-1]])"
++  },
++  {
++   "id": "s28.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 09\nboard.md 3 - Thread B status: mitigated (workaround in place; permanent fix pending).\nboard.md 4 - Thread C note: failing pods still restarting; investigation continues.\nboard.md 5 - Follow-up CLOSED POSTMORTEM_DRAFT.\nboard.md 6 - Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\nchanges.md 1 # Change log: round 09\nchanges.md 3 - CHG-168 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc.log ('ERROR', 'config validation failed', \"{'key': 'cache.ttl_s', 'value': '-1', 'build': '4.51.3'}\") [11, 10, 64]\nsearch-api.log ('ERROR', 'tls handshake failed', \"{'peer': 'sso.example.net', 'reason': 'certificate_expired'}\") [2, 12, 36]\nshipping-svc.log ('ERROR', 'tls handshake failed', \"{'peer': 'sso.example.net', 'reason': 'certificate_expired'}\") [2, 53, 59]\n"
+   }
+  ]
+ }

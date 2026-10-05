@@ -1,0 +1,2 @@
+from ctx import keep_notes
+keep_notes('R1: round-01/changes.md:3 CHG-107 APPLIED retry budget GETs=1. board empty. R1 errs: round-01/logs/inventory-svc.log:7-90 dns SERVFAIL rates.internal.\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspicious); CHG-121 auth-svc no cfg. logs checkout-api.log:8-59, inventory-svc.log:8-74 dns SERVFAIL. Next: advance to R3.')

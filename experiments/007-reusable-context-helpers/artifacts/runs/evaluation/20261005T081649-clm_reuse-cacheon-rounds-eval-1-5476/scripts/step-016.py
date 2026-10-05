@@ -1,0 +1,9 @@
+import ctx,re
+ctx.prune(keep=())
+n=ctx.load()['entries'][0]['body'] if False else None
+b='/task/fixtures/round-05/logs/'
+for s in ['payments-svc.log','ledger-svc.log','search-api.log','shipping-svc.log']:
+    L=open(b+s).read().splitlines()
+    h=[i for i,l in enumerate(L,1) if re.search(r'lag|certificate',l)]
+    print(s,len(h),h[:1],h[-1:])
+ctx.setnote('notes','R1: CHG-113 APPLIED auth-svc cache.ttl_s=-1 (round-01/changes.md:4) suspect BAD_CONFIG (no auth errors seen r1-r5). payments lag r01 payments-svc.log:7,9. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc. lag r02 payments-svc.log:3-40, ledger-svc.log:5-77. CHG-117 TLS hourly noise. R3: CHG-124 PROPOSED; slow queries=noise. R4: board.md:3 Thread B shipping-svc suspected DB_POOL (logs show CERT_EXPIRED peer=sso.example.net shipping-svc.log:1-13); board.md:4 RUNBOOK_UPDATE OPEN. R5: board.md:3 Thread A mitigated; changes.md:3 CHG-143 APPLIED payments mitigation; CERT_EXPIRED now also search-api (r05 search-api.log:14-81) and shipping-svc.log:1-2. ctx.py load/save/setnote/prune(keep).')

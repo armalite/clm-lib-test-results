@@ -1,0 +1,46 @@
+--- rev-25
++++ rev-26
+@@ -4,42 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "R1: changes.md:3 CHG-112 TLS rotation APPLIED; :4 CHG-113 auth-svc cache.ttl_s=-1 (suspect); :5 CHG-114 shipping. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc ongoing; changes.md:3 CHG-117 TLS hourly APPLIED. Lag r02 ledger 5-77, payments 3-40. R3: board empty; CHG-124 PROPOSED. R4: board.md:3 Thread B shipping-svc suspected DB_POOL BUT logs shipping certificate_expired peer=sso.example.net r04 shipping-svc.log:1-13 (CERT_EXPIRED; link CHG-112?); board.md:4 OPEN RUNBOOK_UPDATE. R5: board.md:3 Thread A mitigated; changes.md:3 CHG-143 APPLIED payments mitigation; search-api cert_expired r05 search-api.log:14-51. R6: board.md:3 Thread B adds search-api; cert_expired r06 search-api.log:11-63, shipping-svc.log:4-78. Filter skip INFO/slow. Next: advance."
+-  },
+-  {
+-   "id": "s17.act",
+-   "role": "assistant",
+-   "body": "[step 17] execute\nthought: Compact R6 into notes.\ncode:\nimport ctx\nctx.keep_notes('R1: changes.md:3 CHG-112 TLS rotation APPLIED; :4 CHG-113 auth-svc cache.ttl_s=-1 (suspect); :5 CHG-114 shipping. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc ongoing; changes.md:3 CHG-117 TLS hourly APPLIED. Lag r02 ledger 5-77, payments 3-40. R3: board empty; CHG-124 PROPOSED. R4: board.md:3 Thread B shipping-svc suspected DB_POOL BUT logs shipping certificate_expired peer=sso.example.net r04 shipping-svc.log:1-13 (CERT_EXPIRED; link CHG-112?); board.md:4 OPEN RUNBOOK_UPDATE. R5: board.md:3 Thread A mitigated; changes.md:3 CHG-143 APPLIED payments mitigation; search-api cert_expired r05 search-api.log:14-51. R6: board.md:3 Thread B adds search-api; cert_expired r06 search-api.log:11-63, shipping-svc.log:4-78. Filter skip INFO/slow. Next: advance.')\nprint('ok')"
+-  },
+-  {
+-   "id": "s17.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s17.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 17: revision 21 -> 22; entries 8 -> 1; body chars 5633 -> 775; removed [s14.act, s14.obs, s14.rcpt, s15.act, s15.obs, s16.act, s16.obs]; added []; rewritten [notes]"
+-  },
+-  {
+-   "id": "s18.act",
+-   "role": "assistant",
+-   "body": "[step 18] advance\nthought: "
+-  },
+-  {
+-   "id": "s18.obs",
+-   "role": "observation",
+-   "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/changes.md (3 lines)\n  round-07/logs/auth-svc.log (65 lines)\n  round-07/logs/ledger-svc.log (64 lines)\n  round-07/logs/payments-svc.log (74 lines)\n  round-07/logs/search-api.log (79 lines)\n  round-07/logs/shipping-svc.log (78 lines)"
+-  },
+-  {
+-   "id": "s19.act",
+-   "role": "assistant",
+-   "body": "[step 19] execute\nthought: Inspect round 7 board, changes, and non-INFO log lines.\ncode:\nimport glob\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-07/'+f),1): print(f,i,l.rstrip())\nfor p in sorted(glob.glob('/task/fixtures/round-07/logs/*')):\n  ls=[(i,l.rstrip()) for i,l in enumerate(open(p),1) if 'INFO' not in l and 'slow' not in l.lower()]\n  print(p.split('/')[-1],len(ls))\n  for i,l in ls[:3]+ls[-2:]: print(i,l[:160])"
+-  },
+-  {
+-   "id": "s19.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 07\nboard.md 2 \nboard.md 3 - Follow-up OPEN POSTMORTEM_DRAFT: drafting the postmortem.\nboard.md 4 - Follow-up OPEN DATA_BACKFILL: backfill of records missed during the incident.\nchanges.md 1 # Change log: round 07\nchanges.md 2 \nchanges.md 3 - CHG-154 APPLIED: retry budget for idempotent GETs set to 1\nauth-svc.log 0\nledger-svc.log 0\npayments-svc.log 0\nsearch-api.log 13\n8 {\"ts\":\"2026-09-14T14:06:35Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n10 {\"ts\":\"2026-09-14T14:09:18Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n11 {\"ts\":\"2026-09-14T14:10:31Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n68 {\"ts\":\"2026-09-14T14:52:29Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n71 {\"ts\":\"2026-09-14T14:56:11Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nshipping-svc.log 10\n3 {\"ts\":\"2026-09-14T14:01:10Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n16 {\"ts\":\"2026-09-14T14:13:10Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n21 {\"ts\":\"2026-09-14T14:19:15Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n75 {\"ts\":\"2026-09-14T14:58:34Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n76 {\"ts\":\"2026-09-14T14:58:35Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n"
++   "body": "R1: changes.md:3 CHG-112 TLS rotation APPLIED; :4 CHG-113 auth-svc cache.ttl_s=-1 (suspect); :5 CHG-114 shipping. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc ongoing; changes.md:3 CHG-117 TLS hourly APPLIED. Lag r02 ledger 5-77, payments 3-40. R3: board empty; CHG-124 PROPOSED. R4: board.md:3 Thread B shipping-svc suspected DB_POOL BUT logs shipping certificate_expired peer=sso.example.net r04 shipping-svc.log:1-13 (CERT_EXPIRED; link CHG-112?); board.md:4 OPEN RUNBOOK_UPDATE. R5: board.md:3 Thread A mitigated; changes.md:3 CHG-143 APPLIED payments mitigation; search-api cert_expired r05 search-api.log:14-51. R6: board.md:3 Thread B adds search-api; cert_expired r06 search-api.log:11-63, shipping-svc.log:4-78. R7: board.md:3 OPEN POSTMORTEM_DRAFT, :4 OPEN DATA_BACKFILL; CHG-154 retry (irrelevant); cert_expired still r07 search-api.log:8-11,68-71 shipping-svc.log:3-21,75-76. Filter skip INFO/slow. Next: advance."
+   }
+  ]
+ }

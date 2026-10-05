@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':'R1: board empty. changes.md:3 CHG-112 APPLIED TLS ticket rotation hourly; :4 CHG-113 APPLIED auth-svc build 4.51.3 sets cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT); :5 CHG-114 shipping-svc 4.51.3 no config. Logs: only slow query WARN noise in all svcs; payments-svc consumer lag stock-updates fluctuating (lines 7,9,10,31,34,43) not growing. Services: shipping-svc auth-svc payments-svc ledger-svc search-api.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

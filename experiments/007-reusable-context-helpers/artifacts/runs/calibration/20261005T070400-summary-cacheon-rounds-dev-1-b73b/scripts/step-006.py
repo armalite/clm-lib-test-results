@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('\nR2 auth-svc db pool exhausted also at lines 44,65,69 (in_use grows 12->20). Notify-worker R2 log shows only INFO lines (gaps at 5,7,17-19,33,39,42,45,50,53,56 not checked).\n')
+print('ok')

@@ -1,0 +1,1888 @@
+diff --git a/src/clm_lib/cli.py b/src/clm_lib/cli.py
+index 29c99ea..6712fd5 100644
+--- a/src/clm_lib/cli.py
++++ b/src/clm_lib/cli.py
+@@ -448,6 +448,10 @@ def code_state() -> dict[str, Any]:
+ # Williams design for four conditions: each condition appears once in every position, and
+ # each ordered pair of adjacent conditions occurs once across the four rows.
+ WILLIAMS_4 = ((0, 1, 3, 2), (1, 2, 0, 3), (2, 3, 1, 0), (3, 0, 2, 1))
++# Three conditions: all six orders (two Latin squares), so over six blocks each condition is in
++# every position twice and each ordered adjacent pair occurs twice.
++ORDERS_3 = ((0, 1, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0), (0, 2, 1), (1, 0, 2))
++CONDITION_MODES = ("summary", "clm", "clm_direct", "clm_helpers")
+ 
+ 
+ def parse_conditions(text: str) -> list[tuple[str, bool]]:
+@@ -455,8 +459,10 @@ def parse_conditions(text: str) -> list[tuple[str, bool]]:
+     out = []
+     for part in text.split(","):
+         mode, _, cache = part.strip().partition(":")
+-        if mode not in ("summary", "clm") or cache not in ("on", "off"):
+-            raise ValueError(f"bad condition {part!r}; expected <summary|clm>:<on|off>")
++        if mode not in CONDITION_MODES or cache not in ("on", "off"):
++            raise ValueError(
++                f"bad condition {part!r}; expected <{'|'.join(CONDITION_MODES)}>:<on|off>"
++            )
+         out.append((mode, cache == "on"))
+     if len(set(out)) != len(out):
+         raise ValueError("conditions must be distinct")
+@@ -466,23 +472,32 @@ def parse_conditions(text: str) -> list[tuple[str, bool]]:
+ def condition_schedule(
+     tasks: list[str], reps: int, conditions: list[tuple[str, bool]]
+ ) -> list[dict[str, Any]]:
+-    """Four-condition run order: for task index i and repetition r, Williams row (i + r - 1)
+-    mod 4. Repetitions are outer, tasks inner, as in the two-arm matrix."""
+-    if len(conditions) != 4:
+-        raise ValueError("the condition schedule needs exactly four conditions")
++    """Condition run order per (task, repetition) block. Four conditions: Williams row
++    (i + r - 1) mod 4 for task index i and repetition r. Three conditions: block b (repetitions
++    outer, tasks inner) uses order b mod 6 of ORDERS_3; balance is exact only for multiples of
++    six blocks, so callers should report the realised position counts."""
++    if len(conditions) not in (3, 4):
++        raise ValueError("the condition schedule needs three or four conditions")
+     rows = []
+     for rep in range(1, reps + 1):
+         for index, task in enumerate(tasks):
+-            row = WILLIAMS_4[(index + rep - 1) % 4]
++            block = (rep - 1) * len(tasks) + index
++            row: tuple[int, ...]
++            if len(conditions) == 4:
++                row_index = (index + rep - 1) % 4
++                row = WILLIAMS_4[row_index]
++            else:
++                row_index = block % 6
++                row = ORDERS_3[row_index]
+             for position, c in enumerate(row):
+                 mode, caching = conditions[c]
+                 rows.append(
+                     {
+                         "task": task,
+                         "rep": rep,
+-                        "block": (rep - 1) * len(tasks) + index,
++                        "block": block,
+                         "position": position,
+-                        "williams_row": (index + rep - 1) % 4,
++                        "williams_row": row_index,
+                         "mode": mode,
+                         "caching": "on" if caching else "off",
+                     }
+@@ -523,7 +538,9 @@ def run_matrix(
+         "generator_version": sorted({generate(t).generator_version for t in tasks}),
+         # Per-task scorer versions (coding tasks use their own evaluator).
+         "scorer_version": sorted({scorer_version_for(generate(t)) for t in tasks}),
+-        "mode_order": "williams" if conditions else order,
++        "mode_order": ("williams" if len(conditions) == 4 else "all-orders-3")
++        if conditions
++        else order,
+         "conditions": [f"{m}:{'on' if c else 'off'}" for m, c in conditions]
+         if conditions
+         else None,
+diff --git a/src/clm_lib/config.py b/src/clm_lib/config.py
+index ff5e4e3..6d4ef21 100644
+--- a/src/clm_lib/config.py
++++ b/src/clm_lib/config.py
+@@ -31,6 +31,11 @@ class Limits:
+     spill_min_chars: int = 1500
+     initial_chars_per_token: float = 3.0
+     max_code_chars: int = 20_000
++    # Experiments 001-006 count summary calls against max_calls. With this false, max_calls
++    # covers task calls only (actions, repairs, their retries) and summary calls have their own
++    # cap, so the summary baseline is not denied investigation steps.
++    summary_calls_in_max_calls: bool = True
++    max_summary_calls: int = 0
+ 
+ 
+ @dataclass
+diff --git a/src/clm_lib/export.py b/src/clm_lib/export.py
+index 3516908..9e2211d 100644
+--- a/src/clm_lib/export.py
++++ b/src/clm_lib/export.py
+@@ -268,6 +268,19 @@ def _metrics_row(run_id: str, role: str, src: Path, charged: float) -> dict[str,
+         row[f"{kind}_cache_creation_tokens"] = k["cache_creation_input_tokens"]
+         row[f"{kind}_uncached_input_tokens"] = k["input_tokens_uncached"]
+         row[f"{kind}_latency_s"] = k["latency_s"]
++    if m["mode"] in ("clm_direct", "clm_helpers"):  # experiment 007 helper evidence tiers
++        from .helper_audit import audit_run
++
++        a = audit_run(src)
++        row.update(
++            helper_files=json.dumps(sorted(a["files"])),
++            helper_created=a["tiers"]["created"],
++            helper_executed=a["tiers"]["executed"],
++            helper_repeated_accepted_edits=a["tiers"]["repeated_accepted_edits"],
++            helper_substantive_repeated=a["tiers"]["substantive_repeated"],
++            helper_reuse_findings=len(a["reuse_violations"]),
++            code_chars_all_steps=a["code_chars_all_steps"],
++        )
+     for k, v in (m.get("management") or {}).items():
+         row[f"mgmt_{k}"] = json.dumps(v) if isinstance(v, (dict, list)) else v
+     return row
+diff --git a/src/clm_lib/prompts.py b/src/clm_lib/prompts.py
+index 48a6cfd..b083367 100644
+--- a/src/clm_lib/prompts.py
++++ b/src/clm_lib/prompts.py
+@@ -9,7 +9,9 @@ import json
+ 
+ from .context import Entry
+ 
+-PROMPT_VERSION = "2026-10-04.1"
++# 2026-10-05.1 adds the experiment-007 texts (CLM capability variants, the rounds task kind and
++# its summariser instruction). Every earlier text is unchanged (tests pin their hashes).
++PROMPT_VERSION = "2026-10-05.1"
+ 
+ PROTOCOL = """You are {agent_role} working through a strict JSON protocol.
+ 
+@@ -33,13 +35,21 @@ what you need: search and filter (with line numbers) instead of printing whole f
+ 
+ # Task-kind specific protocol fragments. The "incident" values reproduce the original text
+ # byte for byte, so incident-task prompts (experiments 001-003) are unchanged.
+-AGENT_ROLE = {"incident": "an investigation agent", "coding": "a software engineering agent"}
++AGENT_ROLE = {
++    "incident": "an investigation agent",
++    "coding": "a software engineering agent",
++    "rounds": "an investigation agent",
++}
+ FINAL_EXAMPLE = {
+     "incident": (
+         '  {"action": "final", "answer": {"root_cause": "...", "required_value": "...", "remedy": "...",\n'
+         '                                 "evidence_refs": ["path:line", ...]}}'
+     ),
+     "coding": '  {"action": "final", "answer": {"summary": "<what you implemented and changed>"}}',
++    "rounds": (
++        '  {"action": "final", "answer": {"incidents": [...], "unresolved": [...],\n'
++        '                                 "summary": "..."}}   (fields as specified in <task>)'
++    ),
+ }
+ 
+ CLM_INSTRUCTIONS = """
+@@ -62,6 +72,25 @@ CONTEXT EDITING (you control your working context):
+   out. Keep exact values, file:line references and open questions you still need.
+ """
+ 
++# Experiment 007: the same CLM capabilities with one condition-specific clause each. The shared
++# part is CLM_INSTRUCTIONS without its sentence about reusable helper modules.
++CLM_SHARED = CLM_INSTRUCTIONS.replace(
++    " You may also write reusable helper\n  modules in /task/workspace and import them in later steps (the working directory is importable).",
++    "",
++)
++CLM_CLAUSE = {
++    "clm_direct": """- Context-management code (this run): write the code that inspects or rewrites context.json
++  within each step. You may define functions inside a step's code, but do not save
++  context-management functions or scripts to files for importing, running or exec-ing in later
++  steps. Saving notes and other non-executable files is fine, and so is saving code that only
++  analyses task files.
++""",
++    "clm_helpers": """- Context-management code (this run): you may also save reusable context-management functions
++  in /task/workspace (for example as a Python module), call them in later steps and revise them.
++  The working directory is importable. This is optional.
++""",
++}
++
+ SUMMARY_INSTRUCTIONS = """
+ CONTEXT MANAGEMENT (automatic):
+ - When the request grows past {pressure_pct}% of the budget, the runtime asks a summariser to
+@@ -125,6 +154,20 @@ compact bullet points. Plain text only. Stay within the requested length; it is
+ room to continue."""
+ 
+ 
++SUMMARY_SYSTEM_TOKEN_TAIL_ROUNDS = """You compress an agent's working transcript. The agent is
++investigating a multi-service production incident whose evidence arrives in hourly rounds, and will
++keep working after your summary replaces the entries below. The transcript may include an earlier
++summary: carry its facts forward. Preserve, exactly and verbatim where relevant:
++- each incident thread: its current cause and any superseded cause, affected services, current
++  status and the record that set it;
++- follow-up items opened and closed, with their codes;
++- early facts that may matter later (change records, builds, configuration values);
++- every file:line reference needed as evidence, and observed log formats;
++- open questions and the next planned steps, including rounds still to be released.
++Drop repetition and raw log dumps. Use compact bullet points. Plain text only. Stay within the
++requested length; it is set so the agent has room to continue."""
++
++
+ def system_prompt(
+     mode: str,
+     *,
+@@ -146,6 +189,11 @@ def system_prompt(
+     )
+     if mode in ("clm", "guided"):
+         text += CLM_INSTRUCTIONS.format(max_entries=max_entries, max_body=max_body)
++    elif mode in CLM_CLAUSE:
++        shared = CLM_SHARED.format(max_entries=max_entries, max_body=max_body)
++        marker = "- Ordering rule:"
++        before, after = shared.split(marker, 1)
++        text += before + CLM_CLAUSE[mode] + marker + after
+     else:
+         if summary_policy == "token-tail/1":
+             text += SUMMARY_INSTRUCTIONS_TOKEN_TAIL.format(
+diff --git a/src/clm_lib/report.py b/src/clm_lib/report.py
+index 89efc6a..25ea5f4 100644
+--- a/src/clm_lib/report.py
++++ b/src/clm_lib/report.py
+@@ -182,7 +182,7 @@ def rescore(run_dir: Path) -> dict[str, Any] | None:
+     if not truth_path.exists():
+         return None
+     t = _load(truth_path)
+-    if t.get("kind") == "coding":
++    if t.get("kind") in ("coding", "rounds"):
+         # Coding checks are deterministic data; the recorded score is the current score.
+         score: dict[str, Any] = _load(run_dir / "evaluator" / "score.json")
+         return score
+diff --git a/src/clm_lib/runner.py b/src/clm_lib/runner.py
+index ccba31f..94ea2c9 100644
+--- a/src/clm_lib/runner.py
++++ b/src/clm_lib/runner.py
+@@ -44,6 +44,7 @@ from .executor import DockerExecutor, ExecResult, Executor, ExecutorUnavailable
+ from .prompts import (
+     PROMPT_VERSION,
+     SUMMARY_SYSTEM_TOKEN_TAIL_CODING,
++    SUMMARY_SYSTEM_TOKEN_TAIL_ROUNDS,
+     render_entries,
+     render_user,
+     render_user_blocks,
+@@ -60,6 +61,7 @@ from .provider import (
+     Provider,
+     ProviderError,
+ )
++from .rounds import ROUNDS_ANSWER_SCHEMA, ROUNDS_FIELDS, score_rounds
+ from .tasks import (
+     TaskInstance,
+     no_answer_score,
+@@ -68,7 +70,10 @@ from .tasks import (
+ )
+ from .tracing import RunTrace, now_iso, sha256_text, snapshot_files
+ 
+-MODES = ("summary", "clm", "guided")
++MODES = ("summary", "clm", "guided", "clm_direct", "clm_helpers")
++# Experiment 007 CLM conditions: the same capabilities, with a direct-editing-only clause or a
++# reusable-helpers-allowed clause (prompts.CLM_CLAUSE).
++CLM_MODES = ("clm", "guided", "clm_direct", "clm_helpers")
+ INVALID_FOR_COMPARISON = {
+     "infrastructure_error",
+     "executor_unavailable",
+@@ -134,6 +139,11 @@ class _Usage:
+ 
+ 
+ INCIDENT_FIELDS = ("root_cause", "required_value", "remedy", "evidence_refs")
++# Experiment 007 rounds task: staged actions with the rounds answer contract.
++ROUNDS_ACTION_SCHEMA: dict[str, Any] = {
++    **STAGED_ACTION_SCHEMA,
++    "properties": {**STAGED_ACTION_SCHEMA["properties"], "answer": ROUNDS_ANSWER_SCHEMA},
++}
+ CODING_FIELDS = ("summary",)
+ 
+ 
+@@ -171,6 +181,8 @@ def parse_action(
+             return None, f"final action needs answer with fields {list(need)}"
+         if "evidence_refs" in need and not isinstance(ans["evidence_refs"], list):
+             return None, "evidence_refs must be a list of strings"
++        if "incidents" in need and not isinstance(ans["incidents"], list):
++            return None, "incidents must be a list of objects"
+         return obj, ""
+     return None, "action must be 'execute' or 'final'"
+ 
+@@ -323,7 +335,14 @@ class _Run:
+     # --------------------------------------------------------------- helpers
+     @property
+     def clm(self) -> bool:
+-        return self.mode in ("clm", "guided")
++        return self.mode in CLM_MODES
++
++    def task_calls(self) -> int:
++        """Calls counted against max_calls: all provider attempts, or all except summary calls
++        when ``limits.summary_calls_in_max_calls`` is false (they then have their own cap)."""
++        if self.lim.summary_calls_in_max_calls:
++            return self.c.provider_calls
++        return self.c.provider_calls - self.c.summary_calls
+ 
+     def est_tokens(self, system: str, user: str) -> int:
+         return int((len(system) + len(user)) / self.cpt) + 1
+@@ -332,7 +351,7 @@ class _Run:
+         b = self.lim.context_budget_tokens
+         entries = self.store.entries
+         lines = [
+-            f"step {self.step}; model calls used {self.c.provider_calls}/{self.lim.max_calls}",
++            f"step {self.step}; model calls used {self.task_calls()}/{self.lim.max_calls}",
+             f"request size ~{est} tokens of {b} budget ({100 * est // b}%); "
+             f"pressure threshold {int(self.lim.pressure_ratio * 100)}%; "
+             f"hard limit {b - self.lim.recovery_reserve_tokens} tokens",
+@@ -460,7 +479,13 @@ class _Run:
+     def call(self, req: ModelRequest, kind: str, meta: dict[str, Any]) -> ModelResponse:
+         retries = self.cfg.provider.api_retries
+         for attempt in range(retries + 1):
+-            if self.c.provider_calls >= self.lim.max_calls:
++            if kind == "summary" and not self.lim.summary_calls_in_max_calls:
++                if self.c.summary_calls >= self.lim.max_summary_calls:
++                    raise _Stop(
++                        "max_summary_calls",
++                        f"summary call cap {self.lim.max_summary_calls} reached",
++                    )
++            elif self.task_calls() >= self.lim.max_calls:
+                 raise _Stop(
+                     "max_calls", f"call cap {self.lim.max_calls} reached before {kind} call"
+                 )
+@@ -672,7 +697,11 @@ class _Run:
+                 attempt,
+                 self.lim.max_output_tokens,
+                 limit,
+-                system=SUMMARY_SYSTEM_TOKEN_TAIL_CODING if self.task.kind == "coding" else None,
++                system=SUMMARY_SYSTEM_TOKEN_TAIL_CODING
++                if self.task.kind == "coding"
++                else SUMMARY_SYSTEM_TOKEN_TAIL_ROUNDS
++                if self.task.kind == "rounds"
++                else None,
+             )
+             if self.blocks_layout:
+                 ub, bps = summary_user_blocks(self.task.prompt, older, limit)
+@@ -1081,14 +1110,17 @@ class _Run:
+     # --------------------------------------------------------------- loop
+     def loop(self) -> tuple[str, str]:
+         coding = self.task.kind == "coding"
++        rounds = self.task.kind == "rounds"
+         schema = (
+             CODING_ACTION_SCHEMA
+             if coding
++            else ROUNDS_ACTION_SCHEMA
++            if rounds
+             else STAGED_ACTION_SCHEMA
+             if self.task.staged
+             else ACTION_SCHEMA
+         )
+-        fields = CODING_FIELDS if coding else INCIDENT_FIELDS
++        fields = CODING_FIELDS if coding else ROUNDS_FIELDS if rounds else INCIDENT_FIELDS
+         staged = self.task.staged
+         while True:
+             self.step += 1
+@@ -1377,6 +1409,8 @@ class _Run:
+         score: Any
+         if self.task.kind == "coding":
+             score = self.evaluate_coding(completed=self.answer is not None)
++        elif self.task.kind == "rounds":
++            score = score_rounds(self.answer, truth, self.task.files)
+         else:
+             score = (
+                 score_answer(self.answer, truth, self.task.files)
+diff --git a/src/clm_lib/tasks.py b/src/clm_lib/tasks.py
+index d344022..11eb477 100644
+--- a/src/clm_lib/tasks.py
++++ b/src/clm_lib/tasks.py
+@@ -91,6 +91,14 @@ INSTANCES: dict[str, InstanceSpec] = {
+         for split, n, seed0 in (("dev", 2, base + 100), ("eval", 6, base + 200))
+         for i in range(1, n + 1)
+     },
++    # Experiment 007: multi-service incident over 10-12 evidence rounds (rounds.py).
++    **{
++        f"rounds-{split}-{i}": InstanceSpec(
++            f"rounds-{split}-{i}", seed0 + i, "incident_rounds", f"rounds-{split}"
++        )
++        for split, n, seed0 in (("dev", 2, 7100), ("eval", 4, 7200))
++        for i in range(1, n + 1)
++    },
+ }
+ HELDOUT = ("heldout-1", "heldout-2", "heldout-3")
+ STAGED_EVAL = ("staged-eval-1", "staged-eval-2", "staged-eval-3")
+@@ -131,7 +139,7 @@ class TaskInstance:
+     stages: list[dict[str, str]] = field(default_factory=list)
+     stage_updates: list[str] = field(default_factory=list)
+     generator_version: str = GENERATOR_VERSION
+-    kind: str = "incident"  # "incident" | "coding"
++    kind: str = "incident"  # "incident" | "coding" | "rounds"
+     # Files copied into the agent workspace at the start (coding tasks: the project skeleton).
+     workspace_seed: dict[str, str] = field(default_factory=dict)
+     # Scorer version for this task; empty means the task kind's default (see scorer_version_for).
+@@ -880,6 +888,10 @@ def generate(name: str) -> TaskInstance:
+         from .coding import generate_coding
+ 
+         return generate_coding(spec)
++    if spec.scenario == "incident_rounds":
++        from .rounds import generate_rounds
++
++        return generate_rounds(spec)
+     if spec.scenario == "coding_invoice2":
+         from .coding2 import generate_coding2
+ 
+diff --git a/tests/test_tasks.py b/tests/test_tasks.py
+index d60cd1f..eb25f3a 100644
+--- a/tests/test_tasks.py
++++ b/tests/test_tasks.py
+@@ -7,7 +7,7 @@ from typing import Any
+ from clm_lib.tasks import HELDOUT, INSTANCES, TaskInstance, generate, score_answer
+ 
+ # Experiment 001 task family; the staged family (experiment 002) is tested in test_staged.py.
+-SINGLE = [n for n in INSTANCES if not n.startswith(("staged-", "coding"))]
++SINGLE = [n for n in INSTANCES if not n.startswith(("staged-", "coding", "rounds-"))]
+ 
+ 
+ def refs(inst: TaskInstance) -> list[str]:
+diff --git a/configs/exp007.toml b/configs/exp007.toml
+new file mode 100644
+index 0000000..7baca96
+--- /dev/null
++++ b/configs/exp007.toml
+@@ -0,0 +1,60 @@
++# Experiment 007 configuration (reusable context-management helpers, rounds incident task):
++# experiment 006's model, effort, 8K whole-request budget, output limit, token-tail/1 baseline,
++# blocks/1 layout, 5-minute caching and run-tag/1 isolation, with caching ON for every
++# condition. max_calls 60 covers task calls (actions, repairs, retries); summary calls have their
++# own cap (max_summary_calls 20) so the summary baseline is not denied investigation steps.
++# The ledger ceiling is the one authorised for this experiment (spend at start USD 31.140097 +
++# USD 30). Use only this config for experiment-007 live commands.
++# All limits are recorded in every run and shared by all three conditions.
++runs_dir = "runs"
++
++[provider]
++name = "anthropic"
++model = "claude-opus-5-5"     # verified via the models endpoint by `clm-lib doctor --probe`
++base_url = ""                 # empty: SDK default (or ANTHROPIC_BASE_URL)
++effort = "low"                # output_config.effort; thinking cannot be disabled on this model
++structured_output = true      # output_config.format json_schema for actions
++timeout_s = 120
++api_retries = 2               # runtime-level retries; SDK retries are disabled
++
++[limits]
++max_calls = 60                # per task: actions + repairs + API retries (summaries separate)
++max_output_tokens = 4096
++exec_timeout_s = 30
++output_cap_chars = 6000       # per stream
++context_budget_tokens = 8000  # whole request input
++pressure_ratio = 0.70
++recovery_reserve_tokens = 1000
++spill_min_chars = 1500
++initial_chars_per_token = 3.0
++max_code_chars = 20000
++summary_calls_in_max_calls = false
++max_summary_calls = 20
++
++[baseline]
++policy = "token-tail/1"     # experiment 003; experiments 001/002 used "fixed-tail/1"
++tail_entries = 4
++summary_max_chars = 3000
++summary_retries = 1
++tail_ratio = 0.15            # token-tail/1: verbatim recent-entry allowance (fraction of budget)
++newest_ratio = 0.25          # token-tail/1: newest entry kept verbatim if it fits this fraction
++target_ratio = 0.50          # token-tail/1: desired request size after compaction
++summary_min_chars = 600
++
++[budget]
++ceiling_usd = 61.140097            # total live-validation ceiling; ledger keeps the lowest ever set
++min_run_reserve_usd = 2.00    # compare: do not start a run with less remaining
++ledger = "runs/ledger.json"
++prices = "configs/prices.toml"
++
++[sandbox]
++image = "python:3.12-slim"
++memory = "512m"
++cpus = 1.0
++pids_limit = 128
++
++[request]
++layout = "blocks/1"           # stable task first, one block per context entry, status last
++prompt_caching = true         # on for all three conditions
++cache_ttl = "5m"
++run_isolation = "run-tag/1"   # random 32-hex tag as the first system block of every request
+diff --git a/src/clm_lib/helper_audit.py b/src/clm_lib/helper_audit.py
+new file mode 100644
+index 0000000..e4bf7fe
+--- /dev/null
++++ b/src/clm_lib/helper_audit.py
+@@ -0,0 +1,248 @@
++"""Experiment 007: classify context-management helper evidence from a run's recorded artifacts.
++
++Evidence tiers for each workspace file that holds code touching ``context.json``:
++
++1. ``created``: a file was written that contains code referring to context.json;
++2. ``executed``: a function (or module body) defined in that file began executing in a step
++   that exited 0 (in-container sys.monitoring record);
++3. ``repeated_accepted_edits``: code from that file was on the call stack when context.json was
++   written, the step's edit was accepted, in at least two distinct steps, and each accepted
++   revision appears as the prefix of the next request (report.edit_evidence);
++4. ``substantive``: the function that wrote the context contains its own selection, filtering,
++   merging or replacement logic over existing entries (static AST heuristic, see
++   ``classify_function``), as opposed to a wrapper that only writes text supplied by the caller.
++
++Direct-edit compliance (the clm_direct condition) flags saved files with context-management
++code that a later step reuses: imported/executed (runtime record), compiled or opened for
++reading from a file, run as a subprocess, or exec'd/runpy'd according to the step's code text.
++
++Limitations: the runtime record misses code run in child processes and os.open-level writes;
++code-text checks are pattern-based. Ambiguous cases are inspected manually and reported.
++"""
++
++from __future__ import annotations
++
++import ast
++import json
++import re
++from pathlib import Path
++from typing import Any
++
++from .report import edit_evidence
++
++WS = "/task/workspace/"
++CTX_RE = re.compile(r"context\.json")
++ENTRY_FIELDS = {"id", "role", "body"}
++
++
++def _events(run_dir: Path) -> list[dict[str, Any]]:
++    return [json.loads(x) for x in (run_dir / "events.jsonl").read_text().splitlines() if x]
++
++
++def file_versions(run_dir: Path) -> dict[str, list[tuple[int, str]]]:
++    """Every saved version of each changed workspace file: path -> [(step, text), ...]."""
++    out: dict[str, list[tuple[int, str]]] = {}
++    root = run_dir / "files"
++    if not root.exists():
++        return out
++    for step_dir in sorted(root.glob("step-*")):
++        step = int(step_dir.name.split("-")[1])
++        after = step_dir / "after"
++        if not after.exists():
++            continue
++        for p in sorted(after.rglob("*")):
++            if p.is_file():
++                out.setdefault(str(p.relative_to(after)), []).append(
++                    (step, p.read_text("utf-8", "replace"))
++                )
++    return out
++
++
++def version_at(versions: list[tuple[int, str]], step: int) -> str | None:
++    """The file text in force during ``step`` (the latest version saved before it)."""
++    text = None
++    for s, t in versions:
++        if s < step:
++            text = t
++    return text
++
++
++def _names(node: ast.AST) -> set[str]:
++    return {n.id for n in ast.walk(node) if isinstance(n, ast.Name)}
++
++
++def _strings(node: ast.AST) -> set[str]:
++    return {
++        n.value for n in ast.walk(node) if isinstance(n, ast.Constant) and isinstance(n.value, str)
++    }
++
++
++def classify_function(source: str, qualname: str) -> dict[str, Any]:
++    """Heuristic: what does the named function do with the existing context entries?"""
++    try:
++        tree = ast.parse(source)
++    except SyntaxError:
++        return {"kind": "unparseable"}
++    target = None
++    for node in ast.walk(tree):
++        if (
++            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
++            and node.name == qualname.split(".")[-1]
++        ):
++            target = node
++            break
++    if qualname == "<module>":
++        target = tree  # type: ignore[assignment]
++    if target is None:
++        return {"kind": "not_found"}
++    strings = _strings(target)
++    reads_existing = bool(
++        "entries" in strings
++        and any(isinstance(n, ast.Subscript) for n in ast.walk(target))
++        and (
++            "load" in {getattr(n, "attr", "") for n in ast.walk(target)}
++            or "loads" in {getattr(n, "attr", "") for n in ast.walk(target)}
++        )
++    )
++    field_refs = bool(ENTRY_FIELDS & strings)
++    has_filter = any(isinstance(n, ast.comprehension) and n.ifs for n in ast.walk(target)) or any(
++        isinstance(n, ast.For) and any(isinstance(m, ast.If) for m in ast.walk(n))
++        for n in ast.walk(target)
++    )
++    has_slice = any(isinstance(n, ast.Slice) for n in ast.walk(target))
++    has_sort = bool(
++        {"sorted", "sort", "filter"}
++        & (_names(target) | {getattr(n, "attr", "") for n in ast.walk(target)})
++    )
++    builds_text = any(
++        isinstance(n, ast.Call) and getattr(n.func, "attr", "") == "join" for n in ast.walk(target)
++    )
++    args = [a.arg for a in getattr(getattr(target, "args", None), "args", [])]
++    if reads_existing and field_refs and (has_filter or has_slice or has_sort):
++        kind = "selection/filtering"
++    elif reads_existing and field_refs and builds_text:
++        kind = "merging/rewriting"
++    elif reads_existing and field_refs:
++        kind = "replacement over existing entries"
++    else:
++        kind = "wrapper (writes caller-supplied content)"
++    return {
++        "kind": kind,
++        "substantive": kind in ("selection/filtering", "merging/rewriting"),
++        "reads_existing_entries": reads_existing,
++        "references_entry_fields": field_refs,
++        "filter": has_filter,
++        "slice": has_slice,
++        "sort_or_filter_call": has_sort,
++        "builds_text": builds_text,
++        "parameters": args,
++        "lines": len((ast.get_source_segment(source, target) or source).splitlines())
++        if hasattr(target, "lineno")
++        else len(source.splitlines()),
++    }
++
++
++def audit_run(run_dir: Path) -> dict[str, Any]:
++    m = json.loads((run_dir / "summary.json").read_text())
++    h = m.get("helpers") or {}
++    versions = file_versions(run_dir)
++    cm_files = {
++        p
++        for p, vs in versions.items()
++        if p != "context.json"
++        and any(CTX_RE.search(t) and (p.endswith(".py") or "def " in t) for _, t in vs)
++    }
++    created = {p: versions[p][0][0] for p in sorted(cm_files)}
++    revisions = {p: [s for s, _ in versions[p][1:]] for p in sorted(cm_files)}
++    executed = {p: v for p, v in (h.get("function_execution_steps") or {}).items() if p in cm_files}
++    attributed = {
++        p: v
++        for p, v in (h.get("helper_written_accepted_edit_steps") or {}).items()
++        if p in cm_files
++    }
++    ev = {rec["step"]: rec for rec in edit_evidence(run_dir)}
++    uses = {u["step"]: u for u in h.get("uses") or []}
++    files_out: dict[str, Any] = {}
++    for p in sorted(cm_files):
++        steps = sorted(set(attributed.get(p, [])))
++        confirmed = [
++            s for s in steps if ev.get(s, {}).get("content_prefix_equals_accepted_revision") is True
++        ]
++        writers: dict[str, dict[str, Any]] = {}
++        for s in steps:
++            src = version_at(versions[p], s)
++            for fn in uses.get(s, {}).get("files", {}).get(p, {}).get("wrote_context_from", []):
++                key = f"{fn}@v{s}"
++                writers[key] = {
++                    "step": s,
++                    **(classify_function(src, fn) if src else {"kind": "source_missing"}),
++                }
++        files_out[p] = {
++            "created_step": created[p],
++            "revision_steps": revisions[p],
++            "function_execution_steps": sorted(set(executed.get(p, []))),
++            "helper_written_accepted_edit_steps": steps,
++            "next_request_confirmed_steps": confirmed,
++            "repeated_accepted_edits": len(confirmed) >= 2,
++            "writers": writers,
++            "substantive_repeated": len(confirmed) >= 2
++            and sum(1 for w in writers.values() if w.get("substantive")) >= 2,
++            "final_chars": len(versions[p][-1][1]),
++        }
++    scripts = sorted((run_dir / "scripts").glob("*.py")) if (run_dir / "scripts").exists() else []
++    tiers = {
++        "created": bool(files_out),
++        "executed": any(f["function_execution_steps"] for f in files_out.values()),
++        "repeated_accepted_edits": any(f["repeated_accepted_edits"] for f in files_out.values()),
++        "substantive_repeated": any(f["substantive_repeated"] for f in files_out.values()),
++    }
++    return {
++        "run_id": m["run_id"],
++        "mode": m["mode"],
++        "tiers": tiers,
++        "files": files_out,
++        "code_chars_all_steps": sum(len(p.read_text()) for p in scripts),
++        "steps_with_code": len(scripts),
++        "reuse_violations": reuse_findings(run_dir, cm_files, versions),
++    }
++
++
++def reuse_findings(
++    run_dir: Path, cm_files: set[str], versions: dict[str, list[tuple[int, str]]]
++) -> list[dict[str, Any]]:
++    """Later-step reuse of saved context-management code (any condition; a violation in
++    clm_direct). Each finding names the step, file and the evidence that indicates reuse."""
++    out: list[dict[str, Any]] = []
++    events = _events(run_dir)
++    results = {e["step"]: e for e in events if e.get("event") == "execution_result"}
++    for p in sorted(cm_files):
++        first = versions[p][0][0]
++        full = WS + p
++        stem = Path(p).stem
++        for step, res in sorted(results.items()):
++            if step <= first:
++                continue
++            rt = res.get("runtime_trace") or {}
++            code_path = run_dir / "scripts" / f"step-{step:03d}.py"
++            code = code_path.read_text() if code_path.exists() else ""
++            evidence = []
++            if full in (rt.get("imported") or []):
++                evidence.append("imported")
++            if any(k.split("::", 1)[0] == full for k in (rt.get("calls") or {})):
++                evidence.append("executed (runtime record)")
++            if full in (rt.get("compiled") or []):
++                evidence.append("compiled")
++            if any(
++                o[0] == full and "r" in (o[1] or "r") for o in (rt.get("opened") or [])
++            ) and re.search(r"\bexec\s*\(|runpy|compile\s*\(", code):
++                evidence.append("read and exec/compile in code")
++            if any(p in s or stem in s for s in (rt.get("spawned") or [])):
++                evidence.append("subprocess")
++            if (
++                re.search(rf"\b(import|from)\s+{re.escape(stem)}\b", code)
++                and "imported" not in evidence
++            ):
++                evidence.append("import in code text")
++            if evidence:
++                out.append({"step": step, "file": p, "evidence": evidence})
++    return out
+diff --git a/src/clm_lib/rounds.py b/src/clm_lib/rounds.py
+new file mode 100644
+index 0000000..ea8fe34
+--- /dev/null
++++ b/src/clm_lib/rounds.py
+@@ -0,0 +1,682 @@
++"""Experiment 007 task family: a multi-service incident whose evidence arrives in 10-12 rounds.
++
++Generator ``incident-rounds-gen/1``, scorer ``rounds-score/1``. Each round is one hour of
++evidence under ``round-NN/``: structured service logs, the incident board's updates for that
++hour, and sometimes a change log. Earlier rounds never change and stay readable.
++
++Storyline per instance (services, causes, timings and patterns vary by seed):
++- Thread A: a confirmed cause in one service with impact on a second; mitigated by an APPLIED
++  change, later resolved (its earlier "mitigated" status is superseded).
++- Thread B: errors in one service, first attributed to a suspected cause that a later board
++  update revises (the suspected cause is superseded); a partial update adds an affected service
++  while keeping cause and status; later mitigated.
++- Thread C: a late symptom whose logs show a rejected configuration key/value; the key/value was
++  shipped by a change recorded in round 1 or 2 (an early fact that must be connected later).
++  It stays ongoing.
++- Optional thread D: alerts that the board later closes as a false alarm (not an incident).
++- Follow-up items opened and some closed on the board; those still open at the end are the
++  unresolved issues.
++- From one round onward the service logs switch from key=value text to JSON lines.
++
++The answer contract and code lists are in the task prompt. Ground truth is generated with the
++fixtures and stays in host memory until the run ends.
++"""
++
++from __future__ import annotations
++
++import json
++import random
++from dataclasses import dataclass, field
++from typing import Any
++
++from .tasks import MAX_RANGE, REF_RE, InstanceSpec, TaskInstance
++
++GENERATOR_VERSION = "incident-rounds-gen/1"
++SCORER_VERSION = "rounds-score/1"
++STATUSES = ("ongoing", "mitigated", "resolved")
++
++CAUSES: dict[str, str] = {
++    "DB_POOL_EXHAUSTED": "database connection pool exhausted",
++    "CACHE_STAMPEDE": "cache miss storm after mass expiry",
++    "CERT_EXPIRED": "an expired TLS certificate on a dependency",
++    "DNS_RESOLUTION": "DNS lookups failing for a dependency",
++    "QUEUE_BACKLOG": "message consumer lag growing",
++    "MEMORY_LEAK": "process memory growing until restarts",
++    "UPSTREAM_RATE_LIMIT": "an upstream provider rejecting requests with 429",
++    "DISK_PRESSURE": "a data volume running out of space",
++    "BAD_CONFIG_ROLLOUT": "a configuration value shipped by a rollout is invalid",
++}
++FOLLOW_UPS: dict[str, str] = {
++    "CUSTOMER_COMMS": "customer communication about the impact",
++    "DATA_BACKFILL": "backfill of records missed during the incident",
++    "CAPACITY_REVIEW": "capacity review of the affected tier",
++    "ALERT_TUNING": "tuning of noisy or late alerts",
++    "VENDOR_TICKET": "a ticket open with an external vendor",
++    "POSTMORTEM_DRAFT": "drafting the postmortem",
++    "RUNBOOK_UPDATE": "updating the runbook",
++}
++SERVICES = [
++    "checkout-api",
++    "payments-svc",
++    "inventory-svc",
++    "notify-worker",
++    "search-api",
++    "auth-svc",
++    "ledger-svc",
++    "pricing-svc",
++    "shipping-svc",
++]
++# Causes that can be a thread's real or suspected cause (BAD_CONFIG_ROLLOUT is thread C's).
++GENERAL = [c for c in CAUSES if c != "BAD_CONFIG_ROLLOUT"]
++CONFIG_KEYS = [
++    ("http.max_inflight", ["0", "-1"]),
++    ("retry.backoff_ms", ["-50", "0"]),
++    ("cache.ttl_s", ["-1", "0"]),
++    ("db.pool_max", ["0", "-4"]),
++    ("feature.batch_size", ["0", "-10"]),
++]
++
++
++# ------------------------------------------------------------- log lines
++def signature(cause: str, rng: random.Random, extra: dict[str, str]) -> tuple[str, str, dict]:
++    """(level, message, fields) of one log line showing ``cause``."""
++    if cause == "DB_POOL_EXHAUSTED":
++        n = rng.choice([10, 12, 16, 20])
++        return (
++            "WARN",
++            "db pool exhausted",
++            {"wait_ms": rng.randrange(800, 3000), "in_use": f"{n}/{n}"},
++        )
++    if cause == "CACHE_STAMPEDE":
++        return (
++            "WARN",
++            "cache miss storm",
++            {
++                "key_prefix": rng.choice(["sku:", "price:", "user:"]),
++                "misses_per_s": rng.randrange(800, 4000),
++            },
++        )
++    if cause == "CERT_EXPIRED":
++        return (
++            "ERROR",
++            "tls handshake failed",
++            {"peer": extra.get("peer", "partner-gw"), "reason": "certificate_expired"},
++        )
++    if cause == "DNS_RESOLUTION":
++        return (
++            "ERROR",
++            "dns lookup failed",
++            {"host": extra.get("host", "geo.internal"), "err": "SERVFAIL"},
++        )
++    if cause == "QUEUE_BACKLOG":
++        return (
++            "WARN",
++            "consumer lag",
++            {"topic": extra.get("topic", "events"), "lag": rng.randrange(20_000, 90_000)},
++        )
++    if cause == "MEMORY_LEAK":
++        return (
++            "WARN",
++            "heap usage high",
++            {"rss_mb": rng.randrange(1800, 3900), "gc_pause_ms": rng.randrange(300, 1400)},
++        )
++    if cause == "UPSTREAM_RATE_LIMIT":
++        return (
++            "ERROR",
++            "upstream returned 429",
++            {
++                "upstream": extra.get("upstream", "tax-provider"),
++                "retry_after_s": rng.randrange(5, 60),
++            },
++        )
++    if cause == "DISK_PRESSURE":
++        return "WARN", "disk usage high", {"path": "/var/data", "used_pct": rng.randrange(91, 99)}
++    if cause == "BAD_CONFIG_ROLLOUT":
++        return (
++            "ERROR",
++            "config validation failed",
++            {"key": extra["key"], "value": extra["value"], "build": extra["build"]},
++        )
++    raise KeyError(cause)
++
++
++ROUTINE = [
++    (
++        "INFO",
++        "request ok",
++        lambda r: {
++            "route": r.choice(["/v1/items", "/v1/orders", "/v1/health", "/v1/quote"]),
++            "status": 200,
++            "ms": r.randrange(4, 90),
++        },
++    ),
++    ("INFO", "health ok", lambda r: {"probe": "readiness"}),
++    ("INFO", "heartbeat", lambda r: {"uptime_s": r.randrange(1000, 90000)}),
++    (
++        "WARN",
++        "slow query",
++        lambda r: {"ms": r.randrange(200, 450), "table": r.choice(["orders", "items", "events"])},
++    ),
++    ("INFO", "gc cycle", lambda r: {"pause_ms": r.randrange(2, 40)}),
++]
++
++
++def fmt_line(ts: str, level: str, svc: str, msg: str, fields: dict, as_json: bool) -> str:
++    if as_json:
++        return json.dumps(
++            {"ts": ts, "level": level, "svc": svc, "msg": msg, **fields}, separators=(",", ":")
++        )
++    kv = " ".join(f"{k}={v}" for k, v in fields.items())
++    return f"{ts} {level:<5} {svc} {msg} {kv}"
++
++
++def clock(round_no: int, minute: int, second: int) -> str:
++    return f"2026-09-14T{7 + round_no:02d}:{minute:02d}:{second:02d}Z"
++
++
++# ------------------------------------------------------------- truth
++@dataclass
++class RoundsTruth:
++    incidents: list[dict[str, Any]]  # cause, services, status, evidence_groups
++    unresolved: list[str]
++    superseded_causes: list[str]
++    false_alarm_causes: list[str]
++    stale_statuses: dict[str, list[str]]  # cause -> earlier statuses
++    closed_follow_ups: list[str]
++    notes: str = ""
++    stale_causes: list[str] = field(default_factory=list)
++
++    def to_dict(self) -> dict[str, Any]:
++        return {
++            "kind": "rounds",
++            "generator_version": GENERATOR_VERSION,
++            "incidents": self.incidents,
++            "unresolved": self.unresolved,
++            "superseded_causes": self.superseded_causes,
++            "false_alarm_causes": self.false_alarm_causes,
++            "stale_statuses": self.stale_statuses,
++            "closed_follow_ups": self.closed_follow_ups,
++            "notes": self.notes,
++        }
++
++
++class _Board:
++    """Per-round incident board files; records line numbers of every update."""
++
++    def __init__(self, n_rounds: int) -> None:
++        self.lines: dict[int, list[str]] = {
++            k: [f"# Incident board: updates in round {k:02d}", ""] for k in range(1, n_rounds + 1)
++        }
++
++    def add(self, k: int, text: str) -> tuple[str, int]:
++        self.lines[k].append(f"- {text}")
++        return f"round-{k:02d}/board.md", len(self.lines[k])
++
++
++def _plan(rng: random.Random, n_rounds: int) -> dict[str, Any]:
++    """Event timing (rounds) for this instance, satisfying the storyline's order."""
++    last = n_rounds
++    a1 = rng.choice([2, 3])
++    a2 = a1 + rng.choice([2, 3])
++    a3 = min(last - 2, a2 + rng.choice([2, 3]))
++    b1 = rng.choice([3, 4])
++    b_rev = min(last - 2, b1 + rng.choice([3, 4, 5]))
++    b_part = rng.choice([r for r in range(b1 + 1, last) if r != b_rev])
++    b_mit = min(last - 1, max(b_rev, b_part) + rng.choice([1, 2]))
++    c_origin = rng.choice([1, 2])
++    c1 = rng.choice([last - 3, last - 2])
++    c2 = c1 + 1
++    fmt = rng.choice(range(5, 9))
++    return dict(
++        a1=a1,
++        a2=a2,
++        a3=a3,
++        b1=b1,
++        b_rev=b_rev,
++        b_part=b_part,
++        b_mit=b_mit,
++        c_origin=c_origin,
++        c1=c1,
++        c2=c2,
++        fmt=fmt,
++    )
++
++
++def generate_rounds(spec: InstanceSpec) -> TaskInstance:
++    rng = random.Random(spec.seed)
++    n_rounds = {0: 10, 1: 11, 2: 12}[spec.seed % 3]
++    p = _plan(rng, n_rounds)
++    svcs = rng.sample(SERVICES, 5)
++    sA1, sA2, sB, sB2, sC = svcs
++    cA, cB, cB_wrong = rng.sample(GENERAL, 3)
++    has_d = rng.random() < 0.6
++    cD = rng.choice([c for c in GENERAL if c not in (cA, cB, cB_wrong)]) if has_d else None
++    sD = rng.choice([sA1, sB, sC]) if has_d else None
++    key, bad_values = rng.choice(CONFIG_KEYS)
++    bad_value = rng.choice(bad_values)
++    build = f"{rng.randrange(3, 9)}.{rng.randrange(10, 60)}.{rng.randrange(0, 9)}"
++    extra = {
++        "peer": rng.choice(["partner-gw", "bank-api", "sso.example.net"]),
++        "host": rng.choice(["geo.internal", "rates.internal", "kms.internal"]),
++        "topic": rng.choice(["order-events", "stock-updates", "mail-out"]),
++        "upstream": rng.choice(["tax-provider", "fx-rates", "sms-gateway"]),
++        "key": key,
++        "value": bad_value,
++        "build": build,
++    }
++    board = _Board(n_rounds)
++    groups: dict[str, dict[str, list[list[Any]]]] = {"A": {}, "B": {}, "C": {}}
++    changes: dict[int, list[str]] = {}
++    change_refs: dict[str, tuple[str, int]] = {}
++
++    def change(k: int, text: str, tag: str | None = None) -> None:
++        changes.setdefault(k, [f"# Change log: round {k:02d}", ""])
++        changes[k].append(f"- {text}")
++        if tag:
++            change_refs[tag] = (f"round-{k:02d}/changes.md", len(changes[k]))
++
++    # Routine change records, so the relevant ones are not the only entries.
++    routine_changes = [
++        "APPLIED: log sampling for /v1/health reduced to 1%",
++        "APPLIED: dashboard panels for p99 latency added",
++        "PROPOSED: raise HPA max replicas for search tier (not applied)",
++        "APPLIED: TLS session ticket rotation set to hourly",
++        "APPLIED: retry budget for idempotent GETs set to 1",
++        "PROPOSED: move batch jobs to off-peak window (not applied)",
++    ]
++    for k in range(1, n_rounds + 1):
++        if rng.random() < 0.6:
++            change(k, f"CHG-{100 + k * 7 + rng.randrange(0, 6)} {rng.choice(routine_changes)}")
++    # Thread C origin: an early change record shipping the bad value (the early fact).
++    co = p["c_origin"]
++    change(
++        co,
++        f"CHG-{100 + co * 7 + 6} APPLIED: build {build} rolled out to {sC}; sets `{key}={bad_value}`",
++        tag="C_origin",
++    )
++    change(
++        co, f"CHG-{100 + co * 7 + 7} APPLIED: build {build} rolled out to {sB}; no config changes"
++    )
++
++    # Thread A
++    t = board.add(
++        p["a1"],
++        f"Thread A opened: {CAUSES[cA]} confirmed as the cause (code {cA}) in {sA1}; impact also on {sA2}. Status: ongoing.",
++    )
++    groups["A"]["cause"] = [list(t)]
++    change(
++        p["a2"],
++        f"CHG-{100 + p['a2'] * 7 + 8} APPLIED: mitigation for thread A deployed to {sA1}",
++        tag="A_fix",
++    )
++    board.add(
++        p["a2"], "Thread A status: mitigated (errors reduced after the applied change; monitoring)."
++    )
++    t = board.add(p["a3"], "Thread A status: resolved (no recurrence for two hours).")
++    groups["A"]["status"] = [list(t)]
++    # Thread B
++    board.add(
++        p["b1"],
++        f"Thread B opened: errors in {sB}. Suspected cause: {CAUSES[cB_wrong]} ({cB_wrong}). Status: ongoing.",
++    )
++    t = board.add(
++        p["b_rev"],
++        f"Thread B root cause revised: {CAUSES[cB]} ({cB}); this supersedes the earlier suspicion of {cB_wrong}.",
++    )
++    groups["B"]["cause"] = [list(t)]
++    board.add(
++        p["b_part"],
++        f"Thread B update: affected services now also include {sB2}; cause and status unchanged.",
++    )
++    t = board.add(
++        p["b_mit"], "Thread B status: mitigated (workaround in place; permanent fix pending)."
++    )
++    groups["B"]["status"] = [list(t)]
++    # Thread C
++    t = board.add(
++        p["c1"],
++        f"Thread C opened: request failures on some {sC} pods; cause not yet identified. Status: ongoing.",
++    )
++    groups["C"]["status"] = [list(t)]
++    board.add(p["c2"], "Thread C note: failing pods still restarting; investigation continues.")
++    groups["C"]["origin"] = [list(change_refs["C_origin"])]
++    # Thread D (false alarm)
++    d1 = d2 = 0
++    if cD is not None:
++        d1 = rng.choice(range(2, n_rounds - 3))
++        d2 = d1 + rng.choice([2, 3])
++        board.add(d1, f"Thread D opened: {CAUSES[cD]} alerts ({cD}) on {sD}. Status: ongoing.")
++        board.add(
++            d2, "Thread D closed: false alarm (synthetic monitor misconfigured); not an incident."
++        )
++    # Follow-ups
++    fu = rng.sample(list(FOLLOW_UPS), rng.choice([4, 5]))
++    n_closed = rng.choice([1, 2])
++    closed, still_open = fu[:n_closed], fu[n_closed:]
++    for code in fu:
++        k = rng.randrange(2, n_rounds - 1)
++        board.add(k, f"Follow-up OPEN {code}: {FOLLOW_UPS[code]}.")
++        if code in closed:
++            board.add(rng.randrange(k + 1, n_rounds + 1), f"Follow-up CLOSED {code}.")
++
++    # Service logs per round.
++    files: dict[str, str] = {}
++    stages: list[dict[str, str]] = []
++    cause_lines_c: list[list[Any]] = []
++    sig_lines: dict[str, list[list[Any]]] = {"A": [], "B": []}
++    for k in range(1, n_rounds + 1):
++        as_json = k >= p["fmt"]
++        rf: dict[str, str] = {}
++        for svc in svcs:
++            events: list[tuple[int, int, str, str, dict]] = []
++            for _ in range(rng.randrange(55, 80)):
++                lvl, msg, f = rng.choice(ROUTINE)
++                events.append((rng.randrange(60), rng.randrange(60), lvl, msg, f(rng)))
++            active: list[str] = []
++            if svc == sA1 and p["a1"] - 1 <= k < p["a2"]:
++                active.append(cA)
++            if svc == sA2 and p["a1"] <= k < p["a2"]:
++                active.append(cA)
++            if svc == sB and k >= p["b1"]:
++                active.append(cB)
++            if svc == sB2 and k >= p["b_part"] - 1:
++                active.append(cB)
++            if svc == sC and k >= p["c1"]:
++                active.append("BAD_CONFIG_ROLLOUT")
++            if cD is not None and svc == sD and d1 <= k < d2:
++                active.append(cD)  # alerting noise the board later dismisses
++            for cause in active:
++                n_sig = rng.randrange(6, 14) if not (cause == cB and k >= p["b_mit"]) else 2
++                for _ in range(n_sig):
++                    s_lvl, s_msg, s_fields = signature(cause, rng, extra)
++                    events.append((rng.randrange(60), rng.randrange(60), s_lvl, s_msg, s_fields))
++            events.sort(key=lambda e: (e[0], e[1]))
++            lines = [
++                fmt_line(clock(k, m, s), lvl, svc, msg, f, as_json) for m, s, lvl, msg, f in events
++            ]
++            path = f"round-{k:02d}/logs/{svc}.log"
++            rf[path] = "\n".join(lines) + "\n"
++            # Log lines showing a thread's current cause in one of its services also support
++            # that cause (thread C's are the config validation failures).
++            for thread, cause, owners in (
++                ("A", cA, (sA1, sA2)),
++                ("B", cB, (sB, sB2)),
++                ("C", "BAD_CONFIG_ROLLOUT", (sC,)),
++            ):
++                if svc in owners and cause in active:
++                    msg = signature(cause, random.Random(0), extra)[1]
++                    for i, line in enumerate(lines, start=1):
++                        if msg in line:
++                            (cause_lines_c if thread == "C" else sig_lines[thread]).append(
++                                [path, i]
++                            )
++        rf[f"round-{k:02d}/board.md"] = "\n".join(board.lines[k]) + "\n"
++        if k in changes:
++            rf[f"round-{k:02d}/changes.md"] = "\n".join(changes[k]) + "\n"
++        stages.append(rf)
++        files.update(rf)
++    groups["C"]["cause"] = cause_lines_c
++    groups["A"]["cause"] += sig_lines["A"]
++    groups["B"]["cause"] += sig_lines["B"]
++
++    incidents = [
++        {
++            "thread": "A",
++            "cause": cA,
++            "services": sorted([sA1, sA2]),
++            "status": "resolved",
++            "evidence_groups": groups["A"],
++        },
++        {
++            "thread": "B",
++            "cause": cB,
++            "services": sorted([sB, sB2]),
++            "status": "mitigated",
++            "evidence_groups": groups["B"],
++        },
++        {
++            "thread": "C",
++            "cause": "BAD_CONFIG_ROLLOUT",
++            "services": [sC],
++            "status": "ongoing",
++            "evidence_groups": groups["C"],
++        },
++    ]
++    truth = RoundsTruth(
++        incidents=incidents,
++        unresolved=sorted(still_open),
++        superseded_causes=[cB_wrong],
++        false_alarm_causes=[cD] if cD else [],
++        stale_statuses={cA: ["ongoing", "mitigated"], cB: ["ongoing"]},
++        closed_follow_ups=sorted(closed),
++        notes=f"plan {p}; services {svcs}; key {key}={bad_value} build {build}",
++    )
++    updates = [
++        f"Round {k} of {n_rounds} released. New files are under /task/fixtures/round-{k:02d}/."
++        for k in range(1, n_rounds + 1)
++    ]
++    return TaskInstance(
++        spec=spec,
++        prompt=task_prompt(n_rounds),
++        files=files,
++        truth=truth,
++        stages=stages,
++        stage_updates=updates,
++        generator_version=GENERATOR_VERSION,
++        kind="rounds",
++        scorer_version=SCORER_VERSION,
++    )
++
++
++def task_prompt(n_rounds: int) -> str:
++    causes = "\n".join(f"  {c}: {d}" for c, d in CAUSES.items())
++    fus = "\n".join(f"  {c}: {d}" for c, d in FOLLOW_UPS.items())
++    return f"""Production incident investigation across several services. Evidence arrives in
++{n_rounds} hourly rounds. Only round 1 is available now, under /task/fixtures/round-01/.
++
++Each round directory holds:
++- logs/<service>.log: that hour's structured service logs (the log format may change).
++- board.md: the incident board's updates during that hour. An update lists only what
++  changed; anything it does not mention is unchanged. The latest update for a thread wins.
++- changes.md (some rounds): change records. APPLIED changes took effect; PROPOSED did not.
++
++Reply {{"action": "advance"}} to release the next round. Released rounds never change and stay
++readable. A final answer is accepted only after all {n_rounds} rounds are released.
++
++Final answer (all fields required):
++  {{"action": "final", "answer": {{
++     "incidents": [{{"cause": "<CAUSE_CODE>", "services": ["<service>", ...],
++                    "status": "ongoing|mitigated|resolved",
++                    "evidence_refs": ["round-NN/<file>:<line>", ...]}}, ...],
++     "unresolved": ["<FOLLOW_UP_CODE>", ...],
++     "summary": "<short free text>"}}}}
++- incidents: every real incident at the end of the final round (not false alarms), one entry
++  per incident, with its current cause, all affected services and its current status.
++- evidence_refs: path:line references (relative to /task/fixtures, ranges up to 20 lines as
++  path:a-b) supporting the incident's current cause and current status; when the cause traces
++  back to an earlier change record, cite that record too.
++- unresolved: follow-up items still open at the end of the final round.
++
++Cause codes:
++{causes}
++Follow-up codes:
++{fus}
++"""
++
++
++# ------------------------------------------------------------- scoring
++def _refs(answer_refs: list[Any], files: dict[str, str]) -> tuple[set[tuple[str, int]], list[str]]:
++    covered: set[tuple[str, int]] = set()
++    invalid: list[str] = []
++    for raw in answer_refs:
++        m = REF_RE.match(str(raw))
++        if not m:
++            invalid.append(str(raw))
++            continue
++        path, a = m.group(1), int(m.group(2))
++        b = int(m.group(3)) if m.group(3) else a
++        n_lines = files[path].count("\n") if path in files else 0
++        if path not in files or a < 1 or b < a or b > n_lines or b - a >= MAX_RANGE:
++            invalid.append(str(raw))
++            continue
++        covered.update((path, i) for i in range(a, b + 1))
++    return covered, invalid
++
++
++@dataclass
++class RoundsScore:
++    completed: bool
++    checks: int
++    passed: int
++    by_category: dict[str, dict[str, int]]
++    stale: int
++    reported_causes: list[str]
++    missing_causes: list[str]
++    extra_causes: list[str]
++    unresolved_reported: list[str]
++    invalid_refs: list[str]
++    details: list[dict[str, Any]]
++    strict_success: bool
++    outcome: str
++    import_error: None = None
++    evaluation_error: None = None
++
++    def to_dict(self) -> dict[str, Any]:
++        return {**self.__dict__, "components": self.components}
++
++    @property
++    def components(self) -> dict[str, float]:
++        out = {"all_checks": self.passed / self.checks if self.checks else 0.0}
++        for cat, v in self.by_category.items():
++            out[cat] = v["passed"] / v["total"] if v["total"] else 0.0
++        return out
++
++
++def score_rounds(
++    answer: dict[str, Any] | None, truth: RoundsTruth, files: dict[str, str]
++) -> RoundsScore:
++    """Deterministic checks. Per real incident: cause found, services, status, evidence; plus
++    no superseded or false-alarm cause reported, and the exact set of open follow-ups."""
++    n = len(truth.incidents)
++    by = {
++        c: {"total": t, "passed": 0, "stale": 0}
++        for c, t in (
++            ("causes", n + 1),
++            ("services", n),
++            ("status", n),
++            ("evidence", n),
++            ("unresolved", 1),
++        )
++    }
++    completed = answer is not None
++    reported: list[dict[str, Any]] = []
++    if answer and isinstance(answer.get("incidents"), list):
++        reported = [x for x in answer["incidents"] if isinstance(x, dict)]
++    rep_causes = [str(x.get("cause", "")).strip().upper() for x in reported]
++    want = {i["cause"]: i for i in truth.incidents}
++    details: list[dict[str, Any]] = []
++    all_invalid: list[str] = []
++    for cause, inc in want.items():
++        d: dict[str, Any] = {"thread": inc["thread"], "cause": cause}
++        match = [x for x, c in zip(reported, rep_causes, strict=True) if c == cause]
++        d["found"] = bool(match)
++        if match:
++            by["causes"]["passed"] += 1
++            x = match[0]
++            services = (
++                sorted({str(s).strip() for s in x.get("services", []) if isinstance(s, str)})
++                if isinstance(x.get("services"), list)
++                else []
++            )
++            d["services_ok"] = services == inc["services"]
++            status = str(x.get("status", "")).strip().lower()
++            d["status"] = status
++            d["status_ok"] = status == inc["status"]
++            d["status_stale"] = status in truth.stale_statuses.get(cause, [])
++            raw_refs = x.get("evidence_refs")
++            refs: list[Any] = raw_refs if isinstance(raw_refs, list) else []
++            covered, invalid = _refs(refs, files)
++            all_invalid += invalid
++            groups = {
++                g: any(tuple(r) in covered for r in rows)
++                for g, rows in inc["evidence_groups"].items()
++            }
++            d["evidence_groups"] = groups
++            d["evidence_ok"] = all(groups.values())
++            by["services"]["passed"] += d["services_ok"]
++            by["status"]["passed"] += d["status_ok"]
++            by["status"]["stale"] += d["status_stale"]
++            by["evidence"]["passed"] += d["evidence_ok"]
++        details.append(d)
++    extra = sorted({c for c in rep_causes if c not in want})
++    superseded = [c for c in extra if c in truth.superseded_causes]
++    false_alarm = [c for c in extra if c in truth.false_alarm_causes]
++    no_extra = completed and not extra and len(rep_causes) == len(set(rep_causes))
++    by["causes"]["passed"] += no_extra  # the extra "no wrong incident" check
++    by["causes"]["stale"] += len(superseded)
++    unresolved = []
++    if answer and isinstance(answer.get("unresolved"), list):
++        unresolved = sorted({str(u).strip().upper() for u in answer["unresolved"]})
++    unresolved_ok = completed and unresolved == truth.unresolved
++    by["unresolved"]["passed"] += unresolved_ok
++    by["unresolved"]["stale"] += sum(1 for u in unresolved if u in truth.closed_follow_ups)
++    total = sum(v["total"] for v in by.values())
++    passed = sum(v["passed"] for v in by.values())
++    stale = sum(v["stale"] for v in by.values())
++    strict = completed and passed == total
++    if not completed:
++        outcome = "no_answer"
++    elif strict:
++        outcome = "correct"
++    elif stale:
++        outcome = "stale"
++    else:
++        outcome = "incorrect"
++    details.append(
++        {
++            "extra_causes": extra,
++            "superseded_reported": superseded,
++            "false_alarm_reported": false_alarm,
++        }
++    )
++    return RoundsScore(
++        completed=completed,
++        checks=total,
++        passed=passed,
++        by_category=by,
++        stale=stale,
++        reported_causes=rep_causes,
++        missing_causes=[c for c in want if c not in rep_causes],
++        extra_causes=extra,
++        unresolved_reported=unresolved,
++        invalid_refs=all_invalid,
++        details=details,
++        strict_success=strict,
++        outcome=outcome,
++    )
++
++
++ROUNDS_FIELDS = ("incidents", "unresolved", "summary")
++ROUNDS_ANSWER_SCHEMA: dict[str, Any] = {
++    "type": "object",
++    "properties": {
++        "incidents": {
++            "type": "array",
++            "items": {
++                "type": "object",
++                "properties": {
++                    "cause": {"type": "string"},
++                    "services": {"type": "array", "items": {"type": "string"}},
++                    "status": {"type": "string"},
++                    "evidence_refs": {"type": "array", "items": {"type": "string"}},
++                },
++                "required": ["cause", "services", "status", "evidence_refs"],
++                "additionalProperties": False,
++            },
++        },
++        "unresolved": {"type": "array", "items": {"type": "string"}},
++        "summary": {"type": "string"},
++    },
++    "required": ["incidents", "unresolved", "summary"],
++    "additionalProperties": False,
++}
+diff --git a/tests/test_rounds.py b/tests/test_rounds.py
+new file mode 100644
+index 0000000..9d0da8b
+--- /dev/null
++++ b/tests/test_rounds.py
+@@ -0,0 +1,459 @@
++"""Experiment 007: rounds task generation and scoring, condition instructions, the separate
++summary-call allowance, helper evidence tiers and the three-condition schedule."""
++
++from __future__ import annotations
++
++import copy
++import hashlib
++import json
++from pathlib import Path
++from typing import Any
++
++import pytest
++
++from clm_lib import rounds
++from clm_lib.budget import Ledger
++from clm_lib.cli import ORDERS_3, condition_schedule, parse_conditions
++from clm_lib.config import Config, RequestConfig, load_config
++from clm_lib.helper_audit import audit_run, classify_function
++from clm_lib.prompts import CLM_CLAUSE, CLM_INSTRUCTIONS, system_prompt
++from clm_lib.provider import ModelRequest, ScriptedProvider
++from clm_lib.runner import Runner, parse_action
++from clm_lib.tasks import INSTANCES, generate
++
++from .conftest import TEST_PRICE, FakeExecutor, execute
++
++REPO = Path(__file__).resolve().parents[1]
++NAMES = [n for n in INSTANCES if n.startswith("rounds-")]
++ADVANCE = {"action": "advance"}
++KW: dict[str, Any] = dict(
++    exec_timeout=30, output_cap=6000, pressure_pct=70, tail=4, max_entries=200, max_body=24000
++)
++
++
++def correct_answer(truth: rounds.RoundsTruth) -> dict[str, Any]:
++    incidents = []
++    for inc in truth.incidents:
++        refs = [f"{rows[0][0]}:{rows[0][1]}" for rows in inc["evidence_groups"].values()]
++        incidents.append(
++            {
++                "cause": inc["cause"],
++                "services": list(inc["services"]),
++                "status": inc["status"],
++                "evidence_refs": refs,
++            }
++        )
++    return {"incidents": incidents, "unresolved": list(truth.unresolved), "summary": "x"}
++
++
++def final(answer: dict[str, Any]) -> dict[str, Any]:
++    return {"action": "final", "answer": answer}
++
++
++# ------------------------------------------------------------- generation
++def test_generation_is_deterministic_and_instances_vary_meaningfully() -> None:
++    seen = []
++    for name in NAMES:
++        a, b = generate(name), generate(name)
++        assert a.fixture_sha256 == b.fixture_sha256 and a.kind == "rounds"
++        assert 10 <= a.n_stages <= 12 and a.scorer_version == "rounds-score/1"
++        t = a.truth
++        seen.append(
++            (
++                tuple(i["cause"] for i in t.incidents),
++                tuple(tuple(i["services"]) for i in t.incidents),
++                tuple(t.unresolved),
++                t.notes.split(";")[0],
++            )
++        )
++    for i, x in enumerate(seen):  # causes, services, follow-ups and event timings all differ
++        for y in seen[i + 1 :]:
++            assert x[0] != y[0] or x[1] != y[1]
++            assert x[3] != y[3]
++    assert {generate(n).n_stages for n in NAMES} == {10, 11, 12}
++
++
++def test_every_required_answer_is_established_by_the_evidence() -> None:
++    for name in NAMES:
++        inst = generate(name)
++        t, files = inst.truth, inst.files
++        n = inst.n_stages
++        for inc in t.incidents:
++            for group, rows in inc["evidence_groups"].items():
++                assert rows, (name, inc["thread"], group)
++                for path, line in rows:
++                    text = files[path].splitlines()[line - 1]
++                    if group == "status":
++                        assert "Status: ongoing" in text or inc["status"] in text
++                    if group == "origin":
++                        assert "APPLIED" in text and "build" in text
++        a, b, c = t.incidents
++        boards = "".join(files[f"round-{k:02d}/board.md"] for k in range(1, n + 1))
++        assert f"(code {a['cause']})" in boards and "Thread A status: resolved" in boards
++        assert "revised: " in boards and f"({b['cause']})" in boards
++        assert f"supersedes the earlier suspicion of {t.superseded_causes[0]}" in boards
++        assert (
++            f"now also include {b['services'][0]}" in boards
++            or f"now also include {b['services'][1]}" in boards
++        )
++        origin_path, origin_line = c["evidence_groups"]["origin"][0]
++        origin = files[origin_path].splitlines()[origin_line - 1]
++        cause_path, cause_line = c["evidence_groups"]["cause"][0]
++        cause_text = files[cause_path].splitlines()[cause_line - 1]
++        key_value = origin.split("sets `")[1].rstrip("`")
++        key, value = key_value.split("=")
++        assert key in cause_text and value in cause_text  # later evidence links to round 1/2
++        for code in t.unresolved:
++            assert f"Follow-up OPEN {code}" in boards and f"Follow-up CLOSED {code}" not in boards
++        for code in t.closed_follow_ups:
++            assert f"Follow-up CLOSED {code}" in boards
++        for code in t.false_alarm_causes:
++            assert "false alarm" in boards and f"({code})" in boards
++        # The log format changes part-way (key=value text, then JSON lines).
++        first_log = next(p for p in files if p.startswith("round-01/logs/"))
++        last_log = next(p for p in files if p.startswith(f"round-{n:02d}/logs/"))
++        assert not files[first_log].startswith("{") and files[last_log].startswith("{")
++
++
++def test_prompt_states_the_contract_without_answers() -> None:
++    inst = generate("rounds-eval-1")
++    p = inst.prompt
++    assert '"incidents"' in p and '"unresolved"' in p and "evidence_refs" in p
++    for inc in inst.truth.incidents:
++        for s in inc["services"]:
++            assert s not in p  # no instance facts in the task text
++
++
++# ------------------------------------------------------------- scoring
++def _variant(good: dict[str, Any], edit: Any, inst: Any) -> rounds.RoundsScore:
++    a = copy.deepcopy(good)
++    edit(a)
++    return rounds.score_rounds(a, inst.truth, inst.files)
++
++
++def test_correct_answer_is_strict_and_faulty_answers_fail_specifically() -> None:
++    for name in NAMES:
++        inst = generate(name)
++        t = inst.truth
++        good = correct_answer(t)
++        s = rounds.score_rounds(good, t, inst.files)
++        assert s.strict_success and s.outcome == "correct" and s.passed == s.checks
++        sup, origin = t.superseded_causes[0], t.incidents[2]["evidence_groups"]["origin"][0]
++        origin_ref = f"{origin[0]}:{origin[1]}"
++        closed = t.closed_follow_ups[0] if t.closed_follow_ups else None
++        fa = t.false_alarm_causes[0] if t.false_alarm_causes else None
++        cases: list[tuple[str, Any]] = [
++            ("superseded cause", lambda a, sup=sup: a["incidents"][1].update(cause=sup)),
++            ("stale status", lambda a: a["incidents"][0].update(status="mitigated")),
++            ("partial update missed", lambda a: a["incidents"][1]["services"].pop()),
++            ("missing incident", lambda a: a["incidents"].pop(2)),
++            (
++                "early fact not cited",
++                lambda a, origin_ref=origin_ref: a["incidents"][2].update(
++                    evidence_refs=[r for r in a["incidents"][2]["evidence_refs"] if r != origin_ref]
++                ),
++            ),
++            (
++                "invalid ref",
++                lambda a: a["incidents"][0].update(evidence_refs=["round-99/board.md:1"]),
++            ),
++            ("open follow-up missing", lambda a: a["unresolved"].pop()),
++        ]
++        if closed:
++            cases.append(
++                (
++                    "closed follow-up reported",
++                    lambda a, closed=closed: a["unresolved"].append(closed),
++                )
++            )
++        if fa:
++            cases.append(
++                (
++                    "false alarm reported",
++                    lambda a, fa=fa: a["incidents"].append(
++                        {"cause": fa, "services": [], "status": "resolved", "evidence_refs": []}
++                    ),
++                )
++            )
++        out = {label: _variant(good, edit, inst) for label, edit in cases}
++        assert not any(sc.strict_success for sc in out.values()), name
++        assert out["superseded cause"].by_category["causes"]["stale"] == 1
++        assert out["superseded cause"].outcome == "stale"
++        assert out["stale status"].by_category["status"]["stale"] == 1
++        assert out["partial update missed"].by_category["services"]["passed"] == 2
++        assert out["missing incident"].missing_causes == ["BAD_CONFIG_ROLLOUT"]
++        assert out["early fact not cited"].details[2]["evidence_groups"]["origin"] is False
++        assert out["invalid ref"].invalid_refs == ["round-99/board.md:1"]
++        assert out["open follow-up missing"].by_category["unresolved"]["passed"] == 0
++        if closed:
++            assert out["closed follow-up reported"].by_category["unresolved"]["stale"] == 1
++        if fa:
++            assert out["false alarm reported"].details[-1]["false_alarm_reported"] == [fa]
++        s = rounds.score_rounds(None, t, inst.files)
++        assert not s.strict_success and s.outcome == "no_answer" and s.passed == 0
++
++
++def test_rounds_final_answer_parsing() -> None:
++    ok, err = parse_action(
++        json.dumps(final({"incidents": [], "unresolved": [], "summary": ""})),
++        100,
++        True,
++        rounds.ROUNDS_FIELDS,
++    )
++    assert ok and not err
++    bad, err = parse_action(
++        json.dumps(final({"incidents": {}, "unresolved": [], "summary": ""})),
++        100,
++        True,
++        rounds.ROUNDS_FIELDS,
++    )
++    assert bad is None and "incidents" in err
++
++
++# ------------------------------------------------------------- instructions
++def test_condition_instructions_differ_only_in_their_clause() -> None:
++    direct = system_prompt("clm_direct", **KW, task_kind="rounds")
++    helpers = system_prompt("clm_helpers", **KW, task_kind="rounds")
++    assert direct.replace(CLM_CLAUSE["clm_direct"], "") == helpers.replace(
++        CLM_CLAUSE["clm_helpers"], ""
++    )
++    assert (
++        "reusable helper\n  modules" not in direct and "reusable helper\n  modules" not in helpers
++    )
++    assert "do not save" in direct and "optional" in CLM_CLAUSE["clm_helpers"]
++    # The original CLM text and earlier prompts are unchanged.
++    assert "reusable helper\n  modules" in CLM_INSTRUCTIONS
++    assert (
++        hashlib.sha256(system_prompt("clm", **KW).encode())
++        .hexdigest()
++        .startswith("fa474b0d1ea967a4")
++    )
++    assert (
++        hashlib.sha256(system_prompt("summary", **KW).encode())
++        .hexdigest()
++        .startswith("84134cfb02d2d02e")
++    )
++
++
++def test_historical_configs_keep_summary_calls_in_max_calls() -> None:
++    for name in ("default", "exp003", "exp004", "exp005", "exp006"):
++        lim = load_config(REPO / "configs" / f"{name}.toml").limits
++        assert lim.summary_calls_in_max_calls is True
++
++
++# ------------------------------------------------------------- summary allowance
++def _summary_cfg(separate: bool) -> Config:
++    cfg = Config()
++    cfg.baseline.policy = "token-tail/1"
++    cfg.limits.context_budget_tokens = 4000
++    cfg.limits.max_calls = 6
++    cfg.limits.summary_calls_in_max_calls = not separate
++    cfg.limits.max_summary_calls = 10
++    return cfg
++
++
++def test_separate_summary_allowance_keeps_task_calls_available(tmp_path: Path) -> None:
++    def step(req: ModelRequest) -> Any:
++        return "summary text " * 60 if req.purpose == "summary" else execute("print(1)")
++
++    results = {}
++    for separate in (False, True):
++        cfg = _summary_cfg(separate)
++        runner = Runner(
++            cfg,
++            ScriptedProvider([step] * 40),
++            FakeExecutor(outputs=["y" * 2400] * 40),
++            Ledger.open(tmp_path / f"l{separate}.json", 100.0),
++            TEST_PRICE,
++            live=False,
++            runs_dir=tmp_path / f"runs{separate}",
++            sleep=lambda s: None,
++        )
++        res = runner.run(generate("dev"), "summary")
++        c = res.metrics["counts"]
++        results[separate] = c
++        assert res.status == "max_calls"
++        assert c["summary_calls"] >= 1
++    assert results[False]["action_calls"] + results[False]["summary_calls"] <= 6
++    assert results[True]["action_calls"] == 6  # every task call kept; summaries counted apart
++
++
++# ------------------------------------------------------------- helper evidence
++def _cfg() -> Config:
++    cfg = Config()
++    cfg.request = RequestConfig(layout="blocks/1", prompt_caching=False, run_isolation="run-tag/1")
++    return cfg
++
++
++FILTER_HELPER = (
++    "import json\n"
++    "def compact(keep_last=2):\n"
++    "    d = json.load(open('context.json'))\n"
++    "    es = d['entries']\n"
++    "    notes = [e for e in es if e['role'] == 'note']\n"
++    "    rest = [e for e in es if e['role'] != 'note'][-keep_last:]\n"
++    "    d['entries'] = notes + rest\n"
++    "    json.dump(d, open('context.json', 'w'))\n"
++)
++WRAPPER_HELPER = (
++    "import json\n"
++    "def save(text):\n"
++    "    json.dump({'format': 'clm-context/v1', 'entries': [{'id': 'n', 'role': 'note', 'body': text}]}, open('context.json', 'w'))\n"
++)
++
++
++@pytest.mark.docker
++@pytest.mark.parametrize(
++    ("helper", "substantive"), [(FILTER_HELPER, True), (WRAPPER_HELPER, False)]
++)
++def test_helper_tiers_distinguish_repeated_substantive_logic(
++    tmp_path: Path, helper: str, substantive: bool
++) -> None:
++    from clm_lib.executor import DockerExecutor
++
++    call = (
++        "import cm\ncm.compact()\nprint('ok')\n"
++        if substantive
++        else "import cm\ncm.save('facts so far')\nprint('ok')\n"
++    )
++    script = [
++        execute(f"open('cm.py', 'w').write({helper!r})\nprint('written')\n"),
++        execute("print('pad ' * 50)"),
++        execute(call),
++        execute("print('more ' * 50)"),
++        execute(call),
++        {
++            "action": "final",
++            "answer": {
++                "root_cause": "x",
++                "required_value": "0",
++                "remedy": "x",
++                "evidence_refs": [],
++            },
++        },
++    ]
++    runner = Runner(
++        _cfg(),
++        ScriptedProvider(script),
++        DockerExecutor(),
++        Ledger.open(tmp_path / "l.json", 100.0),
++        TEST_PRICE,
++        live=False,
++        runs_dir=tmp_path / "runs",
++        sleep=lambda s: None,
++    )
++    res = runner.run(generate("dev"), "clm_helpers")
++    a = audit_run(res.run_dir)
++    f = a["files"]["cm.py"]
++    assert (
++        a["tiers"]["created"] and a["tiers"]["executed"] and a["tiers"]["repeated_accepted_edits"]
++    )
++    assert f["helper_written_accepted_edit_steps"] == [3, 5] and f[
++        "next_request_confirmed_steps"
++    ] == [3, 5]
++    assert a["tiers"]["substantive_repeated"] is substantive
++    kinds = {w["kind"] for w in f["writers"].values()}
++    assert kinds == (
++        {"selection/filtering"} if substantive else {"wrapper (writes caller-supplied content)"}
++    )
++    assert [r["step"] for r in a["reuse_violations"]] == [3, 5]  # reuse of saved code (fine in C)
++
++
++@pytest.mark.docker
++def test_direct_condition_reuse_is_flagged_but_within_step_functions_are_not(
++    tmp_path: Path,
++) -> None:
++    from clm_lib.executor import DockerExecutor
++
++    inline = (
++        "import json\n"
++        "def trim(d):\n    d['entries'] = d['entries'][-2:]\n    return d\n"
++        "json.dump(trim(json.load(open('context.json'))), open('context.json', 'w'))\nprint('ok')\n"
++    )
++    script = [
++        execute(inline),
++        execute("open('notes.md', 'w').write('facts: none yet')\nprint('ok')"),
++        execute(f"open('cm.py', 'w').write({FILTER_HELPER!r})\nprint('saved')"),
++        execute("exec(open('cm.py').read())\ncompact()\nprint('ok')"),
++        {
++            "action": "final",
++            "answer": {
++                "root_cause": "x",
++                "required_value": "0",
++                "remedy": "x",
++                "evidence_refs": [],
++            },
++        },
++    ]
++    runner = Runner(
++        _cfg(),
++        ScriptedProvider(script),
++        DockerExecutor(),
++        Ledger.open(tmp_path / "l.json", 100.0),
++        TEST_PRICE,
++        live=False,
++        runs_dir=tmp_path / "runs",
++        sleep=lambda s: None,
++    )
++    res = runner.run(generate("dev"), "clm_direct")
++    a = audit_run(res.run_dir)
++    assert set(a["files"]) == {"cm.py"}  # notes and within-step functions are not helpers
++    assert a["reuse_violations"] == [
++        {"step": 4, "file": "cm.py", "evidence": ["read and exec/compile in code"]}
++    ]
++
++
++def test_classifier_on_plain_sources() -> None:
++    assert classify_function(FILTER_HELPER, "compact")["kind"] == "selection/filtering"
++    assert classify_function(WRAPPER_HELPER, "save")["kind"].startswith("wrapper")
++
++
++# ------------------------------------------------------------- three-condition schedule
++def test_three_condition_schedule_balance() -> None:
++    conds = parse_conditions("summary:on,clm_direct:on,clm_helpers:on")
++    six = condition_schedule(["a", "b", "c"], 2, conds)
++    counts: dict[tuple[str, int], int] = {}
++    for r in six:
++        counts[(r["mode"], r["position"])] = counts.get((r["mode"], r["position"]), 0) + 1
++    assert set(counts.values()) == {2} and len(counts) == 9  # exact over six blocks
++    eight = condition_schedule(["a", "b", "c", "d"], 2, conds)
++    assert len(eight) == 24 and len({r["block"] for r in eight}) == 8
++    per_pos: dict[tuple[str, int], int] = {}
++    for r in eight:
++        per_pos[(r["mode"], r["position"])] = per_pos.get((r["mode"], r["position"]), 0) + 1
++    assert set(per_pos.values()) <= {2, 3, 4}  # eight blocks cannot be balanced exactly
++    assert len(set(ORDERS_3)) == 6
++
++
++@pytest.mark.docker
++def test_rounds_release_visibility_and_end_to_end_scoring(tmp_path: Path) -> None:
++    from clm_lib.executor import DockerExecutor
++
++    inst = generate("rounds-dev-1")
++    probe = (
++        "import os\n"
++        "print(sorted(d for d in os.listdir('/task/fixtures')))\n"
++        "print('hidden', [f for r, _, fs in os.walk('/task') for f in fs if 'truth' in f])\n"
++    )
++    n = inst.n_stages
++    script = [execute(probe), ADVANCE, execute(probe)] + [ADVANCE] * (n - 2)
++    script += [final(correct_answer(inst.truth))]
++    runner = Runner(
++        _cfg(),
++        ScriptedProvider(script),
++        DockerExecutor(),
++        Ledger.open(tmp_path / "l.json", 100.0),
++        TEST_PRICE,
++        live=False,
++        runs_dir=tmp_path / "runs",
++        sleep=lambda s: None,
++    )
++    res = runner.run(inst, "clm_direct")
++    obs = [r.user for r in runner.provider.requests]  # type: ignore[attr-defined]
++    assert "['round-01']" in obs[1] and "hidden []" in obs[1]
++    assert "['round-01', 'round-02']" in obs[3]
++    assert "Round 2 of" in obs[2]
++    assert res.status == "completed" and res.score.strict_success
++    score = json.loads((res.run_dir / "evaluator" / "score.json").read_text())
++    assert score["scorer_version"] == "rounds-score/1"
++    assert res.metrics["prompt_version"] == "2026-10-05.1"

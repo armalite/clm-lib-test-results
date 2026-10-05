@@ -1,0 +1,112 @@
+{
+ "meta": {
+  "kind": "summary",
+  "step": 24,
+  "attempt": 0,
+  "est_input_tokens": 4284,
+  "input_token_bound": 11297,
+  "reserved_usd": 0.138405,
+  "context_revision": 30,
+  "context_sha256": "4318787103c4e719c3a2d97d968a941a16fb44a5dca40ab6d7867ce1b9e2ed9d",
+  "layout": "blocks/1",
+  "cache_ttl": "5m",
+  "prefix": {
+   "family": "summary",
+   "blocks": 11,
+   "system_blocks": 2,
+   "breakpoint_blocks": [
+    2,
+    9
+   ],
+   "previous": true,
+   "common_blocks": 3,
+   "first_changed_block": 3,
+   "common_prefix_chars": 3510
+  },
+  "summary_policy": "token-tail/1",
+  "older_entries": [
+   "sum7",
+   "s20.obs",
+   "s21.act",
+   "s21.obs",
+   "s22.act",
+   "s22.obs",
+   "s23.act"
+  ],
+  "kept_tail": [
+   "s23.obs"
+  ],
+  "summary_attempt": 0,
+  "requested_max_chars": 600,
+  "forced": false
+ },
+ "sha256": "f382122f824546eae441ee2cccf834e285d31d57e0784bfd9d99dad661241880",
+ "payload": {
+  "model": "claude-opus-5-5",
+  "max_tokens": 4096,
+  "system": [
+   {
+    "type": "text",
+    "text": "run-ref: 9361c0050918e6cf92c40fd4862cab77\n"
+   },
+   {
+    "type": "text",
+    "text": "You compress an agent's working transcript. The agent is\ninvestigating a multi-service production incident whose evidence arrives in hourly rounds, and will\nkeep working after your summary replaces the entries below. The transcript may include an earlier\nsummary: carry its facts forward. Preserve, exactly and verbatim where relevant:\n- each incident thread: its current cause and any superseded cause, affected services, current\n  status and the record that set it;\n- follow-up items opened and closed, with their codes;\n- early facts that may matter later (change records, builds, configuration values);\n- every file:line reference needed as evidence, and observed log formats;\n- open questions and the next planned steps, including rounds still to be released.\nDrop repetition and raw log dumps. Use compact bullet points. Plain text only. Stay within the\nrequested length; it is set so the agent has room to continue."
+   }
+  ],
+  "messages": [
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "text",
+      "text": "<task>\nProduction incident investigation across several services. Evidence arrives in\n10 hourly rounds. Only round 1 is available now, under /task/fixtures/round-01/.\n\nEach round directory holds:\n- logs/<service>.log: that hour's structured service logs (the log format may change).\n- board.md: the incident board's updates during that hour. An update lists only what\n  changed; anything it does not mention is unchanged. The latest update for a thread wins.\n- changes.md (some rounds): change records. APPLIED changes took effect; PROPOSED did not.\n\nReply {\"action\": \"advance\"} to release the next round. Released rounds never change and stay\nreadable. A final answer is accepted only after all 10 rounds are released.\n\nFinal answer (all fields required):\n  {\"action\": \"final\", \"answer\": {\n     \"incidents\": [{\"cause\": \"<CAUSE_CODE>\", \"services\": [\"<service>\", ...],\n                    \"status\": \"ongoing|mitigated|resolved\",\n                    \"evidence_refs\": [\"round-NN/<file>:<line>\", ...]}, ...],\n     \"unresolved\": [\"<FOLLOW_UP_CODE>\", ...],\n     \"summary\": \"<short free text>\"}}\n- incidents: every real incident at the end of the final round (not false alarms), one entry\n  per incident, with its current cause, all affected services and its current status.\n- evidence_refs: path:line references (relative to /task/fixtures, ranges up to 20 lines as\n  path:a-b) supporting the incident's current cause and current status; when the cause traces\n  back to an earlier change record, cite that record too.\n- unresolved: follow-up items still open at the end of the final round.\n\nCause codes:\n  DB_POOL_EXHAUSTED: database connection pool exhausted\n  CACHE_STAMPEDE: cache miss storm after mass expiry\n  CERT_EXPIRED: an expired TLS certificate on a dependency\n  DNS_RESOLUTION: DNS lookups failing for a dependency\n  QUEUE_BACKLOG: message consumer lag growing\n  MEMORY_LEAK: process memory growing until restarts\n  UPSTREAM_RATE_LIMIT: an upstream provider rejecting requests with 429\n  DISK_PRESSURE: a data volume running out of space\n  BAD_CONFIG_ROLLOUT: a configuration value shipped by a rollout is invalid\nFollow-up codes:\n  CUSTOMER_COMMS: customer communication about the impact\n  DATA_BACKFILL: backfill of records missed during the incident\n  CAPACITY_REVIEW: capacity review of the affected tier\n  ALERT_TUNING: tuning of noisy or late alerts\n  VENDOR_TICKET: a ticket open with an external vendor\n  POSTMORTEM_DRAFT: drafting the postmortem\n  RUNBOOK_UPDATE: updating the runbook\n</task>\n\n<transcript_to_summarise>\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"sum7\", \"role\": \"summary\", \"body\": \"R1-7 released. R7 has only a 2-line board and logs, no changes.md. The R7 analysis code has run, but its output has not been seen yet. R6 notes are already appended to /task/workspace/notes.md. Next: review the R7 output, append R7 notes, advance through R10, then submit the final answer.\\n- Log format: \\\"\\u003cts> LEVEL svc msg\\\". Noise lines: slow query, heartbeat, health ok, gc cycle, request ok.\\n- Follow-ups:\\n  - R2 opened ALERT_TUNING, RUNBOOK_UPDATE and VENDOR_TICKET (board.md:3-5).\\n  - round-05/board.md:5 opened CAPACITY_REVIEW.\\n  - round-06/board.md:3 CLOSED ALERT_TUNING.\\n  - round-06/board.md:4 opened CUSTOMER_COMMS.\\n  - Currently open: RUNBOOK_UPDATE, VENDOR_TICKET, CAPACITY_REVIEW, CUSTOMER_COMMS.\\n- Change records:\\n  - round-02/changes.md:4 CHG-120 APPLIED notify-worker 8.56.0 with http.max_inflight=0. Possible BAD_CONFIG_ROLLOUT, but notify-worker showed no errors through R6.\\n  - CHG-133 and CHG-138 were TLS rotation only.\\n  - round-06/changes.md:3 CHG-147 APPLIED set the retry budget for idempotent GETs to 1.\\n- Thread A: DB_POOL_EXHAUSTED, affecting auth-svc and search-api.\\n  - Opened at round-03/board.md:3; round-05/board.md:3 set it to mitigated, with mitigation CHG-143 at round-05/changes.md:4.\\n  - Evidence: round-03/logs/auth-svc.log:7-19, round-03/logs/search-api.log:1-14, round-04/logs/auth-svc.log:7-39, round-04/logs/search-api.log:4-30.\\n  - No errors in R6.\\n- Thread B: the board says CACHE_STAMPEDE (round-04/board.md:3), but the logs show fx-rates 429s, so the real cause is UPSTREAM_RATE_LIMIT.\\n  - Affects payments-svc and checkout-api (checkout-api added at round-05/board.md:4). Status is ongoing.\\n  - Log format: \\\"ERROR \\u003csvc> upstream returned 429 upstream=fx-rates retry_after_s=N\\\".\\n  - Evidence: round-04/logs/payments-svc.log:1-45, round-05/logs/checkout-api.log:21-59, round-06/logs/payments-svc.log:3-33, round-06/logs/checkout-api.log:19-77 (exceeds 20 lines; split it, e.g. 19-30, 56-77).\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s20.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=3.1s\\n--- stdout ---\\n# Incident board: updates in round 07\\n\\n\\nauth-svc.log 0\\nfirst 2026-09-14T14:01:40Z INFO  auth-svc heartbeat uptime_s=85082\\ncheckout-api.log 12\\n(11, '2026-09-14T14:16:04Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=46')\\n(19, '2026-09-14T14:20:41Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=20')\\n(25, '2026-09-14T14:28:53Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=24')\\n(26, '2026-09-14T14:29:42Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=9')\\nlast (66, '2026-09-14T14:56:09Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=8')\\nnotify-worker.log 0\\nfirst 2026-09-14T14:00:32Z INFO  notify-worker health ok probe=readiness\\npayments-svc.log 10\\n(1, '2026-09-14T14:00:27Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=21')\\n(7, '2026-09-14T14:04:10Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=21')\\n(13, '2026-09-14T14:08:31Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=38')\\n(23, '2026-09-14T14:18:29Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=58')\\nlast (82, '2026-09-14T14:58:58Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=26')\\nsearch-api.log 0\\nfirst 2026-09-14T14:02:05Z WARN  search-api slow query ms=399 table=events\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s21.act\", \"role\": \"assistant\", \"body\": \"[step 21] execute\\nthought: Save R7 notes.\\ncode:\\nopen('/task/workspace/notes.md','a').write('\\\\nR7: board empty. B 429s continue payments 1..82 (10), checkout 11..66 (12). A none, notify none.\\\\n')\\nprint('ok')\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s21.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.3s\\n--- stdout ---\\nok\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s22.act\", \"role\": \"assistant\", \"body\": \"[step 22] advance\\nthought: \"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s22.obs\", \"role\": \"observation\", \"body\": \"Stage 8 of 10 released.\\nRound 8 of 10 released. New files are under /task/fixtures/round-08/.\\n\\nNew files:\\n  round-08/board.md (5 lines)\\n  round-08/changes.md (3 lines)\\n  round-08/logs/auth-svc.log (71 lines)\\n  round-08/logs/checkout-api.log (65 lines)\\n  round-08/logs/notify-worker.log (79 lines)\\n  round-08/logs/payments-svc.log (87 lines)\\n  round-08/logs/search-api.log (62 lines)\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s23.act\", \"role\": \"assistant\", \"body\": \"[step 23] execute\\nthought: Review R8.\\ncode:\\nimport os,re\\nb='/task/fixtures/round-08/'\\nfor f in ['board.md','changes.md']:\\n  for i,l in enumerate(open(b+f),1): print(f,i,l.rstrip())\\nnoise=re.compile(r'slow query|heartbeat|health ok|gc cycle|request ok')\\nfor f in sorted(os.listdir(b+'logs')):\\n  L=[(i,l.rstrip()) for i,l in enumerate(open(b+'logs/'+f),1) if not noise.search(l)]\\n  print(f,len(L))\\n  for x in L[:4]: print(x)\\n  if L: print('last',L[-1])\"}\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "</transcript_to_summarise>\n\nWrite the replacement summary now, at most 600 characters."
+     }
+    ]
+   }
+  ],
+  "output_config": {
+   "effort": "low"
+  }
+ }
+}

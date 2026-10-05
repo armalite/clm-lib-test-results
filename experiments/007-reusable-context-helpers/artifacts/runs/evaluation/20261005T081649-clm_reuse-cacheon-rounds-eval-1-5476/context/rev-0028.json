@@ -1,0 +1,49 @@
+{
+ "number": 28,
+ "parent": 27,
+ "source": "runtime",
+ "step": 21,
+ "sha256": "78ac66e3f11cd8c295c05f637dfeb30a91a28664670272252a9d06751638cd2a",
+ "entries": [
+  {
+   "id": "notes",
+   "role": "note",
+   "body": "R1: CHG-113 APPLIED auth-svc cache.ttl_s=-1 (round-01/changes.md:4) suspect BAD_CONFIG (no auth errors seen r1-r6). payments lag r01 payments-svc.log:7,9. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc. lag r02 payments-svc.log:3-40, ledger-svc.log:5-77. CHG-117 TLS hourly noise. R3: CHG-124 PROPOSED; slow queries=noise. R4: board.md:3 Thread B shipping-svc suspected DB_POOL (logs show CERT_EXPIRED peer=sso.example.net shipping-svc.log:1-13); board.md:4 RUNBOOK_UPDATE OPEN. R5: board.md:3 Thread A mitigated; changes.md:3 CHG-143 APPLIED payments mitigation; CERT_EXPIRED search-api.log:14-81. R6: board.md:3 Thread B adds search-api; cert errs r06 search-api.log:11-63, shipping-svc.log:4-78 (no lag lines r5,r6). ctx.py load/save/setnote/prune(keep)."
+  },
+  {
+   "id": "s19.act",
+   "role": "assistant",
+   "body": "[step 19] execute\nthought: Save R6 notes and prune.\ncode:\nimport ctx\nctx.prune(keep=())\nctx.setnote('notes','R1: CHG-113 APPLIED auth-svc cache.ttl_s=-1 (round-01/changes.md:4) suspect BAD_CONFIG (no auth errors seen r1-r6). payments lag r01 payments-svc.log:7,9. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc. lag r02 payments-svc.log:3-40, ledger-svc.log:5-77. CHG-117 TLS hourly noise. R3: CHG-124 PROPOSED; slow queries=noise. R4: board.md:3 Thread B shipping-svc suspected DB_POOL (logs show CERT_EXPIRED peer=sso.example.net shipping-svc.log:1-13); board.md:4 RUNBOOK_UPDATE OPEN. R5: board.md:3 Thread A mitigated; changes.md:3 CHG-143 APPLIED payments mitigation; CERT_EXPIRED search-api.log:14-81. R6: board.md:3 Thread B adds search-api; cert errs r06 search-api.log:11-63, shipping-svc.log:4-78 (no lag lines r5,r6). ctx.py load/save/setnote/prune(keep).')\nprint('ok')"
+  },
+  {
+   "id": "s19.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s19.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 19: revision 24 -> 25; entries 8 -> 1; body chars 3619 -> 772; removed [s16.act, s16.obs, s16.rcpt, s17.act, s17.obs, s18.act, s18.obs]; added []; rewritten [notes]"
+  },
+  {
+   "id": "s20.act",
+   "role": "assistant",
+   "body": "[step 20] advance\nthought: "
+  },
+  {
+   "id": "s20.obs",
+   "role": "observation",
+   "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/changes.md (3 lines)\n  round-07/logs/auth-svc.log (65 lines)\n  round-07/logs/ledger-svc.log (64 lines)\n  round-07/logs/payments-svc.log (74 lines)\n  round-07/logs/search-api.log (79 lines)\n  round-07/logs/shipping-svc.log (78 lines)"
+  },
+  {
+   "id": "s21.act",
+   "role": "assistant",
+   "body": "[step 21] execute\nthought: Inspect round 7 board, changes, and key log signals.\ncode:\nimport re,glob\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-07/'+f),1):print(f,i,l.rstrip())\nfor p in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n  L=open(p).read().splitlines();hits=[i for i,l in enumerate(L,1) if re.search(r'ERROR|WARN|cert|lag|ttl|429|pool',l,re.I)]\n  print(p.split('/')[-1],len(hits),hits[:3],hits[-1:] if hits else '')\n  if hits:print(' ',L[hits[0]-1][:200])"
+  },
+  {
+   "id": "s21.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 07\nboard.md 2 \nboard.md 3 - Follow-up OPEN POSTMORTEM_DRAFT: drafting the postmortem.\nboard.md 4 - Follow-up OPEN DATA_BACKFILL: backfill of records missed during the incident.\nchanges.md 1 # Change log: round 07\nchanges.md 2 \nchanges.md 3 - CHG-154 APPLIED: retry budget for idempotent GETs set to 1\nauth-svc.log 11 [5, 6, 12] [55]\n  {\"ts\":\"2026-09-14T14:03:38Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":433,\"table\":\"items\"}\nledger-svc.log 13 [2, 5, 11] [62]\n  {\"ts\":\"2026-09-14T14:07:00Z\",\"level\":\"WARN\",\"svc\":\"ledger-svc\",\"msg\":\"slow query\",\"ms\":389,\"table\":\"items\"}\npayments-svc.log 15 [2, 4, 15] [68]\n  {\"ts\":\"2026-09-14T14:01:13Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"slow query\",\"ms\":286,\"table\":\"items\"}\nsearch-api.log 27 [4, 6, 8] [74]\n  {\"ts\":\"2026-09-14T14:03:58Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":291,\"table\":\"items\"}\nshipping-svc.log 28 [2, 3, 12] [78]\n  {\"ts\":\"2026-09-14T14:01:03Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"slow query\",\"ms\":214,\"table\":\"items\"}\n"
+  }
+ ]
+}

@@ -1,0 +1,45 @@
+--- rev-33
++++ rev-34
+@@ -32,39 +32,9 @@
+    "body": "R6: Thread A resolved (round-06/board.md:3). Follow-ups OPEN ALERT_TUNING (board.md:4), RUNBOOK_UPDATE (board.md:5). CHG-142 APPLIED retry GETs=1. DNS SERVFAIL rates.internal now ledger-svc (round-06/logs/ledger-svc.log:13-29) AND pricing-svc (round-06/logs/pricing-svc.log:5-20). Next: advance to R7."
+   },
+   {
+-   "id": "s19.act",
+-   "role": "assistant",
+-   "body": "[step 19] execute\nthought: Save R6 note, drop step 18 entries.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4','n5')]\nc['entries'].append({'id':'n6','role':'note','body':'R6: Thread A resolved (round-06/board.md:3). Follow-ups OPEN ALERT_TUNING (board.md:4), RUNBOOK_UPDATE (board.md:5). CHG-142 APPLIED retry GETs=1. DNS SERVFAIL rates.internal now ledger-svc (round-06/logs/ledger-svc.log:13-29) AND pricing-svc (round-06/logs/pricing-svc.log:5-20). Next: advance to R7.'})\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+-  },
+-  {
+-   "id": "s19.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.9s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s19.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 19: revision 29 -> 30; entries 8 -> 6; body chars 4215 -> 1440; removed [s18.act, s18.obs, s18.rcpt]; added [n6]; rewritten []"
+-  },
+-  {
+-   "id": "s20.act",
+-   "role": "assistant",
+-   "body": "[step 20] advance\nthought: "
+-  },
+-  {
+-   "id": "s20.obs",
+-   "role": "observation",
+-   "body": "Stage 7 of 12 released.\nRound 7 of 12 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/changes.md (3 lines)\n  round-07/logs/auth-svc.log (69 lines)\n  round-07/logs/inventory-svc.log (70 lines)\n  round-07/logs/ledger-svc.log (85 lines)\n  round-07/logs/payments-svc.log (55 lines)\n  round-07/logs/pricing-svc.log (69 lines)"
+-  },
+-  {
+-   "id": "s21.act",
+-   "role": "assistant",
+-   "body": "[step 21] execute\nthought: Read R7 board/changes and scan logs for errors.\ncode:\nimport glob,re\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-07/'+f),1):print(f,i,l.rstrip())\nfor p in sorted(glob.glob('/task/fixtures/round-07/logs/*')):\n  n=0\n  for i,l in enumerate(open(p),1):\n    if re.search(r'ERROR|error|SERVFAIL|429|cert|heap|OOM|lag|disk',l,re.I) and n<4:\n      n+=1;print(p.split('/')[-1],i,l.rstrip()[:160])"
+-  },
+-  {
+-   "id": "s21.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 07\nboard.md 2 \nboard.md 3 - Thread B update: affected services now also include pricing-svc; cause and status unchanged.\nboard.md 4 - Thread D opened: an expired TLS certificate on a dependency alerts (CERT_EXPIRED) on inventory-svc. Status: ongoing.\nchanges.md 1 # Change log: round 07\nchanges.md 2 \nchanges.md 3 - CHG-151 PROPOSED: raise HPA max replicas for search tier (not applied)\ninventory-svc.log 7 {\"ts\":\"2026-09-14T14:07:39Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"partner-gw\",\"reason\":\"certificate_expired\"}\ninventory-svc.log 8 {\"ts\":\"2026-09-14T14:09:10Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"partner-gw\",\"reason\":\"certificate_expired\"}\ninventory-svc.log 12 {\"ts\":\"2026-09-14T14:11:01Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"partner-gw\",\"reason\":\"certificate_expired\"}\ninventory-svc.log 21 {\"ts\":\"2026-09-14T14:16:35Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"partner-gw\",\"reason\":\"certificate_expired\"}\nledger-svc.log 4 {\"ts\":\"2026-09-14T14:04:33Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\nledger-svc.log 15 {\"ts\":\"2026-09-14T14:11:01Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\nledger-svc.log 17 {\"ts\":\"2026-09-14T14:11:43Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\nledger-svc.log 21 {\"ts\":\"2026-09-14T14:13:13Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\npayments-svc.log 23 {\"ts\":\"2026-09-14T14:19:03Z\",\"level\":\"INFO\",\"svc\":\"payments-svc\",\"msg\":\"heartbeat\",\"uptime_s\":4292}\npricing-svc.log 6 {\"ts\":\"2026-09-14T14:08:55Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\npricing-svc.log 7 {\"ts\":\"2026-09-14T14:09:01Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\npricing-svc.log 12 {\"ts\":\"2026-09-14T14:13:34Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\npricing-svc.log 16 {\"ts\":\"2026-09-14T14:18:26Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n"
++   "id": "n7",
++   "role": "note",
++   "body": "R7: Thread B adds pricing-svc, cause/status unchanged (round-07/board.md:3). Thread D CERT_EXPIRED inventory-svc ongoing (board.md:4); logs tls certificate_expired peer=partner-gw (round-07/logs/inventory-svc.log:7,8,12,21). DNS SERVFAIL continues ledger (round-07/logs/ledger-svc.log:4-21) and pricing (round-07/logs/pricing-svc.log:6-16). CHG-151 PROPOSED only. Next: advance to R8."
+   }
+  ]
+ }

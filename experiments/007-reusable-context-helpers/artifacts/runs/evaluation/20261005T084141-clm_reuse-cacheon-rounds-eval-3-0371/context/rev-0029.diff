@@ -1,0 +1,19 @@
+--- rev-28
++++ rev-29
+@@ -60,6 +60,16 @@
+    "id": "s20.obs",
+    "role": "observation",
+    "body": "Stage 7 of 10 released.\nRound 7 of 10 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (6 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (66 lines)\n  round-07/logs/ledger-svc.log (55 lines)\n  round-07/logs/payments-svc.log (79 lines)\n  round-07/logs/search-api.log (74 lines)"
++  },
++  {
++   "id": "s21.act",
++   "role": "assistant",
++   "body": "[step 21] execute\nthought: Inspect round 7 board and key log signals.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-07/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n    L=open(f).read().splitlines()\n    hits=[(i+1,l[:150]) for i,l in enumerate(L) if re.search(r'ERROR|429|heap|disk|cert|OOM|restart',l,re.I)]\n    print(f.split('/')[-1],len(hits))\n    for h in hits[:4]+hits[-2:]: print(h)"
++  },
++  {
++   "id": "s21.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n# Incident board: updates in round 07\n\n- Thread A status: resolved (no recurrence for two hours).\n- Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\n- Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\n- Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\n\ncheckout-api.log 14\n(6, '2026-09-14T14:04:01Z WARN  checkout-api heap usage high rss_mb=3858 gc_pause_ms=861')\n(7, '2026-09-14T14:05:48Z WARN  checkout-api heap usage high rss_mb=2007 gc_pause_ms=1341')\n(17, '2026-09-14T14:13:05Z WARN  checkout-api heap usage high rss_mb=2280 gc_pause_ms=1230')\n(19, '2026-09-14T14:13:47Z WARN  checkout-api heap usage high rss_mb=2353 gc_pause_ms=1045')\n(67, '2026-09-14T14:55:42Z WARN  checkout-api heap usage high rss_mb=1851 gc_pause_ms=960')\n(70, '2026-09-14T14:58:08Z WARN  checkout-api slow query ms=429 table=events')\ninventory-svc.log 0\nledger-svc.log 0\npayments-svc.log 0\nsearch-api.log 9\n(17, '2026-09-14T14:12:20Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4')\n(20, '2026-09-14T14:14:27Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4')\n(23, '2026-09-14T14:16:31Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4')\n(28, '2026-09-14T14:21:21Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4')\n(52, '2026-09-14T14:40:12Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4')\n(58, '2026-09-14T14:45:48Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4')\n"
+   }
+  ]
+ }

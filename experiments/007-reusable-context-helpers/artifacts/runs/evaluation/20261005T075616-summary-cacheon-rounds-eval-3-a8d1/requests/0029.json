@@ -1,0 +1,137 @@
+{
+ "meta": {
+  "kind": "summary",
+  "step": 24,
+  "attempt": 0,
+  "est_input_tokens": 4626,
+  "input_token_bound": 12153,
+  "reserved_usd": 0.142685,
+  "context_revision": 28,
+  "context_sha256": "a0952da8ad68f75a62ed0eb4a0917c7d95e4c2f443100876de370ac9b5ef2914",
+  "layout": "blocks/1",
+  "cache_ttl": "5m",
+  "prefix": {
+   "family": "summary",
+   "blocks": 16,
+   "system_blocks": 2,
+   "breakpoint_blocks": [
+    2,
+    14
+   ],
+   "previous": true,
+   "common_blocks": 3,
+   "first_changed_block": 3,
+   "common_prefix_chars": 3510
+  },
+  "summary_policy": "token-tail/1",
+  "older_entries": [
+   "sum5",
+   "s18.act",
+   "s18.obs",
+   "s19.act",
+   "s19.obs",
+   "s20.act",
+   "s20.obs",
+   "s21.act",
+   "s21.obs",
+   "s22.act",
+   "s22.obs",
+   "s23.act"
+  ],
+  "kept_tail": [
+   "s23.obs"
+  ],
+  "summary_attempt": 0,
+  "requested_max_chars": 1419,
+  "forced": false
+ },
+ "sha256": "5d84260b617b6e4a330b8fcb8424118d7b0821a00921d55beb70373068b66520",
+ "payload": {
+  "model": "claude-opus-5-5",
+  "max_tokens": 4096,
+  "system": [
+   {
+    "type": "text",
+    "text": "run-ref: 93a32112142857af821d02985b2604bb\n"
+   },
+   {
+    "type": "text",
+    "text": "You compress an agent's working transcript. The agent is\ninvestigating a multi-service production incident whose evidence arrives in hourly rounds, and will\nkeep working after your summary replaces the entries below. The transcript may include an earlier\nsummary: carry its facts forward. Preserve, exactly and verbatim where relevant:\n- each incident thread: its current cause and any superseded cause, affected services, current\n  status and the record that set it;\n- follow-up items opened and closed, with their codes;\n- early facts that may matter later (change records, builds, configuration values);\n- every file:line reference needed as evidence, and observed log formats;\n- open questions and the next planned steps, including rounds still to be released.\nDrop repetition and raw log dumps. Use compact bullet points. Plain text only. Stay within the\nrequested length; it is set so the agent has room to continue."
+   }
+  ],
+  "messages": [
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "text",
+      "text": "<task>\nProduction incident investigation across several services. Evidence arrives in\n10 hourly rounds. Only round 1 is available now, under /task/fixtures/round-01/.\n\nEach round directory holds:\n- logs/<service>.log: that hour's structured service logs (the log format may change).\n- board.md: the incident board's updates during that hour. An update lists only what\n  changed; anything it does not mention is unchanged. The latest update for a thread wins.\n- changes.md (some rounds): change records. APPLIED changes took effect; PROPOSED did not.\n\nReply {\"action\": \"advance\"} to release the next round. Released rounds never change and stay\nreadable. A final answer is accepted only after all 10 rounds are released.\n\nFinal answer (all fields required):\n  {\"action\": \"final\", \"answer\": {\n     \"incidents\": [{\"cause\": \"<CAUSE_CODE>\", \"services\": [\"<service>\", ...],\n                    \"status\": \"ongoing|mitigated|resolved\",\n                    \"evidence_refs\": [\"round-NN/<file>:<line>\", ...]}, ...],\n     \"unresolved\": [\"<FOLLOW_UP_CODE>\", ...],\n     \"summary\": \"<short free text>\"}}\n- incidents: every real incident at the end of the final round (not false alarms), one entry\n  per incident, with its current cause, all affected services and its current status.\n- evidence_refs: path:line references (relative to /task/fixtures, ranges up to 20 lines as\n  path:a-b) supporting the incident's current cause and current status; when the cause traces\n  back to an earlier change record, cite that record too.\n- unresolved: follow-up items still open at the end of the final round.\n\nCause codes:\n  DB_POOL_EXHAUSTED: database connection pool exhausted\n  CACHE_STAMPEDE: cache miss storm after mass expiry\n  CERT_EXPIRED: an expired TLS certificate on a dependency\n  DNS_RESOLUTION: DNS lookups failing for a dependency\n  QUEUE_BACKLOG: message consumer lag growing\n  MEMORY_LEAK: process memory growing until restarts\n  UPSTREAM_RATE_LIMIT: an upstream provider rejecting requests with 429\n  DISK_PRESSURE: a data volume running out of space\n  BAD_CONFIG_ROLLOUT: a configuration value shipped by a rollout is invalid\nFollow-up codes:\n  CUSTOMER_COMMS: customer communication about the impact\n  DATA_BACKFILL: backfill of records missed during the incident\n  CAPACITY_REVIEW: capacity review of the affected tier\n  ALERT_TUNING: tuning of noisy or late alerts\n  VENDOR_TICKET: a ticket open with an external vendor\n  POSTMORTEM_DRAFT: drafting the postmortem\n  RUNBOOK_UPDATE: updating the runbook\n</task>\n\n<transcript_to_summarise>\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"sum5\", \"role\": \"summary\", \"body\": \"Rounds 1-6 of 10 released; rounds 7-10 still to come.\\n\\nLog format: `\\u003cISO ts> LEVEL  \\u003cservice> \\u003cmsg> key=val`. \\\"slow query ms=\\\" WARNs are noise. Notes are in /task/workspace/notes.md.\\n\\nChanges:\\n- r01:3 CHG-109 PROPOSED (HPA search).\\n- r01:4 CHG-113 APPLIED: 4.16.4 to search-api, http.max_inflight=-1. Possible BAD_CONFIG.\\n- r01:5 CHG-114 APPLIED: 4.16.4 to checkout-api.\\n- r02:3 CHG-117 PROPOSED.\\n- r03:3 CHG-125 and r04:3 CHG-133 APPLIED: retry budget.\\n- r04:4 CHG-136 APPLIED: thread A mitigation to ledger.\\n- r06:3 CHG-147 APPLIED: TLS session ticket rotation hourly.\\n\\nThreads:\\n- A: CERT_EXPIRED (sso.example.net). Services: ledger-svc, inventory-svc. Mitigated, set by round-04/board.md:3. Refs: r01 ledger:14-40; r02 ledger:20-28; r02 inventory:10-26; r03 inventory:9-18; r03 ledger:23-43.\\n- B: checkout-api, ongoing (r04 board:4). Board suspects UPSTREAM_RATE_LIMIT, but logs show \\\"heap usage high rss_mb gc_pause_ms\\\": r04:18-90, r05:6-77, r06:17-66. Likely MEMORY_LEAK.\\n- D: DISK_PRESSURE, search-api, ongoing (r04 board:5). \\\"disk usage high path=/var/data used_pct\\\": r04:12-62, r05:14-76, r06:6-74.\\n\\nFollow-ups:\\n- Open: POSTMORTEM_DRAFT, CAPACITY_REVIEW (r04 board:6-8); DATA_BACKFILL (r05 board:3).\\n- Closed: CUSTOMER_COMMS (r06 board:3).\\n\\nNext: advance and scan each round through round 10.\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s18.act\", \"role\": \"assistant\", \"body\": \"[step 18] execute\\nthought: Save round 6 notes then advance next.\\ncode:\\nopen('/task/workspace/notes.md','a').write('\\\\nR6: FU CLOSED CUSTOMER_COMMS (round-06/board.md:3). CHG-147 APPLIED TLS ticket rotation (r06 changes:3). checkout heap 17-66; search disk 6-74.\\\\n')\\nprint('ok')\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s18.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.6s\\n--- stdout ---\\nok\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s19.act\", \"role\": \"assistant\", \"body\": \"[step 19] advance\\nthought: \"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s19.obs\", \"role\": \"observation\", \"body\": \"Stage 7 of 10 released.\\nRound 7 of 10 released. New files are under /task/fixtures/round-07/.\\n\\nNew files:\\n  round-07/board.md (6 lines)\\n  round-07/logs/checkout-api.log (72 lines)\\n  round-07/logs/inventory-svc.log (66 lines)\\n  round-07/logs/ledger-svc.log (55 lines)\\n  round-07/logs/payments-svc.log (79 lines)\\n  round-07/logs/search-api.log (74 lines)\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s20.act\", \"role\": \"assistant\", \"body\": \"[step 20] execute\\nthought: Read round 7 board and scan logs.\\ncode:\\nimport re,glob\\nfrom collections import defaultdict\\nfor i,l in enumerate(open('/task/fixtures/round-07/board.md'),1): print('board',i,l.rstrip())\\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\\n  d=defaultdict(list)\\n  for i,l in enumerate(open(f),1):\\n    if re.search(r'WARN|ERROR|429|restart|OOM|cert|disk|heap',l,re.I) and 'slow query' not in l:\\n      m=re.sub(r'=\\\\S+','=',l.split(None,3)[-1].strip())[:70]; d[m].append(i)\\n  for m,v in d.items(): print(f.split('/')[-1],v[0],v[-1],len(v),m)\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s20.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.5s\\n--- stdout ---\\nboard 1 # Incident board: updates in round 07\\nboard 2 \\nboard 3 - Thread A status: resolved (no recurrence for two hours).\\nboard 4 - Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\\nboard 5 - Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\\nboard 6 - Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\\ncheckout-api.log 6 67 13 heap usage high rss_mb= gc_pause_ms=\\nsearch-api.log 17 58 9 config validation failed key= value= build=\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s21.act\", \"role\": \"assistant\", \"body\": \"[step 21] execute\\nthought: Save round 7 notes.\\ncode:\\nopen('/task/workspace/notes.md','a').write('\\\\nR7: A RESOLVED (round-07/board.md:3). Thread C opened search-api ongoing (board:4); logs search 17-58 config validation failed -> BAD_CONFIG_ROLLOUT (CHG-113 r01 changes:4). D closed false alarm (board:5). FU OPEN VENDOR_TICKET (board:6). checkout heap 6-67.\\\\n')\\nimport re\\nfor i,l in enumerate(open('/task/fixtures/round-07/logs/search-api.log'),1):\\n  if 'config validation' in l: print(i,l.strip()[:160]); break\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s21.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.6s\\n--- stdout ---\\n17 2026-09-14T14:12:20Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s22.act\", \"role\": \"assistant\", \"body\": \"[step 22] advance\\nthought: \"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s22.obs\", \"role\": \"observation\", \"body\": \"Stage 8 of 10 released.\\nRound 8 of 10 released. New files are under /task/fixtures/round-08/.\\n\\nNew files:\\n  round-08/board.md (5 lines)\\n  round-08/changes.md (3 lines)\\n  round-08/logs/checkout-api.log (75 lines)\\n  round-08/logs/inventory-svc.log (78 lines)\\n  round-08/logs/ledger-svc.log (75 lines)\\n  round-08/logs/payments-svc.log (64 lines)\\n  round-08/logs/search-api.log (89 lines)\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s23.act\", \"role\": \"assistant\", \"body\": \"[step 23] execute\\nthought: Scan round 8.\\ncode:\\nimport re,glob\\nfrom collections import defaultdict\\nfor fn in ['board.md','changes.md']:\\n  for i,l in enumerate(open('/task/fixtures/round-08/'+fn),1): print(fn,i,l.rstrip())\\nfor f in sorted(glob.glob('/task/fixtures/round-08/logs/*.log')):\\n  d=defaultdict(list)\\n  for i,l in enumerate(open(f),1):\\n    if re.search(r'WARN|ERROR|429|restart|OOM|cert|disk|heap',l,re.I) and 'slow query' not in l:\\n      m=re.sub(r'=\\\\S+','=',l.split(None,3)[-1].strip())[:70]; d[m].append(i)\\n  for m,v in d.items(): print(f.split('/')[-1],v[0],v[-1],len(v),m)\"}\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "</transcript_to_summarise>\n\nWrite the replacement summary now, at most 1419 characters."
+     }
+    ]
+   }
+  ],
+  "output_config": {
+   "effort": "low"
+  }
+ }
+}

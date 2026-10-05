@@ -1,0 +1,49 @@
+{
+ "number": 28,
+ "parent": 27,
+ "source": "runtime",
+ "step": 20,
+ "sha256": "41b7ab2881234485f2071cd77417d3b62a040dcb725a0c7d891fe714acd0ad12",
+ "entries": [
+  {
+   "id": "notes",
+   "role": "note",
+   "body": "R1: round-01/changes.md:3 CHG-107 APPLIED retry budget GETs=1. board empty. R1 errs: round-01/logs/inventory-svc.log:7-90 dns SERVFAIL rates.internal.\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspicious); CHG-121 auth-svc no cfg. logs checkout-api.log:8-59, inventory-svc.log:8-74 dns SERVFAIL.\nR3: board.md:3 Thread B DB_POOL_EXHAUSTED auth-svc ongoing. changes CHG-126 PROPOSED only. WARN slow query all svcs. R3 logs: auth-svc.log:6-72 ERROR tls certificate_expired peer=sso.example.net (board says DB pool - likely wrong cause); checkout-api.log:33-74, inventory-svc.log:3-50 dns SERVFAIL; search-api 0 errs.\nR4: board empty. auth-svc.log:6-77 cert_expired sso.example.net; shipping-svc.log:3-66 cert_expired sso (new svc); checkout-api.log:1-71, inventory-svc.log:32-75 dns SERVFAIL; search-api 0 errs.\nR5: board.md:3 Thread A mitigated (CHG-143 APPLIED inventory-svc changes.md:3); board.md:4 Thread B +shipping-svc; board.md:5 OPEN VENDOR_TICKET, :6 OPEN ALERT_TUNING. logs: auth-svc.log:11-64, shipping-svc.log:9-65 cert_expired sso; checkout/inventory/search 0 errs.\nR6: board.md:3 OPEN RUNBOOK_UPDATE. changes CHG-144 log sampling (irrelevant). auth-svc.log:4-79, shipping-svc.log:1-64 cert_expired sso; others 0 errs."
+  },
+  {
+   "id": "s18.act",
+   "role": "assistant",
+   "body": "[step 18] execute\nthought: Record R6 into notes and compact.\ncode:\nfrom ctx import keep_notes\nimport json\nn=json.load(open('context.json'))['entries'][0]['body']\nkeep_notes(n+'\\nR6: board.md:3 OPEN RUNBOOK_UPDATE. changes CHG-144 log sampling (irrelevant). auth-svc.log:4-79, shipping-svc.log:1-64 cert_expired sso; others 0 errs.')"
+  },
+  {
+   "id": "s18.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.7s"
+  },
+  {
+   "id": "s18.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 18: revision 24 -> 25; entries 8 -> 1; body chars 3413 -> 1324; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs, s17.act, s17.obs]; added []; rewritten [notes]"
+  },
+  {
+   "id": "s19.act",
+   "role": "assistant",
+   "body": "[step 19] advance\nthought: "
+  },
+  {
+   "id": "s19.obs",
+   "role": "observation",
+   "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/logs/auth-svc.log (66 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (59 lines)\n  round-07/logs/search-api.log (69 lines)\n  round-07/logs/shipping-svc.log (67 lines)"
+  },
+  {
+   "id": "s20.act",
+   "role": "assistant",
+   "body": "[step 20] execute\nthought: Inspect round 7 board and error lines.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-07/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n    ls=[(i+1,l) for i,l in enumerate(open(f)) if re.search(r'ERROR|error|FATAL',l)]\n    print(f.split('/')[-1],len(ls),ls[0][0] if ls else '',ls[-1][0] if ls else '')\n    if ls: print(' ',ls[0][1][:200].strip())"
+  },
+  {
+   "id": "s20.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n# Incident board: updates in round 07\n\n- Thread B root cause revised: an expired TLS certificate on a dependency (CERT_EXPIRED); this supersedes the earlier suspicion of DB_POOL_EXHAUSTED.\n- Thread D opened: an upstream provider rejecting requests with 429 alerts (UPSTREAM_RATE_LIMIT) on search-api. Status: ongoing.\n\nauth-svc.log 10 1 64\n  {\"ts\":\"2026-09-14T14:00:33Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\ncheckout-api.log 0  \ninventory-svc.log 0  \nsearch-api.log 8 4 66\n  {\"ts\":\"2026-09-14T14:04:44Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":16}\nshipping-svc.log 12 10 66\n  {\"ts\":\"2026-09-14T14:07:47Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n"
+  }
+ ]
+}

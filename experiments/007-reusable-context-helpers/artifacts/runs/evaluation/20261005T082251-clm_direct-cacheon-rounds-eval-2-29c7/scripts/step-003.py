@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty; CHG-112 APPLIED log sampling /v1/health 1% (noise). Logs routine (request ok/heartbeat/gc/slow query/health ok). auth-svc heap warn rss_mb fluctuating 1967-3800 (not monotonic, maybe noise) r01 auth-svc.log:3,14,32,35,40,46,60,61. Next: advance to round 2.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

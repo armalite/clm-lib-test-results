@@ -1,0 +1,19 @@
+--- rev-27
++++ rev-28
+@@ -30,6 +30,16 @@
+    "id": "s20.obs",
+    "role": "observation",
+    "body": "Stage 7 of 10 released.\nRound 7 of 10 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (6 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (66 lines)\n  round-07/logs/ledger-svc.log (55 lines)\n  round-07/logs/payments-svc.log (79 lines)\n  round-07/logs/search-api.log (74 lines)"
++  },
++  {
++   "id": "s21.act",
++   "role": "assistant",
++   "body": "[step 21] execute\nthought: Inspect round 7 board and key log lines.\ncode:\nimport re\nb='/task/fixtures/round-07/'\nprint(open(b+'board.md').read())\nfor s in ['checkout-api','inventory-svc','ledger-svc','payments-svc','search-api']:\n    L=open(b+'logs/'+s+'.log').read().splitlines()\n    h=[(i+1,l) for i,l in enumerate(L) if re.search('ERROR|429|disk|heap|cert|restart|OOM',l,re.I)]\n    print(s,len(h))\n    for i,l in h[:3]+h[-2:]: print(i,l[:150])"
++  },
++  {
++   "id": "s21.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n# Incident board: updates in round 07\n\n- Thread A status: resolved (no recurrence for two hours).\n- Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\n- Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\n- Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\n\ncheckout-api 14\n6 2026-09-14T14:04:01Z WARN  checkout-api heap usage high rss_mb=3858 gc_pause_ms=861\n7 2026-09-14T14:05:48Z WARN  checkout-api heap usage high rss_mb=2007 gc_pause_ms=1341\n17 2026-09-14T14:13:05Z WARN  checkout-api heap usage high rss_mb=2280 gc_pause_ms=1230\n67 2026-09-14T14:55:42Z WARN  checkout-api heap usage high rss_mb=1851 gc_pause_ms=960\n70 2026-09-14T14:58:08Z WARN  checkout-api slow query ms=429 table=events\ninventory-svc 0\nledger-svc 0\npayments-svc 0\nsearch-api 9\n17 2026-09-14T14:12:20Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4\n20 2026-09-14T14:14:27Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4\n23 2026-09-14T14:16:31Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4\n52 2026-09-14T14:40:12Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4\n58 2026-09-14T14:45:48Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4\n"
+   }
+  ]
+ }

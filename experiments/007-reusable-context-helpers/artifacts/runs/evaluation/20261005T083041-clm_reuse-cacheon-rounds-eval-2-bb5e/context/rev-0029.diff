@@ -1,0 +1,19 @@
+--- rev-28
++++ rev-29
+@@ -60,6 +60,16 @@
+    "id": "s21.obs",
+    "role": "observation",
+    "body": "Stage 8 of 12 released.\nRound 8 of 12 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (2 lines)\n  round-08/changes.md (3 lines)\n  round-08/logs/auth-svc.log (61 lines)\n  round-08/logs/inventory-svc.log (85 lines)\n  round-08/logs/ledger-svc.log (66 lines)\n  round-08/logs/payments-svc.log (64 lines)\n  round-08/logs/pricing-svc.log (69 lines)"
++  },
++  {
++   "id": "s22.act",
++   "role": "assistant",
++   "body": "[step 22] execute\nthought: Inspect round 8.\ncode:\nimport re\nb='/task/fixtures/round-08/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor s in ['auth','inventory','ledger','payments','pricing']:\n  L=open(b+'logs/'+s+'-svc.log').read().splitlines()\n  hits=[(i,l) for i,l in enumerate(L,1) if re.search(r'ERROR|SERVFAIL|cert|heap|429|disk|pool|lag|restart|OOM',l,re.I) and 'slow query' not in l]\n  print(s,len(hits),[h[0] for h in hits][:3],[h[0] for h in hits][-1:] if hits else '')\n  for h in hits[:2]:print('  ',h[1][:200])"
++  },
++  {
++   "id": "s22.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 08\nboard.md 2 \nchanges.md 1 # Change log: round 08\nchanges.md 2 \nchanges.md 3 - CHG-156 APPLIED: log sampling for /v1/health reduced to 1%\nauth 0 [] \ninventory 9 [6, 16, 18] [78]\n   {\"ts\":\"2026-09-14T15:05:37Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"partner-gw\",\"reason\":\"certificate_expired\"}\n   {\"ts\":\"2026-09-14T15:11:04Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"partner-gw\",\"reason\":\"certificate_expired\"}\nledger 7 [2, 13, 14] [64]\n   {\"ts\":\"2026-09-14T15:01:22Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n   {\"ts\":\"2026-09-14T15:11:51Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\npayments 0 [] \npricing 6 [4, 14, 31] [51]\n   {\"ts\":\"2026-09-14T15:01:55Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n   {\"ts\":\"2026-09-14T15:13:52Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n"
+   }
+  ]
+ }

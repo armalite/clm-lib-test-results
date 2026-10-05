@@ -1,0 +1,44 @@
+{
+ "number": 43,
+ "parent": 42,
+ "source": "runtime",
+ "step": 31,
+ "sha256": "768075191779bb0d86b43ef24e36015156b78fe1fc73c5be25adf73eba0d65ac",
+ "entries": [
+  {
+   "id": "sum12",
+   "role": "summary",
+   "body": "<summary>\nRounds 1-9 of 10 are released, and round 9 is analysed. Round 10 is not yet released. Notes file: /task/workspace/notes.md (round 9 facts not yet appended).\n\nLog formats:\n- Rounds up to 7, plain text: \"2026-09-14T08:03:34Z WARN  checkout-api ...\".\n- Round 8 onward, JSON: {\"ts\":\"...\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"heap usage high\",\"rss_mb\":2717,\"gc_pause_ms\":1068}.\n- To find non-INFO lines, filter out '\"INFO\"' and 'slow query' lines.\n\nThreads:\n- A: CERT_EXPIRED, ledger-svc and inventory-svc, resolved.\n  - Resolved status set by round-07/board.md:3.\n  - Mitigation change record: CHG-136 (round-04/changes.md:4).\n- B: MEMORY_LEAK, services checkout-api and payments-svc, mitigated.\n  - Mitigated status set by round-09/board.md:4 (workaround in place; permanent fix pending).\n  - payments-svc added by round-09/board.md:3; cause and status otherwise unchanged by that line.\n  - Cause revised to MEMORY_LEAK at round-08/board.md:3, superseding UPSTREAM_RATE_LIMIT.\n  - Earlier ongoing status set by round-04/board.md:4.\n  - checkout-api heap refs:\n    - round-06/logs/checkout-api.log:17,24,35,42\n    - round-07/logs/checkout-api.log:6,7,17,19,22\n    - round-08/logs/checkout-api.log:9,15,46,48,56,69\n    - round-09/logs/checkout-api.log:27,56\n  - payments-svc heap refs:\n    - round-08/logs/payments-svc.log:13,24,26,31,34,41,54,62\n    - round-09/logs/payments-svc.log:45,55\n- C: BAD_CONFIG_ROLLOUT, search-api, ongoing.\n  - Status: round-07/board.md:4; round-08/board.md:4 adds that failing pods are still restarting.\n  - Cause: http.max_inflight=-1 shipped in build 4.16.4 via CHG-113 (round-01/changes.md:4).\n  - Log refs:\n    - round-07/logs/search-api.log:17,20,23,28,30\n    - round-08/logs/search-api.log:2,5,11,16,29,36,39,40,55,57,64,76\n    - round-09/logs/search-api.log:5,11,14,22,33,46,58 (ERROR \"config validation failed\")\n- D: false alarm, not an incident (round-07/board.md:5).\n- Noise, not incidents:\n  - \"slow query\" WARNs across services.\n  - CHG-160 (round 8): PROPOSED only, not applied.\n  - CHG-164 (round 9): APPLIED, health log sampling reduced to 1%; irrelevant.\n\nFollow-ups:\n- Open: POSTMORTEM_DRAFT, CAPACITY_REVIEW, DATA_BACKFILL (round-07/board.md:6).\n- Closed:\n  - CUSTOMER_COMMS (round-06/board.md:3)\n  - VENDOR_TICKET (round-08/board.md:5)\n\nNext steps:\n1. Advance to release round 10, then analyse its board.md, changes.md and non-INFO log lines.\n2. Track status or cause changes for B and C, plus any new threads or follow-ups.\n3. Give the final answer with incidents A, B and C, each with services, latest status and refs. Cite CHG-136 for A and CHG-113 for C. List the open follow-ups as unresolved.\n</summary>"
+  },
+  {
+   "id": "s29.act",
+   "role": "assistant",
+   "body": "[step 29] execute\nthought: Save round 9 facts to notes before advancing.\ncode:\nopen('/task/workspace/notes.md','a').write('\\nR9: board.md:3 B adds payments-svc; board.md:4 B mitigated. CHG-164 irrelevant. payments heap refs round-09/logs/payments-svc.log:45,55; checkout round-09/logs/checkout-api.log:27,56. C search errors round-09/logs/search-api.log:5,11,14,22,33,46,58 still ongoing.\\n');print('ok')"
+  },
+  {
+   "id": "s29.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s30.act",
+   "role": "assistant",
+   "body": "[step 30] advance\nthought: "
+  },
+  {
+   "id": "s30.obs",
+   "role": "observation",
+   "body": "Stage 10 of 10 released.\nRound 10 of 10 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (2 lines)\n  round-10/logs/checkout-api.log (79 lines)\n  round-10/logs/inventory-svc.log (65 lines)\n  round-10/logs/ledger-svc.log (74 lines)\n  round-10/logs/payments-svc.log (71 lines)\n  round-10/logs/search-api.log (86 lines)"
+  },
+  {
+   "id": "s31.act",
+   "role": "assistant",
+   "body": "[step 31] execute\nthought: Analyse round 10 board and non-INFO logs.\ncode:\nimport os,glob\nb='/task/fixtures/round-10/'\nfor i,l in enumerate(open(b+'board.md'),1):print('board',i,l.rstrip())\nif os.path.exists(b+'changes.md'):\n  for i,l in enumerate(open(b+'changes.md'),1):print('chg',i,l.rstrip())\nfor f in sorted(glob.glob(b+'logs/*.log')):\n  for i,l in enumerate(open(f),1):\n    if '\"INFO\"' in l or 'slow query' in l:continue\n    print(os.path.basename(f),i,l.rstrip()[:150])"
+  },
+  {
+   "id": "s31.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard 1 # Incident board: updates in round 10\nboard 2 \ncheckout-api.log 20 {\"ts\":\"2026-09-14T17:14:37Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"heap usage high\",\"rss_mb\":3358,\"gc_pause_ms\":831}\ncheckout-api.log 75 {\"ts\":\"2026-09-14T17:57:34Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"heap usage high\",\"rss_mb\":3554,\"gc_pause_ms\":909}\npayments-svc.log 46 {\"ts\":\"2026-09-14T17:38:12Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"heap usage high\",\"rss_mb\":1899,\"gc_pause_ms\":1326}\npayments-svc.log 56 {\"ts\":\"2026-09-14T17:45:52Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"heap usage high\",\"rss_mb\":3739,\"gc_pause_ms\":309}\nsearch-api.log 2 {\"ts\":\"2026-09-14T17:05:30Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.\nsearch-api.log 4 {\"ts\":\"2026-09-14T17:05:57Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.\nsearch-api.log 21 {\"ts\":\"2026-09-14T17:11:39Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.\nsearch-api.log 24 {\"ts\":\"2026-09-14T17:13:10Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.\nsearch-api.log 28 {\"ts\":\"2026-09-14T17:14:18Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.\nsearch-api.log 36 {\"ts\":\"2026-09-14T17:24:02Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.\nsearch-api.log 47 {\"ts\":\"2026-09-14T17:31:07Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.\nsearch-api.log 51 {\"ts\":\"2026-09-14T17:32:36Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.\nsearch-api.log 52 {\"ts\":\"2026-09-14T17:34:02Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.\nsearch-api.log 55 {\"ts\":\"2026-09-14T17:36:23Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.\nsearch-api.log 60 {\"ts\":\"2026-09-14T17:39:07Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.\nsearch-api.log 72 {\"ts\":\"2026-09-14T17:48:05Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.\n"
+  }
+ ]
+}

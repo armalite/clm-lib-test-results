@@ -1,0 +1,19 @@
+--- rev-40
++++ rev-41
+@@ -75,6 +75,16 @@
+    "id": "s29.obs",
+    "role": "observation",
+    "body": "Stage 10 of 10 released.\nRound 10 of 10 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (2 lines)\n  round-10/logs/checkout-api.log (79 lines)\n  round-10/logs/inventory-svc.log (65 lines)\n  round-10/logs/ledger-svc.log (74 lines)\n  round-10/logs/payments-svc.log (71 lines)\n  round-10/logs/search-api.log (86 lines)"
++  },
++  {
++   "id": "s30.act",
++   "role": "assistant",
++   "body": "[step 30] execute\nthought: Inspect round 10 board and key log signals.\ncode:\nimport re\nb=open('/task/fixtures/round-10/board.md').read().splitlines()\nfor i,l in enumerate(b,1):print(i,l)\nfor s in ['checkout-api','payments-svc','search-api']:\n  L=open(f'/task/fixtures/round-10/logs/{s}.log').read().splitlines()\n  h=[i for i,l in enumerate(L,1) if re.search('heap|max_inflight|config|429|ERROR',l)]\n  print(s,len(h),h[:3],h[-3:])\n  if h:print(L[h[0]-1][:200])"
++  },
++  {
++   "id": "s30.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n1 # Incident board: updates in round 10\n2 \ncheckout-api 2 [20, 75] [20, 75]\n{\"ts\":\"2026-09-14T17:14:37Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"heap usage high\",\"rss_mb\":3358,\"gc_pause_ms\":831}\npayments-svc 3 [25, 46, 56] [25, 46, 56]\n{\"ts\":\"2026-09-14T17:19:08Z\",\"level\":\"INFO\",\"svc\":\"payments-svc\",\"msg\":\"heartbeat\",\"uptime_s\":42999}\nsearch-api 12 [2, 4, 21] [55, 60, 72]\n{\"ts\":\"2026-09-14T17:05:30Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.4\"}\n"
+   }
+  ]
+ }

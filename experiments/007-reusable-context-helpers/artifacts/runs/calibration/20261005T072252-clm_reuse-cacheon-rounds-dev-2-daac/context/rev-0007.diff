@@ -1,0 +1,26 @@
+--- rev-6
++++ rev-7
+@@ -4,22 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "R1: changes.md:3 CHG-107 APPLIED retry budget GETs=1. board empty. ctx.py keep_notes(body). R1 errs: inventory-svc.log:7-90 n=11 dns lookup failed host=rates.internal SERVFAIL.\nR2 (see stdout of step4, re-summarize next step):\ncheckout-api.log:8-59 n=6 ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log:8-74 n=11 ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] execute\nthought: Examine round 2 and compact the notes.\ncode:\nimport os,re\nfrom ctx import keep_notes\nR='/task/fixtures/round-02'\nprint(open(R+'/board.md').read());print(open(R+'/changes.md').read())\nout=[]\nfor f in sorted(os.listdir(R+'/logs')):\n  c={}\n  for i,l in enumerate(open(R+'/logs/'+f),1):\n    if re.search(r'ERROR|WARN|FATAL|CRIT|error|warn',l) and 'slow query' not in l:\n      k=re.sub(r'\\d+','#',l[21:120]);c.setdefault(k,[]).append(i)\n  for k,v in c.items(): out.append(f'{f}:{v[0]}-{v[-1]} n={len(v)} {k.strip()}')\nprint('\\n'.join(out[:30]))\nkeep_notes('R1: changes.md:3 CHG-107 APPLIED retry budget GETs=1. board empty. ctx.py keep_notes(body). R1 errs: inventory-svc.log:7-90 n=11 dns lookup failed host=rates.internal SERVFAIL.\\nR2 (see stdout of step4, re-summarize next step):\\n'+'\\n'.join(out[:20]))"
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n# Incident board: updates in round 02\n\n- Thread A opened: DNS lookups failing for a dependency confirmed as the cause (code DNS_RESOLUTION) in inventory-svc; impact also on checkout-api. Status: ongoing.\n\n# Change log: round 02\n\n- CHG-120 APPLIED: build 8.59.8 rolled out to search-api; sets `http.max_inflight=-1`\n- CHG-121 APPLIED: build 8.59.8 rolled out to auth-svc; no config changes\n\ncheckout-api.log:8-59 n=6 ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log:8-74 n=11 ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\n"
+-  },
+-  {
+-   "id": "s4.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 6 -> 1; body chars 3401 -> 421; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added []; rewritten [notes]"
++   "body": "R1: round-01/changes.md:3 CHG-107 APPLIED retry budget GETs=1. board empty. R1 errs: round-01/logs/inventory-svc.log:7-90 dns SERVFAIL rates.internal.\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspicious); CHG-121 auth-svc no cfg. logs checkout-api.log:8-59, inventory-svc.log:8-74 dns SERVFAIL. Next: advance to R3."
+   }
+  ]
+ }

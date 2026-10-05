@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('\nR8: board:3 B=MEMORY_LEAK confirmed (round-08/board.md:3). C ongoing (board:4). VENDOR_TICKET closed (board:5). CHG-160 proposed. Log format is now JSON. checkout heap at r08 checkout:9-69; payments-svc heap at r08 payments:13-62 (possibly thread B). search-api config failure at r08 search:2-76.\n')
+print('ok')

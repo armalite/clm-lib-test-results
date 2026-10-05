@@ -1,0 +1,46 @@
+--- rev-5
++++ rev-6
+@@ -4,42 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "R1: board empty. changes.md:3 CHG-112 APPLIED TLS ticket rotation hourly; :4 CHG-113 APPLIED auth-svc build 4.51.3 sets cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT); :5 CHG-114 shipping-svc 4.51.3 no config. Logs: only slow query WARN noise in all svcs; payments-svc consumer lag stock-updates fluctuating (lines 7,9,10,31,34,43) not growing. Services: shipping-svc auth-svc payments-svc ledger-svc search-api."
+-  },
+-  {
+-   "id": "s2.act",
+-   "role": "assistant",
+-   "body": "[step 2] execute\nthought: Compress context into notes, then advance next step.\ncode:\nimport json\nc={'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':'R1: board empty. changes.md:3 CHG-112 APPLIED TLS ticket rotation hourly; :4 CHG-113 APPLIED auth-svc build 4.51.3 sets cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT); :5 CHG-114 shipping-svc 4.51.3 no config. Logs: only slow query WARN noise in all svcs; payments-svc consumer lag stock-updates fluctuating (lines 7,9,10,31,34,43) not growing. Services: shipping-svc auth-svc payments-svc ledger-svc search-api.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s2.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.9s"
+-  },
+-  {
+-   "id": "s2.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 5765 -> 409; removed [s1.act, s1.obs]; added [notes]; rewritten []"
+-  },
+-  {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] advance\nthought: "
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 11 released.\nRound 2 of 11 released. New files are under /task/fixtures/round-02/.\n\nNew files:\n  round-02/board.md (3 lines)\n  round-02/changes.md (3 lines)\n  round-02/logs/auth-svc.log (77 lines)\n  round-02/logs/ledger-svc.log (81 lines)\n  round-02/logs/payments-svc.log (68 lines)\n  round-02/logs/search-api.log (63 lines)\n  round-02/logs/shipping-svc.log (74 lines)"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] execute\nthought: Inspect round 2 board, changes, and error/warn lines.\ncode:\nimport re,glob\nb='/task/fixtures/round-02/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor p in sorted(glob.glob(b+'logs/*')):\n  for i,l in enumerate(open(p),1):\n    if re.search(r'ERROR|FATAL|429|lag|cert|DNS|pool|OOM|disk|ttl',l,re.I) and 'slow query' not in l:print(p.split('/')[-1],i,l.rstrip()[:150])"
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 02\nboard.md 2 \nboard.md 3 - Thread A opened: message consumer lag growing confirmed as the cause (code QUEUE_BACKLOG) in payments-svc; impact also on ledger-svc. Status: ongoing.\nchanges.md 1 # Change log: round 02\nchanges.md 2 \nchanges.md 3 - CHG-117 APPLIED: TLS session ticket rotation set to hourly\nauth-svc.log 15 2026-09-14T09:11:39Z INFO  auth-svc heartbeat uptime_s=64293\nledger-svc.log 5 2026-09-14T09:01:17Z WARN  ledger-svc consumer lag topic=stock-updates lag=84612\nledger-svc.log 10 2026-09-14T09:05:56Z WARN  ledger-svc consumer lag topic=stock-updates lag=50912\nledger-svc.log 16 2026-09-14T09:08:07Z WARN  ledger-svc consumer lag topic=stock-updates lag=77780\nledger-svc.log 28 2026-09-14T09:18:55Z WARN  ledger-svc consumer lag topic=stock-updates lag=55961\nledger-svc.log 33 2026-09-14T09:25:11Z WARN  ledger-svc consumer lag topic=stock-updates lag=61491\nledger-svc.log 40 2026-09-14T09:27:51Z WARN  ledger-svc consumer lag topic=stock-updates lag=21756\nledger-svc.log 42 2026-09-14T09:29:08Z WARN  ledger-svc consumer lag topic=stock-updates lag=69414\nledger-svc.log 45 2026-09-14T09:32:06Z WARN  ledger-svc consumer lag topic=stock-updates lag=76688\nledger-svc.log 46 2026-09-14T09:32:22Z WARN  ledger-svc consumer lag topic=stock-updates lag=67115\nledger-svc.log 48 2026-09-14T09:35:03Z WARN  ledger-svc consumer lag topic=stock-updates lag=25647\nledger-svc.log 63 2026-09-14T09:47:48Z WARN  ledger-svc consumer lag topic=stock-updates lag=44151\nledger-svc.log 74 2026-09-14T09:55:31Z WARN  ledger-svc consumer lag topic=stock-updates lag=88488\nledger-svc.log 77 2026-09-14T09:58:02Z WARN  ledger-svc consumer lag topic=stock-updates lag=42829\npayments-svc.log 3 2026-09-14T09:05:16Z WARN  payments-svc consumer lag topic=stock-updates lag=72861\npayments-svc.log 11 2026-09-14T09:09:53Z WARN  payments-svc consumer lag topic=stock-updates lag=41714\npayments-svc.log 16 2026-09-14T09:15:08Z WARN  payments-svc consumer lag topic=stock-updates lag=45966\npayments-svc.log 17 2026-09-14T09:15:50Z WARN  payments-svc consumer lag topic=stock-updates lag=58243\npayments-svc.log 26 2026-09-14T09:25:39Z WARN  payments-svc consumer lag topic=stock-updates lag=40906\npayments-svc.log 27 2026-09-14T09:26:19Z WARN  payments-svc consumer lag topic=stock-updates lag=82945\npayments-svc.log 28 2026-09-14T09:26:25Z WARN  payments-svc consumer lag topic=stock-updates lag=49609\npayments-svc.log 30 2026-09-14T09:29:10Z WARN  payments-svc consumer lag topic=stock-updates lag=84422\npayments-svc.log 32 2026-09-14T09:32:32Z WARN  payments-svc consumer lag topic=stock-updates lag=22651\npayments-svc.log 36 2026-09-14T09:35:19Z WARN  payments-svc consumer lag topic=stock-updates lag=58045\npayments-svc.log 37 2026-09-14T09:36:23Z WARN  payments-svc consumer lag topic=stock-updates lag=37694\npayments-svc.log 40 2026-09-14T09:38:14Z WARN  payments-svc consumer lag topic=stock-updates lag=36266\n"
++   "body": "R1: board empty. r01 changes.md:3 CHG-112 APPLIED TLS ticket rotation hourly; :4 CHG-113 APPLIED auth-svc build 4.51.3 sets cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT); :5 CHG-114 shipping-svc 4.51.3 no config. R1 logs: slow query WARN noise; payments lag fluctuating. Services: shipping-svc auth-svc payments-svc ledger-svc search-api.\nR2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc ongoing. changes.md:3 CHG-117 APPLIED TLS rotation hourly. Logs: lag stock-updates fluctuating 20k-88k in payments-svc (3-40) and ledger-svc (5-77), not clearly growing (board may be wrong). No errors elsewhere."
+   }
+  ]
+ }

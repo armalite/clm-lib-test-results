@@ -1,0 +1,24 @@
+--- rev-23
++++ rev-24
+@@ -20,6 +20,21 @@
+    "id": "n4",
+    "role": "note",
+    "body": "R4: Thread A mitigated (round-04/board.md:3); CHG-136 APPLIED mitigation auth-svc (round-04/changes.md:4). Thread B ledger-svc suspected CACHE_STAMPEDE ongoing (board.md:4) BUT logs show DNS SERVFAIL host=rates.internal (round-04/logs/ledger-svc.log:10,28,47,51) -> likely DNS_RESOLUTION. Follow-up OPEN DATA_BACKFILL (board.md:5). CHG-133 APPLIED TLS ticket rotation hourly."
++  },
++  {
++   "id": "s15.act",
++   "role": "assistant",
++   "body": "[step 15] execute\nthought: Read R5 board and errors; compress context.\ncode:\nimport json,re,glob\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4')]\njson.dump(c,open('/task/workspace/context.json','w'))\nfor i,l in enumerate(open('/task/fixtures/round-05/board.md'),1):print(i,l.rstrip())\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*')):\n  n=0\n  for i,l in enumerate(open(f),1):\n    if re.search(r'ERROR|WARN|error',l):\n      n+=1\n      if n<=4:print(f[-18:],i,l.rstrip()[:110])\n  print(f[-18:],'count',n)"
++  },
++  {
++   "id": "s15.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.2s\n--- stdout ---\n1 # Incident board: updates in round 05\n2 \n/logs/auth-svc.log 14 2026-09-14T12:13:13Z WARN  auth-svc slow query ms=230 table=orders\n/logs/auth-svc.log 15 2026-09-14T12:13:52Z WARN  auth-svc slow query ms=326 table=items\n/logs/auth-svc.log 17 2026-09-14T12:17:35Z WARN  auth-svc slow query ms=273 table=orders\n/logs/auth-svc.log 19 2026-09-14T12:19:32Z WARN  auth-svc slow query ms=292 table=orders\n/logs/auth-svc.log count 16\n/inventory-svc.log 1 2026-09-14T12:01:57Z WARN  inventory-svc slow query ms=203 table=items\n/inventory-svc.log 5 2026-09-14T12:10:19Z WARN  inventory-svc slow query ms=251 table=items\n/inventory-svc.log 7 2026-09-14T12:11:57Z WARN  inventory-svc slow query ms=242 table=orders\n/inventory-svc.log 24 2026-09-14T12:33:25Z WARN  inventory-svc slow query ms=242 table=events\n/inventory-svc.log count 13\nogs/ledger-svc.log 9 2026-09-14T12:08:31Z WARN  ledger-svc slow query ms=346 table=items\nogs/ledger-svc.log 10 2026-09-14T12:09:36Z WARN  ledger-svc slow query ms=400 table=events\nogs/ledger-svc.log 14 2026-09-14T12:18:26Z ERROR ledger-svc dns lookup failed host=rates.internal err=SERVFAIL\nogs/ledger-svc.log 16 2026-09-14T12:18:53Z WARN  ledger-svc slow query ms=387 table=items\nogs/ledger-svc.log count 16\ns/payments-svc.log 2 2026-09-14T12:01:24Z WARN  payments-svc slow query ms=434 table=items\ns/payments-svc.log 5 2026-09-14T12:05:22Z WARN  payments-svc slow query ms=359 table=orders\ns/payments-svc.log 14 2026-09-14T12:13:00Z WARN  payments-svc slow query ms=310 table=items\ns/payments-svc.log 15 2026-09-14T12:14:40Z WARN  payments-svc slow query ms=337 table=events\ns/payments-svc.log count 15\ngs/pricing-svc.log 1 2026-09-14T12:00:42Z WARN  pricing-svc slow query ms=303 table=items\ngs/pricing-svc.log 12 2026-09-14T12:06:56Z WARN  pricing-svc slow query ms=292 table=items\ngs/pricing-svc.log 14 2026-09-14T12:07:49Z WARN  pricing-svc slow query ms=268 table=orders\ngs/pricing-svc.log 18 2026-09-14T12:12:57Z WARN  pricing-svc slow query ms=352 table=orders\ngs/pricing-svc.log count 16\n"
++  },
++  {
++   "id": "s15.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 15: revision 22 -> 23; entries 9 -> 4; body chars 3446 -> 1006; removed [s13.act, s13.obs, s13.rcpt, s14.act, s14.obs]; added []; rewritten []"
+   }
+  ]
+ }

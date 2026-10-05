@@ -1,0 +1,19 @@
+--- rev-37
++++ rev-38
+@@ -30,6 +30,16 @@
+    "id": "s26.obs",
+    "role": "observation",
+    "body": "Stage 9 of 11 released.\nRound 9 of 11 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (3 lines)\n  round-09/changes.md (3 lines)\n  round-09/logs/auth-svc.log (64 lines)\n  round-09/logs/checkout-api.log (65 lines)\n  round-09/logs/inventory-svc.log (75 lines)\n  round-09/logs/search-api.log (78 lines)\n  round-09/logs/shipping-svc.log (59 lines)"
++  },
++  {
++   "id": "s27.act",
++   "role": "assistant",
++   "body": "[step 27] execute\nthought: Inspect round 9 board, changes, and error lines.\ncode:\nimport os,re\nb='/task/fixtures/round-09/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor f in sorted(os.listdir(b+'logs')):\n  L=[(i,l.rstrip()) for i,l in enumerate(open(b+'logs/'+f),1) if re.search('ERROR|error|429|SERVFAIL|expired|invalid',l)]\n  print(f,len(L),L[0][0] if L else '',L[-1][0] if L else '')\n  for i,l in L[:2]:print(' ',i,l[:200])"
++  },
++  {
++   "id": "s27.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 09\nboard.md 2 \nboard.md 3 - Thread C note: failing pods still restarting; investigation continues.\nchanges.md 1 # Change log: round 09\nchanges.md 2 \nchanges.md 3 - CHG-166 APPLIED: retry budget for idempotent GETs set to 1\nauth-svc.log 2 22 55\n  22 {\"ts\":\"2026-09-14T16:18:12Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n  55 {\"ts\":\"2026-09-14T16:50:50Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\ncheckout-api.log 0  \ninventory-svc.log 1 59 59\n  59 {\"ts\":\"2026-09-14T16:48:33Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":429,\"table\":\"items\"}\nsearch-api.log 22 1 76\n  1 {\"ts\":\"2026-09-14T16:00:15Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":55}\n  2 {\"ts\":\"2026-09-14T16:00:57Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.59.8\"}\nshipping-svc.log 3 28 56\n  28 {\"ts\":\"2026-09-14T16:32:10Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n  34 {\"ts\":\"2026-09-14T16:37:36Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"slow query\",\"ms\":429,\"table\":\"orders\"}\n"
+   }
+  ]
+ }

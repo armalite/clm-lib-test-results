@@ -1,0 +1,102 @@
+{
+ "meta": {
+  "kind": "summary",
+  "step": 13,
+  "attempt": 0,
+  "est_input_tokens": 4058,
+  "input_token_bound": 10694,
+  "reserved_usd": 0.13539,
+  "context_revision": 15,
+  "context_sha256": "98d73cb4c9dac3c592f102d41a305d75b34147e265e11bec40eebe7b134572aa",
+  "layout": "blocks/1",
+  "cache_ttl": "5m",
+  "prefix": {
+   "family": "summary",
+   "blocks": 8,
+   "system_blocks": 2,
+   "breakpoint_blocks": [
+    2,
+    6
+   ],
+   "previous": true,
+   "common_blocks": 3,
+   "first_changed_block": 3,
+   "common_prefix_chars": 3510
+  },
+  "summary_policy": "token-tail/1",
+  "older_entries": [
+   "sum3",
+   "s8.obs",
+   "s9.act",
+   "s9.obs"
+  ],
+  "kept_tail": [
+   "s10.act",
+   "s10.obs",
+   "s11.act",
+   "s11.obs",
+   "s12.act",
+   "s12.obs"
+  ],
+  "summary_attempt": 0,
+  "requested_max_chars": 943,
+  "forced": false
+ },
+ "sha256": "dc341ff6e12ab5447e43307974347800fef4bed38ecd2740e2da9406e686e6c2",
+ "payload": {
+  "model": "claude-opus-5-5",
+  "max_tokens": 4096,
+  "system": [
+   {
+    "type": "text",
+    "text": "run-ref: 13a6bca9de7b6d0fe337b607e16225f9\n"
+   },
+   {
+    "type": "text",
+    "text": "You compress an agent's working transcript. The agent is\ninvestigating a multi-service production incident whose evidence arrives in hourly rounds, and will\nkeep working after your summary replaces the entries below. The transcript may include an earlier\nsummary: carry its facts forward. Preserve, exactly and verbatim where relevant:\n- each incident thread: its current cause and any superseded cause, affected services, current\n  status and the record that set it;\n- follow-up items opened and closed, with their codes;\n- early facts that may matter later (change records, builds, configuration values);\n- every file:line reference needed as evidence, and observed log formats;\n- open questions and the next planned steps, including rounds still to be released.\nDrop repetition and raw log dumps. Use compact bullet points. Plain text only. Stay within the\nrequested length; it is set so the agent has room to continue."
+   }
+  ],
+  "messages": [
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "text",
+      "text": "<task>\nProduction incident investigation across several services. Evidence arrives in\n11 hourly rounds. Only round 1 is available now, under /task/fixtures/round-01/.\n\nEach round directory holds:\n- logs/<service>.log: that hour's structured service logs (the log format may change).\n- board.md: the incident board's updates during that hour. An update lists only what\n  changed; anything it does not mention is unchanged. The latest update for a thread wins.\n- changes.md (some rounds): change records. APPLIED changes took effect; PROPOSED did not.\n\nReply {\"action\": \"advance\"} to release the next round. Released rounds never change and stay\nreadable. A final answer is accepted only after all 11 rounds are released.\n\nFinal answer (all fields required):\n  {\"action\": \"final\", \"answer\": {\n     \"incidents\": [{\"cause\": \"<CAUSE_CODE>\", \"services\": [\"<service>\", ...],\n                    \"status\": \"ongoing|mitigated|resolved\",\n                    \"evidence_refs\": [\"round-NN/<file>:<line>\", ...]}, ...],\n     \"unresolved\": [\"<FOLLOW_UP_CODE>\", ...],\n     \"summary\": \"<short free text>\"}}\n- incidents: every real incident at the end of the final round (not false alarms), one entry\n  per incident, with its current cause, all affected services and its current status.\n- evidence_refs: path:line references (relative to /task/fixtures, ranges up to 20 lines as\n  path:a-b) supporting the incident's current cause and current status; when the cause traces\n  back to an earlier change record, cite that record too.\n- unresolved: follow-up items still open at the end of the final round.\n\nCause codes:\n  DB_POOL_EXHAUSTED: database connection pool exhausted\n  CACHE_STAMPEDE: cache miss storm after mass expiry\n  CERT_EXPIRED: an expired TLS certificate on a dependency\n  DNS_RESOLUTION: DNS lookups failing for a dependency\n  QUEUE_BACKLOG: message consumer lag growing\n  MEMORY_LEAK: process memory growing until restarts\n  UPSTREAM_RATE_LIMIT: an upstream provider rejecting requests with 429\n  DISK_PRESSURE: a data volume running out of space\n  BAD_CONFIG_ROLLOUT: a configuration value shipped by a rollout is invalid\nFollow-up codes:\n  CUSTOMER_COMMS: customer communication about the impact\n  DATA_BACKFILL: backfill of records missed during the incident\n  CAPACITY_REVIEW: capacity review of the affected tier\n  ALERT_TUNING: tuning of noisy or late alerts\n  VENDOR_TICKET: a ticket open with an external vendor\n  POSTMORTEM_DRAFT: drafting the postmortem\n  RUNBOOK_UPDATE: updating the runbook\n</task>\n\n<transcript_to_summarise>\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"sum3\", \"role\": \"summary\", \"body\": \"Rounds 1-3 of 11 released; round 3 is not yet read, and 04-11 are still to come.\\n- R1 changes.md:3 CHG-107 APPLIED: retry budget for GETs set to 1.\\n- R2 changes.md:3 CHG-120 APPLIED: build 8.59.8 to search-api, sets http.max_inflight=-1. This is a likely BAD_CONFIG_ROLLOUT; cite it if one appears. search-api had no errors in R1-R2.\\n- R2 changes.md:4 CHG-121: auth-svc, no config change.\\n- Thread A: DNS_RESOLUTION (host=rates.internal SERVFAIL), services inventory-svc and checkout-api, ongoing (round-02/board.md:3).\\n  - Refs: round-01/logs/inventory-svc.log:7-90, round-02/logs/checkout-api.log:8-59, round-02/logs/inventory-svc.log:8-74.\\n- Follow-ups: none.\\n- Slow-query WARNs are noise.\\n- Notes file: /task/workspace/notes.md.\\n- Next: read round-03 board, changes and log errors, then advance to round 11 and give the final answer.\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s8.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.5s\\n--- stdout ---\\nboard.md 1 # Incident board: updates in round 03\\nboard.md 2 \\nboard.md 3 - Thread B opened: errors in auth-svc. Suspected cause: database connection pool exhausted (DB_POOL_EXHAUSTED). Status: ongoing.\\nchanges.md 1 # Change log: round 03\\nchanges.md 2 \\nchanges.md 3 - CHG-126 PROPOSED: raise HPA max replicas for search tier (not applied)\\nauth-svc.log 6 2026-09-14T10:01:11Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\\nauth-svc.log 9 2026-09-14T10:02:37Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\\nauth-svc.log 15 2026-09-14T10:10:16Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\\nauth-svc.log 21 2026-09-14T10:19:36Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\\nauth-svc.log 25 2026-09-14T10:22:03Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\\nauth-svc.log 26 2026-09-14T10:23:33Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\\nauth-svc.log count 10\\nfirst 2026-09-14T10:00:15Z INFO  auth-svc heartbeat uptime_s=3665\\ncheckout-api.log 33 2026-09-14T10:22:15Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\\ncheckout-api.log 37 2026-09-14T10:24:43Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\\ncheckout-api.log 44 2026-09-14T10:31:19Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\\ncheckout-api.log 45 2026-09-14T10:32:24Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\\ncheckout-api.log 47 2026-09-14T10:34:17Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\\ncheckout-api.log 54 2026-09-14T10:37:53Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\\ncheckout-api.log count 8\\nfirst 2026-09-14T10:01:43Z INFO  checkout-api health ok probe=readiness\\ninventory-svc.log 3 2026-09-14T10:01:47Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\\ninventory-svc.log 7 2026-09-14T10:04:06Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\\ninventory-svc.log 15 2026-09-14T10:13:19Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\\ninventory-svc.log 28 2026-09-14T10:24:26Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\\ninventory-svc.log 34 2026-09-14T10:29:26Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\\ninventory-svc.log 41 2026-09-14T10:35:40Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\\ninventory-svc.log count 7\\nfirst 2026-09-14T10:00:03Z INFO  inventory-svc health ok probe=readiness\\nsearch-api.log count 0\\nfirst 2026-09-14T10:00:11Z INFO  search-api health ok probe=readiness\\nshipping-svc.log count 0\\nfirst 2026-09-14T10:00:05Z INFO  shipping-svc health ok probe=readiness\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s9.act\", \"role\": \"assistant\", \"body\": \"[step 9] execute\\nthought: Record round 3 findings to notes: Thread B board says DB pool but logs show CERT_EXPIRED on auth-svc.\\ncode:\\nopen('/task/workspace/notes.md','a').write('\\\\nR3: board.md:3 Thread B auth-svc suspected DB_POOL (board), but logs show CERT_EXPIRED peer=sso.example.net round-03/logs/auth-svc.log:6-26. CHG-126 PROPOSED (ignore). DNS continues round-03/logs/checkout-api.log:33-54, inventory-svc.log:3-41.\\\\n')\\nprint('ok')\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s9.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.4s\\n--- stdout ---\\nok\\n\"}\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "</transcript_to_summarise>\n\nWrite the replacement summary now, at most 943 characters."
+     }
+    ]
+   }
+  ],
+  "output_config": {
+   "effort": "low"
+  }
+ }
+}

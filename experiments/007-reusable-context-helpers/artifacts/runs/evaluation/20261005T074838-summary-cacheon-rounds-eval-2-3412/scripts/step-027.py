@@ -1,0 +1,3 @@
+open('/task/workspace/notes.md','a').write('\nR9: B cause revised DNS_RESOLUTION round-09/board.md:3 (ledger+pricing). D closed false alarm round-09/board.md:5 (drop D). C opened inventory ongoing round-09/board.md:4; logs config validation failed retry.backoff_ms=0 build 7.30.0 round-09/logs/inventory-svc.log:2 -> BAD_CONFIG via CHG-120 round-02/changes.md:3. Open +POSTMORTEM_DRAFT round-09/board.md:6.\n')
+L=open('/task/fixtures/round-09/logs/inventory-svc.log').read().splitlines()
+for i in [2,15,28,29,42,71]: print(i,L[i-1][40:150])

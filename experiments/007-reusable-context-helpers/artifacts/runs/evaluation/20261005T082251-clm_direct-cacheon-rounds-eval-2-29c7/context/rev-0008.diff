@@ -1,0 +1,49 @@
+--- rev-7
++++ rev-8
+@@ -4,42 +4,12 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: board empty; CHG-112 APPLIED log sampling /v1/health 1% (noise). Logs routine (request ok/heartbeat/gc/slow query/health ok). auth-svc heap warn rss_mb fluctuating 1967-3800 (not monotonic, maybe noise) r01 auth-svc.log:3,14,32,35,40,46,60,61. Next: advance to round 2."
++   "body": "R1: board empty; CHG-112 APPLIED log sampling /v1/health 1% (noise). auth-svc heap warn r01 auth-svc.log:3,14,32,35,40,46,60,61."
+   },
+   {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] execute\nthought: Compact context with note on auth heap warnings, then advance next step.\ncode:\nimport json\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty; CHG-112 APPLIED log sampling /v1/health 1% (noise). Logs routine (request ok/heartbeat/gc/slow query/health ok). auth-svc heap warn rss_mb fluctuating 1967-3800 (not monotonic, maybe noise) r01 auth-svc.log:3,14,32,35,40,46,60,61. Next: advance to round 2.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s"
+-  },
+-  {
+-   "id": "s3.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 3: revision 3 -> 4; entries 4 -> 1; body chars 1776 -> 273; removed [s2.act, s2.obs, s2.rcpt]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] advance\nthought: "
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 12 released.\nRound 2 of 12 released. New files are under /task/fixtures/round-02/.\n\nNew files:\n  round-02/board.md (4 lines)\n  round-02/changes.md (4 lines)\n  round-02/logs/auth-svc.log (81 lines)\n  round-02/logs/inventory-svc.log (76 lines)\n  round-02/logs/ledger-svc.log (60 lines)\n  round-02/logs/payments-svc.log (67 lines)\n  round-02/logs/pricing-svc.log (71 lines)"
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Inspect round 2 board, changes, and non-routine log lines.\ncode:\nimport re,glob\nb='/task/fixtures/round-02/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor p in sorted(glob.glob(b+'logs/*.log')):\n  for i,l in enumerate(open(p),1):\n    if not re.search(r'request ok|heartbeat|gc |health ok|slow query',l):print(p.split('/')[-1],i,l.rstrip()[:150])"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 02\nboard.md 2 \nboard.md 3 - Thread A opened: process memory growing until restarts confirmed as the cause (code MEMORY_LEAK) in auth-svc; impact also on payments-svc. Status: ongoing.\nboard.md 4 - Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\nchanges.md 1 # Change log: round 02\nchanges.md 2 \nchanges.md 3 - CHG-120 APPLIED: build 7.30.0 rolled out to inventory-svc; sets `retry.backoff_ms=0`\nchanges.md 4 - CHG-121 APPLIED: build 7.30.0 rolled out to ledger-svc; no config changes\nauth-svc.log 5 2026-09-14T09:04:30Z WARN  auth-svc heap usage high rss_mb=2645 gc_pause_ms=428\nauth-svc.log 10 2026-09-14T09:09:55Z WARN  auth-svc heap usage high rss_mb=3123 gc_pause_ms=604\nauth-svc.log 15 2026-09-14T09:14:42Z WARN  auth-svc heap usage high rss_mb=2694 gc_pause_ms=872\nauth-svc.log 18 2026-09-14T09:17:04Z WARN  auth-svc heap usage high rss_mb=1840 gc_pause_ms=335\nauth-svc.log 21 2026-09-14T09:18:37Z WARN  auth-svc heap usage high rss_mb=3321 gc_pause_ms=437\nauth-svc.log 42 2026-09-14T09:34:21Z WARN  auth-svc heap usage high rss_mb=2867 gc_pause_ms=877\nauth-svc.log 53 2026-09-14T09:42:24Z WARN  auth-svc heap usage high rss_mb=3658 gc_pause_ms=1094\nauth-svc.log 55 2026-09-14T09:42:46Z WARN  auth-svc heap usage high rss_mb=2511 gc_pause_ms=701\nauth-svc.log 65 2026-09-14T09:49:19Z WARN  auth-svc heap usage high rss_mb=2185 gc_pause_ms=1031\nauth-svc.log 70 2026-09-14T09:51:03Z WARN  auth-svc heap usage high rss_mb=3619 gc_pause_ms=502\nauth-svc.log 76 2026-09-14T09:54:41Z WARN  auth-svc heap usage high rss_mb=2876 gc_pause_ms=786\npayments-svc.log 5 2026-09-14T09:02:39Z WARN  payments-svc heap usage high rss_mb=3182 gc_pause_ms=1162\npayments-svc.log 20 2026-09-14T09:16:31Z WARN  payments-svc heap usage high rss_mb=2763 gc_pause_ms=547\npayments-svc.log 24 2026-09-14T09:19:25Z WARN  payments-svc heap usage high rss_mb=3831 gc_pause_ms=922\npayments-svc.log 26 2026-09-14T09:21:59Z WARN  payments-svc heap usage high rss_mb=1979 gc_pause_ms=511\npayments-svc.log 30 2026-09-14T09:24:21Z WARN  payments-svc heap usage high rss_mb=2112 gc_pause_ms=704\npayments-svc.log 40 2026-09-14T09:33:34Z WARN  payments-svc heap usage high rss_mb=1973 gc_pause_ms=432\npayments-svc.log 43 2026-09-14T09:38:42Z WARN  payments-svc heap usage high rss_mb=3138 gc_pause_ms=876\npayments-svc.log 48 2026-09-14T09:43:42Z WARN  payments-svc heap usage high rss_mb=2065 gc_pause_ms=987\n"
++   "id": "n2",
++   "role": "note",
++   "body": "R2: board.md:3 Thread A MEMORY_LEAK auth-svc (+payments-svc) ongoing; board.md:4 follow-up OPEN CUSTOMER_COMMS. changes.md:3 CHG-120 APPLIED inventory-svc build 7.30.0 sets retry.backoff_ms=0 (suspicious, watch inventory); changes.md:4 CHG-121 ledger no config. Logs: auth heap warns lines 5-76, payments heap warns lines 5-48 (rss fluctuating). Filter used: skip request ok|heartbeat|gc |health ok|slow query. Next: advance to round 3."
+   }
+  ]
+ }

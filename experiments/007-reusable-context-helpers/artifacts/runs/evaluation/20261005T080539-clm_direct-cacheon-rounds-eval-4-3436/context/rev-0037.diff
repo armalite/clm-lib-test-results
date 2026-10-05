@@ -1,0 +1,45 @@
+--- rev-36
++++ rev-37
+@@ -42,39 +42,9 @@
+    "body": "R8: board.md:3 Thread A resolved; board.md:4 Thread B mitigated; board.md:5 Thread C opened search-api failures cause unknown ongoing (logs: config validation failed cache.ttl_s=-1 build 8.23.7 search-api.log:24,34,36,41,54,56,60,78,82,84 => BAD_CONFIG_ROLLOUT from CHG-113); board.md:6 follow-up OPEN CAPACITY_REVIEW. 429 auth-svc.log:29,40; shipping-svc.log:41,42. Next: advance."
+   },
+   {
+-   "id": "s24.act",
+-   "role": "assistant",
+-   "body": "[step 24] execute\nthought: Compress context with R8 note.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4','n5','n6','n7')]\nc['entries'].append({'id':'n8','role':'note','body':'R8: board.md:3 Thread A resolved; board.md:4 Thread B mitigated; board.md:5 Thread C opened search-api failures cause unknown ongoing (logs: config validation failed cache.ttl_s=-1 build 8.23.7 search-api.log:24,34,36,41,54,56,60,78,82,84 => BAD_CONFIG_ROLLOUT from CHG-113); board.md:6 follow-up OPEN CAPACITY_REVIEW. 429 auth-svc.log:29,40; shipping-svc.log:41,42. Next: advance.'})\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s24.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.5s"
+-  },
+-  {
+-   "id": "s24.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 24: revision 32 -> 33; entries 14 -> 8; body chars 6016 -> 2226; removed [s21.act, s21.obs, s21.rcpt, s22.act, s22.obs, s23.act, s23.obs]; added [n8]; rewritten []"
+-  },
+-  {
+-   "id": "s25.act",
+-   "role": "assistant",
+-   "body": "[step 25] advance\nthought: "
+-  },
+-  {
+-   "id": "s25.obs",
+-   "role": "observation",
+-   "body": "Stage 9 of 11 released.\nRound 9 of 11 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (5 lines)\n  round-09/changes.md (3 lines)\n  round-09/logs/auth-svc.log (66 lines)\n  round-09/logs/inventory-svc.log (65 lines)\n  round-09/logs/notify-worker.log (64 lines)\n  round-09/logs/search-api.log (69 lines)\n  round-09/logs/shipping-svc.log (79 lines)"
+-  },
+-  {
+-   "id": "s26.act",
+-   "role": "assistant",
+-   "body": "[step 26] execute\nthought: Inspect round 9 board, changes, and key log lines.\ncode:\nimport re\nb='/task/fixtures/round-09/'\nfor f in ['board.md','changes.md']:\n    for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nimport os\nfor f in sorted(os.listdir(b+'logs')):\n    n=0\n    for i,l in enumerate(open(b+'logs/'+f),1):\n        if re.search(r'WARN|ERROR|429|pool|ttl|leak|memory',l,re.I) and 'slow query' not in l:\n            n+=1\n            if n<=4:print(f,i,l.rstrip()[:150])\n    print(f,'hits',n)"
+-  },
+-  {
+-   "id": "s26.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 09\nboard.md 2 \nboard.md 3 - Thread C note: failing pods still restarting; investigation continues.\nboard.md 4 - Follow-up OPEN DATA_BACKFILL: backfill of records missed during the incident.\nboard.md 5 - Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\nchanges.md 1 # Change log: round 09\nchanges.md 2 \nchanges.md 3 - CHG-163 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc.log 1 {\"ts\":\"2026-09-14T16:00:17Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":9}\nauth-svc.log 6 {\"ts\":\"2026-09-14T16:03:07Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":57}\nauth-svc.log hits 2\ninventory-svc.log hits 0\nnotify-worker.log hits 0\nsearch-api.log 1 {\"ts\":\"2026-09-14T16:01:40Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"8.23.7\"}\nsearch-api.log 4 {\"ts\":\"2026-09-14T16:04:49Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"8.23.7\"}\nsearch-api.log 12 {\"ts\":\"2026-09-14T16:08:26Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"8.23.7\"}\nsearch-api.log 13 {\"ts\":\"2026-09-14T16:09:04Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"8.23.7\"}\nsearch-api.log hits 10\nshipping-svc.log 43 {\"ts\":\"2026-09-14T16:31:06Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":56}\nshipping-svc.log 59 {\"ts\":\"2026-09-14T16:42:32Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":29}\nshipping-svc.log hits 2\n"
++   "id": "n9",
++   "role": "note",
++   "body": "R9: board.md:3 Thread C pods still restarting, investigation continues (still ongoing, cause unknown on board). board.md:4 OPEN DATA_BACKFILL; board.md:5 OPEN RUNBOOK_UPDATE. CHG-163 log sampling irrelevant. search-api config validation failed ttl -1 search-api.log:1,4,12,13. 429 auth-svc.log:1,6; shipping-svc.log:43,59. No pool WARNs. Next: advance."
+   }
+  ]
+ }

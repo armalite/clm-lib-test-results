@@ -1,0 +1,2 @@
+import ctx
+d=ctx.load();d['entries']=[e for e in d['entries'] if e['id'] in('n1','n2','n3')]+[{'id':'n4','role':'note','body':'R4: board.md:3 Thread A mitigated; board.md:4 Thread B ledger-svc suspected CACHE_STAMPEDE ongoing (but logs show DNS SERVFAIL rates.internal ledger-svc.log:10-83 -> likely DNS_RESOLUTION); board.md:5 DATA_BACKFILL OPEN. changes.md:3 CHG-133 TLS ticket rotation; changes.md:4 CHG-136 APPLIED mitigation auth-svc.'}];ctx.save(d);print('ok')

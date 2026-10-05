@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('R1 changes: CHG-113 APPLIED search-api http.max_inflight=-1 (possible BAD_CONFIG) round-01/changes.md:4 ; CHG-109 proposed only. No other errors R1.\n')
+print(open('/task/workspace/notes.md').read())

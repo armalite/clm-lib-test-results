@@ -1,0 +1,3 @@
+import ctx
+ctx.reset(['ctx.py has load/save/reset(notes). R1: ledger-svc CERT_EXPIRED peer=sso.example.net round-01/logs/ledger-svc.log:14-21. slow query WARNs noise. round-01/changes.md:4 CHG-113 APPLIED search-api http.max_inflight=-1 (possible BAD_CONFIG_ROLLOUT, no errors yet). CHG-109 proposed only.','R2: board.md:3 Thread A CERT_EXPIRED ledger-svc+inventory-svc ongoing. inventory-svc.log:10-19 cert errors; ledger-svc.log:20-28. CHG-117 proposed only. No search-api errors yet. Next: advance to R3.'])
+print('ok')

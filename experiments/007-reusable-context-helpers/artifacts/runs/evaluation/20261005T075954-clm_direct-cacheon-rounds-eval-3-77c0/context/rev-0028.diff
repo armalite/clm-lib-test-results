@@ -1,0 +1,19 @@
+--- rev-27
++++ rev-28
+@@ -30,6 +30,16 @@
+    "id": "s19.obs",
+    "role": "observation",
+    "body": "Stage 7 of 10 released.\nRound 7 of 10 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (6 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (66 lines)\n  round-07/logs/ledger-svc.log (55 lines)\n  round-07/logs/payments-svc.log (79 lines)\n  round-07/logs/search-api.log (74 lines)"
++  },
++  {
++   "id": "s20.act",
++   "role": "assistant",
++   "body": "[step 20] execute\nthought: Inspect R7 board and key log lines.\ncode:\nimport re\nb='/task/fixtures/round-07/'\nfor i,l in enumerate(open(b+'board.md'),1):print('board',i,l.rstrip())\nfor s in ['checkout-api','inventory-svc','ledger-svc','payments-svc','search-api']:\n  L=open(b+'logs/'+s+'.log').read().splitlines()\n  hits=[(i,l) for i,l in enumerate(L,1) if re.search(r'ERROR|429|cert|disk|heap|rss|OOM|restart|level=error|\"error\"',l,re.I) and 'slow query' not in l]\n  print(s,len(hits),[i for i,_ in hits][:40])\n  for i,l in hits[:2]:print(' ',i,l[:200])\n  if not hits:print(' first',L[0][:200])"
++  },
++  {
++   "id": "s20.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nboard 1 # Incident board: updates in round 07\nboard 2 \nboard 3 - Thread A status: resolved (no recurrence for two hours).\nboard 4 - Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\nboard 5 - Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\nboard 6 - Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\ncheckout-api 13 [6, 7, 17, 19, 22, 30, 35, 36, 41, 54, 56, 57, 67]\n  6 2026-09-14T14:04:01Z WARN  checkout-api heap usage high rss_mb=3858 gc_pause_ms=861\n  7 2026-09-14T14:05:48Z WARN  checkout-api heap usage high rss_mb=2007 gc_pause_ms=1341\ninventory-svc 0 []\n first 2026-09-14T14:00:02Z INFO  inventory-svc gc cycle pause_ms=39\nledger-svc 0 []\n first 2026-09-14T14:01:25Z INFO  ledger-svc request ok route=/v1/health status=200 ms=77\npayments-svc 0 []\n first 2026-09-14T14:00:40Z INFO  payments-svc heartbeat uptime_s=70376\nsearch-api 9 [17, 20, 23, 28, 30, 39, 50, 52, 58]\n  17 2026-09-14T14:12:20Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4\n  20 2026-09-14T14:14:27Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4\n"
+   }
+  ]
+ }

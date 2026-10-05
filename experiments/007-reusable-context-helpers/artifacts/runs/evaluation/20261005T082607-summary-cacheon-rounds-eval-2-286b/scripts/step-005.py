@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('R2: Thread A MEMORY_LEAK auth-svc+payments-svc ongoing (round-02/board.md:3). FU OPEN CUSTOMER_COMMS (board.md:4). CHG-120 APPLIED inventory-svc retry.backoff_ms=0 (round-02/changes.md:3) - watch BAD_CONFIG. CHG-121 ledger no cfg. payments heap warns round-02/logs/payments-svc.log:5-43; auth round-02/logs/auth-svc.log:5-21.\n')
+print('ok')

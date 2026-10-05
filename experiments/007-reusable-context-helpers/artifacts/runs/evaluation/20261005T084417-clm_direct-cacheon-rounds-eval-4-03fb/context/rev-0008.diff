@@ -1,0 +1,25 @@
+--- rev-7
++++ rev-8
+@@ -7,19 +7,9 @@
+    "body": "R1: changes.md:3 CHG-107 PROPOSED HPA search; :4 CHG-113 APPLIED search-api cache.ttl_s=-1 (bad config?); :5 CHG-114 auth-svc no config. board empty. slow query WARNs = noise. R1 only inventory-svc db pool exhausted WARN lines 5,9,28,30,45,52 (round-01/logs/inventory-svc.log); other svcs clean."
+   },
+   {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Compact context and inspect round 2.\ncode:\nimport json,glob,os\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: changes.md:3 CHG-107 PROPOSED HPA search; :4 CHG-113 APPLIED search-api cache.ttl_s=-1 (bad config?); :5 CHG-114 auth-svc no config. board empty. slow query WARNs = noise. R1 only inventory-svc db pool exhausted WARN lines 5,9,28,30,45,52 (round-01/logs/inventory-svc.log); other svcs clean.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))\nd='/task/fixtures/round-02/'\nfor i,l in enumerate(open(d+'board.md').read().splitlines(),1):print('B',i,l)\nfor f in sorted(glob.glob(d+'logs/*.log')):\n  L=open(f).read().splitlines()\n  e=[(i,l[:120]) for i,l in enumerate(L,1) if ('ERROR' in l or 'WARN' in l) and 'slow query' not in l]\n  print(os.path.basename(f),len(e))\n  for x in e[:4]:print(' ',*x)"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nB 1 # Incident board: updates in round 02\nB 2 \nB 3 - Thread A opened: database connection pool exhausted confirmed as the cause (code DB_POOL_EXHAUSTED) in inventory-svc; impact also on notify-worker. Status: ongoing.\nauth-svc.log 0\ninventory-svc.log 10\n  3 2026-09-14T09:01:52Z WARN  inventory-svc db pool exhausted wait_ms=2830 in_use=20/20\n  9 2026-09-14T09:07:05Z WARN  inventory-svc db pool exhausted wait_ms=2026 in_use=12/12\n  19 2026-09-14T09:15:52Z WARN  inventory-svc db pool exhausted wait_ms=2742 in_use=10/10\n  30 2026-09-14T09:21:56Z WARN  inventory-svc db pool exhausted wait_ms=2960 in_use=20/20\nnotify-worker.log 9\n  6 2026-09-14T09:03:51Z WARN  notify-worker db pool exhausted wait_ms=1266 in_use=10/10\n  14 2026-09-14T09:10:15Z WARN  notify-worker db pool exhausted wait_ms=2099 in_use=10/10\n  29 2026-09-14T09:22:51Z WARN  notify-worker db pool exhausted wait_ms=2601 in_use=20/20\n  32 2026-09-14T09:27:16Z WARN  notify-worker db pool exhausted wait_ms=2806 in_use=16/16\nsearch-api.log 0\nshipping-svc.log 0\n"
+-  },
+-  {
+-   "id": "s5.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 5: revision 5 -> 6; entries 8 -> 1; body chars 2414 -> 295; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs, s4.act, s4.obs]; added []; rewritten [n1]"
++   "id": "n2",
++   "role": "note",
++   "body": "R2: board.md:3 Thread A DB_POOL_EXHAUSTED inventory-svc+notify-worker ongoing. inventory-svc.log pool WARN 3,9,19,30; notify-worker.log 6,14,29,32. no changes.md seen. others clean. Next: advance to R3."
+   }
+  ]
+ }

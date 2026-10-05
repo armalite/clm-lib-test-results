@@ -1,0 +1,69 @@
+{
+ "number": 36,
+ "parent": 35,
+ "source": "runtime",
+ "step": 30,
+ "sha256": "4fca314538746a14a98b582e7d5e15319465e4a8e477fc80a8ea7976d9c8b84a",
+ "entries": [
+  {
+   "id": "sum6",
+   "role": "summary",
+   "body": "<summary>\n- R1: CHG-112 APPLIED TLS rotation. CHG-113 APPLIED round-01/changes.md:4 auth-svc build 4.51.3 sets `cache.ttl_s=-1`. CHG-114 APPLIED shipping-svc 4.51.3, no config. Slow query WARNs = noise.\n- Thread A QUEUE_BACKLOG, services payments-svc+ledger-svc (round-02/board.md:3). Lag topic=stock-updates (round-02/logs/ledger-svc.log:5,:74). MITIGATED round-05/board.md:3 after CHG-143 APPLIED round-05/changes.md:3. RESOLVED round-08/board.md:3.\n- Thread B: services shipping-svc, search-api (search-api added round-06/board.md:3). Earlier cause DB_POOL_EXHAUSTED (round-04/board.md:3), superseded by CERT_EXPIRED at round-08/board.md:4. Status ongoing.\n- Thread B cert lines: round-07 shipping:3,16,21 and search-api:8,10,11. round-08 search-api:2,22,25 and shipping:4,11,19.\n- Thread C: auth-svc, ongoing (round-08/board.md:5). Board has not named a cause yet. Logs show BAD_CONFIG_ROLLOUT from CHG-113: round-08/logs/auth-svc.log:14,16,18,21.\n- auth-svc log is now JSON: {\"ts\",\"level\",\"svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"4.51.3\"}. Other services use `ts LEVEL svc msg k=v`.\n- CHG-154 and CHG-157 (R8 dashboards) are irrelevant.\n- Follow-ups OPEN: RUNBOOK_UPDATE (round-04/board.md:4), POSTMORTEM_DRAFT (round-07/board.md:3), DATA_BACKFILL (round-07/board.md:4), ALERT_TUNING (round-08/board.md:6). None closed.\n- Notes are in /task/workspace/notes.md (through R8).\n- Round 9 released; step 25 output not yet seen. Next: read round-09 board, changes and logs, append to notes, advance rounds 10-11, then submit final.\n</summary>"
+  },
+  {
+   "id": "s25.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 09\nboard.md 3 - Thread B status: mitigated (workaround in place; permanent fix pending).\nboard.md 4 - Thread C note: failing pods still restarting; investigation continues.\nboard.md 5 - Follow-up CLOSED POSTMORTEM_DRAFT.\nboard.md 6 - Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\nchanges.md 1 # Change log: round 09\nchanges.md 3 - CHG-168 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc.log 11 [10, 12, 22, 24, 49, 51, 55, 57]\n   {\"ts\":\"2026-09-14T16:08:16Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"4.51.3\"}\nledger-svc.log 0 []\npayments-svc.log 0 []\nsearch-api.log 2 [12, 36]\n   {\"ts\":\"2026-09-14T16:10:27Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nshipping-svc.log 2 [53, 59]\n   {\"ts\":\"2026-09-14T16:38:50Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n"
+  },
+  {
+   "id": "s26.act",
+   "role": "assistant",
+   "body": "[step 26] execute\nthought: Save R9 notes.\ncode:\nopen('/task/workspace/notes.md','a').write('\\nR9: Thread B MITIGATED round-09/board.md:3; cert lines search-api:12,36 shipping:53,59. Thread C ongoing round-09/board.md:4; auth ttl errors round-09/logs/auth-svc.log:10,12,22. POSTMORTEM_DRAFT CLOSED round-09/board.md:5. CUSTOMER_COMMS OPEN round-09/board.md:6. Open now: RUNBOOK_UPDATE, DATA_BACKFILL, ALERT_TUNING, CUSTOMER_COMMS.\\n')\nprint('ok')"
+  },
+  {
+   "id": "s26.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s27.act",
+   "role": "assistant",
+   "body": "[step 27] advance\nthought: "
+  },
+  {
+   "id": "s27.obs",
+   "role": "observation",
+   "body": "Stage 10 of 11 released.\nRound 10 of 11 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (3 lines)\n  round-10/changes.md (3 lines)\n  round-10/logs/auth-svc.log (73 lines)\n  round-10/logs/ledger-svc.log (61 lines)\n  round-10/logs/payments-svc.log (58 lines)\n  round-10/logs/search-api.log (71 lines)\n  round-10/logs/shipping-svc.log (76 lines)"
+  },
+  {
+   "id": "s28.act",
+   "role": "assistant",
+   "body": "[step 28] execute\nthought: Read round 10.\ncode:\nimport os,re\nb='/task/fixtures/round-10/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):\n    if l.strip():print(f,i,l.rstrip())\nfor s in sorted(os.listdir(b+'logs')):\n  L=open(b+'logs/'+s).read().splitlines()\n  h=[i for i,l in enumerate(L,1) if re.search('ERROR|cert|ttl|lag|429|pool',l)]\n  print(s,len(h),h[:8])\n  if h:print('  ',L[h[0]-1][:220])"
+  },
+  {
+   "id": "s28.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.9s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 10\nboard.md 3 - Follow-up CLOSED CUSTOMER_COMMS.\nchanges.md 1 # Change log: round 10\nchanges.md 3 - CHG-173 PROPOSED: move batch jobs to off-peak window (not applied)\nauth-svc.log 13 [9, 17, 18, 21, 23, 24, 26, 27]\n   {\"ts\":\"2026-09-14T17:06:59Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"4.51.3\"}\nledger-svc.log 0 []\npayments-svc.log 0 []\nsearch-api.log 2 [20, 37]\n   {\"ts\":\"2026-09-14T17:20:35Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nshipping-svc.log 2 [58, 61]\n   {\"ts\":\"2026-09-14T17:43:48Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n"
+  },
+  {
+   "id": "s29.act",
+   "role": "assistant",
+   "body": "[step 29] execute\nthought: Save R10 notes.\ncode:\nopen('/task/workspace/notes.md','a').write('\\nR10: CUSTOMER_COMMS CLOSED round-10/board.md:3. CHG-173 PROPOSED irrelevant. auth ttl errors round-10/logs/auth-svc.log:9,17,18. cert search-api:20,37 shipping:58,61. Open now: RUNBOOK_UPDATE, DATA_BACKFILL, ALERT_TUNING.\\n')\nprint('ok')"
+  },
+  {
+   "id": "s29.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s30.act",
+   "role": "assistant",
+   "body": "[step 30] advance\nthought: "
+  },
+  {
+   "id": "s30.obs",
+   "role": "observation",
+   "body": "Stage 11 of 11 released.\nRound 11 of 11 released. New files are under /task/fixtures/round-11/.\n\nNew files:\n  round-11/board.md (2 lines)\n  round-11/changes.md (3 lines)\n  round-11/logs/auth-svc.log (82 lines)\n  round-11/logs/ledger-svc.log (58 lines)\n  round-11/logs/payments-svc.log (67 lines)\n  round-11/logs/search-api.log (68 lines)\n  round-11/logs/shipping-svc.log (75 lines)"
+  }
+ ]
+}

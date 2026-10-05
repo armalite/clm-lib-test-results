@@ -1,0 +1,2 @@
+import ctx
+d=ctx.load();d['entries']=[d['entries'][0],{'id':'n2','role':'note','body':'R2: board.md:3 Thread A MEMORY_LEAK auth-svc (+payments-svc) ongoing; board.md:4 follow-up OPEN CUSTOMER_COMMS. changes.md:3 CHG-120 APPLIED inventory-svc build 7.30.0 sets retry.backoff_ms=0 (possible BAD_CONFIG later); changes.md:4 CHG-121 ledger no config. Logs: auth heap warns rss up to 3658 (auth-svc.log:53), payments heap warns (payments-svc.log:24). Inventory/ledger/pricing quiet.'}];ctx.save(d);print('ok')

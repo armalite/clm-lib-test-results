@@ -1,0 +1,19 @@
+--- rev-24
++++ rev-25
+@@ -30,6 +30,16 @@
+    "id": "s18.obs",
+    "role": "observation",
+    "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (3 lines)\n  round-07/logs/auth-svc.log (83 lines)\n  round-07/logs/inventory-svc.log (78 lines)\n  round-07/logs/notify-worker.log (59 lines)\n  round-07/logs/search-api.log (62 lines)\n  round-07/logs/shipping-svc.log (67 lines)"
++  },
++  {
++   "id": "s19.act",
++   "role": "assistant",
++   "body": "[step 19] execute\nthought: Inspect round 7 board and WARN/ERROR summary.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-07/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n    L=[(i+1,l) for i,l in enumerate(open(f)) if re.search(r'WARN|ERROR|warn|error',l)]\n    print(f.split('/')[-1],len(L),L[0][0] if L else '',L[-1][0] if L else '')\n    for i,l in L[:2]: print(' ',i,l.strip()[:160])"
++  },
++  {
++   "id": "s19.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 07\n\n- Thread B root cause revised: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT); this supersedes the earlier suspicion of MEMORY_LEAK.\n\nauth-svc.log 28 3 76\n  3 {\"ts\":\"2026-09-14T14:00:38Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":34}\n  4 {\"ts\":\"2026-09-14T14:00:58Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":206,\"table\":\"events\"}\ninventory-svc.log 15 11 75\n  11 {\"ts\":\"2026-09-14T14:08:41Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":288,\"table\":\"items\"}\n  12 {\"ts\":\"2026-09-14T14:09:46Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":407,\"table\":\"items\"}\nnotify-worker.log 14 1 59\n  1 {\"ts\":\"2026-09-14T14:00:14Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":427,\"table\":\"items\"}\n  4 {\"ts\":\"2026-09-14T14:05:07Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":302,\"table\":\"orders\"}\nsearch-api.log 21 2 59\n  2 {\"ts\":\"2026-09-14T14:01:15Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":395,\"table\":\"events\"}\n  4 {\"ts\":\"2026-09-14T14:02:43Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":390,\"table\":\"events\"}\nshipping-svc.log 21 1 55\n  1 {\"ts\":\"2026-09-14T14:01:28Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"slow query\",\"ms\":355,\"table\":\"orders\"}\n  6 {\"ts\":\"2026-09-14T14:05:08Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"slow query\",\"ms\":333,\"table\":\"orders\"}\n"
+   }
+  ]
+ }

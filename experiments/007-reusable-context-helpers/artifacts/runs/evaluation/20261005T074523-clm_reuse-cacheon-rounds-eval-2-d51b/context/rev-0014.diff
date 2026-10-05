@@ -1,0 +1,46 @@
+--- rev-13
++++ rev-14
+@@ -4,42 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "NOTES r01: board empty. CHG-112 APPLIED log sampling (noise). slow query WARNs noise. auth heap WARNs r01 auth-svc.log:3-61.\nR02: board.md:3 Thread A MEMORY_LEAK auth-svc + payments-svc ongoing; board.md:4 follow-up OPEN CUSTOMER_COMMS. changes.md:3 CHG-120 APPLIED inventory-svc retry.backoff_ms=0 (watch BAD_CONFIG_ROLLOUT); changes.md:4 CHG-121 ledger no config. Logs r02: auth heap WARN auth-svc.log:5-76, payments heap WARN payments-svc.log:5-48.\nR03: board.md:3 CUSTOMER_COMMS CLOSED. changes.md:3 CHG-121 APPLIED retry budget GETs=1. heap WARNs auth-svc.log:19-40+, payments-svc.log:8-39+. others clean. Filter: skip slow query|INFO|/v1/health. Next: advance."
+-  },
+-  {
+-   "id": "s8.act",
+-   "role": "assistant",
+-   "body": "[step 8] execute\nthought: Record r03 findings, compact context.\ncode:\nimport ctx\nctx.replace_all(open('/task/workspace/context.json').read() and 'NOTES r01: board empty. CHG-112 APPLIED log sampling (noise). slow query WARNs noise. auth heap WARNs r01 auth-svc.log:3-61.\\nR02: board.md:3 Thread A MEMORY_LEAK auth-svc + payments-svc ongoing; board.md:4 follow-up OPEN CUSTOMER_COMMS. changes.md:3 CHG-120 APPLIED inventory-svc retry.backoff_ms=0 (watch BAD_CONFIG_ROLLOUT); changes.md:4 CHG-121 ledger no config. Logs r02: auth heap WARN auth-svc.log:5-76, payments heap WARN payments-svc.log:5-48.\\nR03: board.md:3 CUSTOMER_COMMS CLOSED. changes.md:3 CHG-121 APPLIED retry budget GETs=1. heap WARNs auth-svc.log:19-40+, payments-svc.log:8-39+. others clean. Filter: skip slow query|INFO|/v1/health. Next: advance.')\nprint('ok')"
+-  },
+-  {
+-   "id": "s8.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=2.0s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s8.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 8: revision 9 -> 10; entries 8 -> 1; body chars 3437 -> 666; removed [s5.act, s5.obs, s5.rcpt, s6.act, s6.obs, s7.act, s7.obs]; added []; rewritten [notes]"
+-  },
+-  {
+-   "id": "s9.act",
+-   "role": "assistant",
+-   "body": "[step 9] advance\nthought: "
+-  },
+-  {
+-   "id": "s9.obs",
+-   "role": "observation",
+-   "body": "Stage 4 of 12 released.\nRound 4 of 12 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (5 lines)\n  round-04/changes.md (4 lines)\n  round-04/logs/auth-svc.log (74 lines)\n  round-04/logs/inventory-svc.log (77 lines)\n  round-04/logs/ledger-svc.log (83 lines)\n  round-04/logs/payments-svc.log (58 lines)\n  round-04/logs/pricing-svc.log (75 lines)"
+-  },
+-  {
+-   "id": "s10.act",
+-   "role": "assistant",
+-   "body": "[step 10] execute\nthought: Inspect round 4 board, changes, and non-noise log lines.\ncode:\nimport glob,re\nb='/task/fixtures/round-04/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1): print(f,i,l.rstrip())\nfor f in sorted(glob.glob(b+'logs/*')):\n  n=f.split('/')[-1]\n  c=0\n  for i,l in enumerate(open(f),1):\n    if re.search(r'slow query|INFO|/v1/health',l): continue\n    c+=1\n    if c<=6: print(n,i,l.rstrip()[:160])\n  print(n,'nonnoise',c)"
+-  },
+-  {
+-   "id": "s10.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 04\nboard.md 2 \nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nboard.md 4 - Thread B opened: errors in ledger-svc. Suspected cause: cache miss storm after mass expiry (CACHE_STAMPEDE). Status: ongoing.\nboard.md 5 - Follow-up OPEN DATA_BACKFILL: backfill of records missed during the incident.\nchanges.md 1 # Change log: round 04\nchanges.md 2 \nchanges.md 3 - CHG-133 APPLIED: TLS session ticket rotation set to hourly\nchanges.md 4 - CHG-136 APPLIED: mitigation for thread A deployed to auth-svc\nauth-svc.log nonnoise 0\ninventory-svc.log nonnoise 0\nledger-svc.log 10 2026-09-14T11:08:33Z ERROR ledger-svc dns lookup failed host=rates.internal err=SERVFAIL\nledger-svc.log 28 2026-09-14T11:17:36Z ERROR ledger-svc dns lookup failed host=rates.internal err=SERVFAIL\nledger-svc.log 47 2026-09-14T11:29:29Z ERROR ledger-svc dns lookup failed host=rates.internal err=SERVFAIL\nledger-svc.log 51 2026-09-14T11:31:21Z ERROR ledger-svc dns lookup failed host=rates.internal err=SERVFAIL\nledger-svc.log 52 2026-09-14T11:31:26Z ERROR ledger-svc dns lookup failed host=rates.internal err=SERVFAIL\nledger-svc.log 57 2026-09-14T11:38:24Z ERROR ledger-svc dns lookup failed host=rates.internal err=SERVFAIL\nledger-svc.log nonnoise 11\npayments-svc.log nonnoise 0\npricing-svc.log nonnoise 0\n"
++   "body": "NOTES r01: board empty. CHG-112 APPLIED log sampling (noise). slow query WARNs noise.\nR02: board.md:3 Thread A MEMORY_LEAK auth-svc + payments-svc; board.md:4 CUSTOMER_COMMS OPEN. changes.md:3 CHG-120 APPLIED inventory-svc retry.backoff_ms=0 (watch BAD_CONFIG_ROLLOUT). heap WARN r02 auth-svc.log:5-76, payments-svc.log:5-48.\nR03: board.md:3 CUSTOMER_COMMS CLOSED. changes.md:3 CHG-121 APPLIED retry budget. heap r03 auth-svc.log:19-40, payments-svc.log:8-39.\nR04: board.md:3 Thread A mitigated; changes.md:4 CHG-136 APPLIED mitigation auth-svc. heap WARNs gone r04. board.md:4 Thread B ledger-svc suspected CACHE_STAMPEDE ongoing BUT logs show DNS SERVFAIL host=rates.internal ledger-svc.log:10-57 (likely DNS_RESOLUTION). board.md:5 DATA_BACKFILL OPEN. changes.md:3 CHG-133 TLS ticket rotation (noise?).\nFilter: skip slow query|INFO|/v1/health. Next: advance."
+   }
+  ]
+ }

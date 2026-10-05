@@ -1,0 +1,107 @@
+{
+ "meta": {
+  "kind": "summary",
+  "step": 8,
+  "attempt": 0,
+  "est_input_tokens": 3804,
+  "input_token_bound": 10505,
+  "reserved_usd": 0.134445,
+  "context_revision": 9,
+  "context_sha256": "189544939321765dc0f969324e94e3dcc932c65754347959bbaf7def934a3149",
+  "layout": "blocks/1",
+  "cache_ttl": "5m",
+  "prefix": {
+   "family": "summary",
+   "blocks": 10,
+   "system_blocks": 2,
+   "breakpoint_blocks": [
+    2,
+    8
+   ],
+   "previous": true,
+   "common_blocks": 3,
+   "first_changed_block": 3,
+   "common_prefix_chars": 3510
+  },
+  "summary_policy": "token-tail/1",
+  "older_entries": [
+   "sum2",
+   "s5.act",
+   "s5.obs",
+   "s6.act",
+   "s6.obs",
+   "s7.act"
+  ],
+  "kept_tail": [
+   "s7.obs"
+  ],
+  "summary_attempt": 0,
+  "requested_max_chars": 689,
+  "forced": false
+ },
+ "sha256": "63264e2b7ba5fcab64a779fa4852580e2599134c8be5b799c7d0a186f5211262",
+ "payload": {
+  "model": "claude-opus-5-5",
+  "max_tokens": 4096,
+  "system": [
+   {
+    "type": "text",
+    "text": "run-ref: 903f1c3b9af5551fa675e53e3422680c\n"
+   },
+   {
+    "type": "text",
+    "text": "You compress an agent's working transcript. The agent is\ninvestigating a multi-service production incident whose evidence arrives in hourly rounds, and will\nkeep working after your summary replaces the entries below. The transcript may include an earlier\nsummary: carry its facts forward. Preserve, exactly and verbatim where relevant:\n- each incident thread: its current cause and any superseded cause, affected services, current\n  status and the record that set it;\n- follow-up items opened and closed, with their codes;\n- early facts that may matter later (change records, builds, configuration values);\n- every file:line reference needed as evidence, and observed log formats;\n- open questions and the next planned steps, including rounds still to be released.\nDrop repetition and raw log dumps. Use compact bullet points. Plain text only. Stay within the\nrequested length; it is set so the agent has room to continue."
+   }
+  ],
+  "messages": [
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "text",
+      "text": "<task>\nProduction incident investigation across several services. Evidence arrives in\n11 hourly rounds. Only round 1 is available now, under /task/fixtures/round-01/.\n\nEach round directory holds:\n- logs/<service>.log: that hour's structured service logs (the log format may change).\n- board.md: the incident board's updates during that hour. An update lists only what\n  changed; anything it does not mention is unchanged. The latest update for a thread wins.\n- changes.md (some rounds): change records. APPLIED changes took effect; PROPOSED did not.\n\nReply {\"action\": \"advance\"} to release the next round. Released rounds never change and stay\nreadable. A final answer is accepted only after all 11 rounds are released.\n\nFinal answer (all fields required):\n  {\"action\": \"final\", \"answer\": {\n     \"incidents\": [{\"cause\": \"<CAUSE_CODE>\", \"services\": [\"<service>\", ...],\n                    \"status\": \"ongoing|mitigated|resolved\",\n                    \"evidence_refs\": [\"round-NN/<file>:<line>\", ...]}, ...],\n     \"unresolved\": [\"<FOLLOW_UP_CODE>\", ...],\n     \"summary\": \"<short free text>\"}}\n- incidents: every real incident at the end of the final round (not false alarms), one entry\n  per incident, with its current cause, all affected services and its current status.\n- evidence_refs: path:line references (relative to /task/fixtures, ranges up to 20 lines as\n  path:a-b) supporting the incident's current cause and current status; when the cause traces\n  back to an earlier change record, cite that record too.\n- unresolved: follow-up items still open at the end of the final round.\n\nCause codes:\n  DB_POOL_EXHAUSTED: database connection pool exhausted\n  CACHE_STAMPEDE: cache miss storm after mass expiry\n  CERT_EXPIRED: an expired TLS certificate on a dependency\n  DNS_RESOLUTION: DNS lookups failing for a dependency\n  QUEUE_BACKLOG: message consumer lag growing\n  MEMORY_LEAK: process memory growing until restarts\n  UPSTREAM_RATE_LIMIT: an upstream provider rejecting requests with 429\n  DISK_PRESSURE: a data volume running out of space\n  BAD_CONFIG_ROLLOUT: a configuration value shipped by a rollout is invalid\nFollow-up codes:\n  CUSTOMER_COMMS: customer communication about the impact\n  DATA_BACKFILL: backfill of records missed during the incident\n  CAPACITY_REVIEW: capacity review of the affected tier\n  ALERT_TUNING: tuning of noisy or late alerts\n  VENDOR_TICKET: a ticket open with an external vendor\n  POSTMORTEM_DRAFT: drafting the postmortem\n  RUNBOOK_UPDATE: updating the runbook\n</task>\n\n<transcript_to_summarise>\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"sum2\", \"role\": \"summary\", \"body\": \"Summary of work so far (rounds 1-2 of 11 released; rounds 03-11 still to be released):\\n\\nLog format (same in R1 and R2): `2026-09-14THH:MM:SSZ LEVEL  \\u003cservice> \\u003cmessage> key=val ...`\\n- Routine noise to skip: request ok, health ok, heartbeat, gc cycle, slow query.\\n- Pool signal format: `WARN \\u003csvc> db pool exhausted wait_ms=N in_use=X/X`.\\n- The format may change in later rounds.\\n\\nRound 1 (/task/fixtures/round-01/):\\n- board.md: header only; no threads.\\n- changes.md:\\n  - line 3: CHG-107 PROPOSED, raise HPA max replicas for search tier (not applied).\\n  - line 4: CHG-113 APPLIED, build 8.23.7 to search-api, sets `cache.ttl_s=-1`. This is an invalid value and a likely BAD_CONFIG_ROLLOUT/CACHE_STAMPEDE source. Cite round-01/changes.md:4 if a search-api incident appears.\\n  - line 5: CHG-114 APPLIED, build 8.23.7 to auth-svc, no config changes.\\n- inventory-svc.log db pool exhausted at lines 5, 9, 28, 30, 45, 52.\\n- All other logs in R1 contain only routine lines.\\n\\nRound 2 (/task/fixtures/round-02/):\\n- No changes.md in this round.\\n- board.md:3 opens Thread A.\\n  - Cause: DB_POOL_EXHAUSTED, confirmed.\\n  - Services: inventory-svc, with impact also on notify-worker.\\n  - Status: ongoing.\\n- inventory-svc.log db pool exhausted at lines 3, 9, 19, 30, 33, 54, 67, 68, 74, 78.\\n- notify-worker.log db pool exhausted at lines 6, 14, 29, 32, 34, 37, 40, 45, 57.\\n- auth-svc, search-api and shipping-svc logs contain only routine lines.\\n- search-api shows no symptoms yet despite CHG-113.\\n\\nIncident threads:\\n- A: DB_POOL_EXHAUSTED.\\n  - Services: inventory-svc, notify-worker.\\n  - Status: ongoing, set by round-02/board.md:3.\\n  - Evidence: round-02/board.md:3, round-02/logs/inventory-svc.log:3-19, round-02/logs/notify-worker.log:6-14, round-01/logs/inventory-svc.log:5-9.\\n\\nFollow-ups: none opened or closed yet.\\n\\nWorkspace: notes in /task/workspace/notes.md (R1 notes appended).\\n\\nNext steps:\\n- Advance round by round through rounds 3-11.\\n- Each round, read board.md (latest update per thread wins; unmentioned fields are unchanged), changes.md if present, and the non-routine log lines.\\n- Use the same filter script, and adapt it if the log format changes.\\n- Watch for:\\n  - a search-api thread tied to CHG-113;\\n  - cause changes on Thread A;\\n  - status changes on Thread A;\\n  - false-alarm threads;\\n  - follow-up codes opened or closed.\\n- Collect file:line refs for each thread's current cause and status.\\n- Give the final answer only after round 11.\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s5.act\", \"role\": \"assistant\", \"body\": \"[step 5] execute\\nthought: Save notes before context summarisation.\\ncode:\\nopen('/task/workspace/notes.md','a').write('R2: Thread A DB_POOL_EXHAUSTED inventory-svc+notify-worker ongoing round-02/board.md:3; logs round-02/logs/inventory-svc.log:3, notify-worker.log:6\\\\n')\\nprint(open('/task/workspace/notes.md').read())\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s5.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.3s\\n--- stdout ---\\nR1: CHG-113 APPLIED search-api cache.ttl_s=-1 (round-01/changes.md:4); inventory db pool exhausted round-01/logs/inventory-svc.log:5,9\\nR2: Thread A DB_POOL_EXHAUSTED inventory-svc+notify-worker ongoing round-02/board.md:3; logs round-02/logs/inventory-svc.log:3, notify-worker.log:6\\n\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s6.act\", \"role\": \"assistant\", \"body\": \"[step 6] advance\\nthought: \"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s6.obs\", \"role\": \"observation\", \"body\": \"Stage 3 of 11 released.\\nRound 3 of 11 released. New files are under /task/fixtures/round-03/.\\n\\nNew files:\\n  round-03/board.md (3 lines)\\n  round-03/logs/auth-svc.log (64 lines)\\n  round-03/logs/inventory-svc.log (77 lines)\\n  round-03/logs/notify-worker.log (74 lines)\\n  round-03/logs/search-api.log (75 lines)\\n  round-03/logs/shipping-svc.log (75 lines)\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s7.act\", \"role\": \"assistant\", \"body\": \"[step 7] execute\\nthought: \\ncode:\\nimport re,glob\\nprint(open('/task/fixtures/round-03/board.md').read())\\nfor f in sorted(glob.glob('/task/fixtures/round-03/logs/*.log')):\\n    for i,l in enumerate(open(f),1):\\n        if not re.search(r'request ok|health ok|heartbeat|gc cycle|slow query',l):\\n            print(f.split('/')[-1],i,l.strip()[:150])\"}\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "</transcript_to_summarise>\n\nWrite the replacement summary now, at most 689 characters."
+     }
+    ]
+   }
+  ],
+  "output_config": {
+   "effort": "low"
+  }
+ }
+}

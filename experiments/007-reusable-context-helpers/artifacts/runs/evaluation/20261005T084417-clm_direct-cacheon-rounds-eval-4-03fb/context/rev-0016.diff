@@ -1,0 +1,45 @@
+--- rev-15
++++ rev-16
+@@ -17,39 +17,9 @@
+    "body": "R3: board.md:3 Thread D CACHE_STAMPEDE auth-svc ongoing. auth-svc.log miss storm 1,15,16,18,24,43. pool WARN continues inventory-svc.log 12-76, notify-worker.log 4-71. no changes.md. Next: advance R4."
+   },
+   {
+-   "id": "s9.act",
+-   "role": "assistant",
+-   "body": "[step 9] execute\nthought: Save R3 note and compact context.\ncode:\nimport json\nn=[{'id':'n1','role':'note','body':'R1: changes.md:3 CHG-107 PROPOSED HPA search; :4 CHG-113 APPLIED search-api cache.ttl_s=-1 (bad config?); :5 CHG-114 auth-svc no config. board empty. slow query WARNs = noise. R1 only inventory-svc db pool exhausted WARN lines 5,9,28,30,45,52 (round-01/logs/inventory-svc.log); other svcs clean.'},{'id':'n2','role':'note','body':'R2: board.md:3 Thread A DB_POOL_EXHAUSTED inventory-svc+notify-worker ongoing. inventory-svc.log pool WARN 3,9,19,30; notify-worker.log 6,14,29,32. no changes.md.'},{'id':'n3','role':'note','body':'R3: board.md:3 Thread D CACHE_STAMPEDE auth-svc ongoing. auth-svc.log miss storm 1,15,16,18,24,43. pool WARN continues inventory-svc.log 12-76, notify-worker.log 4-71. no changes.md. Next: advance R4.'}]\njson.dump({'format':'clm-context/v1','entries':n},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s9.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s"
+-  },
+-  {
+-   "id": "s9.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 9: revision 11 -> 12; entries 9 -> 3; body chars 4938 -> 657; removed [s6.act, s6.obs, s6.rcpt, s7.act, s7.obs, s8.act, s8.obs]; added [n3]; rewritten [n2]"
+-  },
+-  {
+-   "id": "s10.act",
+-   "role": "assistant",
+-   "body": "[step 10] advance\nthought: "
+-  },
+-  {
+-   "id": "s10.obs",
+-   "role": "observation",
+-   "body": "Stage 4 of 11 released.\nRound 4 of 11 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (4 lines)\n  round-04/logs/auth-svc.log (101 lines)\n  round-04/logs/inventory-svc.log (89 lines)\n  round-04/logs/notify-worker.log (74 lines)\n  round-04/logs/search-api.log (69 lines)\n  round-04/logs/shipping-svc.log (79 lines)"
+-  },
+-  {
+-   "id": "s11.act",
+-   "role": "assistant",
+-   "body": "[step 11] execute\nthought: Inspect R4 board and grep key log patterns.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-04/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-04/logs/*.log')):\n    c={}\n    for i,l in enumerate(open(f),1):\n        if re.search(r'WARN|ERROR|FATAL|level=(warn|error)',l,re.I) and 'slow query' not in l:\n            k=re.sub(r'\\d+','#',l.strip())[:90]\n            c.setdefault(k,[]).append(i)\n    print(f.split('/')[-1])\n    for k,v in c.items(): print(' ',len(v),v[:6],k)"
+-  },
+-  {
+-   "id": "s11.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n# Incident board: updates in round 04\n\n- Thread B opened: errors in auth-svc. Suspected cause: process memory growing until restarts (MEMORY_LEAK). Status: ongoing.\n- Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\n\nauth-svc.log\n  5 [1, 23, 42, 55, 65] #-#-#T#:#:#Z WARN  auth-svc cache miss storm key_prefix=user: misses_per_s=#\n  4 [2, 52, 63, 72] #-#-#T#:#:#Z WARN  auth-svc cache miss storm key_prefix=sku: misses_per_s=#\n  12 [12, 16, 17, 34, 36, 41] #-#-#T#:#:#Z ERROR auth-svc upstream returned # upstream=tax-provider retry_after_s=#\n  4 [18, 53, 71, 74] #-#-#T#:#:#Z WARN  auth-svc cache miss storm key_prefix=price: misses_per_s=#\ninventory-svc.log\n  10 [3, 19, 21, 23, 34, 35] #-#-#T#:#:#Z WARN  inventory-svc db pool exhausted wait_ms=# in_use=#/#\nnotify-worker.log\n  13 [11, 31, 41, 42, 46, 48] #-#-#T#:#:#Z WARN  notify-worker db pool exhausted wait_ms=# in_use=#/#\nsearch-api.log\nshipping-svc.log\n  10 [5, 21, 28, 29, 33, 36] #-#-#T#:#:#Z ERROR shipping-svc upstream returned # upstream=tax-provider retry_after_s=#\n"
++   "id": "n4",
++   "role": "note",
++   "body": "R4: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing (board claim; logs show no memory evidence). board.md:4 follow-up OPEN VENDOR_TICKET. auth-svc.log ERROR upstream 429 tax-provider 12,16,17,34,36,41 (UPSTREAM_RATE_LIMIT?); shipping-svc.log same 5,21,28,29,33,36. auth miss storm 1,2,18,23. pool WARN inventory 3,19,21; notify 11,31,41. Next: advance R5."
+   }
+  ]
+ }

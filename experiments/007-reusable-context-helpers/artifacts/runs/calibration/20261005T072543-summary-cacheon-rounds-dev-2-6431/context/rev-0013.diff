@@ -1,0 +1,19 @@
+--- rev-12
++++ rev-13
+@@ -25,6 +25,16 @@
+    "id": "s9.obs",
+    "role": "observation",
+    "body": "Stage 4 of 11 released.\nRound 4 of 11 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (2 lines)\n  round-04/logs/auth-svc.log (83 lines)\n  round-04/logs/checkout-api.log (77 lines)\n  round-04/logs/inventory-svc.log (81 lines)\n  round-04/logs/search-api.log (59 lines)\n  round-04/logs/shipping-svc.log (81 lines)"
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Inspect round 4.\ncode:\nimport os,glob\nd='/task/fixtures/round-04/'\nprint(open(d+'board.md').read())\nfor f in sorted(glob.glob(d+'logs/*.log')):\n  n=os.path.basename(f);hits=[]\n  for i,l in enumerate(open(f),1):\n    if ('ERROR' in l or 'WARN' in l) and 'slow query' not in l: hits.append((i,l.strip()[:150]))\n  print(n,len(hits),[h[0] for h in hits])\n  for h in hits[:2]: print(' ',h)\nprint(open(d+'logs/auth-svc.log').readline()[:200])"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=3.9s\n--- stdout ---\n# Incident board: updates in round 04\n\n\nauth-svc.log 9 [6, 8, 16, 39, 48, 59, 63, 66, 77]\n  (6, '2026-09-14T11:04:19Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\n  (8, '2026-09-14T11:04:44Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\ncheckout-api.log 12 [1, 8, 11, 13, 16, 21, 38, 43, 59, 60, 67, 71]\n  (1, '2026-09-14T11:00:28Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL')\n  (8, '2026-09-14T11:06:39Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL')\ninventory-svc.log 11 [32, 36, 38, 43, 45, 52, 56, 57, 59, 64, 75]\n  (32, '2026-09-14T11:29:13Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL')\n  (36, '2026-09-14T11:30:00Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL')\nsearch-api.log 0 []\nshipping-svc.log 9 [3, 20, 27, 34, 42, 44, 58, 62, 66]\n  (3, '2026-09-14T11:04:31Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\n  (20, '2026-09-14T11:16:07Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\n2026-09-14T11:01:02Z INFO  auth-svc request ok route=/v1/items status=200 ms=19\n\n"
+   }
+  ]
+ }

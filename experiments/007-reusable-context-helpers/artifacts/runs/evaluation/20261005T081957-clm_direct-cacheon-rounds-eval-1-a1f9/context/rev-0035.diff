@@ -1,0 +1,19 @@
+--- rev-34
++++ rev-35
+@@ -60,6 +60,16 @@
+    "id": "s25.obs",
+    "role": "observation",
+    "body": "Stage 9 of 11 released.\nRound 9 of 11 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (6 lines)\n  round-09/changes.md (3 lines)\n  round-09/logs/auth-svc.log (67 lines)\n  round-09/logs/ledger-svc.log (60 lines)\n  round-09/logs/payments-svc.log (58 lines)\n  round-09/logs/search-api.log (64 lines)\n  round-09/logs/shipping-svc.log (76 lines)"
++  },
++  {
++   "id": "s26.act",
++   "role": "assistant",
++   "body": "[step 26] execute\nthought: Inspect R9 board, changes, and error lines.\ncode:\nimport re,glob\nb='/task/fixtures/round-09/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob(b+'logs/*.log')):\n  n=0\n  for i,l in enumerate(open(f),1):\n    if re.search('ERROR|error|lag|WARN',l) and 'slow' not in l:\n      n+=1\n      if n<=3:print(f.split('/')[-1],i,l.rstrip()[:160])\n  print(f.split('/')[-1],'count',n)"
++  },
++  {
++   "id": "s26.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 09\nboard.md 2 \nboard.md 3 - Thread B status: mitigated (workaround in place; permanent fix pending).\nboard.md 4 - Thread C note: failing pods still restarting; investigation continues.\nboard.md 5 - Follow-up CLOSED POSTMORTEM_DRAFT.\nboard.md 6 - Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\nchanges.md 1 # Change log: round 09\nchanges.md 2 \nchanges.md 3 - CHG-168 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc.log 10 {\"ts\":\"2026-09-14T16:08:16Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"4.51.3\"}\nauth-svc.log 12 {\"ts\":\"2026-09-14T16:08:49Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"4.51.3\"}\nauth-svc.log 22 {\"ts\":\"2026-09-14T16:18:42Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"4.51.3\"}\nauth-svc.log count 11\nledger-svc.log count 0\npayments-svc.log count 0\nsearch-api.log 12 {\"ts\":\"2026-09-14T16:10:27Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nsearch-api.log 36 {\"ts\":\"2026-09-14T16:35:11Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nsearch-api.log count 2\nshipping-svc.log 53 {\"ts\":\"2026-09-14T16:38:50Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nshipping-svc.log 59 {\"ts\":\"2026-09-14T16:42:08Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nshipping-svc.log count 2\n"
+   }
+  ]
+ }

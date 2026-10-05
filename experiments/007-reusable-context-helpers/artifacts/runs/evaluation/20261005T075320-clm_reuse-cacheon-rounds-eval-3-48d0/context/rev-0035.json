@@ -1,0 +1,64 @@
+{
+ "number": 35,
+ "parent": 34,
+ "source": "runtime",
+ "step": 24,
+ "sha256": "3867a89422e2731e469f63ea47500302607f08f00ba9b9aae5d9ea5e83054c53",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: changes.md:3 CHG-109 PROPOSED HPA search; :4 CHG-113 APPLIED search-api http.max_inflight=-1; :5 CHG-114 checkout no cfg. ledger-svc CERT_EXPIRED peer=sso.example.net round-01/logs/ledger-svc.log:14,15,21,39,72. slow query WARNs everywhere = noise. board r1 empty."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 Thread A CERT_EXPIRED ledger-svc+inventory-svc ongoing. changes.md:3 CHG-117 PROPOSED. inventory-svc.log:10-13 cert errors; ledger-svc.log:20,23,28,43."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board empty. changes.md:3 CHG-125 APPLIED retry budget=1. cert errors continue inventory-svc.log:9-18,39-57,71; ledger-svc.log:23-43,61-69. no other errors."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board.md:3 A mitigated; :4 Thread B checkout-api UPSTREAM_RATE_LIMIT ongoing (suspected); :5 Thread D DISK_PRESSURE search-api ongoing; :6-8 OPEN CUSTOMER_COMMS,POSTMORTEM_DRAFT,CAPACITY_REVIEW. changes.md:4 CHG-136 APPLIED ledger mitigation A; :3 CHG-133 retry. search-api.log:12,13,21,38,54,62 disk WARN 92-98%."
+  },
+  {
+   "id": "n4b",
+   "role": "note",
+   "body": "R4 checkout-api.log:18-20,35,41,42,88,90 heap WARN rss_mb up to 3821 gc pauses (no 429 seen) -> maybe MEMORY_LEAK not rate limit. Next: advance to R5."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board.md:3 OPEN DATA_BACKFILL. checkout-api.log:6,24,25,31,32,35,51,77 heap WARN rss up to 3773 (no 429). search-api.log:14,31,35,46,61,70,76 disk 91-98%. no changes.md. Next: advance R6."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board.md:3 CLOSED CUSTOMER_COMMS. changes.md:3 CHG-147 APPLIED TLS ticket rotation. checkout-api.log:17,24,35,42,53,59,61,66 heap WARN (no 429). search-api.log:6,22,28,30,38,39,46,74 disk 91-97%. Next: advance R7."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board.md:3 A resolved; :4 Thread C search-api failures ongoing cause unknown; :5 D closed false alarm; :6 OPEN VENDOR_TICKET. search-api.log:17,20,23,28,30,39,50,52,58 ERROR config validation http.max_inflight=-1 (BAD_CONFIG_ROLLOUT, CHG-113 r1 changes.md:4). checkout heap WARN continues :6-67 (MEMORY_LEAK, thread B). Next: advance R8."
+  },
+  {
+   "id": "s24.act",
+   "role": "assistant",
+   "body": "[step 24] execute\nthought: Read spill compactly and trim context.\ncode:\nimport ctx\nctx.keep_only(['n1','n2','n3','n4','n4b','n5','n6','n7'])\nt=open('spill/s23.obs.txt').read()\nfor l in t.splitlines():\n  if 'board' in l or 'changes' in l: print(l[:160])\nimport collections\nc=collections.defaultdict(list)\nfor l in t.splitlines():\n  p=l.split(' ',2)\n  if len(p)>2 and p[0].endswith('.log'):\n    k=(p[0],'429' if '429' in p[2] else 'heap' if 'heap' in p[2].lower() else 'disk' if 'disk' in p[2].lower() else 'cfg' if 'config' in p[2].lower() else 'cert' if 'cert' in p[2].lower() else 'oth')\n    c[k].append(p[1])\nfor k,v in c.items():print(k,','.join(v))"
+  },
+  {
+   "id": "s24.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 08\nboard.md 2 \nboard.md 3 - Thread B root cause revised: process memory growing until restarts (MEMORY_LEAK); this supersedes the earlier suspicion of UPSTREAM_RATE_LIMIT.\nboard.md 4 - Thread C note: failing pods still restarting; investigation continues.\nboard.md 5 - Follow-up CLOSED VENDOR_TICKET.\nchanges.md 1 # Change log: round 08\nchanges.md 2 \nchanges.md 3 - CHG-160 PROPOSED: move batch jobs to off-peak window (not applied)\n('checkout-api.log', 'heap') 9,15,46,48,56,69\n('ledger-svc.log', '429') 22\n('payments-svc.log', 'heap') 13,24,26,31,34,41,54,62\n('search-api.log', 'cfg') 2,5,11,16,29,36,39,40,55,57,64,76\n"
+  },
+  {
+   "id": "s24.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 24: revision 33 -> 34; entries 15 -> 8; body chars 3617 -> 1810; removed [s21.act, s21.obs, s21.rcpt, s22.act, s22.obs, s23.act, s23.obs]; added []; rewritten []"
+  }
+ ]
+}

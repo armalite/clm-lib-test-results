@@ -1,0 +1,45 @@
+--- rev-18
++++ rev-19
+@@ -22,39 +22,9 @@
+    "body": "R4: board empty (no changes). auth-svc.log:6-77 and shipping-svc.log:3-66 tls certificate_expired sso.example.net (CERT_EXPIRED now auth-svc+shipping-svc). checkout-api.log:1-71, inventory-svc.log:32-75 SERVFAIL continue. search clean. R4 done; next: advance."
+   },
+   {
+-   "id": "s11.act",
+-   "role": "assistant",
+-   "body": "[step 11] execute\nthought: Compact context with R4 note.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\ne=[x for x in c['entries'] if x['id'] in('n1','n2','n3')]\ne.append({'id':'n4','role':'note','body':'R4: board empty (no changes). auth-svc.log:6-77 and shipping-svc.log:3-66 tls certificate_expired sso.example.net (CERT_EXPIRED now auth-svc+shipping-svc). checkout-api.log:1-71, inventory-svc.log:32-75 SERVFAIL continue. search clean. R4 done; next: advance.'})\nc['entries']=e\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s11.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s"
+-  },
+-  {
+-   "id": "s11.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 11: revision 14 -> 15; entries 10 -> 4; body chars 4499 -> 1232; removed [s8.act, s8.obs, s8.rcpt, s9.act, s9.obs, s10.act, s10.obs]; added [n4]; rewritten []"
+-  },
+-  {
+-   "id": "s12.act",
+-   "role": "assistant",
+-   "body": "[step 12] advance\nthought: "
+-  },
+-  {
+-   "id": "s12.obs",
+-   "role": "observation",
+-   "body": "Stage 5 of 11 released.\nRound 5 of 11 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (6 lines)\n  round-05/changes.md (3 lines)\n  round-05/logs/auth-svc.log (71 lines)\n  round-05/logs/checkout-api.log (74 lines)\n  round-05/logs/inventory-svc.log (57 lines)\n  round-05/logs/search-api.log (56 lines)\n  round-05/logs/shipping-svc.log (69 lines)"
+-  },
+-  {
+-   "id": "s13.act",
+-   "role": "assistant",
+-   "body": "[step 13] execute\nthought: Inspect round 5 board/changes and non-routine log lines.\ncode:\nimport re,glob\nb='/task/fixtures/round-05/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob(b+'logs/*')):\n  n=f.split('/')[-1];hits=[]\n  for i,l in enumerate(open(f),1):\n    if re.search(r'ok|gc|health|heartbeat|slow query',l) and not re.search(r'ERROR|FATAL|SERVFAIL|cert|429|OOM|pool|lag|disk|evict',l,re.I):continue\n    hits.append((i,l.rstrip()))\n  print(n,len(hits),[h[0] for h in hits])\n  for h in hits[:2]:print(' ',h[1][:160])"
+-  },
+-  {
+-   "id": "s13.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 05\nboard.md 2 \nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nboard.md 4 - Thread B update: affected services now also include shipping-svc; cause and status unchanged.\nboard.md 5 - Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\nboard.md 6 - Follow-up OPEN ALERT_TUNING: tuning of noisy or late alerts.\nchanges.md 1 # Change log: round 05\nchanges.md 2 \nchanges.md 3 - CHG-143 APPLIED: mitigation for thread A deployed to inventory-svc\nauth-svc.log 11 [2, 8, 14, 22, 28, 30, 45, 51, 57, 59, 64]\n  2026-09-14T12:00:44Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\n  2026-09-14T12:01:46Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ncheckout-api.log 0 []\ninventory-svc.log 0 []\nsearch-api.log 0 []\nshipping-svc.log 11 [9, 11, 34, 36, 39, 52, 54, 55, 60, 63, 65]\n  2026-09-14T12:08:01Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\n  2026-09-14T12:08:38Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\n"
++   "id": "n5",
++   "role": "note",
++   "body": "R5: round-05/board.md:3 Thread A mitigated; :4 Thread B adds shipping-svc (cause still listed DB_POOL, logs say CERT_EXPIRED); :5 VENDOR_TICKET OPEN; :6 ALERT_TUNING OPEN. changes.md:3 CHG-143 APPLIED mitigation inventory-svc. Logs: auth-svc.log:2-64, shipping-svc.log:9-65 cert_expired; checkout/inventory/search clean (SERVFAIL gone). R5 done; next: advance."
+   }
+  ]
+ }

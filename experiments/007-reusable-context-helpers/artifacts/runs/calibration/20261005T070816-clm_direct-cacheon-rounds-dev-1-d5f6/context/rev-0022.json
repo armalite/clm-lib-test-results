@@ -1,0 +1,49 @@
+{
+ "number": 22,
+ "parent": 21,
+ "source": "runtime",
+ "step": 16,
+ "sha256": "3d364ea66117a87e313b1dd0d32b269fb4160301b5393cc989c677876078620f",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: quiet; only slow-query WARNs in 5 svcs (auth-svc, checkout-api, notify-worker, payments-svc, search-api). CHG-108 PROPOSED (ignore). Scan: grep WARN|ERROR|fail|429|timeout, dedupe."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board follow-ups OPEN: ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET (round-02/board.md:3-5). changes: CHG-120 APPLIED notify-worker http.max_inflight=0 (round-02/changes.md:4) suspect BAD_CONFIG; CHG-121 payments no cfg. auth-svc.log:1 db pool exhausted (single?). auth-svc DB_POOL_EXHAUSTED recurring R2 (round-02/logs/auth-svc.log:1-25,44-69)."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: Thread A opened DB_POOL_EXHAUSTED auth-svc + search-api ongoing (round-03/board.md:3). evidence round-03/logs/auth-svc.log:7, round-03/logs/search-api.log:1. CHG-125 dashboards irrelevant. notify-worker CHG-120 no errors seen yet R2/R3."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: Thread B opened CACHE_STAMPEDE payments-svc ongoing (round-04/board.md:3) but logs show 429 fx-rates in payments-svc.log:1 and checkout-api.log:9 -> likely UPSTREAM_RATE_LIMIT (watch). DB pool still exhausted auth-svc.log:7, search-api.log:4. CHG-133 APPLIED TLS ticket rotation hourly (round-04/changes.md:3) - watch for cert issues."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: Thread A mitigated (round-05/board.md:3) via CHG-143 auth-svc (round-05/changes.md:4); no db pool errors in R5 logs. Thread B adds checkout-api (round-05/board.md:4); 429 fx-rates still: round-05/logs/checkout-api.log:21, payments-svc.log:13. Follow-up OPEN CAPACITY_REVIEW (round-05/board.md:5). CHG-138 APPLIED TLS rotation hourly (round-05/changes.md:3). Next: advance to R6."
+  },
+  {
+   "id": "s16.act",
+   "role": "assistant",
+   "body": "[step 16] execute\nthought: Compact context with R5 findings.\ncode:\nimport json\np='/task/workspace/context.json'\nc=json.load(open(p))\ne=[x for x in c['entries'] if x['id'] in('n1','n2','n3','n4')]\ne.append({'id':'n5','role':'note','body':'R5: Thread A mitigated (round-05/board.md:3) via CHG-143 auth-svc (round-05/changes.md:4); no db pool errors in R5 logs. Thread B adds checkout-api (round-05/board.md:4); 429 fx-rates still: round-05/logs/checkout-api.log:21, payments-svc.log:13. Follow-up OPEN CAPACITY_REVIEW (round-05/board.md:5). CHG-138 APPLIED TLS rotation hourly (round-05/changes.md:3). Next: advance to R6.'})\njson.dump({'format':'clm-context/v1','entries':e},open(p,'w'))\nprint('ok')"
+  },
+  {
+   "id": "s16.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s16.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 16: revision 20 -> 21; entries 11 -> 5; body chars 4876 -> 1492; removed [s13.act, s13.obs, s13.rcpt, s14.act, s14.obs, s15.act, s15.obs]; added [n5]; rewritten []"
+  }
+ ]
+}

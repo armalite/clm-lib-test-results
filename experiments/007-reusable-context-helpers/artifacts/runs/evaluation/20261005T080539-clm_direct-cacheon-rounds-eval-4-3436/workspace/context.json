@@ -1,0 +1,70 @@
+{
+ "format": "clm-context/v1",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. slow query WARNs = noise. inventory-svc db pool exhausted WARN round-01/logs/inventory-svc.log:5,9,28,30,45,52. changes r01: CHG-113 APPLIED search-api 8.23.7 sets cache.ttl_s=-1 (round-01/changes.md:4, suspect BAD_CONFIG_ROLLOUT); CHG-114 auth-svc no config; CHG-107 PROPOSED only."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 Thread A opened DB_POOL_EXHAUSTED inventory-svc + notify-worker, ongoing. pool WARNs round-02/logs/inventory-svc.log:3-19, notify-worker.log:6-45. search-api quiet."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread D opened CACHE_STAMPEDE auth-svc ongoing; auth-svc cache miss storm WARN round-03/logs/auth-svc.log:1,15,16,18,24,43. Pool WARNs continue round-03/logs/inventory-svc.log:12-76, notify-worker.log:4-71. Next: advance."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board.md:3 Thread B opened MEMORY_LEAK auth-svc ongoing (verify against logs); board.md:4 follow-up OPEN VENDOR_TICKET. 429 from upstream=tax-provider in auth-svc.log:12,16 and shipping-svc.log:5,21,28,29 (UPSTREAM_RATE_LIMIT, not yet on board). Cache miss storm continues auth-svc.log:1,2. Pool WARNs continue inventory-svc.log:3-23, notify-worker.log:11-42. search-api quiet."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board.md:3 Thread A mitigated (CHG-143 APPLIED round-05/changes.md:4 mitigation inventory-svc). board.md:4 Thread B services +shipping-svc, cause MEMORY_LEAK unchanged (logs show 429 tax-provider, not memory). board.md:5 Thread D false alarm. CHG-137 TLS ticket rotation. 429 auth-svc.log:1,2,13,33,35,53; shipping-svc.log:9,16,18,23,27,28. No pool WARNs in r5. Next: advance."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board empty (no changes). CHG-142 PROPOSED only. 429 tax-provider continues auth-svc.log:8,23,34,88; shipping-svc.log:11,23,27,88. No pool/other WARNs. Next: advance."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board.md:3 Thread B cause revised to UPSTREAM_RATE_LIMIT (auth-svc+shipping-svc). 429 tax-provider auth-svc.log:3,11,17,23,24,34; shipping-svc.log:15,16,20,29,33,34. No pool WARNs. Next: advance."
+  },
+  {
+   "id": "n8",
+   "role": "note",
+   "body": "R8: board.md:3 Thread A resolved; board.md:4 Thread B mitigated; board.md:5 Thread C opened search-api failures cause unknown ongoing (logs: config validation failed cache.ttl_s=-1 build 8.23.7 search-api.log:24,34,36,41,54,56,60,78,82,84 => BAD_CONFIG_ROLLOUT from CHG-113); board.md:6 follow-up OPEN CAPACITY_REVIEW. 429 auth-svc.log:29,40; shipping-svc.log:41,42. Next: advance."
+  },
+  {
+   "id": "n9",
+   "role": "note",
+   "body": "R9: board.md:3 Thread C pods still restarting, investigation continues (still ongoing, cause unknown on board). board.md:4 OPEN DATA_BACKFILL; board.md:5 OPEN RUNBOOK_UPDATE. CHG-163 log sampling irrelevant. search-api config validation failed ttl -1 search-api.log:1,4,12,13. 429 auth-svc.log:1,6; shipping-svc.log:43,59. No pool WARNs. Next: advance."
+  },
+  {
+   "id": "n10",
+   "role": "note",
+   "body": "R10: board.md:3 CLOSED DATA_BACKFILL. CHG-174 PROPOSED only. search-api config validation failed ttl -1 search-api.log:2,6,11,12,39. 429 auth-svc.log:1,32; shipping-svc.log:8,27. No pool WARNs. Next: advance."
+  },
+  {
+   "id": "s32.act",
+   "role": "assistant",
+   "body": "[step 32] execute\nthought: Inspect round 11 board, changes, and key log lines.\ncode:\nimport re\nb='/task/fixtures/round-11/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor s in ['search-api','auth-svc','shipping-svc','inventory-svc','notify-worker']:\n  L=[i for i,l in enumerate(open(b+'logs/'+s+'.log'),1) if re.search('429|ttl|pool|exhaust|memory',l)]\n  print(s,L[:12])\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s32.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.9s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 11\nboard.md 2 \nchanges.md 1 # Change log: round 11\nchanges.md 2 \nchanges.md 3 - CHG-178 PROPOSED: raise HPA max replicas for search tier (not applied)\nsearch-api [5, 8, 19, 29, 32, 40, 42, 48, 59, 68, 72]\nauth-svc [15, 36, 49]\nshipping-svc [8, 24]\ninventory-svc []\nnotify-worker []\n"
+  },
+  {
+   "id": "s32.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 32: revision 43 -> 44; entries 15 -> 10; body chars 3935 -> 2786; removed [s30.act, s30.obs, s30.rcpt, s31.act, s31.obs]; added []; rewritten []"
+  }
+ ]
+}

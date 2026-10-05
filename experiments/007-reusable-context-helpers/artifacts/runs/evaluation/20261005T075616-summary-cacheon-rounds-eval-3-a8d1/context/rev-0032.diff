@@ -1,0 +1,19 @@
+--- rev-31
++++ rev-32
+@@ -30,6 +30,16 @@
+    "id": "s25.obs",
+    "role": "observation",
+    "body": "Stage 9 of 10 released.\nRound 9 of 10 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (4 lines)\n  round-09/changes.md (3 lines)\n  round-09/logs/checkout-api.log (69 lines)\n  round-09/logs/inventory-svc.log (76 lines)\n  round-09/logs/ledger-svc.log (77 lines)\n  round-09/logs/payments-svc.log (81 lines)\n  round-09/logs/search-api.log (62 lines)"
++  },
++  {
++   "id": "s26.act",
++   "role": "assistant",
++   "body": "[step 26] execute\nthought: Scan round 9 board, changes, and anomalous log lines.\ncode:\nimport os,re\nb='/task/fixtures/round-09/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor f in sorted(os.listdir(b+'logs')):\n  L=open(b+'logs/'+f).read().splitlines()\n  hits=[i for i,l in enumerate(L,1) if re.search('ERROR|WARN',l) and 'slow query' not in l]\n  if hits:print(f,len(hits),hits[0],hits[-1],L[hits[0]-1][:200])\n"
++  },
++  {
++   "id": "s26.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.7s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 09\nboard.md 2 \nboard.md 3 - Thread B update: affected services now also include payments-svc; cause and status unchanged.\nboard.md 4 - Thread B status: mitigated (workaround in place; permanent fix pending).\nchanges.md 1 # Change log: round 09\nchanges.md 2 \nchanges.md 3 - CHG-164 APPLIED: log sampling for /v1/health reduced to 1%\ncheckout-api.log 2 27 56 {\"ts\":\"2026-09-14T16:24:25Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"heap usage high\",\"rss_mb\":1836,\"gc_pause_ms\":1163}\npayments-svc.log 2 45 55 {\"ts\":\"2026-09-14T16:33:21Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"heap usage high\",\"rss_mb\":3736,\"gc_pause_ms\":693}\nsearch-api.log 7 5 58 {\"ts\":\"2026-09-14T16:04:29Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.4\"}\n"
+   }
+  ]
+ }

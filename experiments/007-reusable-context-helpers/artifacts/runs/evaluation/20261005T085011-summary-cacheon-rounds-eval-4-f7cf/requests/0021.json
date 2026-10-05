@@ -1,0 +1,127 @@
+{
+ "meta": {
+  "kind": "summary",
+  "step": 17,
+  "attempt": 0,
+  "est_input_tokens": 4348,
+  "input_token_bound": 11528,
+  "reserved_usd": 0.13956,
+  "context_revision": 20,
+  "context_sha256": "02947b319b31fdf5f72d9c9d014749743c772e3923cc5f074d2c0bf8e06c7c63",
+  "layout": "blocks/1",
+  "cache_ttl": "5m",
+  "prefix": {
+   "family": "summary",
+   "blocks": 13,
+   "system_blocks": 2,
+   "breakpoint_blocks": [
+    2,
+    11
+   ],
+   "previous": true,
+   "common_blocks": 3,
+   "first_changed_block": 3,
+   "common_prefix_chars": 3510
+  },
+  "summary_policy": "token-tail/1",
+  "older_entries": [
+   "sum4",
+   "s10.act",
+   "s10.obs",
+   "s11.act",
+   "s11.obs",
+   "s12.act",
+   "s12.obs",
+   "s13.act",
+   "s13.obs"
+  ],
+  "kept_tail": [
+   "s14.act",
+   "s14.obs",
+   "s15.act",
+   "s15.obs",
+   "s16.act",
+   "s16.obs"
+  ],
+  "summary_attempt": 0,
+  "requested_max_chars": 1040,
+  "forced": false
+ },
+ "sha256": "2c7b0adf46ec19910e7d9c4ed2595b374ab56ec33046e27f1d856b47581ca0de",
+ "payload": {
+  "model": "claude-opus-5-5",
+  "max_tokens": 4096,
+  "system": [
+   {
+    "type": "text",
+    "text": "run-ref: 903f1c3b9af5551fa675e53e3422680c\n"
+   },
+   {
+    "type": "text",
+    "text": "You compress an agent's working transcript. The agent is\ninvestigating a multi-service production incident whose evidence arrives in hourly rounds, and will\nkeep working after your summary replaces the entries below. The transcript may include an earlier\nsummary: carry its facts forward. Preserve, exactly and verbatim where relevant:\n- each incident thread: its current cause and any superseded cause, affected services, current\n  status and the record that set it;\n- follow-up items opened and closed, with their codes;\n- early facts that may matter later (change records, builds, configuration values);\n- every file:line reference needed as evidence, and observed log formats;\n- open questions and the next planned steps, including rounds still to be released.\nDrop repetition and raw log dumps. Use compact bullet points. Plain text only. Stay within the\nrequested length; it is set so the agent has room to continue."
+   }
+  ],
+  "messages": [
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "text",
+      "text": "<task>\nProduction incident investigation across several services. Evidence arrives in\n11 hourly rounds. Only round 1 is available now, under /task/fixtures/round-01/.\n\nEach round directory holds:\n- logs/<service>.log: that hour's structured service logs (the log format may change).\n- board.md: the incident board's updates during that hour. An update lists only what\n  changed; anything it does not mention is unchanged. The latest update for a thread wins.\n- changes.md (some rounds): change records. APPLIED changes took effect; PROPOSED did not.\n\nReply {\"action\": \"advance\"} to release the next round. Released rounds never change and stay\nreadable. A final answer is accepted only after all 11 rounds are released.\n\nFinal answer (all fields required):\n  {\"action\": \"final\", \"answer\": {\n     \"incidents\": [{\"cause\": \"<CAUSE_CODE>\", \"services\": [\"<service>\", ...],\n                    \"status\": \"ongoing|mitigated|resolved\",\n                    \"evidence_refs\": [\"round-NN/<file>:<line>\", ...]}, ...],\n     \"unresolved\": [\"<FOLLOW_UP_CODE>\", ...],\n     \"summary\": \"<short free text>\"}}\n- incidents: every real incident at the end of the final round (not false alarms), one entry\n  per incident, with its current cause, all affected services and its current status.\n- evidence_refs: path:line references (relative to /task/fixtures, ranges up to 20 lines as\n  path:a-b) supporting the incident's current cause and current status; when the cause traces\n  back to an earlier change record, cite that record too.\n- unresolved: follow-up items still open at the end of the final round.\n\nCause codes:\n  DB_POOL_EXHAUSTED: database connection pool exhausted\n  CACHE_STAMPEDE: cache miss storm after mass expiry\n  CERT_EXPIRED: an expired TLS certificate on a dependency\n  DNS_RESOLUTION: DNS lookups failing for a dependency\n  QUEUE_BACKLOG: message consumer lag growing\n  MEMORY_LEAK: process memory growing until restarts\n  UPSTREAM_RATE_LIMIT: an upstream provider rejecting requests with 429\n  DISK_PRESSURE: a data volume running out of space\n  BAD_CONFIG_ROLLOUT: a configuration value shipped by a rollout is invalid\nFollow-up codes:\n  CUSTOMER_COMMS: customer communication about the impact\n  DATA_BACKFILL: backfill of records missed during the incident\n  CAPACITY_REVIEW: capacity review of the affected tier\n  ALERT_TUNING: tuning of noisy or late alerts\n  VENDOR_TICKET: a ticket open with an external vendor\n  POSTMORTEM_DRAFT: drafting the postmortem\n  RUNBOOK_UPDATE: updating the runbook\n</task>\n\n<transcript_to_summarise>\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"sum4\", \"role\": \"summary\", \"body\": \"R1-3 done; R4 released (unread), R5-11 pending.\\nLog fmt: `2026-09-14THH:MM:SSZ LEVEL \\u003csvc> \\u003cmsg> k=v`; noise: request ok|health ok|heartbeat|gc cycle|slow query. May change.\\nR1 changes.md: :3 CHG-107 PROPOSED; :4 CHG-113 APPLIED search-api build 8.23.7 cache.ttl_s=-1 (likely BAD_CONFIG/STAMPEDE src); :5 CHG-114 APPLIED auth-svc.\\nThread A: DB_POOL_EXHAUSTED, inventory-svc+notify-worker, ongoing (round-02/board.md:3). Refs: round-02/logs/inventory-svc.log:3-19, round-02/logs/notify-worker.log:6-14, round-01/logs/inventory-svc.log:5-9, round-03/logs/inventory-svc.log:12-30, round-03/logs/notify-worker.log:4-23.\\nThread D: CACHE_STAMPEDE, auth-svc, ongoing (round-03/board.md:3). Refs round-03/logs/auth-svc.log:1-18. Check whether linked to CHG-114 (auth-svc) or CHG-113.\\nFollow-ups: none.\\nNotes: /task/workspace/notes.md (R3 appended).\\nNext: read R4 board (4 lines) + filtered logs (incl. search-api, shipping-svc), advance to R11, final.\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s10.act\", \"role\": \"assistant\", \"body\": \"[step 10] execute\\nthought: Read R4 board and filtered logs compactly.\\ncode:\\nimport re,glob,os\\nd='/task/fixtures/round-04/'\\nprint(open(d+'board.md').read())\\nnoise=re.compile(r'request ok|health ok|heartbeat|gc cycle|slow query')\\nfor f in sorted(glob.glob(d+'logs/*.log')):\\n    seen={}\\n    for i,l in enumerate(open(f),1):\\n        if noise.search(l): continue\\n        m=re.sub(r'\\\\d+','#',l.split(' ',2)[-1] if ' ' in l else l)[:70]\\n        seen.setdefault(m,[]).append(i)\\n    for m,ls in seen.items(): print(os.path.basename(f),ls[0],ls[-1],len(ls),m.strip())\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s10.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=2.9s\\n--- stdout ---\\n# Incident board: updates in round 04\\n\\n- Thread B opened: errors in auth-svc. Suspected cause: process memory growing until restarts (MEMORY_LEAK). Status: ongoing.\\n- Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\\n\\nauth-svc.log 1 65 5 auth-svc cache miss storm key_prefix=user: misses_per_s=#\\nauth-svc.log 2 72 4 auth-svc cache miss storm key_prefix=sku: misses_per_s=#\\nauth-svc.log 12 100 12 auth-svc upstream returned # upstream=tax-provider retry_after_s=#\\nauth-svc.log 18 74 4 auth-svc cache miss storm key_prefix=price: misses_per_s=#\\ninventory-svc.log 3 84 10 inventory-svc db pool exhausted wait_ms=# in_use=#/#\\nnotify-worker.log 11 73 13 notify-worker db pool exhausted wait_ms=# in_use=#/#\\nshipping-svc.log 5 61 10 shipping-svc upstream returned # upstream=tax-provider retry_after_s=#\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s11.act\", \"role\": \"assistant\", \"body\": \"[step 11] execute\\nthought: Save R4 notes compactly.\\ncode:\\nopen('/task/workspace/notes.md','a').write('\\\\nR4: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing (suspected; logs show 429 tax-provider in auth-svc.log:12-100 and shipping-svc.log:5-61 -> likely UPSTREAM_RATE_LIMIT). board.md:4 VENDOR_TICKET OPEN. Thread D stampede continues auth-svc.log:1-74. Thread A continues inventory-svc.log:3-84, notify-worker.log:11-73.\\\\n')\\nprint('ok')\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s11.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.3s\\n--- stdout ---\\nok\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s12.act\", \"role\": \"assistant\", \"body\": \"[step 12] advance\\nthought: \"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s12.obs\", \"role\": \"observation\", \"body\": \"Stage 5 of 11 released.\\nRound 5 of 11 released. New files are under /task/fixtures/round-05/.\\n\\nNew files:\\n  round-05/board.md (5 lines)\\n  round-05/changes.md (4 lines)\\n  round-05/logs/auth-svc.log (71 lines)\\n  round-05/logs/inventory-svc.log (56 lines)\\n  round-05/logs/notify-worker.log (58 lines)\\n  round-05/logs/search-api.log (74 lines)\\n  round-05/logs/shipping-svc.log (81 lines)\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s13.act\", \"role\": \"assistant\", \"body\": \"[step 13] execute\\nthought: Read R5 board, changes, filtered logs.\\ncode:\\nimport re,glob,os\\nd='/task/fixtures/round-05/'\\nprint(open(d+'board.md').read());print(open(d+'changes.md').read())\\nnoise=re.compile(r'request ok|health ok|heartbeat|gc cycle|slow query')\\nfor f in sorted(glob.glob(d+'logs/*.log')):\\n    seen={}\\n    for i,l in enumerate(open(f),1):\\n        if noise.search(l): continue\\n        m=re.sub(r'\\\\d+','#',l.split(' ',2)[-1] if ' ' in l else l)[:70]\\n        seen.setdefault(m,[]).append(i)\\n    for m,ls in seen.items(): print(os.path.basename(f),ls[0],ls[-1],len(ls),m.strip())\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s13.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.5s\\n--- stdout ---\\n# Incident board: updates in round 05\\n\\n- Thread A status: mitigated (errors reduced after the applied change; monitoring).\\n- Thread B update: affected services now also include shipping-svc; cause and status unchanged.\\n- Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\\n\\n# Change log: round 05\\n\\n- CHG-137 APPLIED: TLS session ticket rotation set to hourly\\n- CHG-143 APPLIED: mitigation for thread A deployed to inventory-svc\\n\\nauth-svc.log 1 60 7 auth-svc upstream returned # upstream=tax-provider retry_after_s=#\\nshipping-svc.log 9 77 13 shipping-svc upstream returned # upstream=tax-provider retry_after_s=#\\n\"}\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "</transcript_to_summarise>\n\nWrite the replacement summary now, at most 1040 characters."
+     }
+    ]
+   }
+  ],
+  "output_config": {
+   "effort": "low"
+  }
+ }
+}

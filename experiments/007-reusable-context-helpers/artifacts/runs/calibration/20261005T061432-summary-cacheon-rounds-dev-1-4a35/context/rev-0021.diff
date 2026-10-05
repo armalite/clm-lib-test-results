@@ -1,0 +1,19 @@
+--- rev-20
++++ rev-21
+@@ -65,6 +65,16 @@
+    "id": "s16.obs",
+    "role": "observation",
+    "body": "Stage 6 of 10 released.\nRound 6 of 10 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (4 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/auth-svc.log (58 lines)\n  round-06/logs/checkout-api.log (81 lines)\n  round-06/logs/notify-worker.log (63 lines)\n  round-06/logs/payments-svc.log (79 lines)\n  round-06/logs/search-api.log (61 lines)"
++  },
++  {
++   "id": "s17.act",
++   "role": "assistant",
++   "body": "[step 17] execute\nthought: Inspect R6 compactly, append notes.\ncode:\nimport os,re\nfrom collections import defaultdict\nb='/task/fixtures/round-06/'\nout=[]\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):\n    if l.strip() and not l.startswith('#'): out.append(f'{f} {i} {l.rstrip()}')\nnoise=re.compile(r'slow query|gc cycle|request ok|heartbeat|health ok')\nfor f in sorted(os.listdir(b+'logs')):\n  d=defaultdict(list)\n  for i,l in enumerate(open(b+'logs/'+f),1):\n    if noise.search(l): continue\n    k=re.sub(r'\\d+','N',l.split(' ',3)[-1])[:70]\n    d[k].append(i)\n  for k,v in d.items(): out.append(f'{f} {v[0]}-{v[-1]} {len(v)} {k.strip()}')\ns='\\n'.join(out);print(s)\nopen('/task/workspace/notes.md','a').write('\\nR6 raw:\\n'+s+'\\n')"
++  },
++  {
++   "id": "s17.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=3.0s\n--- stdout ---\nboard.md 3 - Follow-up CLOSED ALERT_TUNING.\nboard.md 4 - Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\nchanges.md 3 - CHG-147 APPLIED: retry budget for idempotent GETs set to 1\ncheckout-api.log 19-77 6 upstream returned N upstream=fx-rates retry_after_s=N\npayments-svc.log 3-76 11 upstream returned N upstream=fx-rates retry_after_s=N\n"
+   }
+  ]
+ }

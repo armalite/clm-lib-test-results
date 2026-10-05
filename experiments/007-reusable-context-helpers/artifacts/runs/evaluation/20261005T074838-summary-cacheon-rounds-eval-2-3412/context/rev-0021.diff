@@ -1,0 +1,19 @@
+--- rev-20
++++ rev-21
+@@ -50,6 +50,16 @@
+    "id": "s16.obs",
+    "role": "observation",
+    "body": "Stage 6 of 12 released.\nRound 6 of 12 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (5 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/auth-svc.log (68 lines)\n  round-06/logs/inventory-svc.log (76 lines)\n  round-06/logs/ledger-svc.log (68 lines)\n  round-06/logs/payments-svc.log (61 lines)\n  round-06/logs/pricing-svc.log (81 lines)"
++  },
++  {
++   "id": "s17.act",
++   "role": "assistant",
++   "body": "[step 17] execute\nthought: Inspect round 6.\ncode:\nimport os,re\nd='/task/fixtures/round-06/'\nfor fn in ['board.md','changes.md']:\n  for i,l in enumerate(open(d+fn),1):print(fn,i,l.rstrip()[:200])\nfor f in sorted(os.listdir(d+'logs')):\n  L=open(d+'logs/'+f).read().splitlines()\n  e=[i for i,l in enumerate(L,1) if re.search('ERROR|WARN|heap|err',l,re.I) and 'slow query' not in l]\n  print(f,len(e),e[:15])\n  if e:print(' ',L[e[0]-1][:150])\n  print(' first:',L[0][:120])"
++  },
++  {
++   "id": "s17.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 2 \nboard.md 3 - Thread A status: resolved (no recurrence for two hours).\nboard.md 4 - Follow-up OPEN ALERT_TUNING: tuning of noisy or late alerts.\nboard.md 5 - Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\nchanges.md 1 # Change log: round 06\nchanges.md 2 \nchanges.md 3 - CHG-142 APPLIED: retry budget for idempotent GETs set to 1\nauth-svc.log 0 []\n first: 2026-09-14T13:00:44Z WARN  auth-svc slow query ms=370 table=orders\ninventory-svc.log 0 []\n first: 2026-09-14T13:00:53Z WARN  inventory-svc slow query ms=387 table=orders\nledger-svc.log 8 [13, 15, 24, 29, 54, 64, 67, 68]\n  2026-09-14T13:12:51Z ERROR ledger-svc dns lookup failed host=rates.internal err=SERVFAIL\n first: 2026-09-14T13:00:17Z INFO  ledger-svc heartbeat uptime_s=59521\npayments-svc.log 0 []\n first: 2026-09-14T13:00:05Z INFO  payments-svc gc cycle pause_ms=26\npricing-svc.log 9 [5, 6, 16, 18, 20, 48, 53, 60, 67]\n  2026-09-14T13:03:55Z ERROR pricing-svc dns lookup failed host=rates.internal err=SERVFAIL\n first: 2026-09-14T13:00:59Z INFO  pricing-svc heartbeat uptime_s=54220\n"
+   }
+  ]
+ }

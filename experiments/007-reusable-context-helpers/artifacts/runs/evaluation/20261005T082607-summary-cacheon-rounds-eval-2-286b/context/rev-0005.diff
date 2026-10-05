@@ -1,0 +1,19 @@
+--- rev-4
++++ rev-5
+@@ -25,6 +25,16 @@
+    "id": "s3.obs",
+    "role": "observation",
+    "body": "Stage 2 of 12 released.\nRound 2 of 12 released. New files are under /task/fixtures/round-02/.\n\nNew files:\n  round-02/board.md (4 lines)\n  round-02/changes.md (4 lines)\n  round-02/logs/auth-svc.log (81 lines)\n  round-02/logs/inventory-svc.log (76 lines)\n  round-02/logs/ledger-svc.log (60 lines)\n  round-02/logs/payments-svc.log (67 lines)\n  round-02/logs/pricing-svc.log (71 lines)"
++  },
++  {
++   "id": "s4.act",
++   "role": "assistant",
++   "body": "[step 4] execute\nthought: Read round 2 board, changes, and grep logs.\ncode:\nimport glob,re\nb='/task/fixtures/round-02/'\nfor f in ['board.md','changes.md']:\n    print('==',f);print(open(b+f).read())\nfor f in sorted(glob.glob(b+'logs/*.log')):\n    print('==',f.split('/')[-1])\n    for i,l in enumerate(open(f),1):\n        if 'slow query' in l: continue\n        if re.search(r'ERROR|WARN|FATAL|429|cert|dns|pool|lag|disk|OOM|restart|config',l,re.I):\n            print(i,l.rstrip()[:150])\n"
++  },
++  {
++   "id": "s4.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n== board.md\n# Incident board: updates in round 02\n\n- Thread A opened: process memory growing until restarts confirmed as the cause (code MEMORY_LEAK) in auth-svc; impact also on payments-svc. Status: ongoing.\n- Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\n\n== changes.md\n# Change log: round 02\n\n- CHG-120 APPLIED: build 7.30.0 rolled out to inventory-svc; sets `retry.backoff_ms=0`\n- CHG-121 APPLIED: build 7.30.0 rolled out to ledger-svc; no config changes\n\n== auth-svc.log\n5 2026-09-14T09:04:30Z WARN  auth-svc heap usage high rss_mb=2645 gc_pause_ms=428\n10 2026-09-14T09:09:55Z WARN  auth-svc heap usage high rss_mb=3123 gc_pause_ms=604\n15 2026-09-14T09:14:42Z WARN  auth-svc heap usage high rss_mb=2694 gc_pause_ms=872\n18 2026-09-14T09:17:04Z WARN  auth-svc heap usage high rss_mb=1840 gc_pause_ms=335\n21 2026-09-14T09:18:37Z WARN  auth-svc heap usage high rss_mb=3321 gc_pause_ms=437\n42 2026-09-14T09:34:21Z WARN  auth-svc heap usage high rss_mb=2867 gc_pause_ms=877\n53 2026-09-14T09:42:24Z WARN  auth-svc heap usage high rss_mb=3658 gc_pause_ms=1094\n55 2026-09-14T09:42:46Z WARN  auth-svc heap usage high rss_mb=2511 gc_pause_ms=701\n65 2026-09-14T09:49:19Z WARN  auth-svc heap usage high rss_mb=2185 gc_pause_ms=1031\n70 2026-09-14T09:51:03Z WARN  auth-svc heap usage high rss_mb=3619 gc_pause_ms=502\n76 2026-09-14T09:54:41Z WARN  auth-svc heap usage high rss_mb=2876 gc_pause_ms=786\n== inventory-svc.log\n== ledger-svc.log\n== payments-svc.log\n5 2026-09-14T09:02:39Z WARN  payments-svc heap usage high rss_mb=3182 gc_pause_ms=1162\n20 2026-09-14T09:16:31Z WARN  payments-svc heap usage high rss_mb=2763 gc_pause_ms=547\n24 2026-09-14T09:19:25Z WARN  payments-svc heap usage high rss_mb=3831 gc_pause_ms=922\n26 2026-09-14T09:21:59Z WARN  payments-svc heap usage high rss_mb=1979 gc_pause_ms=511\n30 2026-09-14T09:24:21Z WARN  payments-svc heap usage high rss_mb=2112 gc_pause_ms=704\n40 2026-09-14T09:33:34Z WARN  payments-svc heap usage high rss_mb=1973 gc_pause_ms=432\n43 2026-09-14T09:38:42Z WARN  payments-svc heap usage high rss_mb=3138 gc_pause_ms=876\n48 2026-09-14T09:43:42Z WARN  payments-svc heap usage high rss_mb=2065 gc_pause_ms=987\n== pricing-svc.log\n"
+   }
+  ]
+ }

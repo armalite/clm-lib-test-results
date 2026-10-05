@@ -1,0 +1,7 @@
+import json
+n1='R1: board empty. slow query WARNs = noise. inventory-svc db pool exhausted WARN round-01/logs/inventory-svc.log:5,9,28,30,45,52. changes r01: CHG-113 APPLIED search-api 8.23.7 sets cache.ttl_s=-1 (round-01/changes.md:4, suspect BAD_CONFIG_ROLLOUT); CHG-114 auth-svc no config; CHG-107 PROPOSED only.'
+n2='R2: board.md:3 Thread A opened DB_POOL_EXHAUSTED inventory-svc + notify-worker, ongoing. pool WARNs round-02/logs/inventory-svc.log:3-19, notify-worker.log:6-45. search-api quiet.'
+n3='R3: board.md:3 Thread D opened CACHE_STAMPEDE auth-svc ongoing; auth-svc cache miss storm WARN round-03/logs/auth-svc.log:1,15,16,18,24,43. Pool WARNs continue round-03/logs/inventory-svc.log:12-76, notify-worker.log:4-71. Next: advance.'
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n1},{'id':'n2','role':'note','body':n2},{'id':'n3','role':'note','body':n3}]}
+json.dump(c,open('/task/workspace/context.json','w'))
+print('ok')

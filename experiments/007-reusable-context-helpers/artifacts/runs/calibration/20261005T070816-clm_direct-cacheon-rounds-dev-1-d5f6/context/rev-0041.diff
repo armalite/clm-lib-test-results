@@ -1,0 +1,19 @@
+--- rev-40
++++ rev-41
+@@ -70,6 +70,16 @@
+    "id": "s29.obs",
+    "role": "observation",
+    "body": "Stage 10 of 10 released.\nRound 10 of 10 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (3 lines)\n  round-10/changes.md (3 lines)\n  round-10/logs/auth-svc.log (65 lines)\n  round-10/logs/checkout-api.log (65 lines)\n  round-10/logs/notify-worker.log (84 lines)\n  round-10/logs/payments-svc.log (72 lines)\n  round-10/logs/search-api.log (70 lines)"
++  },
++  {
++   "id": "s30.act",
++   "role": "assistant",
++   "body": "[step 30] execute\nthought: Inspect R10 board, changes, and key errors.\ncode:\nimport re,glob\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-10/'+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob('/task/fixtures/round-10/logs/*')):\n  seen=set()\n  for i,l in enumerate(open(f),1):\n    if re.search('ERROR|fail|429|exhaust|max_inflight',l):\n      k=re.sub(r'\\d','',l)[-60:]\n      if k in seen:continue\n      seen.add(k);print(f.split('/')[-1],i,l.rstrip()[:150])"
++  },
++  {
++   "id": "s30.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 10\nboard.md 2 \nboard.md 3 - Follow-up CLOSED CAPACITY_REVIEW.\nchanges.md 1 # Change log: round 10\nchanges.md 2 \nchanges.md 3 - CHG-171 APPLIED: retry budget for idempotent GETs set to 1\ncheckout-api.log 6 {\"ts\":\"2026-09-14T17:04:29Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":53}\nnotify-worker.log 16 {\"ts\":\"2026-09-14T17:09:35Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.5\npayments-svc.log 56 {\"ts\":\"2026-09-14T17:44:56Z\",\"level\":\"ERROR\",\"svc\":\"payments-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":15}\n"
+   }
+  ]
+ }

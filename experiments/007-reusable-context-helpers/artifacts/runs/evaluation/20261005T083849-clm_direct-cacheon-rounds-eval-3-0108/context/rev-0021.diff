@@ -1,0 +1,46 @@
+--- rev-20
++++ rev-21
+@@ -4,42 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: CHG-113 APPLIED search-api 4.16.4 sets http.max_inflight=-1 (round-01/changes.md:4); CHG-114 checkout no cfg; CHG-109 PROPOSED. ledger-svc CERT_EXPIRED sso.example.net round-01/logs/ledger-svc.log:14-21 (ERRORs thru :72). board r1 empty. slow query WARNs everywhere = noise.\nR2: board Thread A CERT_EXPIRED ledger-svc+inventory-svc ongoing (round-02/board.md:3); inventory errs round-02/logs/inventory-svc.log:10-13; ledger round-02/logs/ledger-svc.log:20-43. CHG-117 PROPOSED. search-api no errors yet r2.\nR3: board empty; CHG-125 APPLIED retry budget=1 (round-03/changes.md:3). cert errs continue inventory round-03/logs/inventory-svc.log:9-39, ledger round-03/logs/ledger-svc.log:23-40. others clean.\nR4: board A mitigated (round-04/board.md:3); B checkout-api UPSTREAM_RATE_LIMIT ongoing (:4); D search-api DISK_PRESSURE ongoing (:5); FU OPEN CUSTOMER_COMMS,POSTMORTEM_DRAFT,CAPACITY_REVIEW (:6-8). CHG-136 APPLIED ledger mitigation A (round-04/changes.md:4); CHG-133 retry.\nR4 logs: checkout-api heap high WARNs (possible MEMORY_LEAK, round-04/logs/checkout-api.log:18-44), no 429 seen; search-api disk used_pct 92-98 round-04/logs/search-api.log:12-62."
+-  },
+-  {
+-   "id": "s13.act",
+-   "role": "assistant",
+-   "body": "[step 13] execute\nthought: Note r4 log findings, compress context, then advance next.\ncode:\nimport json\nn=open('/task/workspace/notes.txt').read()+'\\nR4 logs: checkout-api heap high WARNs (possible MEMORY_LEAK, round-04/logs/checkout-api.log:18-44), no 429 seen; search-api disk used_pct 92-98 round-04/logs/search-api.log:12-62.'\nopen('/task/workspace/notes.txt','w').write(n)\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))\nprint('ok')"
+-  },
+-  {
+-   "id": "s13.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s13.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 13: revision 16 -> 17; entries 4 -> 1; body chars 4017 -> 1162; removed [s12.act, s12.obs, s12.rcpt]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s14.act",
+-   "role": "assistant",
+-   "body": "[step 14] advance\nthought: "
+-  },
+-  {
+-   "id": "s14.obs",
+-   "role": "observation",
+-   "body": "Stage 5 of 10 released.\nRound 5 of 10 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (3 lines)\n  round-05/logs/checkout-api.log (78 lines)\n  round-05/logs/inventory-svc.log (67 lines)\n  round-05/logs/ledger-svc.log (63 lines)\n  round-05/logs/payments-svc.log (78 lines)\n  round-05/logs/search-api.log (83 lines)"
+-  },
+-  {
+-   "id": "s15.act",
+-   "role": "assistant",
+-   "body": "[step 15] execute\nthought: Inspect round 5 board and errors/warns summary.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-05/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*.log')):\n    L=open(f).read().splitlines()\n    hits=[(i+1,l) for i,l in enumerate(L) if re.search(r'ERROR|error|429|disk|heap|cert|WARN',l) and 'slow query' not in l]\n    print(f.split('/')[-1],len(hits))\n    for i,l in hits[:4]+hits[-2:]: print(i,l[:160])"
+-  },
+-  {
+-   "id": "s15.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.7s\n--- stdout ---\n# Incident board: updates in round 05\n\n- Follow-up OPEN DATA_BACKFILL: backfill of records missed during the incident.\n\ncheckout-api.log 12\n6 2026-09-14T12:03:51Z WARN  checkout-api heap usage high rss_mb=3374 gc_pause_ms=1013\n24 2026-09-14T12:17:04Z WARN  checkout-api heap usage high rss_mb=2894 gc_pause_ms=543\n25 2026-09-14T12:17:38Z WARN  checkout-api heap usage high rss_mb=2589 gc_pause_ms=1212\n31 2026-09-14T12:22:43Z WARN  checkout-api heap usage high rss_mb=2793 gc_pause_ms=1035\n69 2026-09-14T12:56:23Z WARN  checkout-api heap usage high rss_mb=2504 gc_pause_ms=978\n77 2026-09-14T12:59:00Z WARN  checkout-api heap usage high rss_mb=3655 gc_pause_ms=899\ninventory-svc.log 0\nledger-svc.log 0\npayments-svc.log 0\nsearch-api.log 7\n14 2026-09-14T12:15:15Z WARN  search-api disk usage high path=/var/data used_pct=98\n31 2026-09-14T12:21:51Z WARN  search-api disk usage high path=/var/data used_pct=97\n35 2026-09-14T12:25:27Z WARN  search-api disk usage high path=/var/data used_pct=98\n46 2026-09-14T12:32:47Z WARN  search-api disk usage high path=/var/data used_pct=92\n70 2026-09-14T12:53:47Z WARN  search-api disk usage high path=/var/data used_pct=91\n76 2026-09-14T12:56:36Z WARN  search-api disk usage high path=/var/data used_pct=95\n"
++   "body": "R1: CHG-113 APPLIED search-api 4.16.4 sets http.max_inflight=-1 (round-01/changes.md:4); CHG-114 checkout no cfg; CHG-109 PROPOSED. ledger-svc CERT_EXPIRED sso.example.net round-01/logs/ledger-svc.log:14-21 (ERRORs thru :72). board r1 empty. slow query WARNs everywhere = noise.\nR2: board Thread A CERT_EXPIRED ledger-svc+inventory-svc ongoing (round-02/board.md:3); inventory errs round-02/logs/inventory-svc.log:10-13; ledger round-02/logs/ledger-svc.log:20-43. CHG-117 PROPOSED. search-api no errors yet r2.\nR3: board empty; CHG-125 APPLIED retry budget=1 (round-03/changes.md:3). cert errs continue inventory round-03/logs/inventory-svc.log:9-39, ledger round-03/logs/ledger-svc.log:23-40. others clean.\nR4: board A mitigated (round-04/board.md:3); B checkout-api UPSTREAM_RATE_LIMIT ongoing (:4); D search-api DISK_PRESSURE ongoing (:5); FU OPEN CUSTOMER_COMMS,POSTMORTEM_DRAFT,CAPACITY_REVIEW (:6-8). CHG-136 APPLIED ledger mitigation A (round-04/changes.md:4); CHG-133 retry.\nR4 logs: checkout-api heap high WARNs (possible MEMORY_LEAK, round-04/logs/checkout-api.log:18-44), no 429 seen; search-api disk used_pct 92-98 round-04/logs/search-api.log:12-62.\nR5: board FU OPEN DATA_BACKFILL (round-05/board.md:3). checkout heap WARNs round-05/logs/checkout-api.log:6-77; search disk 91-98 round-05/logs/search-api.log:14-76; others clean. Next: advance to r6."
+   }
+  ]
+ }

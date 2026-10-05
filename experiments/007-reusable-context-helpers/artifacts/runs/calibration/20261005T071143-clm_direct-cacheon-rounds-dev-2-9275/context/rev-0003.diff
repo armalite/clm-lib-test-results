@@ -1,0 +1,24 @@
+--- rev-2
++++ rev-3
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: board empty. inventory-svc ERROR dns lookup failed host=rates.internal SERVFAIL lines 7,20,50,54,57,62,65 (round-01/logs/inventory-svc.log). slow query WARNs everywhere = noise."
++  },
++  {
++   "id": "s2.act",
++   "role": "assistant",
++   "body": "[step 2] execute\nthought: Compress context, then view remaining round-1 details (changes, non-slow-query errors).\ncode:\nimport json,glob\nnote='R1: board empty. inventory-svc ERROR dns lookup failed host=rates.internal SERVFAIL lines 7,20,50,54,57,62,65 (round-01/logs/inventory-svc.log). slow query WARNs everywhere = noise.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':note}]},open('/task/workspace/context.json','w'))\nprint(open('/task/fixtures/round-01/changes.md').read())\nfor p in glob.glob('/task/fixtures/round-01/logs/*'):\n  for i,l in enumerate(open(p),1):\n    if ('ERROR' in l or 'error' in l.lower()) and 'slow query' not in l and 'dns lookup' not in l: print(p.split('/')[-1],i,l.strip()[:140])"
++  },
++  {
++   "id": "s2.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n# Change log: round 01\n\n- CHG-107 APPLIED: retry budget for idempotent GETs set to 1\n\n"
++  },
++  {
++   "id": "s2.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 6517 -> 181; removed [s1.act, s1.obs]; added [n1]; rewritten []"
+   }
+  ]
+ }

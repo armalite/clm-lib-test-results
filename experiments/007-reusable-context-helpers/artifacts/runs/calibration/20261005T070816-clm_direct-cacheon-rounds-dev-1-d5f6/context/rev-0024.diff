@@ -1,0 +1,19 @@
+--- rev-23
++++ rev-24
+@@ -50,6 +50,16 @@
+    "id": "s17.obs",
+    "role": "observation",
+    "body": "Stage 6 of 10 released.\nRound 6 of 10 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (4 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/auth-svc.log (58 lines)\n  round-06/logs/checkout-api.log (81 lines)\n  round-06/logs/notify-worker.log (63 lines)\n  round-06/logs/payments-svc.log (79 lines)\n  round-06/logs/search-api.log (61 lines)"
++  },
++  {
++   "id": "s18.act",
++   "role": "assistant",
++   "body": "[step 18] execute\nthought: Inspect R6 board, changes, and anomalies.\ncode:\nimport re,glob\nb='/task/fixtures/round-06/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob(b+'logs/*')):\n  seen=set()\n  for i,l in enumerate(open(f),1):\n    if re.search(r'WARN|ERROR|fail|429|timeout|expired|x509|dns|lag|memory|disk',l,re.I):\n      k=re.sub(r'\\d+','#',l)[-80:]\n      if k in seen:continue\n      seen.add(k);print(f.split('/')[-1],i,l.rstrip()[:160])"
++  },
++  {
++   "id": "s18.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 2 \nboard.md 3 - Follow-up CLOSED ALERT_TUNING.\nboard.md 4 - Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\nchanges.md 1 # Change log: round 06\nchanges.md 2 \nchanges.md 3 - CHG-147 APPLIED: retry budget for idempotent GETs set to 1\nauth-svc.log 1 2026-09-14T13:01:28Z WARN  auth-svc slow query ms=366 table=orders\nauth-svc.log 4 2026-09-14T13:03:45Z WARN  auth-svc slow query ms=350 table=events\nauth-svc.log 7 2026-09-14T13:08:20Z WARN  auth-svc slow query ms=400 table=items\ncheckout-api.log 1 2026-09-14T13:01:16Z WARN  checkout-api slow query ms=366 table=events\ncheckout-api.log 3 2026-09-14T13:01:44Z WARN  checkout-api slow query ms=394 table=orders\ncheckout-api.log 19 2026-09-14T13:17:07Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=19\ncheckout-api.log 58 2026-09-14T13:40:31Z WARN  checkout-api slow query ms=328 table=items\nnotify-worker.log 4 2026-09-14T13:02:56Z WARN  notify-worker slow query ms=409 table=orders\nnotify-worker.log 8 2026-09-14T13:06:20Z WARN  notify-worker slow query ms=223 table=events\nnotify-worker.log 36 2026-09-14T13:24:27Z WARN  notify-worker slow query ms=412 table=items\npayments-svc.log 3 2026-09-14T13:02:27Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=38\npayments-svc.log 9 2026-09-14T13:08:03Z WARN  payments-svc slow query ms=272 table=events\npayments-svc.log 13 2026-09-14T13:10:36Z WARN  payments-svc slow query ms=274 table=items\npayments-svc.log 23 2026-09-14T13:19:27Z WARN  payments-svc slow query ms=334 table=orders\nsearch-api.log 1 2026-09-14T13:00:11Z WARN  search-api slow query ms=313 table=items\nsearch-api.log 4 2026-09-14T13:02:25Z WARN  search-api slow query ms=416 table=events\nsearch-api.log 7 2026-09-14T13:06:21Z WARN  search-api slow query ms=437 table=orders\n"
+   }
+  ]
+ }

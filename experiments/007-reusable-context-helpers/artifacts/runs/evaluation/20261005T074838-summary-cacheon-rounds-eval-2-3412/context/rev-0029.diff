@@ -1,0 +1,19 @@
+--- rev-28
++++ rev-29
+@@ -30,6 +30,16 @@
+    "id": "s22.obs",
+    "role": "observation",
+    "body": "Stage 8 of 12 released.\nRound 8 of 12 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (2 lines)\n  round-08/changes.md (3 lines)\n  round-08/logs/auth-svc.log (61 lines)\n  round-08/logs/inventory-svc.log (85 lines)\n  round-08/logs/ledger-svc.log (66 lines)\n  round-08/logs/payments-svc.log (64 lines)\n  round-08/logs/pricing-svc.log (69 lines)"
++  },
++  {
++   "id": "s23.act",
++   "role": "assistant",
++   "body": "[step 23] execute\nthought: Scan round 8 board, changes, and error lines.\ncode:\nimport os,json\nb='/task/fixtures/round-08/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):\n    if l.strip(): print(f,i,l.rstrip())\nfor f in sorted(os.listdir(b+'logs')):\n  L=open(b+'logs/'+f).read().splitlines()\n  idx=[i for i,l in enumerate(L,1) if ('ERROR' in l or 'WARN' in l) and 'slow query' not in l]\n  print(f,len(idx),idx[:12])\n  if idx: print('  ',L[idx[0]-1][:200])\n  print(' first:',L[0][:120])\n"
++  },
++  {
++   "id": "s23.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 08\nchanges.md 1 # Change log: round 08\nchanges.md 3 - CHG-156 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc.log 0 []\n first: {\"ts\":\"2026-09-14T15:04:44Z\",\"level\":\"INFO\",\"svc\":\"auth-svc\",\"msg\":\"heartbeat\",\"uptime_s\":83431}\ninventory-svc.log 9 [6, 16, 18, 24, 57, 66, 73, 77, 78]\n   {\"ts\":\"2026-09-14T15:05:37Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"partner-gw\",\"reason\":\"certificate_expired\"}\n first: {\"ts\":\"2026-09-14T15:01:41Z\",\"level\":\"INFO\",\"svc\":\"inventory-svc\",\"msg\":\"request ok\",\"route\":\"/v1/quote\",\"status\":200,\"m\nledger-svc.log 7 [2, 13, 14, 29, 34, 36, 64]\n   {\"ts\":\"2026-09-14T15:01:22Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n first: {\"ts\":\"2026-09-14T15:00:04Z\",\"level\":\"INFO\",\"svc\":\"ledger-svc\",\"msg\":\"gc cycle\",\"pause_ms\":13}\npayments-svc.log 0 []\n first: {\"ts\":\"2026-09-14T15:01:26Z\",\"level\":\"INFO\",\"svc\":\"payments-svc\",\"msg\":\"health ok\",\"probe\":\"readiness\"}\npricing-svc.log 6 [4, 14, 31, 39, 42, 51]\n   {\"ts\":\"2026-09-14T15:01:55Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n first: {\"ts\":\"2026-09-14T15:01:01Z\",\"level\":\"INFO\",\"svc\":\"pricing-svc\",\"msg\":\"request ok\",\"route\":\"/v1/quote\",\"status\":200,\"ms\"\n"
+   }
+  ]
+ }

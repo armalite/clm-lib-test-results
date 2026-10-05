@@ -1,0 +1,44 @@
+{
+ "number": 16,
+ "parent": 15,
+ "source": "summary",
+ "step": 14,
+ "sha256": "34444e668f49824ae1da21eed42ccfa537971ed1e1e27adf314978213ebc2f20",
+ "entries": [
+  {
+   "id": "sum3",
+   "role": "summary",
+   "body": "<summary>\n- R1: CHG-112 APPLIED TLS rotation; CHG-113 APPLIED round-01/changes.md:4 auth-svc build 4.51.3 sets `cache.ttl_s=-1` (suspect BAD_CONFIG_ROLLOUT, no thread/errors yet); CHG-114 APPLIED shipping-svc 4.51.3 no config. Slow query WARNs = noise.\n- Thread A QUEUE_BACKLOG payments-svc+ledger-svc ongoing (round-02/board.md:3); lag topic=stock-updates e.g. round-02/logs/ledger-svc.log:5,:74, payments-svc.log:3,:30; lag continues R3,R4.\n- R3: board empty; CHG-124 PROPOSED only.\n- R4: Thread B shipping-svc, board says DB_POOL_EXHAUSTED ongoing (round-04/board.md:3) but logs show CERT_EXPIRED: round-04/logs/shipping-svc.log:1,2,4,13,17,18 `tls handshake failed peer=sso.example.net reason=certificate_expired` (13 lines). Follow-up RUNBOOK_UPDATE OPEN (round-04/board.md:4). CHG-133 APPLIED dashboards (irrelevant).\n- Log format: `2026-09-14T08:06:15Z WARN  svc msg k=v`.\n- Notes /task/workspace/notes.md (append R4). Next: advance to round 5 (5-11 pending).\n</summary>"
+  },
+  {
+   "id": "s11.act",
+   "role": "assistant",
+   "body": "[step 11] execute\nthought: Save R4 notes: board says DB_POOL but logs show CERT_EXPIRED for shipping-svc.\ncode:\nopen('/task/workspace/notes.md','a').write('\\nR4: board.md:3 Thread B shipping-svc DB_POOL_EXHAUSTED ongoing (logs contradict: tls certificate_expired peer=sso.example.net round-04/logs/shipping-svc.log:1,2,4 -> real CERT_EXPIRED). board.md:4 follow-up OPEN RUNBOOK_UPDATE. CHG-133 dashboards irrelevant. lag continues.\\n')\nprint('ok')"
+  },
+  {
+   "id": "s11.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s12.act",
+   "role": "assistant",
+   "body": "[step 12] advance\nthought: "
+  },
+  {
+   "id": "s12.obs",
+   "role": "observation",
+   "body": "Stage 5 of 11 released.\nRound 5 of 11 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (3 lines)\n  round-05/changes.md (3 lines)\n  round-05/logs/auth-svc.log (67 lines)\n  round-05/logs/ledger-svc.log (61 lines)\n  round-05/logs/payments-svc.log (73 lines)\n  round-05/logs/search-api.log (84 lines)\n  round-05/logs/shipping-svc.log (70 lines)"
+  },
+  {
+   "id": "s13.act",
+   "role": "assistant",
+   "body": "[step 13] execute\nthought: Read round 5 compactly.\ncode:\nimport os,glob\nfrom collections import Counter\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-05/'+f),1):\n    if l.strip(): print(f,i,l.rstrip()[:200])\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*.log')):\n  c=Counter();n=0\n  for i,l in enumerate(open(f),1):\n    if 'INFO' in l or 'slow query' in l: continue\n    if 'consumer lag' in l: c['lag']+=1; continue\n    if 'certificate_expired' in l: c['cert']+=1; continue\n    n+=1\n    if n<=4: print(os.path.basename(f),i,l.rstrip()[:150])\n  print(os.path.basename(f),dict(c),'other',n)"
+  },
+  {
+   "id": "s13.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 05\nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nchanges.md 1 # Change log: round 05\nchanges.md 3 - CHG-143 APPLIED: mitigation for thread A deployed to payments-svc\nauth-svc.log {} other 0\nledger-svc.log {} other 0\npayments-svc.log {} other 0\nsearch-api.log {'cert': 6} other 0\nshipping-svc.log {'cert': 8} other 0\n"
+  }
+ ]
+}

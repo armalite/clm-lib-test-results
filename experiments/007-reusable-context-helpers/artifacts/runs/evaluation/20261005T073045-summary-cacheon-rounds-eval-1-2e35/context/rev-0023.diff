@@ -1,0 +1,19 @@
+--- rev-22
++++ rev-23
+@@ -45,6 +45,16 @@
+    "id": "s18.obs",
+    "role": "observation",
+    "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/changes.md (3 lines)\n  round-07/logs/auth-svc.log (65 lines)\n  round-07/logs/ledger-svc.log (64 lines)\n  round-07/logs/payments-svc.log (74 lines)\n  round-07/logs/search-api.log (79 lines)\n  round-07/logs/shipping-svc.log (78 lines)"
++  },
++  {
++   "id": "s19.act",
++   "role": "assistant",
++   "body": "[step 19] execute\nthought: Read round 7.\ncode:\nimport os,glob\nfrom collections import Counter\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-07/'+f),1):\n    if l.strip(): print(f,i,l.rstrip()[:220])\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n  c=Counter();n=0;cl=[]\n  for i,l in enumerate(open(f),1):\n    if 'INFO' in l or 'slow query' in l: continue\n    if 'consumer lag' in l: c['lag']+=1; continue\n    if 'certificate_expired' in l: c['cert']+=1; cl.append(i); continue\n    n+=1\n    if n<=4: print(os.path.basename(f),i,l.rstrip()[:150])\n  print(os.path.basename(f),dict(c),cl[:8],'other',n)"
++  },
++  {
++   "id": "s19.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.9s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 07\nboard.md 3 - Follow-up OPEN POSTMORTEM_DRAFT: drafting the postmortem.\nboard.md 4 - Follow-up OPEN DATA_BACKFILL: backfill of records missed during the incident.\nchanges.md 1 # Change log: round 07\nchanges.md 3 - CHG-154 APPLIED: retry budget for idempotent GETs set to 1\nauth-svc.log {} [] other 0\nledger-svc.log {} [] other 0\npayments-svc.log {} [] other 0\nsearch-api.log {'cert': 13} [8, 10, 11, 16, 20, 28, 30, 37] other 0\nshipping-svc.log {'cert': 10} [3, 16, 21, 35, 36, 41, 52, 66] other 0\n"
+   }
+  ]
+ }

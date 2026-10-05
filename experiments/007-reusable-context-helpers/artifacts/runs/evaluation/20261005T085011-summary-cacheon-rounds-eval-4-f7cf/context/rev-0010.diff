@@ -1,0 +1,39 @@
+--- rev-9
++++ rev-10
+@@ -2,34 +2,9 @@
+  "format": "clm-context/v1",
+  "entries": [
+   {
+-   "id": "sum2",
++   "id": "sum3",
+    "role": "summary",
+-   "body": "Summary of work so far (rounds 1-2 of 11 released; rounds 03-11 still to be released):\n\nLog format (same in R1 and R2): `2026-09-14THH:MM:SSZ LEVEL  <service> <message> key=val ...`\n- Routine noise to skip: request ok, health ok, heartbeat, gc cycle, slow query.\n- Pool signal format: `WARN <svc> db pool exhausted wait_ms=N in_use=X/X`.\n- The format may change in later rounds.\n\nRound 1 (/task/fixtures/round-01/):\n- board.md: header only; no threads.\n- changes.md:\n  - line 3: CHG-107 PROPOSED, raise HPA max replicas for search tier (not applied).\n  - line 4: CHG-113 APPLIED, build 8.23.7 to search-api, sets `cache.ttl_s=-1`. This is an invalid value and a likely BAD_CONFIG_ROLLOUT/CACHE_STAMPEDE source. Cite round-01/changes.md:4 if a search-api incident appears.\n  - line 5: CHG-114 APPLIED, build 8.23.7 to auth-svc, no config changes.\n- inventory-svc.log db pool exhausted at lines 5, 9, 28, 30, 45, 52.\n- All other logs in R1 contain only routine lines.\n\nRound 2 (/task/fixtures/round-02/):\n- No changes.md in this round.\n- board.md:3 opens Thread A.\n  - Cause: DB_POOL_EXHAUSTED, confirmed.\n  - Services: inventory-svc, with impact also on notify-worker.\n  - Status: ongoing.\n- inventory-svc.log db pool exhausted at lines 3, 9, 19, 30, 33, 54, 67, 68, 74, 78.\n- notify-worker.log db pool exhausted at lines 6, 14, 29, 32, 34, 37, 40, 45, 57.\n- auth-svc, search-api and shipping-svc logs contain only routine lines.\n- search-api shows no symptoms yet despite CHG-113.\n\nIncident threads:\n- A: DB_POOL_EXHAUSTED.\n  - Services: inventory-svc, notify-worker.\n  - Status: ongoing, set by round-02/board.md:3.\n  - Evidence: round-02/board.md:3, round-02/logs/inventory-svc.log:3-19, round-02/logs/notify-worker.log:6-14, round-01/logs/inventory-svc.log:5-9.\n\nFollow-ups: none opened or closed yet.\n\nWorkspace: notes in /task/workspace/notes.md (R1 notes appended).\n\nNext steps:\n- Advance round by round through rounds 3-11.\n- Each round, read board.md (latest update per thread wins; unmentioned fields are unchanged), changes.md if present, and the non-routine log lines.\n- Use the same filter script, and adapt it if the log format changes.\n- Watch for:\n  - a search-api thread tied to CHG-113;\n  - cause changes on Thread A;\n  - status changes on Thread A;\n  - false-alarm threads;\n  - follow-up codes opened or closed.\n- Collect file:line refs for each thread's current cause and status.\n- Give the final answer only after round 11."
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Save notes before context summarisation.\ncode:\nopen('/task/workspace/notes.md','a').write('R2: Thread A DB_POOL_EXHAUSTED inventory-svc+notify-worker ongoing round-02/board.md:3; logs round-02/logs/inventory-svc.log:3, notify-worker.log:6\\n')\nprint(open('/task/workspace/notes.md').read())"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nR1: CHG-113 APPLIED search-api cache.ttl_s=-1 (round-01/changes.md:4); inventory db pool exhausted round-01/logs/inventory-svc.log:5,9\nR2: Thread A DB_POOL_EXHAUSTED inventory-svc+notify-worker ongoing round-02/board.md:3; logs round-02/logs/inventory-svc.log:3, notify-worker.log:6\n\n"
+-  },
+-  {
+-   "id": "s6.act",
+-   "role": "assistant",
+-   "body": "[step 6] advance\nthought: "
+-  },
+-  {
+-   "id": "s6.obs",
+-   "role": "observation",
+-   "body": "Stage 3 of 11 released.\nRound 3 of 11 released. New files are under /task/fixtures/round-03/.\n\nNew files:\n  round-03/board.md (3 lines)\n  round-03/logs/auth-svc.log (64 lines)\n  round-03/logs/inventory-svc.log (77 lines)\n  round-03/logs/notify-worker.log (74 lines)\n  round-03/logs/search-api.log (75 lines)\n  round-03/logs/shipping-svc.log (75 lines)"
+-  },
+-  {
+-   "id": "s7.act",
+-   "role": "assistant",
+-   "body": "[step 7] execute\nthought: \ncode:\nimport re,glob\nprint(open('/task/fixtures/round-03/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-03/logs/*.log')):\n    for i,l in enumerate(open(f),1):\n        if not re.search(r'request ok|health ok|heartbeat|gc cycle|slow query',l):\n            print(f.split('/')[-1],i,l.strip()[:150])"
++   "body": "R1-2 of 11 done; R3 released (unread), R4-11 pending.\nLog fmt: `2026-09-14THH:MM:SSZ LEVEL <svc> <msg> k=v`; noise: request ok|health ok|heartbeat|gc cycle|slow query. May change.\nR1 changes.md: :3 CHG-107 PROPOSED; :4 CHG-113 APPLIED search-api build 8.23.7 cache.ttl_s=-1 (likely BAD_CONFIG/STAMPEDE src); :5 CHG-114 APPLIED auth-svc.\nThread A: DB_POOL_EXHAUSTED, inventory-svc+notify-worker, ongoing (round-02/board.md:3). Refs: round-02/logs/inventory-svc.log:3-19, round-02/logs/notify-worker.log:6-14, round-01/logs/inventory-svc.log:5-9.\nFollow-ups: none.\nNotes: /task/workspace/notes.md.\nNext: read R3 board+filtered logs, advance to R11, final."
+   },
+   {
+    "id": "s7.obs",

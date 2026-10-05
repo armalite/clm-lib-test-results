@@ -1,0 +1,2 @@
+import ctx
+d=ctx.load();d['entries']=[e for e in d['entries'] if e['id'].startswith('n')]+[{'id':'n8','role':'note','body':'R8: board empty; changes.md:3 CHG-156 APPLIED log sampling (noise). inventory cert_expired partner-gw inventory-svc.log:6-78 (n=9); DNS SERVFAIL ledger-svc.log:2-64 (n=7), pricing-svc.log:4-51 (n=6). auth/payments clean.'}];ctx.save(d);print('ok')

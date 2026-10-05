@@ -1,0 +1,19 @@
+--- rev-16
++++ rev-17
+@@ -35,6 +35,16 @@
+    "id": "s13.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 05\nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nchanges.md 1 # Change log: round 05\nchanges.md 3 - CHG-143 APPLIED: mitigation for thread A deployed to payments-svc\nauth-svc.log {} other 0\nledger-svc.log {} other 0\npayments-svc.log {} other 0\nsearch-api.log {'cert': 6} other 0\nshipping-svc.log {'cert': 8} other 0\n"
++  },
++  {
++   "id": "s14.act",
++   "role": "assistant",
++   "body": "[step 14] execute\nthought: Save R5 notes and get cert line numbers for search-api.\ncode:\nimport glob\nr=[]\nfor f in ['search-api','shipping-svc']:\n  ls=[i for i,l in enumerate(open(f'/task/fixtures/round-05/logs/{f}.log'),1) if 'certificate_expired' in l]\n  r.append(f'{f}:{ls}')\n  print(f,ls,[l.rstrip()[:140] for l in open(f'/task/fixtures/round-05/logs/{f}.log') if 'certificate_expired' in l][:1])\nopen('/task/workspace/notes.md','a').write('\\nR5: board.md:3 Thread A mitigated; changes.md:3 CHG-143 APPLIED mitigation payments. lag gone. cert errors now also search-api: '+' '.join(r)+'\\n')"
++  },
++  {
++   "id": "s14.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nsearch-api [14, 35, 50, 51, 79, 81] ['2026-09-14T12:10:24Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired']\nshipping-svc [1, 2, 18, 27, 52, 54, 56, 59] ['2026-09-14T12:00:08Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired']\n"
+   }
+  ]
+ }

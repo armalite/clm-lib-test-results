@@ -1,0 +1,24 @@
+--- rev-19
++++ rev-20
+@@ -20,6 +20,21 @@
+    "id": "n4",
+    "role": "note",
+    "body": "R4: board.md:3 Thread B opened MEMORY_LEAK auth-svc ongoing (verify against logs); board.md:4 follow-up OPEN VENDOR_TICKET. 429 from upstream=tax-provider in auth-svc.log:12,16 and shipping-svc.log:5,21,28,29 (UPSTREAM_RATE_LIMIT, not yet on board). Cache miss storm continues auth-svc.log:1,2. Pool WARNs continue inventory-svc.log:3-23, notify-worker.log:11-42. search-api quiet."
++  },
++  {
++   "id": "s14.act",
++   "role": "assistant",
++   "body": "[step 14] execute\nthought: Read round 5 board/changes and scan logs; compress context.\ncode:\nimport json,re\nb='/task/fixtures/round-05/'\nfor f in ['board.md','changes.md']:\n    for i,l in enumerate(open(b+f).read().splitlines()):print(f,i+1,l)\nfor s in ['auth-svc','inventory-svc','notify-worker','search-api','shipping-svc']:\n    L=open(b+'logs/'+s+'.log').read().splitlines()\n    d={}\n    for i,l in enumerate(L):\n        if re.search('WARN|ERROR',l):\n            k=re.sub(r'[0-9]','',l)[20:80]\n            d.setdefault(k,[]).append(i+1)\n    for k,v in d.items():print(s,v[:6],len(v),k)\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4')]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s14.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 05\nboard.md 2 \nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nboard.md 4 - Thread B update: affected services now also include shipping-svc; cause and status unchanged.\nboard.md 5 - Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\nchanges.md 1 # Change log: round 05\nchanges.md 2 \nchanges.md 3 - CHG-137 APPLIED: TLS session ticket rotation set to hourly\nchanges.md 4 - CHG-143 APPLIED: mitigation for thread A deployed to inventory-svc\nauth-svc [1, 2, 13, 33, 35, 53] 7 c upstream returned  upstream=tax-provider retry_after_s=\nauth-svc [5] 1 c slow query ms= table=events\nauth-svc [6, 18, 20, 36, 40, 44] 9 c slow query ms= table=orders\nauth-svc [14, 16, 21, 23, 38, 67] 6 c slow query ms= table=items\ninventory-svc [2, 8, 17, 45] 4 ry-svc slow query ms= table=events\ninventory-svc [9, 10, 12, 15, 24, 27] 7 ry-svc slow query ms= table=items\ninventory-svc [21, 38] 2 ry-svc slow query ms= table=orders\nnotify-worker [4, 11, 13, 16, 32] 5 worker slow query ms= table=items\nnotify-worker [12, 31] 2 worker slow query ms= table=orders\nnotify-worker [23] 1 worker slow query ms= table=events\nsearch-api [1, 2, 32, 41, 49, 50] 8 api slow query ms= table=items\nsearch-api [8, 11, 31, 59] 4 api slow query ms= table=orders\nsearch-api [15, 22, 45, 70] 4 api slow query ms= table=events\nshipping-svc [8, 13, 43, 50] 4 g-svc slow query ms= table=orders\nshipping-svc [9, 16, 18, 23, 27, 28] 13 g-svc upstream returned  upstream=tax-provider retry_after_s\nshipping-svc [26, 34, 53, 54, 57, 64] 8 g-svc slow query ms= table=events\nshipping-svc [29] 1 g-svc slow query ms= table=items\n"
++  },
++  {
++   "id": "s14.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 14: revision 18 -> 19; entries 9 -> 4; body chars 3032 -> 1096; removed [s12.act, s12.obs, s12.rcpt, s13.act, s13.obs]; added []; rewritten []"
+   }
+  ]
+ }

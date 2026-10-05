@@ -1,0 +1,19 @@
+--- rev-26
++++ rev-27
+@@ -40,6 +40,16 @@
+    "id": "s20.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 07\n\n- Thread B root cause revised: an expired TLS certificate on a dependency (CERT_EXPIRED); this supersedes the earlier suspicion of DB_POOL_EXHAUSTED.\n- Thread D opened: an upstream provider rejecting requests with 429 alerts (UPSTREAM_RATE_LIMIT) on search-api. Status: ongoing.\n\nauth-svc.log 20 [1] [64]\n   {\"ts\":\"2026-09-14T14:00:33Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\ncheckout-api.log 12 [1] [62]\n   {\"ts\":\"2026-09-14T14:00:16Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"slow query\",\"ms\":239,\"table\":\"orders\"}\ninventory-svc.log 15 [1] [59]\n   {\"ts\":\"2026-09-14T14:00:17Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":353,\"table\":\"orders\"}\nsearch-api.log 27 [1] [69]\n   {\"ts\":\"2026-09-14T14:00:18Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":444,\"table\":\"orders\"}\nshipping-svc.log 23 [6] [66]\n   {\"ts\":\"2026-09-14T14:04:04Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"slow query\",\"ms\":429,\"table\":\"orders\"}\n"
++  },
++  {
++   "id": "s21.act",
++   "role": "assistant",
++   "body": "[step 21] execute\nthought: Check round 7 ERROR lines by msg per service, and save notes.\ncode:\nimport os,re,json,collections\nb='/task/fixtures/round-07/'\nfor f in sorted(os.listdir(b+'logs')):\n    L=open(b+'logs/'+f).read().splitlines()\n    c=collections.defaultdict(list)\n    for i,l in enumerate(L):\n        if 'ERROR' in l:\n            m=re.search(r'\"msg\":\"([^\"]*)\"',l); c[m.group(1) if m else l[:60]].append(i+1)\n    print(f,{k:(len(v),v[0],v[-1]) for k,v in c.items()})\nopen('/task/workspace/notes.md','a').write('\\nR7: board.md:3 ThreadB cause revised CERT_EXPIRED. board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing. slow query WARNs everywhere (noise?).\\n')\n"
++  },
++  {
++   "id": "s21.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nauth-svc.log {'tls handshake failed': (10, 1, 64)}\ncheckout-api.log {}\ninventory-svc.log {}\nsearch-api.log {'upstream returned 429': (8, 4, 66)}\nshipping-svc.log {'tls handshake failed': (12, 10, 66)}\n"
+   }
+  ]
+ }

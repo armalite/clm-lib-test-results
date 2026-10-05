@@ -1,0 +1,34 @@
+{
+ "number": 31,
+ "parent": 30,
+ "source": "summary",
+ "step": 25,
+ "sha256": "af6452e409dcf376d3f943d2bb0a4673ea9b0c4b2ab16a0d072f783f1f0b8b24",
+ "entries": [
+  {
+   "id": "sum7",
+   "role": "summary",
+   "body": "Summary (round 8 of 11 released; rounds 09-11 still to release via {\"action\":\"advance\"}):\n\nLogs: JSON since r07, e.g. {\"ts\":..,\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"upstream returned 429\"}. Ignore \"slow query\" and gc lines.\n\nChanges: CHG-113 APPLIED r01/changes.md:4 (search-api cache.ttl_s=-1, unlinked). CHG-137 and CHG-143 APPLIED r05:3-4. CHG-107 and CHG-142 PROPOSED only.\n\nThreads:\n- A: DB_POOL_EXHAUSTED; inventory-svc, notify-worker. MITIGATED per round-05/board.md:3. Evidence: r02 inventory-svc.log:3-78, notify-worker.log:6-57.\n- B: UPSTREAM_RATE_LIMIT per round-07/board.md:3, superseding MEMORY_LEAK. auth-svc, shipping-svc; ongoing. r07 429s: auth-svc.log:3-76, shipping-svc.log:15-50.\n- D: CACHE_STAMPEDE false alarm (round-05/board.md:5). Exclude.\n\nFollow-ups: VENDOR_TICKET OPEN (round-04/board.md:4).\n\nNotes file appended through R7.\n\nNext: read the r08 board (6 lines) and logs, append notes, advance, then final."
+  },
+  {
+   "id": "s23.act",
+   "role": "assistant",
+   "body": "[step 23] execute\nthought: \ncode:\nimport glob,re\nb='/task/fixtures/round-08/'\nfor i,l in enumerate(open(b+'board.md'),1):print('board',i,l.rstrip())\nimport os\nif os.path.exists(b+'changes.md'):\n  for i,l in enumerate(open(b+'changes.md'),1):print('chg',i,l.rstrip())\nfor f in sorted(glob.glob(b+'logs/*')):\n  n=f.split('/')[-1];c={}\n  for i,l in enumerate(open(f),1):\n    if 'slow query' in l: continue\n    if re.search('WARN|ERROR|warn|error',l):\n      k=re.sub(r'\\d+','N',l[20:90]);c.setdefault(k,[]).append(i)\n  for k,v in c.items():print(n,k,v[:15],len(v))"
+  },
+  {
+   "id": "s23.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nboard 1 # Incident board: updates in round 08\nboard 2 \nboard 3 - Thread A status: resolved (no recurrence for two hours).\nboard 4 - Thread B status: mitigated (workaround in place; permanent fix pending).\nboard 5 - Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\nboard 6 - Follow-up OPEN CAPACITY_REVIEW: capacity review of the affected tier.\nauth-svc.log :N:NZ\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"upstream returned N [29, 40] 2\nsearch-api.log :N:NZ\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation f [24, 34, 36, 41, 54, 56, 60, 78, 82, 84] 10\nshipping-svc.log :N:NZ\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"upstream returned [41, 42] 2\n"
+  },
+  {
+   "id": "s24.act",
+   "role": "assistant",
+   "body": "[step 24] execute\nthought: Save R8 notes and look at search-api config errors.\ncode:\nopen('/task/workspace/notes.md','a').write('\\nR8: board.md:3 A resolved; :4 B mitigated; :5 C opened search-api ongoing; :6 CAPACITY_REVIEW OPEN. search-api config validation errors log:24-84 (likely BAD_CONFIG_ROLLOUT CHG-113 r01/changes.md:4). B 429 auth:29,40 ship:41,42.\\n')\nl=open('/task/fixtures/round-08/logs/search-api.log').readlines();print(l[23][:200])"
+  },
+  {
+   "id": "s24.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n{\"ts\":\"2026-09-14T15:11:35Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"8.23.7\"}\n\n"
+  }
+ ]
+}

@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('\nR8: Thread A resolved r08/board.md:3. Thread B UPSTREAM_RATE_LIMIT confirmed r08/board.md:4, ongoing; r08 logs payments-svc 2-83 (429), checkout-api 1-54. Thread C r08/board.md:5 notify-worker ongoing; logs show config validation failed http.max_inflight=0 (r08 notify-worker.log:5,45,50,58,72) -> BAD_CONFIG_ROLLOUT traced to CHG-120 r02/changes.md:4. CHG-159 proposed only.\n')
+print('ok')

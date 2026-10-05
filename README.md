@@ -20,6 +20,7 @@ Each experiment documents its own methods, model, context budget and settings in
 | [004](experiments/004-coding-changing-requirements/README.md) | Coding an invoice package while requirements are added and replaced over four stages, against the robust baseline | Both methods managed context and both got 12/12 strict successes, with no regressions or stale rules. CLM was about 25% cheaper, matching the baseline's spending on summary calls. |
 | [005](experiments/005-harder-coding-accuracy/README.md) | A harder version of 004: interacting rules, partial changes, 6 or 8 stages | Stopped after calibration: both methods passed every hidden check in all 8 calibration runs at both difficulty levels, so by the pre-registered rule the accuracy comparison was not run. No claim about correctness. |
 | [006](experiments/006-prompt-caching-comparison/README.md) | The experiment-004 coding task with and without provider prompt caching, for both methods (4 conditions, 48 runs) | All runs strictly successful. With caching on, CLM was about 35% cheaper than the baseline (27% with caching off) and about 20% faster either way; caching cut each method's cost by about a third. |
+| [007](experiments/007-reusable-context-helpers/README.md) | A 10–12-round incident investigation: summary baseline, CLM direct editing, and CLM instructed to edit through reusable functions it writes | Helpers optional (initial calibration): none appeared. Instructed (24-run evaluation): strict success baseline 4/8, direct 6/8, reusable 7/8; both CLM strategies about a third cheaper and a quarter faster than the baseline in every block; reusable vs direct showed no clear difference. |
 
 ### Methods compared in experiments 001 and 002
 
@@ -84,6 +85,20 @@ Both experiments compared two context-management approaches. The model was the s
   - **Caching within each method:** it cut cost by 32% (baseline) and 39% (CLM), with no change in elapsed time.
 - **Main finding:** the advantage persisted and widened, because the baseline's separate summary calls gained almost nothing from caching.
 - **Most important limitation:** one synthetic workload with reused instances, one model, and one layout and caching policy.
+
+### [007 – Reusable context-management helpers](experiments/007-reusable-context-helpers/README.md)
+
+- **Problem:** a multi-service incident with evidence in 10–12 rounds. Compared: the summary baseline (A), CLM with direct editing (B), and CLM **instructed** to make its context edits through reusable functions it writes (C).
+- **Two phases, reported separately:**
+  - **Initial calibration:** helpers merely permitted; none appeared, so that phase stopped.
+  - **Revised phase:** a documented revision with the strategy instructed, and a 24-run evaluation on 4 fresh instances.
+- **Headline (evaluation):**
+  - **Strict success:** A 4/8, B 6/8, C 7/8. The baseline's failures were all missing evidence references.
+  - **Mean cost:** A USD 0.582, B 0.386, C 0.361. Both CLM conditions were cheaper in every block.
+  - **Time:** both CLM conditions were about 25% faster.
+  - **C vs B:** a mixed, small difference (cheaper in 4 of 8 blocks).
+- **Helpers:** C complied in every run, with one small module written at step 1 and used for every edit. The helpers were note writers or simple entry filters.
+- **Most important limitation:** 8 matched blocks, one synthetic task family, one model and one instruction wording. Two CLM-only runtime defects were found and fixed along the way.
 
 ## Planned experiments
 

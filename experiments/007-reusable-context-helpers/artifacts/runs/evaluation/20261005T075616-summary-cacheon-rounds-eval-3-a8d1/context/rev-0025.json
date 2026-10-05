@@ -1,0 +1,44 @@
+{
+ "number": 25,
+ "parent": 24,
+ "source": "summary",
+ "step": 21,
+ "sha256": "6c5d36bfe5d279e3dc92eeb329ea9b0ef6575d3020aa5210ec5c59e2e71c99b2",
+ "entries": [
+  {
+   "id": "sum5",
+   "role": "summary",
+   "body": "Rounds 1-6 of 10 released; rounds 7-10 still to come.\n\nLog format: `<ISO ts> LEVEL  <service> <msg> key=val`. \"slow query ms=\" WARNs are noise. Notes are in /task/workspace/notes.md.\n\nChanges:\n- r01:3 CHG-109 PROPOSED (HPA search).\n- r01:4 CHG-113 APPLIED: 4.16.4 to search-api, http.max_inflight=-1. Possible BAD_CONFIG.\n- r01:5 CHG-114 APPLIED: 4.16.4 to checkout-api.\n- r02:3 CHG-117 PROPOSED.\n- r03:3 CHG-125 and r04:3 CHG-133 APPLIED: retry budget.\n- r04:4 CHG-136 APPLIED: thread A mitigation to ledger.\n- r06:3 CHG-147 APPLIED: TLS session ticket rotation hourly.\n\nThreads:\n- A: CERT_EXPIRED (sso.example.net). Services: ledger-svc, inventory-svc. Mitigated, set by round-04/board.md:3. Refs: r01 ledger:14-40; r02 ledger:20-28; r02 inventory:10-26; r03 inventory:9-18; r03 ledger:23-43.\n- B: checkout-api, ongoing (r04 board:4). Board suspects UPSTREAM_RATE_LIMIT, but logs show \"heap usage high rss_mb gc_pause_ms\": r04:18-90, r05:6-77, r06:17-66. Likely MEMORY_LEAK.\n- D: DISK_PRESSURE, search-api, ongoing (r04 board:5). \"disk usage high path=/var/data used_pct\": r04:12-62, r05:14-76, r06:6-74.\n\nFollow-ups:\n- Open: POSTMORTEM_DRAFT, CAPACITY_REVIEW (r04 board:6-8); DATA_BACKFILL (r05 board:3).\n- Closed: CUSTOMER_COMMS (r06 board:3).\n\nNext: advance and scan each round through round 10."
+  },
+  {
+   "id": "s18.act",
+   "role": "assistant",
+   "body": "[step 18] execute\nthought: Save round 6 notes then advance next.\ncode:\nopen('/task/workspace/notes.md','a').write('\\nR6: FU CLOSED CUSTOMER_COMMS (round-06/board.md:3). CHG-147 APPLIED TLS ticket rotation (r06 changes:3). checkout heap 17-66; search disk 6-74.\\n')\nprint('ok')"
+  },
+  {
+   "id": "s18.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s19.act",
+   "role": "assistant",
+   "body": "[step 19] advance\nthought: "
+  },
+  {
+   "id": "s19.obs",
+   "role": "observation",
+   "body": "Stage 7 of 10 released.\nRound 7 of 10 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (6 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (66 lines)\n  round-07/logs/ledger-svc.log (55 lines)\n  round-07/logs/payments-svc.log (79 lines)\n  round-07/logs/search-api.log (74 lines)"
+  },
+  {
+   "id": "s20.act",
+   "role": "assistant",
+   "body": "[step 20] execute\nthought: Read round 7 board and scan logs.\ncode:\nimport re,glob\nfrom collections import defaultdict\nfor i,l in enumerate(open('/task/fixtures/round-07/board.md'),1): print('board',i,l.rstrip())\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n  d=defaultdict(list)\n  for i,l in enumerate(open(f),1):\n    if re.search(r'WARN|ERROR|429|restart|OOM|cert|disk|heap',l,re.I) and 'slow query' not in l:\n      m=re.sub(r'=\\S+','=',l.split(None,3)[-1].strip())[:70]; d[m].append(i)\n  for m,v in d.items(): print(f.split('/')[-1],v[0],v[-1],len(v),m)"
+  },
+  {
+   "id": "s20.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nboard 1 # Incident board: updates in round 07\nboard 2 \nboard 3 - Thread A status: resolved (no recurrence for two hours).\nboard 4 - Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\nboard 5 - Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\nboard 6 - Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\ncheckout-api.log 6 67 13 heap usage high rss_mb= gc_pause_ms=\nsearch-api.log 17 58 9 config validation failed key= value= build=\n"
+  }
+ ]
+}

@@ -1,0 +1,19 @@
+--- rev-36
++++ rev-37
+@@ -25,6 +25,16 @@
+    "id": "s27.obs",
+    "role": "observation",
+    "body": "Stage 10 of 11 released.\nRound 10 of 11 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (4 lines)\n  round-10/changes.md (3 lines)\n  round-10/logs/auth-svc.log (72 lines)\n  round-10/logs/checkout-api.log (75 lines)\n  round-10/logs/inventory-svc.log (75 lines)\n  round-10/logs/search-api.log (82 lines)\n  round-10/logs/shipping-svc.log (75 lines)"
++  },
++  {
++   "id": "s28.act",
++   "role": "assistant",
++   "body": "[step 28] execute\nthought: Read R10 board, changes, and key log hits.\ncode:\nimport re\nb='/task/fixtures/round-10/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1): print(f,i,l.rstrip())\nfor s in ['search-api','auth-svc','shipping-svc']:\n  h=[i for i,l in enumerate(open(b+'logs/'+s+'.log'),1) if re.search('config validation|429|tls handshake|memory|OOM',l)]\n  print(s,h[:12],len(h))\nfor i,l in enumerate(open(b+'logs/search-api.log'),1):\n  if 'slow query' not in l and i<4: print(i,l[:200].rstrip())"
++  },
++  {
++   "id": "s28.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 10\nboard.md 2 \nboard.md 3 - Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\nboard.md 4 - Follow-up CLOSED DATA_BACKFILL.\nchanges.md 1 # Change log: round 10\nchanges.md 2 \nchanges.md 3 - CHG-175 APPLIED: log sampling for /v1/health reduced to 1%\nsearch-api [1, 4, 7, 8, 20, 30, 50, 54, 60] 9\nauth-svc [10, 17] 2\nshipping-svc [3, 60] 2\n1 {\"ts\":\"2026-09-14T17:01:11Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.59.8\"}\n"
+   }
+  ]
+ }

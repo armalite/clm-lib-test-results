@@ -1,0 +1,65 @@
+{
+ "format": "clm-context/v1",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty; changes.md:3 CHG-108 PROPOSED (HPA search). Logs only slow-query noise. Services: notify-worker, checkout-api, auth-svc, payments-svc, search-api."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3-5 follow-ups OPEN ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET. changes.md:4 CHG-120 APPLIED notify-worker 8.56.0 sets http.max_inflight=0 (suspect BAD_CONFIG, no errors yet); :5 CHG-121 payments no config. auth-svc.log:1,3,15,22,23,25,44,65,69 db pool exhausted WARN (DB_POOL_EXHAUSTED candidate, not on board yet). Filter used: skip lines with slow query/INFO."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread A DB_POOL_EXHAUSTED auth-svc + search-api ongoing. changes.md:3 CHG-125 dashboards (irrelevant). auth-svc.log:7,12,13,15 pool WARN; search-api.log:1,14,30 pool WARN. No notify-worker errors yet."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing (logs show 429 fx-rates instead, no cache errors -> real cause likely UPSTREAM_RATE_LIMIT). changes.md:3 CHG-133 APPLIED TLS ticket rotation. payments-svc.log:1,3,7,25,31,45 429 fx-rates; checkout-api.log:9,19,50,53,59,62 429 fx-rates. auth-svc.log:7,9,19,81 pool WARN; search-api.log:4,11,83 pool WARN."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board.md:3 Thread A mitigated; :4 Thread B adds checkout-api; :5 OPEN CAPACITY_REVIEW. changes.md:3 CHG-138 TLS rotation; :4 CHG-143 APPLIED thread A mitigation auth-svc. No pool WARNs in R5. checkout-api.log:21,23,30,38,42,59,65 429 fx-rates; payments-svc.log:13,19,47,50,55,73 429 fx-rates. notify-worker no errors yet."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board.md:3 CLOSED ALERT_TUNING; :4 OPEN CUSTOMER_COMMS. changes.md:3 CHG-147 retry budget (irrelevant). checkout-api.log:19,30,56,73,76,77 429 fx-rates; payments-svc.log:3,10,11,16,18,33,40,42,43,44,76 429 fx-rates. No pool WARNs, no notify-worker errors."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board empty. checkout-api.log:11,19,25,29,33,39,49,56,62,66 429 fx-rates; payments-svc.log:1,7,13,23,28,33,36,71,75,82 429 fx-rates. No pool WARNs, no notify-worker errors."
+  },
+  {
+   "id": "n8",
+   "role": "note",
+   "body": "R8: board.md:3 Thread A resolved; :4 Thread B cause UPSTREAM_RATE_LIMIT; :5 Thread C notify-worker ongoing cause unknown. changes.md:3 CHG-159 PROPOSED. notify-worker.log:5,45,50,58,65,72 config validation failed key http.* (BAD_CONFIG via CHG-120 r02 changes.md:4). checkout-api.log:1,6,20,29,35,39,49,51,54 429; payments-svc.log:2,24,25,34,39,41,45,46,52 429. Next: advance to R9."
+  },
+  {
+   "id": "n9",
+   "role": "note",
+   "body": "R9: board.md:3 Thread B mitigated; :4 Thread C still restarting (ongoing). changes.md:3 CHG-164 retry budget (irrelevant). checkout-api.log:34,55 429; payments-svc.log:34,42 429; notify-worker.log:3,5,12,14,15,48,52,63,67 config validation http.max_inflight=0 build 8.56.0. Next: advance to R10."
+  },
+  {
+   "id": "s29.act",
+   "role": "assistant",
+   "body": "[step 29] execute\nthought: Read R10 board, changes, and error lines.\ncode:\nimport json,os\nb='/task/fixtures/round-10/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip()[:200])\nfor s in os.listdir(b+'logs'):\n  for i,l in enumerate(open(b+'logs/'+s),1):\n    if 'slow query' in l or ' INFO' in l or 'level=info' in l.lower(): continue\n    print(s,i,l.rstrip()[:110])\np='/task/workspace/context.json'\nc=json.load(open(p))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open(p,'w'))"
+  },
+  {
+   "id": "s29.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.1s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 10\nboard.md 2 \nboard.md 3 - Follow-up CLOSED CAPACITY_REVIEW.\nchanges.md 1 # Change log: round 10\nchanges.md 2 \nchanges.md 3 - CHG-171 APPLIED: retry budget for idempotent GETs set to 1\nnotify-worker.log 1 {\"ts\":\"2026-09-14T17:00:10Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"gc cycle\",\"pause_ms\":9}\nnotify-worker.log 2 {\"ts\":\"2026-09-14T17:00:42Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"health ok\",\"probe\":\"readiness\"}\nnotify-worker.log 4 {\"ts\":\"2026-09-14T17:01:10Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"heartbeat\",\"uptime_s\":86724}\nnotify-worker.log 5 {\"ts\":\"2026-09-14T17:01:12Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"gc cycle\",\"pause_ms\":31}\nnotify-worker.log 6 {\"ts\":\"2026-09-14T17:01:50Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"health ok\",\"probe\":\"readiness\"}\nnotify-worker.log 7 {\"ts\":\"2026-09-14T17:01:50Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"gc cycle\",\"pause_ms\":29}\nnotify-worker.log 8 {\"ts\":\"2026-09-14T17:02:01Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"request ok\",\"route\":\"/v1/quote\",\"stat\nnotify-worker.log 9 {\"ts\":\"2026-09-14T17:03:10Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"request ok\",\"route\":\"/v1/orders\",\"sta\nnotify-worker.log 10 {\"ts\":\"2026-09-14T17:03:51Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"request ok\",\"route\":\"/v1/items\",\"stat\nnotify-worker.log 11 {\"ts\":\"2026-09-14T17:04:46Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"heartbeat\",\"uptime_s\":11204}\nnotify-worker.log 13 {\"ts\":\"2026-09-14T17:06:48Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"health ok\",\"probe\":\"readiness\"}\nnotify-worker.log 15 {\"ts\":\"2026-09-14T17:08:43Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"gc cycle\",\"pause_ms\":10}\nnotify-worker.log 16 {\"ts\":\"2026-09-14T17:09:35Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"htt\nnotify-worker.log 17 {\"ts\":\"2026-09-14T17:09:39Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"request ok\",\"route\":\"/v1/orders\",\"sta\nnotify-worker.log 18 {\"ts\":\"2026-09-14T17:10:44Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"request ok\",\"route\":\"/v1/health\",\"sta\nnotify-worker.log 19 {\"ts\":\"2026-09-14T17:11:54Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"heartbeat\",\"uptime_s\":87566}\nnotify-worker.log 20 {\"ts\":\"2026-09-14T17:11:56Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"heartbeat\",\"uptime_s\":3128}\nnotify-worker.log 21 {\"ts\":\"2026-09-14T17:12:32Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"htt\nnotify-worker.log 22 {\"ts\":\"2026-09-14T17:14:17Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"gc cycle\",\"pause_ms\":9}\nnotify-worker.log 23 {\"ts\":\"2026-09-14T17:14:55Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"request ok\",\"route\":\"/v1/orders\",\"sta\nnotify-worker.log 25 {\"ts\":\"2026-09-14T17:15:45Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"heartbeat\",\"uptime_s\":80597}\nnotify-worker.log 26 {\"ts\":\"2026-09-14T17:16:24Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"health ok\",\"probe\":\"readiness\"}\nnotify-worker.log 27 {\"ts\":\"2026-09-14T17:16:33Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"htt\nnotify-worker.log 28 {\"ts\":\"2026-09-14T17:17:36Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"request ok\",\"route\":\"/v1/quote\",\"stat\nnotify-worker.log 29 {\"ts\":\"2026-09-14T17:17:40Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"gc cycle\",\"pause_ms\":35}\nnotify-worker.log 30 {\"ts\":\"2026-09-14T17:18:11Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"htt\nnotify-worker.log 33 {\"ts\":\"2026-09-14T17:19:48Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"gc cycle\",\"pause_ms\":9}\nnotify-worker.log 34 {\"ts\":\"2026-09-14T17:20:49Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"heartbeat\",\"uptime_s\":61363}\nnotify-worker.log 35 {\"ts\":\"2026-09-14T17:21:31Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"health ok\",\"probe\":\"readiness\"}\nnotify-worker.log 36 {\"ts\":\"2026-09-14T17:21:48Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"request ok\",\"route\":\"/v1/quote\",\"stat\nnotify-worker.log 37 {\"ts\":\"2026-09-14T17:21:50Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"gc cycle\",\"pause_ms\":4}\nnotify-worker.log 38 {\"ts\":\"2026-09-14T17:23:13Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"gc cycle\",\"pause_ms\":39}\nnotify-worker.log 42 {\"ts\":\"2026-09-14T17:28:43Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"heartbeat\",\"uptime_s\":70593}\nnotify-worker.log 44 {\"ts\":\"2026-09-14T17:29:00Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"gc cycle\",\"pause_ms\":11}\nnotify-worker.log 47 {\"ts\":\"2026-09-14T17:32:05Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"health ok\",\"probe\":\"readiness\"}\nnotify-worker.log 48 {\"ts\":\"2026-09-14T17:33:58Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"request ok\",\"route\":\"/v1/items\",\"stat\nnotify-worker.log 49 {\"ts\":\"2026-09-14T17:34:11Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"heartbeat\",\"uptime_s\":17648}\nnotify-worker.log 50 {\"ts\":\"2026-09-14T17:35:08Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"htt\nnotify-worker.log 51 {\"ts\":\"2026-09-14T17:35:15Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"health ok\",\"probe\":\"readiness\"}\nnotify-worker.log 52 {\"ts\":\"2026-09-14T17:38:16Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"heartbeat\",\"uptime_s\":28019}\nnotify-worker.log 53 {\"ts\":\"2026-09-14T17:38:23Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"health ok\",\"probe\":\"readiness\"}\nnotify-worker.log 54 {\"ts\":\"2026-09-14T17:38:36Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"heartbeat\",\"uptime_s\":67748}\nnotify-worker.log 55 {\"ts\":\"2026-09-14T17:38:39Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"gc cycle\",\"pause_ms\":16}\nnotify-worker.log 56 {\"ts\":\"2026-09-14T17:39:25Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"heartbeat\",\"uptime_s\":32585}\nnotify-worker.log 57 {\"ts\":\"2026-09-14T17:39:36Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"request ok\",\"route\":\"/v1/health\",\"sta\nnotify-worker.log 58 {\"ts\":\"2026-09-14T17:40:23Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"gc cycle\",\"pause_ms\":12}\nnotify-worke\n[stdout truncated: 36257 bytes produced, first 6000 chars shown]"
+  },
+  {
+   "id": "s29.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 29: revision 40 -> 41; entries 14 -> 9; body chars 3746 -> 2555; removed [s27.act, s27.obs, s27.rcpt, s28.act, s28.obs]; added []; rewritten []"
+  }
+ ]
+}

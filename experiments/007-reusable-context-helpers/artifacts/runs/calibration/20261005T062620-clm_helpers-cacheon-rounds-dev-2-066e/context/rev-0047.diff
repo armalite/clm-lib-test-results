@@ -1,0 +1,25 @@
+--- rev-46
++++ rev-47
+@@ -47,19 +47,9 @@
+    "body": "R9: board.md:3 Thread C pods still restarting (ongoing). changes.md:3 CHG-166 retry budget (noise). search-api 429/config lines continue 1-31. cert few (auth 22,55; shipping 28,34,56). inventory 59 check? Next: advance to round 10."
+   },
+   {
+-   "id": "s30.act",
+-   "role": "assistant",
+-   "body": "[step 30] execute\nthought: Compact context, read round 10 board/changes and scan.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))\nfor f in['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-10/'+f),1):print(f,i,l.strip()[:200])\nimport re\nfor s in['auth-svc','checkout-api','inventory-svc','search-api','shipping-svc']:\n  d={}\n  for i,l in enumerate(open(f'/task/fixtures/round-10/logs/{s}.log'),1):\n    if 'slow query' in l or 'INFO' in l or 'info' in l: continue\n    m=re.search(r'msg\\W+([^\\\",]+)',l); k=m.group(1) if m else l[:60]\n    d.setdefault(k,[]).append(i)\n  for k,v in d.items():print(s,k,v[:12])"
+-  },
+-  {
+-   "id": "s30.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.7s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 10\nboard.md 2 \nboard.md 3 - Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\nboard.md 4 - Follow-up CLOSED DATA_BACKFILL.\nchanges.md 1 # Change log: round 10\nchanges.md 2 \nchanges.md 3 - CHG-175 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc tls handshake failed [10, 17]\nsearch-api config validation failed [1, 4, 7, 8, 20, 30, 50, 54, 60]\nshipping-svc tls handshake failed [3, 60]\n"
+-  },
+-  {
+-   "id": "s30.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 30: revision 44 -> 45; entries 14 -> 9; body chars 4730 -> 2795; removed [s28.act, s28.obs, s28.rcpt, s29.act, s29.obs]; added []; rewritten []"
++   "id": "n10",
++   "role": "note",
++   "body": "R10: board.md:3 Thread D (429 search-api) FALSE ALARM; board.md:4 CLOSED DATA_BACKFILL. changes CHG-175 noise. search-api config validation failed lines 1,4,7,8,20,30,50,54,60 (round-10/logs/search-api.log) -> Thread C BAD_CONFIG ongoing (CHG-120 round-02/changes.md:3). cert few auth 10,17; shipping 3,60. Open: ALERT_TUNING, RUNBOOK_UPDATE. Next: advance to round 11."
+   }
+  ]
+ }

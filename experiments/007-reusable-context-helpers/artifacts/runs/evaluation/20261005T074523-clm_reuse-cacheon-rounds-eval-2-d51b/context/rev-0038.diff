@@ -1,0 +1,46 @@
+--- rev-37
++++ rev-38
+@@ -4,42 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "NOTES r01: board empty. CHG-112 APPLIED log sampling (noise). slow query WARNs noise.\nR02: board.md:3 Thread A MEMORY_LEAK auth-svc + payments-svc; board.md:4 CUSTOMER_COMMS OPEN. changes.md:3 CHG-120 APPLIED inventory-svc retry.backoff_ms=0 (watch BAD_CONFIG_ROLLOUT). heap WARN r02 auth-svc.log:5-76, payments-svc.log:5-48.\nR03: board.md:3 CUSTOMER_COMMS CLOSED. changes.md:3 CHG-121 APPLIED retry budget. heap r03 auth-svc.log:19-40, payments-svc.log:8-39.\nR04: board.md:3 Thread A mitigated; changes.md:4 CHG-136 APPLIED mitigation auth-svc. heap WARNs gone r04. board.md:4 Thread B ledger-svc suspected CACHE_STAMPEDE ongoing BUT logs show DNS SERVFAIL host=rates.internal ledger-svc.log:10-57 (likely DNS_RESOLUTION). board.md:5 DATA_BACKFILL OPEN. changes.md:3 CHG-133 TLS ticket rotation (noise?).\nFilter: skip slow query|INFO|/v1/health.\nR05: board empty. DNS SERVFAIL rates.internal continues ledger-svc.log:14-49.\nR06: board.md:3 Thread A RESOLVED; board.md:4 ALERT_TUNING OPEN; board.md:5 RUNBOOK_UPDATE OPEN. changes.md:3 CHG-142 retry budget (noise). DNS SERVFAIL rates.internal ledger-svc.log:13-68 AND now pricing-svc.log:5-67.\nR07: board.md:3 Thread B +pricing-svc; board.md:4 Thread D CERT_EXPIRED inventory-svc ongoing (logs inventory-svc.log:7-68 partner-gw cert expired, real). changes.md:3 CHG-151 PROPOSED (noise). DNS continues ledger-svc.log:4-73, pricing-svc.log:6-61.\nR08: board empty. CHG-156 noise. cert continues inventory-svc.log:6-78; DNS ledger-svc.log:2-64, pricing-svc.log:4-51.\nR09: board.md:3 Thread B cause=DNS_RESOLUTION; board.md:4 Thread C inventory-svc ongoing cause unknown (logs inventory-svc.log:2-71 config validation failed retry.backoff_ms=0 -> BAD_CONFIG_ROLLOUT from CHG-120 r02 changes.md:3); board.md:5 Thread D FALSE ALARM (drop cert); board.md:6 POSTMORTEM_DRAFT OPEN. DNS ledger-svc.log:3-68, pricing-svc.log:3-62. auth/payments clean. Next: advance."
+-  },
+-  {
+-   "id": "s26.act",
+-   "role": "assistant",
+-   "body": "[step 26] execute\nthought: Record r09 and compact.\ncode:\nimport ctx,json\nd=json.load(open('context.json'))\nn=[e for e in d['entries'] if e['id']=='notes'][0]['body']\nn=n.replace(' Next: advance.','')+'\\nR09: board.md:3 Thread B cause=DNS_RESOLUTION; board.md:4 Thread C inventory-svc ongoing cause unknown (logs inventory-svc.log:2-71 config validation failed retry.backoff_ms=0 -> BAD_CONFIG_ROLLOUT from CHG-120 r02 changes.md:3); board.md:5 Thread D FALSE ALARM (drop cert); board.md:6 POSTMORTEM_DRAFT OPEN. DNS ledger-svc.log:3-68, pricing-svc.log:3-62. auth/payments clean. Next: advance.'\nctx.replace_all(n)\nprint('ok')"
+-  },
+-  {
+-   "id": "s26.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s26.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 26: revision 33 -> 34; entries 8 -> 1; body chars 5196 -> 1905; removed [s23.act, s23.obs, s23.rcpt, s24.act, s24.obs, s25.act, s25.obs]; added []; rewritten [notes]"
+-  },
+-  {
+-   "id": "s27.act",
+-   "role": "assistant",
+-   "body": "[step 27] advance\nthought: "
+-  },
+-  {
+-   "id": "s27.obs",
+-   "role": "observation",
+-   "body": "Stage 10 of 12 released.\nRound 10 of 12 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (3 lines)\n  round-10/changes.md (3 lines)\n  round-10/logs/auth-svc.log (69 lines)\n  round-10/logs/inventory-svc.log (73 lines)\n  round-10/logs/ledger-svc.log (88 lines)\n  round-10/logs/payments-svc.log (59 lines)\n  round-10/logs/pricing-svc.log (67 lines)"
+-  },
+-  {
+-   "id": "s28.act",
+-   "role": "assistant",
+-   "body": "[step 28] execute\nthought: Inspect round 10 board, changes, and non-noise logs.\ncode:\nimport re,glob\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-10/'+f),1):print(f,i,l.rstrip())\nfor p in sorted(glob.glob('/task/fixtures/round-10/logs/*')):\n  ls=[(i,l.rstrip()) for i,l in enumerate(open(p),1) if not re.search('slow query|INFO|/v1/health',l)]\n  print(p.split('/')[-1],len(ls),ls[0] if ls else '',ls[-1] if ls else '')\n  ks={}\n  for i,l in ls:\n    k=re.sub(r'\\d+','#',l)[30:110];ks.setdefault(k,i)\n  for k,i in list(ks.items())[:4]:print('  ',i,k)"
+-  },
+-  {
+-   "id": "s28.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=2.3s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 10\nboard.md 2 \nboard.md 3 - Thread C note: failing pods still restarting; investigation continues.\nchanges.md 1 # Change log: round 10\nchanges.md 2 \nchanges.md 3 - CHG-170 PROPOSED: move batch jobs to off-peak window (not applied)\nauth-svc.log 0  \ninventory-svc.log 6 (13, '{\"ts\":\"2026-09-14T17:11:16Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"7.30.0\"}') (50, '{\"ts\":\"2026-09-14T17:41:05Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"7.30.0\"}')\n   13 ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backo\nledger-svc.log 10 (2, '{\"ts\":\"2026-09-14T17:00:25Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}') (81, '{\"ts\":\"2026-09-14T17:54:16Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}')\n   2 ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\npayments-svc.log 0  \npricing-svc.log 12 (1, '{\"ts\":\"2026-09-14T17:01:03Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}') (54, '{\"ts\":\"2026-09-14T17:44:26Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}')\n   1 ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"er\n"
++   "body": "NOTES r01: board empty. CHG-112 APPLIED log sampling (noise). slow query WARNs noise.\nR02: board.md:3 Thread A MEMORY_LEAK auth-svc + payments-svc; board.md:4 CUSTOMER_COMMS OPEN. changes.md:3 CHG-120 APPLIED inventory-svc retry.backoff_ms=0 (watch BAD_CONFIG_ROLLOUT). heap WARN r02 auth-svc.log:5-76, payments-svc.log:5-48.\nR03: board.md:3 CUSTOMER_COMMS CLOSED. changes.md:3 CHG-121 APPLIED retry budget. heap r03 auth-svc.log:19-40, payments-svc.log:8-39.\nR04: board.md:3 Thread A mitigated; changes.md:4 CHG-136 APPLIED mitigation auth-svc. heap WARNs gone r04. board.md:4 Thread B ledger-svc suspected CACHE_STAMPEDE ongoing BUT logs show DNS SERVFAIL host=rates.internal ledger-svc.log:10-57 (likely DNS_RESOLUTION). board.md:5 DATA_BACKFILL OPEN. changes.md:3 CHG-133 TLS ticket rotation (noise?).\nFilter: skip slow query|INFO|/v1/health.\nR05: board empty. DNS SERVFAIL rates.internal continues ledger-svc.log:14-49.\nR06: board.md:3 Thread A RESOLVED; board.md:4 ALERT_TUNING OPEN; board.md:5 RUNBOOK_UPDATE OPEN. changes.md:3 CHG-142 retry budget (noise). DNS SERVFAIL rates.internal ledger-svc.log:13-68 AND now pricing-svc.log:5-67.\nR07: board.md:3 Thread B +pricing-svc; board.md:4 Thread D CERT_EXPIRED inventory-svc ongoing (logs inventory-svc.log:7-68 partner-gw cert expired, real). changes.md:3 CHG-151 PROPOSED (noise). DNS continues ledger-svc.log:4-73, pricing-svc.log:6-61.\nR08: board empty. CHG-156 noise. cert continues inventory-svc.log:6-78; DNS ledger-svc.log:2-64, pricing-svc.log:4-51.\nR09: board.md:3 Thread B cause=DNS_RESOLUTION; board.md:4 Thread C inventory-svc ongoing cause unknown (logs inventory-svc.log:2-71 config validation failed retry.backoff_ms=0 -> BAD_CONFIG_ROLLOUT from CHG-120 r02 changes.md:3); board.md:5 Thread D FALSE ALARM (drop cert); board.md:6 POSTMORTEM_DRAFT OPEN. DNS ledger-svc.log:3-68, pricing-svc.log:3-62. auth/payments clean.\nR10: board.md:3 Thread C still restarting. CHG-170 PROPOSED noise. config fail inventory-svc.log:13-50; DNS ledger-svc.log:2-81, pricing-svc.log:1-54. Next: advance."
+   }
+  ]
+ }

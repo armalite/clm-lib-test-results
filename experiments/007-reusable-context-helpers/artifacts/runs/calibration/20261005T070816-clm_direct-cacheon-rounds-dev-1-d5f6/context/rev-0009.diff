@@ -1,0 +1,26 @@
+--- rev-8
++++ rev-9
+@@ -9,22 +9,7 @@
+   {
+    "id": "n2",
+    "role": "note",
+-   "body": "R2: board follow-ups OPEN: ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET (round-02/board.md:3-5). changes: CHG-120 APPLIED notify-worker http.max_inflight=0 (round-02/changes.md:4) suspect BAD_CONFIG; CHG-121 payments no cfg. auth-svc.log:1 db pool exhausted (single?)."
+-  },
+-  {
+-   "id": "s6.act",
+-   "role": "assistant",
+-   "body": "[step 6] execute\nthought: Record R2 findings, compact context, check auth db pool and notify-worker inflight.\ncode:\nimport json,re\np='/task/workspace/context.json'\nn1='R1: quiet; only slow-query WARNs in 5 svcs (auth-svc, checkout-api, notify-worker, payments-svc, search-api). CHG-108 PROPOSED (ignore). Scan: grep WARN|ERROR|fail|429|timeout, dedupe.'\nn2='R2: board follow-ups OPEN: ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET (round-02/board.md:3-5). changes: CHG-120 APPLIED notify-worker http.max_inflight=0 (round-02/changes.md:4) suspect BAD_CONFIG; CHG-121 payments no cfg. auth-svc.log:1 db pool exhausted (single?).'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n1},{'id':'n2','role':'note','body':n2}]},open(p,'w'))\nfor f in ['auth-svc','notify-worker']:\n  for i,l in enumerate(open('/task/fixtures/round-02/logs/'+f+'.log'),1):\n    if re.search('pool|inflight|config|ERROR',l,re.I):print(f,i,l.strip()[:160])"
+-  },
+-  {
+-   "id": "s6.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.7s\n--- stdout ---\nauth-svc 1 2026-09-14T09:00:55Z WARN  auth-svc db pool exhausted wait_ms=1710 in_use=10/10\nauth-svc 3 2026-09-14T09:02:39Z WARN  auth-svc db pool exhausted wait_ms=1553 in_use=10/10\nauth-svc 15 2026-09-14T09:09:17Z WARN  auth-svc db pool exhausted wait_ms=1729 in_use=10/10\nauth-svc 22 2026-09-14T09:12:48Z WARN  auth-svc db pool exhausted wait_ms=1431 in_use=12/12\nauth-svc 23 2026-09-14T09:13:25Z WARN  auth-svc db pool exhausted wait_ms=1107 in_use=20/20\nauth-svc 25 2026-09-14T09:14:51Z WARN  auth-svc db pool exhausted wait_ms=2228 in_use=10/10\nauth-svc 44 2026-09-14T09:31:35Z WARN  auth-svc db pool exhausted wait_ms=1167 in_use=12/12\nauth-svc 65 2026-09-14T09:49:27Z WARN  auth-svc db pool exhausted wait_ms=2877 in_use=16/16\nauth-svc 69 2026-09-14T09:50:45Z WARN  auth-svc db pool exhausted wait_ms=807 in_use=20/20\n"
+-  },
+-  {
+-   "id": "s6.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 6: revision 6 -> 7; entries 8 -> 2; body chars 3790 -> 451; removed [s3.act, s3.obs, s3.rcpt, s4.act, s4.obs, s5.act, s5.obs]; added [n2]; rewritten [n1]"
++   "body": "R2: board follow-ups OPEN: ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET (round-02/board.md:3-5). changes: CHG-120 APPLIED notify-worker http.max_inflight=0 (round-02/changes.md:4) suspect BAD_CONFIG; CHG-121 payments no cfg. auth-svc.log:1 db pool exhausted (single?). auth-svc DB_POOL_EXHAUSTED recurring R2 (round-02/logs/auth-svc.log:1-25,44-69)."
+   }
+  ]
+ }

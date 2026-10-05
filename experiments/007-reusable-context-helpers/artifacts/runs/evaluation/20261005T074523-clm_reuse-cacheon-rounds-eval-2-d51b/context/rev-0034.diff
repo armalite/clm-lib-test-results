@@ -1,0 +1,46 @@
+--- rev-33
++++ rev-34
+@@ -4,42 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "NOTES r01: board empty. CHG-112 APPLIED log sampling (noise). slow query WARNs noise.\nR02: board.md:3 Thread A MEMORY_LEAK auth-svc + payments-svc; board.md:4 CUSTOMER_COMMS OPEN. changes.md:3 CHG-120 APPLIED inventory-svc retry.backoff_ms=0 (watch BAD_CONFIG_ROLLOUT). heap WARN r02 auth-svc.log:5-76, payments-svc.log:5-48.\nR03: board.md:3 CUSTOMER_COMMS CLOSED. changes.md:3 CHG-121 APPLIED retry budget. heap r03 auth-svc.log:19-40, payments-svc.log:8-39.\nR04: board.md:3 Thread A mitigated; changes.md:4 CHG-136 APPLIED mitigation auth-svc. heap WARNs gone r04. board.md:4 Thread B ledger-svc suspected CACHE_STAMPEDE ongoing BUT logs show DNS SERVFAIL host=rates.internal ledger-svc.log:10-57 (likely DNS_RESOLUTION). board.md:5 DATA_BACKFILL OPEN. changes.md:3 CHG-133 TLS ticket rotation (noise?).\nFilter: skip slow query|INFO|/v1/health.\nR05: board empty. DNS SERVFAIL rates.internal continues ledger-svc.log:14-49.\nR06: board.md:3 Thread A RESOLVED; board.md:4 ALERT_TUNING OPEN; board.md:5 RUNBOOK_UPDATE OPEN. changes.md:3 CHG-142 retry budget (noise). DNS SERVFAIL rates.internal ledger-svc.log:13-68 AND now pricing-svc.log:5-67.\nR07: board.md:3 Thread B +pricing-svc; board.md:4 Thread D CERT_EXPIRED inventory-svc ongoing (logs inventory-svc.log:7-68 partner-gw cert expired, real). changes.md:3 CHG-151 PROPOSED (noise). DNS continues ledger-svc.log:4-73, pricing-svc.log:6-61.\nR08: board empty. CHG-156 noise. cert continues inventory-svc.log:6-78; DNS ledger-svc.log:2-64, pricing-svc.log:4-51. Next: advance."
+-  },
+-  {
+-   "id": "s23.act",
+-   "role": "assistant",
+-   "body": "[step 23] execute\nthought: Record r08 and compact.\ncode:\nimport ctx,json\nd=json.load(open('context.json'))\nn=[e for e in d['entries'] if e['id']=='notes'][0]['body']\nn=n.replace(' Next: advance.','')+'\\nR08: board empty. CHG-156 noise. cert continues inventory-svc.log:6-78; DNS ledger-svc.log:2-64, pricing-svc.log:4-51. Next: advance.'\nctx.replace_all(n)\nprint('ok')"
+-  },
+-  {
+-   "id": "s23.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s23.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 23: revision 29 -> 30; entries 8 -> 1; body chars 4993 -> 1528; removed [s20.act, s20.obs, s20.rcpt, s21.act, s21.obs, s22.act, s22.obs]; added []; rewritten [notes]"
+-  },
+-  {
+-   "id": "s24.act",
+-   "role": "assistant",
+-   "body": "[step 24] advance\nthought: "
+-  },
+-  {
+-   "id": "s24.obs",
+-   "role": "observation",
+-   "body": "Stage 9 of 12 released.\nRound 9 of 12 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (6 lines)\n  round-09/logs/auth-svc.log (73 lines)\n  round-09/logs/inventory-svc.log (71 lines)\n  round-09/logs/ledger-svc.log (72 lines)\n  round-09/logs/payments-svc.log (64 lines)\n  round-09/logs/pricing-svc.log (73 lines)"
+-  },
+-  {
+-   "id": "s25.act",
+-   "role": "assistant",
+-   "body": "[step 25] execute\nthought: Inspect round 9 board and filtered logs.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-09/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-09/logs/*.log')):\n  L=[(i+1,l.strip()) for i,l in enumerate(open(f)) if not re.search(r'slow query|INFO|/v1/health',l)]\n  print(f.split('/')[-1],len(L))\n  for x in L[:3]+L[-1:]: print(' ',x[0],x[1][:150])"
+-  },
+-  {
+-   "id": "s25.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.7s\n--- stdout ---\n# Incident board: updates in round 09\n\n- Thread B root cause revised: DNS lookups failing for a dependency (DNS_RESOLUTION); this supersedes the earlier suspicion of CACHE_STAMPEDE.\n- Thread C opened: request failures on some inventory-svc pods; cause not yet identified. Status: ongoing.\n- Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\n- Follow-up OPEN POSTMORTEM_DRAFT: drafting the postmortem.\n\nauth-svc.log 0\ninventory-svc.log 11\n  2 {\"ts\":\"2026-09-14T16:03:15Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"7.30\n  15 {\"ts\":\"2026-09-14T16:17:25Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"7.30\n  28 {\"ts\":\"2026-09-14T16:28:00Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"7.30\n  71 {\"ts\":\"2026-09-14T16:59:16Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"7.30\nledger-svc.log 9\n  3 {\"ts\":\"2026-09-14T16:04:49Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n  9 {\"ts\":\"2026-09-14T16:10:35Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n  10 {\"ts\":\"2026-09-14T16:10:55Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n  68 {\"ts\":\"2026-09-14T16:54:12Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\npayments-svc.log 0\npricing-svc.log 9\n  3 {\"ts\":\"2026-09-14T16:01:53Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n  14 {\"ts\":\"2026-09-14T16:09:21Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n  22 {\"ts\":\"2026-09-14T16:14:23Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n  62 {\"ts\":\"2026-09-14T16:48:32Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n"
++   "body": "NOTES r01: board empty. CHG-112 APPLIED log sampling (noise). slow query WARNs noise.\nR02: board.md:3 Thread A MEMORY_LEAK auth-svc + payments-svc; board.md:4 CUSTOMER_COMMS OPEN. changes.md:3 CHG-120 APPLIED inventory-svc retry.backoff_ms=0 (watch BAD_CONFIG_ROLLOUT). heap WARN r02 auth-svc.log:5-76, payments-svc.log:5-48.\nR03: board.md:3 CUSTOMER_COMMS CLOSED. changes.md:3 CHG-121 APPLIED retry budget. heap r03 auth-svc.log:19-40, payments-svc.log:8-39.\nR04: board.md:3 Thread A mitigated; changes.md:4 CHG-136 APPLIED mitigation auth-svc. heap WARNs gone r04. board.md:4 Thread B ledger-svc suspected CACHE_STAMPEDE ongoing BUT logs show DNS SERVFAIL host=rates.internal ledger-svc.log:10-57 (likely DNS_RESOLUTION). board.md:5 DATA_BACKFILL OPEN. changes.md:3 CHG-133 TLS ticket rotation (noise?).\nFilter: skip slow query|INFO|/v1/health.\nR05: board empty. DNS SERVFAIL rates.internal continues ledger-svc.log:14-49.\nR06: board.md:3 Thread A RESOLVED; board.md:4 ALERT_TUNING OPEN; board.md:5 RUNBOOK_UPDATE OPEN. changes.md:3 CHG-142 retry budget (noise). DNS SERVFAIL rates.internal ledger-svc.log:13-68 AND now pricing-svc.log:5-67.\nR07: board.md:3 Thread B +pricing-svc; board.md:4 Thread D CERT_EXPIRED inventory-svc ongoing (logs inventory-svc.log:7-68 partner-gw cert expired, real). changes.md:3 CHG-151 PROPOSED (noise). DNS continues ledger-svc.log:4-73, pricing-svc.log:6-61.\nR08: board empty. CHG-156 noise. cert continues inventory-svc.log:6-78; DNS ledger-svc.log:2-64, pricing-svc.log:4-51.\nR09: board.md:3 Thread B cause=DNS_RESOLUTION; board.md:4 Thread C inventory-svc ongoing cause unknown (logs inventory-svc.log:2-71 config validation failed retry.backoff_ms=0 -> BAD_CONFIG_ROLLOUT from CHG-120 r02 changes.md:3); board.md:5 Thread D FALSE ALARM (drop cert); board.md:6 POSTMORTEM_DRAFT OPEN. DNS ledger-svc.log:3-68, pricing-svc.log:3-62. auth/payments clean. Next: advance."
+   }
+  ]
+ }

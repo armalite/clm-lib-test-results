@@ -1,0 +1,19 @@
+--- rev-11
++++ rev-12
+@@ -40,6 +40,16 @@
+    "id": "s9.obs",
+    "role": "observation",
+    "body": "Stage 4 of 11 released.\nRound 4 of 11 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (4 lines)\n  round-04/changes.md (3 lines)\n  round-04/logs/auth-svc.log (65 lines)\n  round-04/logs/ledger-svc.log (77 lines)\n  round-04/logs/payments-svc.log (74 lines)\n  round-04/logs/search-api.log (59 lines)\n  round-04/logs/shipping-svc.log (86 lines)"
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Read round 4 board/changes and non-noise lines.\ncode:\nimport os,glob\nfrom collections import Counter\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-04/'+f),1):\n    if l.strip(): print(f,i,l.rstrip()[:200])\nfor f in sorted(glob.glob('/task/fixtures/round-04/logs/*.log')):\n  c=Counter();n=0\n  for i,l in enumerate(open(f),1):\n    if 'INFO' in l or 'slow query' in l: continue\n    if 'consumer lag' in l: c['lag']+=1; continue\n    n+=1\n    if n<=6: print(os.path.basename(f),i,l.rstrip()[:150])\n  print(os.path.basename(f),dict(c),'other',n)"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 04\nboard.md 3 - Thread B opened: errors in shipping-svc. Suspected cause: database connection pool exhausted (DB_POOL_EXHAUSTED). Status: ongoing.\nboard.md 4 - Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\nchanges.md 1 # Change log: round 04\nchanges.md 3 - CHG-133 APPLIED: dashboard panels for p99 latency added\nauth-svc.log {} other 0\nledger-svc.log {'lag': 7} other 0\npayments-svc.log {'lag': 7} other 0\nsearch-api.log {} other 0\nshipping-svc.log 1 2026-09-14T11:00:43Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 2 2026-09-14T11:00:44Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 4 2026-09-14T11:02:10Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 13 2026-09-14T11:06:46Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 17 2026-09-14T11:08:04Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log 18 2026-09-14T11:09:16Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nshipping-svc.log {} other 13\n"
+   }
+  ]
+ }

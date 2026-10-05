@@ -1,0 +1,19 @@
+--- rev-7
++++ rev-8
+@@ -30,6 +30,16 @@
+    "id": "s6.obs",
+    "role": "observation",
+    "body": "Stage 3 of 11 released.\nRound 3 of 11 released. New files are under /task/fixtures/round-03/.\n\nNew files:\n  round-03/board.md (2 lines)\n  round-03/changes.md (3 lines)\n  round-03/logs/auth-svc.log (70 lines)\n  round-03/logs/ledger-svc.log (62 lines)\n  round-03/logs/payments-svc.log (62 lines)\n  round-03/logs/search-api.log (69 lines)\n  round-03/logs/shipping-svc.log (60 lines)"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: Read round 3 board/changes and non-noise log lines, compactly.\ncode:\nimport os,glob\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-03/'+f),1):\n    if l.strip(): print(f,i,l.rstrip()[:200])\nfrom collections import Counter\nfor f in sorted(glob.glob('/task/fixtures/round-03/logs/*.log')):\n  c=Counter()\n  for i,l in enumerate(open(f),1):\n    if 'INFO' in l or 'slow query' in l: continue\n    if 'consumer lag' in l: c['lag']+=1; continue\n    print(os.path.basename(f),i,l.rstrip()[:150])\n  print(os.path.basename(f),dict(c))"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 03\nchanges.md 1 # Change log: round 03\nchanges.md 3 - CHG-124 PROPOSED: move batch jobs to off-peak window (not applied)\nauth-svc.log {}\nledger-svc.log {'lag': 7}\npayments-svc.log {'lag': 6}\nsearch-api.log {}\nshipping-svc.log {}\n"
+   }
+  ]
+ }

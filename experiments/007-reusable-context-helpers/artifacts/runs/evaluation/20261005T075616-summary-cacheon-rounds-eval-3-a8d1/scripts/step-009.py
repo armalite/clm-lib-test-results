@@ -1,0 +1,1 @@
+open('/task/workspace/notes.md','a').write('R3: board empty; CHG-125 APPLIED retry budget GET=1 (round-03/changes.md:3); cert errors continue inventory round-03/logs/inventory-svc.log:9-57, ledger round-03/logs/ledger-svc.log:23-61\n')

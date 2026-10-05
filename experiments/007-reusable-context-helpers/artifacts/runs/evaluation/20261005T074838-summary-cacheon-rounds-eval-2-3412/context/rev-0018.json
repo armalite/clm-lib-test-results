@@ -1,0 +1,39 @@
+{
+ "number": 18,
+ "parent": 17,
+ "source": "summary",
+ "step": 15,
+ "sha256": "077ec4fc2d5349a98eceb597e35b34b6145cba09ca172fd56d3322508ae32922",
+ "entries": [
+  {
+   "id": "sum4",
+   "role": "summary",
+   "body": "Summary (rounds 1-4 of 12 released; rounds 05-12 still to come via {\"action\":\"advance\"}). Notes are in /task/workspace/notes.md (rounds 1-4 recorded).\n\nLog format:\n- `2026-09-14THH:MM:SSZ LEVEL <service> <msg> key=val`\n- Messages include heap usage high rss_mb=, slow query (noise), and dns lookup failed host= err=.\n- The format may change in later rounds.\n\nChange records:\n- R1 CHG-112 APPLIED: health log sampling set to 1% (benign).\n- R2 changes.md:3 CHG-120 APPLIED: inventory-svc build 7.30.0, retry.backoff_ms=0. Suspicious; possible BAD_CONFIG_ROLLOUT.\n- R2 changes.md:4 CHG-121 APPLIED: ledger-svc 7.30.0.\n- R3 CHG-121 APPLIED: GET retry budget set to 1 (the ID is reused).\n- R4 changes.md:3 CHG-133 APPLIED: TLS ticket rotation (benign).\n- R4 changes.md:4 CHG-136 APPLIED: Thread A mitigation on auth-svc.\n\nThread A: MEMORY_LEAK, auth-svc + payments-svc.\n- Opened round-02/board.md:3.\n- Now mitigated per round-04/board.md:3, with round-04/changes.md:4.\n- Heap lines: round-01/logs/auth-svc.log:3,14,32,35,40,46,60,61 and round-02/logs/auth-svc.log:5,10,15,18,21,42,53,55,65,70.\n- Payments also leaked in round 3. No heap warnings in round 4.\n\nThread B: ledger-svc, ongoing (round-04/board.md:4).\n- The board suspects CACHE_STAMPEDE.\n- Logs show DNS SERVFAIL host=rates.internal at round-04/logs/ledger-svc.log:10,28,47,51,52,57,60,63,64,79,83.\n- The real cause is likely DNS_RESOLUTION; watch for a board correction.\n\nFollow-ups:\n- CUSTOMER_COMMS: opened at round-02/board.md:4, closed at round-03/board.md:3.\n- DATA_BACKFILL: OPEN at round-04/board.md:5.\n\nNext: advance through rounds 5-12, tracking threads (latest update wins), APPLIED vs PROPOSED changes, follow-ups and refs."
+  },
+  {
+   "id": "s12.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.7s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s13.act",
+   "role": "assistant",
+   "body": "[step 13] advance\nthought: "
+  },
+  {
+   "id": "s13.obs",
+   "role": "observation",
+   "body": "Stage 5 of 12 released.\nRound 5 of 12 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (2 lines)\n  round-05/logs/auth-svc.log (66 lines)\n  round-05/logs/inventory-svc.log (55 lines)\n  round-05/logs/ledger-svc.log (63 lines)\n  round-05/logs/payments-svc.log (70 lines)\n  round-05/logs/pricing-svc.log (74 lines)"
+  },
+  {
+   "id": "s14.act",
+   "role": "assistant",
+   "body": "[step 14] execute\nthought: Inspect round 5 compactly.\ncode:\nimport os,re\nd='/task/fixtures/round-05/'\nfor i,l in enumerate(open(d+'board.md'),1):print('board',i,l.rstrip())\nfor f in sorted(os.listdir(d+'logs')):\n  L=open(d+'logs/'+f).read().splitlines()\n  e=[i for i,l in enumerate(L,1) if re.search('ERROR|WARN|heap',l) and 'slow query' not in l]\n  print(f,len(e),e[:15]);\n  if e:print(' ',L[e[0]-1][:150])\n  if L:print(' first:',L[0][:150])"
+  },
+  {
+   "id": "s14.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nboard 1 # Incident board: updates in round 05\nboard 2 \nauth-svc.log 0 []\n first: 2026-09-14T12:00:12Z INFO  auth-svc health ok probe=readiness\ninventory-svc.log 0 []\n first: 2026-09-14T12:01:57Z WARN  inventory-svc slow query ms=203 table=items\nledger-svc.log 6 [14, 19, 36, 38, 40, 49]\n  2026-09-14T12:18:26Z ERROR ledger-svc dns lookup failed host=rates.internal err=SERVFAIL\n first: 2026-09-14T12:00:47Z INFO  ledger-svc gc cycle pause_ms=30\npayments-svc.log 0 []\n first: 2026-09-14T12:01:11Z INFO  payments-svc request ok route=/v1/quote status=200 ms=64\npricing-svc.log 0 []\n first: 2026-09-14T12:00:42Z WARN  pricing-svc slow query ms=303 table=items\n"
+  }
+ ]
+}

@@ -1,0 +1,46 @@
+--- rev-10
++++ rev-11
+@@ -4,42 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: nothing; CHG-108 PROPOSED (search HPA) not applied. R2: auth-svc db pool exhausted WARNs (round-02/logs/auth-svc.log:1,3,15,22,23,25; 9 total) -> DB_POOL_EXHAUSTED auth-svc, no board thread yet. CHG-120 APPLIED notify-worker http.max_inflight=0 (round-02/changes.md, possible BAD_CONFIG_ROLLOUT; no errors yet). Board R2 follow-ups OPEN: ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET. Next: advance to R3."
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Record R2 findings, then advance next step.\ncode:\nimport json\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: nothing; CHG-108 PROPOSED (search HPA) not applied. R2: auth-svc db pool exhausted WARNs (round-02/logs/auth-svc.log:1,3,15,22,23,25; 9 total) -> DB_POOL_EXHAUSTED auth-svc, no board thread yet. CHG-120 APPLIED notify-worker http.max_inflight=0 (round-02/changes.md, possible BAD_CONFIG_ROLLOUT; no errors yet). Board R2 follow-ups OPEN: ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET. Next: advance to R3.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))\nprint(open('/task/fixtures/round-02/changes.md').read().splitlines())"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n['# Change log: round 02', '', '- CHG-116 APPLIED: log sampling for /v1/health reduced to 1%', '- CHG-120 APPLIED: build 8.56.0 rolled out to notify-worker; sets `http.max_inflight=0`', '- CHG-121 APPLIED: build 8.56.0 rolled out to payments-svc; no config changes']\n"
+-  },
+-  {
+-   "id": "s5.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 5: revision 6 -> 7; entries 4 -> 1; body chars 2194 -> 407; removed [s4.act, s4.obs, s4.rcpt]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s6.act",
+-   "role": "assistant",
+-   "body": "[step 6] advance\nthought: "
+-  },
+-  {
+-   "id": "s6.obs",
+-   "role": "observation",
+-   "body": "Stage 3 of 10 released.\nRound 3 of 10 released. New files are under /task/fixtures/round-03/.\n\nNew files:\n  round-03/board.md (3 lines)\n  round-03/changes.md (3 lines)\n  round-03/logs/auth-svc.log (64 lines)\n  round-03/logs/checkout-api.log (78 lines)\n  round-03/logs/notify-worker.log (70 lines)\n  round-03/logs/payments-svc.log (74 lines)\n  round-03/logs/search-api.log (82 lines)"
+-  },
+-  {
+-   "id": "s7.act",
+-   "role": "assistant",
+-   "body": "[step 7] execute\nthought: Inspect R3 board, changes, and non-INFO logs.\ncode:\nimport os,re\nb='/task/fixtures/round-03/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f).read().splitlines(),1):print(f,i,l)\nfor f in sorted(os.listdir(b+'logs')):\n  L=open(b+'logs/'+f).read().splitlines()\n  hits=[(i,l) for i,l in enumerate(L,1) if not re.search(r'\\bINFO\\b|level=info|\"info\"',l,re.I)]\n  print(f,len(hits))\n  for i,l in hits[:6]:print(' ',i,l[:150])"
+-  },
+-  {
+-   "id": "s7.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 03\nboard.md 2 \nboard.md 3 - Thread A opened: database connection pool exhausted confirmed as the cause (code DB_POOL_EXHAUSTED) in auth-svc; impact also on search-api. Status: ongoing.\nchanges.md 1 # Change log: round 03\nchanges.md 2 \nchanges.md 3 - CHG-125 APPLIED: dashboard panels for p99 latency added\nauth-svc.log 18\n  2 2026-09-14T10:01:58Z WARN  auth-svc slow query ms=246 table=items\n  3 2026-09-14T10:02:17Z WARN  auth-svc slow query ms=442 table=orders\n  7 2026-09-14T10:03:40Z WARN  auth-svc db pool exhausted wait_ms=2520 in_use=10/10\n  12 2026-09-14T10:08:39Z WARN  auth-svc db pool exhausted wait_ms=2188 in_use=20/20\n  13 2026-09-14T10:09:46Z WARN  auth-svc db pool exhausted wait_ms=1059 in_use=10/10\n  15 2026-09-14T10:10:22Z WARN  auth-svc db pool exhausted wait_ms=2680 in_use=20/20\ncheckout-api.log 7\n  6 2026-09-14T10:03:19Z WARN  checkout-api slow query ms=247 table=items\n  15 2026-09-14T10:09:26Z WARN  checkout-api slow query ms=370 table=items\n  17 2026-09-14T10:11:18Z WARN  checkout-api slow query ms=379 table=orders\n  28 2026-09-14T10:18:53Z WARN  checkout-api slow query ms=210 table=orders\n  48 2026-09-14T10:35:49Z WARN  checkout-api slow query ms=375 table=events\n  59 2026-09-14T10:44:40Z WARN  checkout-api slow query ms=362 table=items\nnotify-worker.log 15\n  1 2026-09-14T10:00:04Z WARN  notify-worker slow query ms=357 table=events\n  3 2026-09-14T10:00:38Z WARN  notify-worker slow query ms=373 table=events\n  21 2026-09-14T10:15:40Z WARN  notify-worker slow query ms=325 table=events\n  23 2026-09-14T10:18:22Z WARN  notify-worker slow query ms=258 table=orders\n  26 2026-09-14T10:23:50Z WARN  notify-worker slow query ms=336 table=events\n  29 2026-09-14T10:24:42Z WARN  notify-worker slow query ms=275 table=items\npayments-svc.log 17\n  5 2026-09-14T10:03:25Z WARN  payments-svc slow query ms=240 table=items\n  6 2026-09-14T10:03:34Z WARN  payments-svc slow query ms=447 table=orders\n  13 2026-09-14T10:09:27Z WARN  payments-svc slow query ms=262 table=orders\n  17 2026-09-14T10:12:08Z WARN  payments-svc slow query ms=414 table=items\n  21 2026-09-14T10:14:32Z WARN  payments-svc slow query ms=221 table=events\n  28 2026-09-14T10:20:37Z WARN  payments-svc slow query ms=386 table=items\nsearch-api.log 27\n  1 2026-09-14T10:01:43Z WARN  search-api db pool exhausted wait_ms=2985 in_use=10/10\n  7 2026-09-14T10:03:59Z WARN  search-api slow query ms=337 table=orders\n  14 2026-09-14T10:09:00Z WARN  search-api db pool exhausted wait_ms=1584 in_use=20/20\n  20 2026-09-14T10:12:26Z WARN  search-api slow query ms=371 table=orders\n  24 2026-09-14T10:14:14Z WARN  search-api slow query ms=326 table=orders\n  27 2026-09-14T10:18:39Z WARN  search-api slow query ms=284 table=items\n"
++   "body": "R1: nothing; CHG-108 PROPOSED (search HPA) not applied. R2: auth-svc db pool exhausted WARNs (round-02/logs/auth-svc.log:1,3,15,22,23,25). CHG-120 APPLIED notify-worker http.max_inflight=0 (round-02/changes.md:4, possible BAD_CONFIG_ROLLOUT). Board R2 follow-ups OPEN: ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET. R3: board Thread A DB_POOL_EXHAUSTED auth-svc+search-api ongoing (round-03/board.md:3); pool WARNs auth-svc.log:7,12,13,15; search-api.log:1,14. CHG-125 dashboards irrelevant."
+   }
+  ]
+ }

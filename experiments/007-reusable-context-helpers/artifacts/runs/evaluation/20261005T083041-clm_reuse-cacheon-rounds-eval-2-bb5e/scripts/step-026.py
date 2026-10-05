@@ -1,0 +1,2 @@
+import ctx
+d=ctx.load();d['entries']=[e for e in d['entries'] if e['id'].startswith('n')]+[{'id':'n9','role':'note','body':'R9: board.md:3 Thread B cause DNS_RESOLUTION (ledger+pricing); board.md:4 Thread C inventory-svc ongoing cause unknown (logs: config validation failed retry.backoff_ms=0 build 7.30 inventory-svc.log:2-71 n=11 -> BAD_CONFIG_ROLLOUT, cite R2 changes.md:3 CHG-120); board.md:5 Thread D FALSE ALARM; board.md:6 POSTMORTEM_DRAFT OPEN. DNS ledger-svc.log:3-68, pricing-svc.log:3-62. auth/payments clean.'}];ctx.save(d);print('ok')

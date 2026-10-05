@@ -1,0 +1,116 @@
+{
+ "meta": {
+  "kind": "summary",
+  "step": 20,
+  "attempt": 0,
+  "est_input_tokens": 4028,
+  "input_token_bound": 10723,
+  "reserved_usd": 0.135535,
+  "context_revision": 24,
+  "context_sha256": "e115d86a01623f16d0338226c9988da7afb6690d3cb6496efa9545265486eff5",
+  "layout": "blocks/1",
+  "cache_ttl": "5m",
+  "prefix": {
+   "family": "summary",
+   "blocks": 11,
+   "system_blocks": 2,
+   "breakpoint_blocks": [
+    2,
+    9
+   ],
+   "previous": true,
+   "common_blocks": 3,
+   "first_changed_block": 3,
+   "common_prefix_chars": 3510
+  },
+  "summary_policy": "token-tail/1",
+  "older_entries": [
+   "sum5",
+   "s14.obs",
+   "s15.act",
+   "s15.obs",
+   "s16.act",
+   "s16.obs",
+   "s17.act"
+  ],
+  "kept_tail": [
+   "s17.obs",
+   "s18.act",
+   "s18.obs",
+   "s19.act",
+   "s19.obs"
+  ],
+  "summary_attempt": 0,
+  "requested_max_chars": 1133,
+  "forced": false
+ },
+ "sha256": "646bd3b9d55e9f9569a418350e36437a33c2db4ed8bde6c62966eab7aaade52f",
+ "payload": {
+  "model": "claude-opus-5-5",
+  "max_tokens": 4096,
+  "system": [
+   {
+    "type": "text",
+    "text": "run-ref: 13a6bca9de7b6d0fe337b607e16225f9\n"
+   },
+   {
+    "type": "text",
+    "text": "You compress an agent's working transcript. The agent is\ninvestigating a multi-service production incident whose evidence arrives in hourly rounds, and will\nkeep working after your summary replaces the entries below. The transcript may include an earlier\nsummary: carry its facts forward. Preserve, exactly and verbatim where relevant:\n- each incident thread: its current cause and any superseded cause, affected services, current\n  status and the record that set it;\n- follow-up items opened and closed, with their codes;\n- early facts that may matter later (change records, builds, configuration values);\n- every file:line reference needed as evidence, and observed log formats;\n- open questions and the next planned steps, including rounds still to be released.\nDrop repetition and raw log dumps. Use compact bullet points. Plain text only. Stay within the\nrequested length; it is set so the agent has room to continue."
+   }
+  ],
+  "messages": [
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "text",
+      "text": "<task>\nProduction incident investigation across several services. Evidence arrives in\n11 hourly rounds. Only round 1 is available now, under /task/fixtures/round-01/.\n\nEach round directory holds:\n- logs/<service>.log: that hour's structured service logs (the log format may change).\n- board.md: the incident board's updates during that hour. An update lists only what\n  changed; anything it does not mention is unchanged. The latest update for a thread wins.\n- changes.md (some rounds): change records. APPLIED changes took effect; PROPOSED did not.\n\nReply {\"action\": \"advance\"} to release the next round. Released rounds never change and stay\nreadable. A final answer is accepted only after all 11 rounds are released.\n\nFinal answer (all fields required):\n  {\"action\": \"final\", \"answer\": {\n     \"incidents\": [{\"cause\": \"<CAUSE_CODE>\", \"services\": [\"<service>\", ...],\n                    \"status\": \"ongoing|mitigated|resolved\",\n                    \"evidence_refs\": [\"round-NN/<file>:<line>\", ...]}, ...],\n     \"unresolved\": [\"<FOLLOW_UP_CODE>\", ...],\n     \"summary\": \"<short free text>\"}}\n- incidents: every real incident at the end of the final round (not false alarms), one entry\n  per incident, with its current cause, all affected services and its current status.\n- evidence_refs: path:line references (relative to /task/fixtures, ranges up to 20 lines as\n  path:a-b) supporting the incident's current cause and current status; when the cause traces\n  back to an earlier change record, cite that record too.\n- unresolved: follow-up items still open at the end of the final round.\n\nCause codes:\n  DB_POOL_EXHAUSTED: database connection pool exhausted\n  CACHE_STAMPEDE: cache miss storm after mass expiry\n  CERT_EXPIRED: an expired TLS certificate on a dependency\n  DNS_RESOLUTION: DNS lookups failing for a dependency\n  QUEUE_BACKLOG: message consumer lag growing\n  MEMORY_LEAK: process memory growing until restarts\n  UPSTREAM_RATE_LIMIT: an upstream provider rejecting requests with 429\n  DISK_PRESSURE: a data volume running out of space\n  BAD_CONFIG_ROLLOUT: a configuration value shipped by a rollout is invalid\nFollow-up codes:\n  CUSTOMER_COMMS: customer communication about the impact\n  DATA_BACKFILL: backfill of records missed during the incident\n  CAPACITY_REVIEW: capacity review of the affected tier\n  ALERT_TUNING: tuning of noisy or late alerts\n  VENDOR_TICKET: a ticket open with an external vendor\n  POSTMORTEM_DRAFT: drafting the postmortem\n  RUNBOOK_UPDATE: updating the runbook\n</task>\n\n<transcript_to_summarise>\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"sum5\", \"role\": \"summary\", \"body\": \"Rounds 1-4 of 11 read; round 5 released (board.md 6 lines, changes.md 3 lines), and its read was started at step 14 but the output is not seen yet. Rounds 06-11 are still to come.\\n- R1 changes.md:3 CHG-107 APPLIED: retry budget for GETs set to 1.\\n- R2 changes.md:3 CHG-120 APPLIED: build 8.59.8 to search-api, sets http.max_inflight=-1. Likely BAD_CONFIG_ROLLOUT; cite it if one appears. search-api had 0 errors in R1-R4.\\n- R2 changes.md:4 CHG-121: auth-svc, no config change.\\n- R3 changes.md:3 CHG-126 PROPOSED, not applied. Ignore it.\\n- Thread A: DNS_RESOLUTION (host=rates.internal SERVFAIL) on inventory-svc and checkout-api. Status ongoing, set by round-02/board.md:3.\\n  - Refs: round-01/logs/inventory-svc.log:7-90; round-02/logs/checkout-api.log:8-59; round-02/logs/inventory-svc.log:8-74; round-03/logs/checkout-api.log:33-54; round-03/logs/inventory-svc.log:3-41; round-04/logs/checkout-api.log:1-71; round-04/logs/inventory-svc.log:32-75.\\n- Thread B: auth-svc, ongoing (round-03/board.md:3).\\n  - The board suspects DB_POOL_EXHAUSTED.\\n  - Logs show CERT_EXPIRED (tls handshake failed peer=sso.example.net reason=certificate_expired): round-03/logs/auth-svc.log:6-26, round-04/logs/auth-svc.log:6-77.\\n  - New in R4: shipping-svc has the same cert error, round-04/logs/shipping-svc.log:3-66.\\n  - Watch for a board correction.\\n- R4 board had no updates.\\n- Follow-ups: none so far.\\n- Slow-query WARNs are noise.\\n- Notes file: /task/workspace/notes.md.\\n- Next: read the round-05 board, changes and errors, advance through round 11, then give the final answer.\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s14.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.5s\\n--- stdout ---\\n# Incident board: updates in round 05\\n\\n- Thread A status: mitigated (errors reduced after the applied change; monitoring).\\n- Thread B update: affected services now also include shipping-svc; cause and status unchanged.\\n- Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\\n- Follow-up OPEN ALERT_TUNING: tuning of noisy or late alerts.\\n\\n# Change log: round 05\\n\\n- CHG-143 APPLIED: mitigation for thread A deployed to inventory-svc\\n\\nauth-svc.log 11 [2, 8] [64]\\n  2026-09-14T12:00:44Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\\ncheckout-api.log 0 [] []\\n first 2026-09-14T12:03:31Z INFO  checkout-api heartbeat uptime_s=46378\\ninventory-svc.log 0 [] []\\n first 2026-09-14T12:00:03Z INFO  inventory-svc gc cycle pause_ms=37\\nsearch-api.log 0 [] []\\n first 2026-09-14T12:04:38Z INFO  search-api health ok probe=readiness\\nshipping-svc.log 11 [9, 11] [65]\\n  2026-09-14T12:08:01Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s15.act\", \"role\": \"assistant\", \"body\": \"[step 15] execute\\nthought: Save round 5 notes.\\ncode:\\nopen('/task/workspace/notes.md','a').write('\\\\nR5: board.md:3 Thread A mitigated after CHG-143 (round-05/changes.md:3). board.md:4 Thread B adds shipping-svc. board.md:5-6 OPEN VENDOR_TICKET, ALERT_TUNING. CERT errors auth-svc.log:2-64, shipping-svc.log:9-65. checkout/inventory 0 errors.\\\\n')\\nprint('ok')\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s15.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.3s\\n--- stdout ---\\nok\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s16.act\", \"role\": \"assistant\", \"body\": \"[step 16] advance\\nthought: \"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s16.obs\", \"role\": \"observation\", \"body\": \"Stage 6 of 11 released.\\nRound 6 of 11 released. New files are under /task/fixtures/round-06/.\\n\\nNew files:\\n  round-06/board.md (3 lines)\\n  round-06/changes.md (3 lines)\\n  round-06/logs/auth-svc.log (80 lines)\\n  round-06/logs/checkout-api.log (62 lines)\\n  round-06/logs/inventory-svc.log (69 lines)\\n  round-06/logs/search-api.log (64 lines)\\n  round-06/logs/shipping-svc.log (74 lines)\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s17.act\", \"role\": \"assistant\", \"body\": \"[step 17] execute\\nthought: Read round 6 board, changes, and error summary.\\ncode:\\nimport os,re\\nb='/task/fixtures/round-06/'\\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\\nfor f in sorted(os.listdir(b+'logs')):\\n  L=open(b+'logs/'+f).read().splitlines()\\n  e=[(i+1,l) for i,l in enumerate(L) if re.search(r'ERROR|error|level=error|\\\"error\\\"',l) and 'slow' not in l]\\n  print(f,len(e),[x[0] for x in e[:1]],[x[0] for x in e[-1:]])\\n  if e: print('  ',e[0][1][:160])\\n  else: print(' first',L[0][:160])\\n\"}\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "</transcript_to_summarise>\n\nWrite the replacement summary now, at most 1133 characters."
+     }
+    ]
+   }
+  ],
+  "output_config": {
+   "effort": "low"
+  }
+ }
+}

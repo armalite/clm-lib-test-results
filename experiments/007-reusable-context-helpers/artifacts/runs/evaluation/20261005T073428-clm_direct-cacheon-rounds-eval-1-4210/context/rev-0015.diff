@@ -1,0 +1,26 @@
+--- rev-14
++++ rev-15
+@@ -4,22 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "R1: board empty. r01 changes.md:3 CHG-112 APPLIED TLS ticket rotation hourly; :4 CHG-113 APPLIED auth-svc build 4.51.3 sets cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT); :5 CHG-114 shipping-svc 4.51.3 no config. R1 logs: slow query WARN noise; payments lag fluctuating. Services: shipping-svc auth-svc payments-svc ledger-svc search-api.\nR2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc ongoing. changes.md:3 CHG-117 APPLIED TLS rotation hourly. Logs: lag stock-updates fluctuating 20k-88k in payments-svc (3-40) and ledger-svc (5-77), not clearly growing (board may be wrong). No errors elsewhere.\nR3: board empty (no changes). changes.md:3 CHG-124 PROPOSED only. Logs: slow query WARN noise all services; 13 lag lines (not yet checked trend). Next: check r03 lag values then advance."
+-  },
+-  {
+-   "id": "s9.act",
+-   "role": "assistant",
+-   "body": "[step 9] execute\nthought: Compact context: add R3 notes, drop s8 entries.\ncode:\nimport json\np='/task/workspace/context.json'\nd=json.load(open(p))\nn=[e for e in d['entries'] if e['id']=='notes'][0]['body']\nn+=\"\\nR3: board empty (no changes). changes.md:3 CHG-124 PROPOSED only. Logs: slow query WARN noise all services; 13 lag lines (not yet checked trend). Next: check r03 lag values then advance.\"\njson.dump({'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':n}]},open(p,'w'))\nimport re\nfor f in ['payments-svc','ledger-svc']:\n  for i,l in enumerate(open(f'/task/fixtures/round-03/logs/{f}.log'),1):\n    if 'lag' in l:print(f,i,l.strip()[-60:])"
+-  },
+-  {
+-   "id": "s9.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=2.1s\n--- stdout ---\npayments-svc 3 ARN  payments-svc consumer lag topic=stock-updates lag=35416\npayments-svc 15 ARN  payments-svc consumer lag topic=stock-updates lag=20865\npayments-svc 27 ARN  payments-svc consumer lag topic=stock-updates lag=20434\npayments-svc 40 ARN  payments-svc consumer lag topic=stock-updates lag=45784\npayments-svc 42 ARN  payments-svc consumer lag topic=stock-updates lag=61499\npayments-svc 55 ARN  payments-svc consumer lag topic=stock-updates lag=54042\nledger-svc 20  WARN  ledger-svc consumer lag topic=stock-updates lag=40274\nledger-svc 23  WARN  ledger-svc consumer lag topic=stock-updates lag=79900\nledger-svc 25  WARN  ledger-svc consumer lag topic=stock-updates lag=65011\nledger-svc 36  WARN  ledger-svc consumer lag topic=stock-updates lag=82231\nledger-svc 53  WARN  ledger-svc consumer lag topic=stock-updates lag=86793\nledger-svc 59  WARN  ledger-svc consumer lag topic=stock-updates lag=27862\nledger-svc 61  WARN  ledger-svc consumer lag topic=stock-updates lag=82870\n"
+-  },
+-  {
+-   "id": "s9.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 9: revision 12 -> 13; entries 4 -> 1; body chars 6150 -> 797; removed [s8.act, s8.obs, s8.rcpt]; added []; rewritten [notes]"
++   "body": "R1: board empty. r01 changes.md:3 CHG-112 APPLIED TLS ticket rotation hourly; :4 CHG-113 APPLIED auth-svc build 4.51.3 sets cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT); :5 CHG-114 shipping-svc 4.51.3 no config. R1 logs: slow query WARN noise; payments lag fluctuating. Services: shipping-svc auth-svc payments-svc ledger-svc search-api.\nR2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc ongoing. changes.md:3 CHG-117 APPLIED TLS rotation hourly. Logs: lag stock-updates fluctuating 20k-88k in payments-svc (3-40) and ledger-svc (5-77), not clearly growing (board may be wrong). No errors elsewhere.\nR3: board empty (no changes). changes.md:3 CHG-124 PROPOSED only. Logs: slow query WARN noise all services; lag still fluctuating 20k-87k both svcs, not growing (likely false alarm / noise). Next: advance to R4."
+   }
+  ]
+ }

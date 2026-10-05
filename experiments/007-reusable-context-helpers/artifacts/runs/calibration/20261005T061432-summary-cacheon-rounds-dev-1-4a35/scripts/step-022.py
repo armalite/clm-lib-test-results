@@ -1,0 +1,3 @@
+open('/task/workspace/notes.md','a').write('\nR8: A resolved (round-08/board.md:3). B cause UPSTREAM_RATE_LIMIT (round-08/board.md:4). Thread C notify-worker ongoing (round-08/board.md:5), logs round-08/logs/notify-worker.log:5-72 max_inflight=0 -> BAD_CONFIG_ROLLOUT via CHG-120. B refs round-08/logs/payments-svc.log:2-83 (wide), checkout-api.log:1-54.\n')
+for i,l in enumerate(open('/task/fixtures/round-08/logs/notify-worker.log'),1):
+  if 'max_inflight' in l: print(i,l.strip()[:160])

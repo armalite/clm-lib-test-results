@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. changes CHG-112 APPLIED log sampling /v1/health 1% (round-01/changes.md:3). Logs: only routine slow query WARNs all svcs; auth-svc heap usage high rss_mb 2-3.8GB gc pauses (round-01/logs/auth-svc.log:3,40,60) - watch MEMORY_LEAK. No incidents yet.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

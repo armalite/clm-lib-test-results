@@ -1,0 +1,19 @@
+--- rev-25
++++ rev-26
+@@ -30,6 +30,16 @@
+    "id": "s19.obs",
+    "role": "observation",
+    "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/logs/auth-svc.log (66 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (59 lines)\n  round-07/logs/search-api.log (69 lines)\n  round-07/logs/shipping-svc.log (67 lines)"
++  },
++  {
++   "id": "s20.act",
++   "role": "assistant",
++   "body": "[step 20] execute\nthought: Read round 7 board and scan logs for errors.\ncode:\nimport os,re\nb='/task/fixtures/round-07/'\nprint(open(b+'board.md').read())\nfor f in sorted(os.listdir(b+'logs')):\n    L=open(b+'logs/'+f).read().splitlines()\n    e=[i+1 for i,l in enumerate(L) if re.search(r'ERROR|WARN',l)]\n    print(f,len(e),e[:1],e[-1:])\n    if e: print('  ',L[e[0]-1][:220])\n    else: print(' first',L[0][:160])\n"
++  },
++  {
++   "id": "s20.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 07\n\n- Thread B root cause revised: an expired TLS certificate on a dependency (CERT_EXPIRED); this supersedes the earlier suspicion of DB_POOL_EXHAUSTED.\n- Thread D opened: an upstream provider rejecting requests with 429 alerts (UPSTREAM_RATE_LIMIT) on search-api. Status: ongoing.\n\nauth-svc.log 20 [1] [64]\n   {\"ts\":\"2026-09-14T14:00:33Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\ncheckout-api.log 12 [1] [62]\n   {\"ts\":\"2026-09-14T14:00:16Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"slow query\",\"ms\":239,\"table\":\"orders\"}\ninventory-svc.log 15 [1] [59]\n   {\"ts\":\"2026-09-14T14:00:17Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":353,\"table\":\"orders\"}\nsearch-api.log 27 [1] [69]\n   {\"ts\":\"2026-09-14T14:00:18Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":444,\"table\":\"orders\"}\nshipping-svc.log 23 [6] [66]\n   {\"ts\":\"2026-09-14T14:04:04Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"slow query\",\"ms\":429,\"table\":\"orders\"}\n"
+   }
+  ]
+ }

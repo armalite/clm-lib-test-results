@@ -1,0 +1,112 @@
+{
+ "meta": {
+  "kind": "summary",
+  "step": 21,
+  "attempt": 0,
+  "est_input_tokens": 4169,
+  "input_token_bound": 10847,
+  "reserved_usd": 0.136155,
+  "context_revision": 25,
+  "context_sha256": "a9fb5f069382c75f87fbbaecf64a7e56468ae8d1d8da12bf8a550317bea9d83c",
+  "layout": "blocks/1",
+  "cache_ttl": "5m",
+  "prefix": {
+   "family": "summary",
+   "blocks": 11,
+   "system_blocks": 2,
+   "breakpoint_blocks": [
+    2,
+    9
+   ],
+   "previous": true,
+   "common_blocks": 3,
+   "first_changed_block": 3,
+   "common_prefix_chars": 3510
+  },
+  "summary_policy": "token-tail/1",
+  "older_entries": [
+   "sum5",
+   "s17.obs",
+   "s18.act",
+   "s18.obs",
+   "s19.act",
+   "s19.obs",
+   "s20.act"
+  ],
+  "kept_tail": [
+   "s20.obs"
+  ],
+  "summary_attempt": 0,
+  "requested_max_chars": 964,
+  "forced": false
+ },
+ "sha256": "8ba39aa726ead720afba8d98a856fae57be4b83a7a63c6818f3bf87cc2a3cc42",
+ "payload": {
+  "model": "claude-opus-5-5",
+  "max_tokens": 4096,
+  "system": [
+   {
+    "type": "text",
+    "text": "run-ref: f349a8e625dd5ee7e4d9cfdfef42e353\n"
+   },
+   {
+    "type": "text",
+    "text": "You compress an agent's working transcript. The agent is\ninvestigating a multi-service production incident whose evidence arrives in hourly rounds, and will\nkeep working after your summary replaces the entries below. The transcript may include an earlier\nsummary: carry its facts forward. Preserve, exactly and verbatim where relevant:\n- each incident thread: its current cause and any superseded cause, affected services, current\n  status and the record that set it;\n- follow-up items opened and closed, with their codes;\n- early facts that may matter later (change records, builds, configuration values);\n- every file:line reference needed as evidence, and observed log formats;\n- open questions and the next planned steps, including rounds still to be released.\nDrop repetition and raw log dumps. Use compact bullet points. Plain text only. Stay within the\nrequested length; it is set so the agent has room to continue."
+   }
+  ],
+  "messages": [
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "text",
+      "text": "<task>\nProduction incident investigation across several services. Evidence arrives in\n12 hourly rounds. Only round 1 is available now, under /task/fixtures/round-01/.\n\nEach round directory holds:\n- logs/<service>.log: that hour's structured service logs (the log format may change).\n- board.md: the incident board's updates during that hour. An update lists only what\n  changed; anything it does not mention is unchanged. The latest update for a thread wins.\n- changes.md (some rounds): change records. APPLIED changes took effect; PROPOSED did not.\n\nReply {\"action\": \"advance\"} to release the next round. Released rounds never change and stay\nreadable. A final answer is accepted only after all 12 rounds are released.\n\nFinal answer (all fields required):\n  {\"action\": \"final\", \"answer\": {\n     \"incidents\": [{\"cause\": \"<CAUSE_CODE>\", \"services\": [\"<service>\", ...],\n                    \"status\": \"ongoing|mitigated|resolved\",\n                    \"evidence_refs\": [\"round-NN/<file>:<line>\", ...]}, ...],\n     \"unresolved\": [\"<FOLLOW_UP_CODE>\", ...],\n     \"summary\": \"<short free text>\"}}\n- incidents: every real incident at the end of the final round (not false alarms), one entry\n  per incident, with its current cause, all affected services and its current status.\n- evidence_refs: path:line references (relative to /task/fixtures, ranges up to 20 lines as\n  path:a-b) supporting the incident's current cause and current status; when the cause traces\n  back to an earlier change record, cite that record too.\n- unresolved: follow-up items still open at the end of the final round.\n\nCause codes:\n  DB_POOL_EXHAUSTED: database connection pool exhausted\n  CACHE_STAMPEDE: cache miss storm after mass expiry\n  CERT_EXPIRED: an expired TLS certificate on a dependency\n  DNS_RESOLUTION: DNS lookups failing for a dependency\n  QUEUE_BACKLOG: message consumer lag growing\n  MEMORY_LEAK: process memory growing until restarts\n  UPSTREAM_RATE_LIMIT: an upstream provider rejecting requests with 429\n  DISK_PRESSURE: a data volume running out of space\n  BAD_CONFIG_ROLLOUT: a configuration value shipped by a rollout is invalid\nFollow-up codes:\n  CUSTOMER_COMMS: customer communication about the impact\n  DATA_BACKFILL: backfill of records missed during the incident\n  CAPACITY_REVIEW: capacity review of the affected tier\n  ALERT_TUNING: tuning of noisy or late alerts\n  VENDOR_TICKET: a ticket open with an external vendor\n  POSTMORTEM_DRAFT: drafting the postmortem\n  RUNBOOK_UPDATE: updating the runbook\n</task>\n\n<transcript_to_summarise>\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"sum5\", \"role\": \"summary\", \"body\": \"Rounds 1-6 of 12 released; 07-12 still to come via {\\\"action\\\":\\\"advance\\\"}. Notes: /task/workspace/notes.md (R1-5 recorded).\\n\\nLog format:\\n- `2026-09-14THH:MM:SSZ LEVEL \\u003cservice> \\u003cmsg> key=val`\\n- Messages seen: heap usage high rss_mb=; dns lookup failed host= err=; slow query (noise).\\n- Format may change.\\n\\nChanges:\\n- R1 CHG-112: log sampling, benign.\\n- round-02/changes.md:3 CHG-120 APPLIED: inventory-svc 7.30.0, retry.backoff_ms=0. Possible BAD_CONFIG_ROLLOUT.\\n- round-02/changes.md:4 CHG-121 APPLIED: ledger-svc 7.30.0.\\n- R3 CHG-121 (ID reused): GET retry budget=1.\\n- round-04/changes.md:3 CHG-133: benign.\\n- round-04/changes.md:4 CHG-136 APPLIED: Thread A mitigation.\\n\\nThread A: MEMORY_LEAK, auth-svc + payments-svc.\\n- Opened round-02/board.md:3.\\n- Mitigated per round-04/board.md:3.\\n- Heap refs: round-01/logs/auth-svc.log:3,14,32,35,40,46,60,61; round-02/logs/auth-svc.log:5,10,15,18,21,42,53,55,65,70.\\n- No heap warnings in R4 or R5.\\n\\nThread B: ledger-svc, ongoing (round-04/board.md:4).\\n- Board says CACHE_STAMPEDE; logs suggest DNS_RESOLUTION.\\n- SERVFAIL host=rates.internal at round-04/logs/ledger-svc.log:10,28,47,51,52,57,60,63,64,79,83 and round-05/logs/ledger-svc.log:14,19,36,38,40,49.\\n\\nFollow-ups:\\n- CUSTOMER_COMMS: opened round-02/board.md:4, closed round-03/board.md:3.\\n- DATA_BACKFILL: OPEN, round-04/board.md:5.\\n\\nR5 board empty; no changes.md.\\n\\nNext: inspect round-06 board.md (5 lines), changes.md (3 lines) and logs, then continue advancing.\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s17.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.6s\\n--- stdout ---\\nboard.md 1 # Incident board: updates in round 06\\nboard.md 2 \\nboard.md 3 - Thread A status: resolved (no recurrence for two hours).\\nboard.md 4 - Follow-up OPEN ALERT_TUNING: tuning of noisy or late alerts.\\nboard.md 5 - Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\\nchanges.md 1 # Change log: round 06\\nchanges.md 2 \\nchanges.md 3 - CHG-142 APPLIED: retry budget for idempotent GETs set to 1\\nauth-svc.log 0 []\\n first: 2026-09-14T13:00:44Z WARN  auth-svc slow query ms=370 table=orders\\ninventory-svc.log 0 []\\n first: 2026-09-14T13:00:53Z WARN  inventory-svc slow query ms=387 table=orders\\nledger-svc.log 8 [13, 15, 24, 29, 54, 64, 67, 68]\\n  2026-09-14T13:12:51Z ERROR ledger-svc dns lookup failed host=rates.internal err=SERVFAIL\\n first: 2026-09-14T13:00:17Z INFO  ledger-svc heartbeat uptime_s=59521\\npayments-svc.log 0 []\\n first: 2026-09-14T13:00:05Z INFO  payments-svc gc cycle pause_ms=26\\npricing-svc.log 9 [5, 6, 16, 18, 20, 48, 53, 60, 67]\\n  2026-09-14T13:03:55Z ERROR pricing-svc dns lookup failed host=rates.internal err=SERVFAIL\\n first: 2026-09-14T13:00:59Z INFO  pricing-svc heartbeat uptime_s=54220\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s18.act\", \"role\": \"assistant\", \"body\": \"[step 18] execute\\nthought: Record round 6 notes.\\ncode:\\nopen('/task/workspace/notes.md','a').write('\\\\nR6: board.md:3 Thread A RESOLVED. board.md:4 ALERT_TUNING OPEN, board.md:5 RUNBOOK_UPDATE OPEN. changes.md:3 CHG-142 APPLIED GET retry budget 1 (benign). ledger DNS SERVFAIL round-06/logs/ledger-svc.log:13,15,24,29,54,64,67,68; pricing-svc DNS SERVFAIL rates.internal round-06/logs/pricing-svc.log:5,6,16,18,20,48,53,60,67 (pricing now affected by Thread B).\\\\n');print('ok')\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s18.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.7s\\n--- stdout ---\\nok\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s19.act\", \"role\": \"assistant\", \"body\": \"[step 19] advance\\nthought: \"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s19.obs\", \"role\": \"observation\", \"body\": \"Stage 7 of 12 released.\\nRound 7 of 12 released. New files are under /task/fixtures/round-07/.\\n\\nNew files:\\n  round-07/board.md (4 lines)\\n  round-07/changes.md (3 lines)\\n  round-07/logs/auth-svc.log (69 lines)\\n  round-07/logs/inventory-svc.log (70 lines)\\n  round-07/logs/ledger-svc.log (85 lines)\\n  round-07/logs/payments-svc.log (55 lines)\\n  round-07/logs/pricing-svc.log (69 lines)\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s20.act\", \"role\": \"assistant\", \"body\": \"[step 20] execute\\nthought: Inspect round 7.\\ncode:\\nimport os,re\\nb='/task/fixtures/round-07/'\\nfor f in ['board.md','changes.md']:\\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\\nfor f in sorted(os.listdir(b+'logs')):\\n  L=open(b+'logs/'+f).read().splitlines()\\n  hits=[i for i,l in enumerate(L,1) if re.search('ERROR|heap|dns|429|cert|disk|pool|lag',l,re.I) and 'slow query' not in l]\\n  print(f,len(hits),hits[:20])\\n  if hits:print('  ',L[hits[0]-1])\\n  print(' first:',L[0])\"}\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "</transcript_to_summarise>\n\nWrite the replacement summary now, at most 964 characters."
+     }
+    ]
+   }
+  ],
+  "output_config": {
+   "effort": "low"
+  }
+ }
+}

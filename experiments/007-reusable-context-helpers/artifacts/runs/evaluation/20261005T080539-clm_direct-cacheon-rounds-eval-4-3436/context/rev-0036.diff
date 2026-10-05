@@ -1,0 +1,19 @@
+--- rev-35
++++ rev-36
+@@ -65,6 +65,16 @@
+    "id": "s25.obs",
+    "role": "observation",
+    "body": "Stage 9 of 11 released.\nRound 9 of 11 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (5 lines)\n  round-09/changes.md (3 lines)\n  round-09/logs/auth-svc.log (66 lines)\n  round-09/logs/inventory-svc.log (65 lines)\n  round-09/logs/notify-worker.log (64 lines)\n  round-09/logs/search-api.log (69 lines)\n  round-09/logs/shipping-svc.log (79 lines)"
++  },
++  {
++   "id": "s26.act",
++   "role": "assistant",
++   "body": "[step 26] execute\nthought: Inspect round 9 board, changes, and key log lines.\ncode:\nimport re\nb='/task/fixtures/round-09/'\nfor f in ['board.md','changes.md']:\n    for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nimport os\nfor f in sorted(os.listdir(b+'logs')):\n    n=0\n    for i,l in enumerate(open(b+'logs/'+f),1):\n        if re.search(r'WARN|ERROR|429|pool|ttl|leak|memory',l,re.I) and 'slow query' not in l:\n            n+=1\n            if n<=4:print(f,i,l.rstrip()[:150])\n    print(f,'hits',n)"
++  },
++  {
++   "id": "s26.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 09\nboard.md 2 \nboard.md 3 - Thread C note: failing pods still restarting; investigation continues.\nboard.md 4 - Follow-up OPEN DATA_BACKFILL: backfill of records missed during the incident.\nboard.md 5 - Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\nchanges.md 1 # Change log: round 09\nchanges.md 2 \nchanges.md 3 - CHG-163 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc.log 1 {\"ts\":\"2026-09-14T16:00:17Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":9}\nauth-svc.log 6 {\"ts\":\"2026-09-14T16:03:07Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":57}\nauth-svc.log hits 2\ninventory-svc.log hits 0\nnotify-worker.log hits 0\nsearch-api.log 1 {\"ts\":\"2026-09-14T16:01:40Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"8.23.7\"}\nsearch-api.log 4 {\"ts\":\"2026-09-14T16:04:49Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"8.23.7\"}\nsearch-api.log 12 {\"ts\":\"2026-09-14T16:08:26Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"8.23.7\"}\nsearch-api.log 13 {\"ts\":\"2026-09-14T16:09:04Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"8.23.7\"}\nsearch-api.log hits 10\nshipping-svc.log 43 {\"ts\":\"2026-09-14T16:31:06Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":56}\nshipping-svc.log 59 {\"ts\":\"2026-09-14T16:42:32Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":29}\nshipping-svc.log hits 2\n"
+   }
+  ]
+ }

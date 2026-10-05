@@ -1,0 +1,49 @@
+{
+ "number": 27,
+ "parent": 26,
+ "source": "spill",
+ "step": 21,
+ "sha256": "0a9214b1d78b1df023b8ffcc2f054b9f67e09e4f29409e9e70341bb68592d1a2",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: CHG-107 APPLIED retry budget GETs=1 (round-01/changes.md:3). slow query WARNs = noise. inventory-svc DNS SERVFAIL host=rates.internal round-01/logs/inventory-svc.log:7,20.\nR2: board Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing (round-02/board.md:3). CHG-120 APPLIED search-api http.max_inflight=-1 (round-02/changes.md:3) watch BAD_CONFIG (no search errs seen R2). CHG-121 auth no config. checkout DNS errs round-02/logs/checkout-api.log:8,24; inventory round-02/logs/inventory-svc.log:8,12.\nR3: board Thread B auth-svc DB_POOL_EXHAUSTED ongoing (round-03/board.md:3) BUT logs show CERT_EXPIRED peer=sso.example.net round-03/logs/auth-svc.log:6,9,15..72. DNS continues checkout round-03/logs/checkout-api.log:33,74; inventory round-03/logs/inventory-svc.log:3,50. CHG-126 PROPOSED only.\nR4: board empty (no changes). CERT_EXPIRED sso.example.net now also shipping-svc round-04/logs/shipping-svc.log:3,20,66; auth round-04/logs/auth-svc.log:6,77. DNS continues checkout round-04/logs/checkout-api.log:1,71; inventory round-04/logs/inventory-svc.log:32,75. No search errs.\nR5: Thread A mitigated round-05/board.md:3 after CHG-143 APPLIED inventory-svc (round-05/changes.md:3); no DNS errs R5. Thread B adds shipping-svc (round-05/board.md:4). Follow-ups OPEN VENDOR_TICKET (board:5), ALERT_TUNING (board:6). CERT errs auth round-05/logs/auth-svc.log:2,8; shipping round-05/logs/shipping-svc.log:9,11.\nR6: board adds Follow-up OPEN RUNBOOK_UPDATE (round-06/board.md:3). CHG-144 APPLIED log sampling (noise). CERT continues auth round-06/logs/auth-svc.log:4,79; shipping round-06/logs/shipping-svc.log:1,64. No DNS/search errs. Next: advance to R7."
+  },
+  {
+   "id": "s18.act",
+   "role": "assistant",
+   "body": "[step 18] execute\nthought: Save R6 findings and compress.\ncode:\nimport json\nd=json.load(open('/task/workspace/context.json'))\nn=[e for e in d['entries'] if e['id']=='n1'][0]['body']\nn=n.replace(' Next: advance to R6.','')\nn+='\\nR6: board adds Follow-up OPEN RUNBOOK_UPDATE (round-06/board.md:3). CHG-144 APPLIED log sampling (noise). CERT continues auth round-06/logs/auth-svc.log:4,79; shipping round-06/logs/shipping-svc.log:1,64. No DNS/search errs. Next: advance to R7.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s18.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s"
+  },
+  {
+   "id": "s18.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 18: revision 22 -> 23; entries 8 -> 1; body chars 6145 -> 1662; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs, s17.act, s17.obs]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s19.act",
+   "role": "assistant",
+   "body": "[step 19] advance\nthought: "
+  },
+  {
+   "id": "s19.obs",
+   "role": "observation",
+   "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/logs/auth-svc.log (66 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (59 lines)\n  round-07/logs/search-api.log (69 lines)\n  round-07/logs/shipping-svc.log (67 lines)"
+  },
+  {
+   "id": "s20.act",
+   "role": "assistant",
+   "body": "[step 20] execute\nthought: Inspect R7 board and error lines.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-07/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n    for i,l in enumerate(open(f),1):\n        if re.search(r'ERROR|error|FATAL|SERVFAIL|cert|429|invalid',l,re.I):\n            print(f.split('/')[-1],i,l.strip()[:150])"
+  },
+  {
+   "id": "s20.obs",
+   "role": "observation",
+   "body": "[runtime: observation of 5569 chars moved to /task/workspace/spill/s20.obs.txt because the request exceeded the hard limit]"
+  }
+ ]
+}

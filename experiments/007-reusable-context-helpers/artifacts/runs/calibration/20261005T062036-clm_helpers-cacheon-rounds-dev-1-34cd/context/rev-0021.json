@@ -1,0 +1,29 @@
+{
+ "number": 21,
+ "parent": 20,
+ "source": "runtime",
+ "step": 14,
+ "sha256": "57467ecf526a0e78753762fee068aab27c922ccdb5a2905edb0f86da19f1df87",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: nothing; CHG-108 PROPOSED (search HPA) not applied. R2: auth-svc db pool exhausted WARNs (round-02/logs/auth-svc.log:1,3,15,22,23,25). CHG-120 APPLIED notify-worker http.max_inflight=0 (round-02/changes.md:4, possible BAD_CONFIG_ROLLOUT; no notify errors R3). Board R2 follow-ups OPEN: ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET. R3: board Thread A DB_POOL_EXHAUSTED auth-svc+search-api ongoing (round-03/board.md:3); pool WARNs auth-svc.log:7,12,13,15; search-api.log:1,14. R4: board Thread B payments-svc CACHE_STAMPEDE ongoing (round-04/board.md:3) but logs show 429 upstream=fx-rates in payments-svc (1,3,7) and checkout-api (9,19) -> likely UPSTREAM_RATE_LIMIT. pool still: auth-svc.log:7,9; search-api.log:4,11. CHG-133 TLS tickets APPLIED (round-04/changes.md:3) irrelevant? R5: board A mitigated (round-05/board.md:3) after CHG-143 APPLIED auth-svc (round-05/changes.md:4). Board B adds checkout-api (board.md:4). 429 fx-rates payments-svc.log:13,19; checkout-api.log:21,23,30. Follow-up OPEN CAPACITY_REVIEW (board.md:5). CHG-138 TLS irrelevant."
+  },
+  {
+   "id": "s14.act",
+   "role": "assistant",
+   "body": "[step 14] execute\nthought: Record R5 findings in note, drop step entries, check pool in R5 quickly.\ncode:\nimport json,re\nb='/task/fixtures/round-05/logs/'\nfor f in ['auth-svc.log','search-api.log']:\n  L=open(b+f).read().splitlines()\n  print(f,[i for i,l in enumerate(L,1) if re.search('pool',l)])\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='n1'][0]\nn['body']+=\" R5: board A mitigated (round-05/board.md:3) after CHG-143 APPLIED auth-svc (round-05/changes.md:4). Board B adds checkout-api (board.md:4). 429 fx-rates payments-svc.log:13,19; checkout-api.log:21,23,30. Follow-up OPEN CAPACITY_REVIEW (board.md:5). CHG-138 TLS irrelevant.\"\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s14.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nauth-svc.log []\nsearch-api.log []\n"
+  },
+  {
+   "id": "s14.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 14: revision 19 -> 20; entries 4 -> 1; body chars 4437 -> 1059; removed [s13.act, s13.obs, s13.rcpt]; added []; rewritten [n1]"
+  }
+ ]
+}

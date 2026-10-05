@@ -1,0 +1,2 @@
+import ctx
+ctx.reset('R1: changes.md:3 CHG-113 APPLIED search-api cache.ttl_s=-1 (BAD_CONFIG candidate); CHG-114 auth-svc no cfg; CHG-107 PROPOSED. slow query WARNs = noise. ctx.py has load/save/reset(notes).\nR2: board.md:3 Thread A DB_POOL_EXHAUSTED inventory-svc + notify-worker, ongoing. pool WARNs round-02/logs/inventory-svc.log:3-78, notify-worker.log:6-57. No other WARN/ERROR in r2.')

@@ -1,0 +1,1 @@
+open('/task/workspace/notes.md','a').write('R2: board Thread A DB_POOL_EXHAUSTED inventory-svc + notify-worker ongoing (round-02/board.md:3). inv pool warns r2 lines 3-78; notify pool warns r2 lines 6-57. search-api no warns r2.\n');print('ok')

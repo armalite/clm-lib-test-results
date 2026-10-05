@@ -1,0 +1,19 @@
+--- rev-18
++++ rev-19
+@@ -55,6 +55,16 @@
+    "id": "s15.obs",
+    "role": "observation",
+    "body": "Stage 6 of 11 released.\nRound 6 of 11 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (3 lines)\n  round-06/logs/auth-svc.log (72 lines)\n  round-06/logs/ledger-svc.log (69 lines)\n  round-06/logs/payments-svc.log (71 lines)\n  round-06/logs/search-api.log (74 lines)\n  round-06/logs/shipping-svc.log (86 lines)"
++  },
++  {
++   "id": "s16.act",
++   "role": "assistant",
++   "body": "[step 16] execute\nthought: Read round 6 compactly.\ncode:\nimport os,glob\nfrom collections import Counter\nfor f in ['board.md']:\n  for i,l in enumerate(open('/task/fixtures/round-06/'+f),1):\n    if l.strip(): print(f,i,l.rstrip()[:200])\nfor f in sorted(glob.glob('/task/fixtures/round-06/logs/*.log')):\n  c=Counter();n=0;cl=[]\n  for i,l in enumerate(open(f),1):\n    if 'INFO' in l or 'slow query' in l: continue\n    if 'consumer lag' in l: c['lag']+=1; continue\n    if 'certificate_expired' in l: c['cert']+=1; cl.append(i); continue\n    n+=1\n    if n<=4: print(os.path.basename(f),i,l.rstrip()[:150])\n  print(os.path.basename(f),dict(c),cl[:8],'other',n)"
++  },
++  {
++   "id": "s16.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 3 - Thread B update: affected services now also include search-api; cause and status unchanged.\nauth-svc.log {} [] other 0\nledger-svc.log {} [] other 0\npayments-svc.log {} [] other 0\nsearch-api.log {'cert': 8} [11, 14, 25, 26, 35, 51, 54, 63] other 0\nshipping-svc.log {'cert': 8} [4, 35, 40, 45, 51, 57, 62, 78] other 0\n"
+   }
+  ]
+ }

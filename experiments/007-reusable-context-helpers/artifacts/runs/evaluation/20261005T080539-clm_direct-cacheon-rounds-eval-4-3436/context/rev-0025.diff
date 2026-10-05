@@ -1,0 +1,45 @@
+--- rev-24
++++ rev-25
+@@ -27,39 +27,9 @@
+    "body": "R5: board.md:3 Thread A mitigated (CHG-143 APPLIED round-05/changes.md:4 mitigation inventory-svc). board.md:4 Thread B services +shipping-svc, cause MEMORY_LEAK unchanged (logs show 429 tax-provider, not memory). board.md:5 Thread D false alarm. CHG-137 TLS ticket rotation. 429 auth-svc.log:1,2,13,33,35,53; shipping-svc.log:9,16,18,23,27,28. No pool WARNs in r5. Next: advance."
+   },
+   {
+-   "id": "s15.act",
+-   "role": "assistant",
+-   "body": "[step 15] execute\nthought: Save R5 note, compress, then advance next step.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4')]\nc['entries'].append({'id':'n5','role':'note','body':'R5: board.md:3 Thread A mitigated (CHG-143 APPLIED round-05/changes.md:4 mitigation inventory-svc). board.md:4 Thread B services +shipping-svc, cause MEMORY_LEAK unchanged (logs show 429 tax-provider, not memory). board.md:5 Thread D false alarm. CHG-137 TLS ticket rotation. 429 auth-svc.log:1,2,13,33,35,53; shipping-svc.log:9,16,18,23,27,28. No pool WARNs in r5. Next: advance.'})\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s15.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s"
+-  },
+-  {
+-   "id": "s15.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 15: revision 20 -> 21; entries 7 -> 5; body chars 3779 -> 1476; removed [s14.act, s14.obs, s14.rcpt]; added [n5]; rewritten []"
+-  },
+-  {
+-   "id": "s16.act",
+-   "role": "assistant",
+-   "body": "[step 16] advance\nthought: "
+-  },
+-  {
+-   "id": "s16.obs",
+-   "role": "observation",
+-   "body": "Stage 6 of 11 released.\nRound 6 of 11 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (2 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/auth-svc.log (91 lines)\n  round-06/logs/inventory-svc.log (76 lines)\n  round-06/logs/notify-worker.log (71 lines)\n  round-06/logs/search-api.log (56 lines)\n  round-06/logs/shipping-svc.log (88 lines)"
+-  },
+-  {
+-   "id": "s17.act",
+-   "role": "assistant",
+-   "body": "[step 17] execute\nthought: Inspect round 6 board, changes, and key log signals.\ncode:\nimport re,glob\nb='/task/fixtures/round-06/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob(b+'logs/*.log')):\n  for i,l in enumerate(open(f),1):\n    if re.search(r'WARN|ERROR|429|pool|memory|oom|cert|dns|disk|lag|ttl|miss',l,re.I) and not re.search('slow query',l,re.I):print(f.split('/')[-1],i,l.rstrip()[:150])"
+-  },
+-  {
+-   "id": "s17.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 2 \nchanges.md 1 # Change log: round 06\nchanges.md 2 \nchanges.md 3 - CHG-142 PROPOSED: raise HPA max replicas for search tier (not applied)\nauth-svc.log 8 2026-09-14T13:05:19Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=32\nauth-svc.log 23 2026-09-14T13:16:02Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=29\nauth-svc.log 34 2026-09-14T13:23:06Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=14\nauth-svc.log 36 2026-09-14T13:24:38Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=16\nauth-svc.log 41 2026-09-14T13:28:59Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=30\nauth-svc.log 45 2026-09-14T13:30:29Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=44\nauth-svc.log 61 2026-09-14T13:38:58Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=25\nauth-svc.log 68 2026-09-14T13:41:20Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=56\nauth-svc.log 70 2026-09-14T13:42:04Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=14\nauth-svc.log 71 2026-09-14T13:42:20Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=6\nauth-svc.log 79 2026-09-14T13:48:23Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=59\nauth-svc.log 86 2026-09-14T13:55:00Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=55\nauth-svc.log 88 2026-09-14T13:55:40Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=12\nshipping-svc.log 11 2026-09-14T13:04:37Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=24\nshipping-svc.log 23 2026-09-14T13:15:04Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=15\nshipping-svc.log 27 2026-09-14T13:15:52Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=31\nshipping-svc.log 29 2026-09-14T13:17:43Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=12\nshipping-svc.log 32 2026-09-14T13:19:00Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=43\nshipping-svc.log 46 2026-09-14T13:30:37Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=52\nshipping-svc.log 47 2026-09-14T13:30:43Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=6\nshipping-svc.log 58 2026-09-14T13:38:11Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=58\nshipping-svc.log 62 2026-09-14T13:40:16Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=41\nshipping-svc.log 67 2026-09-14T13:44:02Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=38\nshipping-svc.log 78 2026-09-14T13:52:51Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=28\nshipping-svc.log 83 2026-09-14T13:55:04Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=53\nshipping-svc.log 88 2026-09-14T13:59:27Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=39\n"
++   "id": "n6",
++   "role": "note",
++   "body": "R6: board empty (no changes). CHG-142 PROPOSED only. 429 tax-provider continues auth-svc.log:8,23,34,88; shipping-svc.log:11,23,27,88. No pool/other WARNs. Next: advance."
+   }
+  ]
+ }

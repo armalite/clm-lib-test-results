@@ -1,0 +1,19 @@
+--- rev-7
++++ rev-8
+@@ -5,6 +5,16 @@
+    "id": "sum2",
+    "role": "summary",
+    "body": "Summary of work so far (rounds 1-2 of 10 released; rounds 3-10 still to be released):\n\nLog format (may change in later rounds): `2026-09-14THH:MM:SSZ LEVEL  <service> <message> key=val ...`\n- Examples: `INFO  auth-svc heartbeat uptime_s=N`, `INFO  <svc> request ok route=... status=200 ms=N`, `INFO  <svc> health ok probe=readiness`, `WARN  <svc> slow query ms=NNN table=events|orders|items`, `INFO  <svc> gc cycle pause_ms=N`.\n- Baseline noise: slow query WARNs (ms about 200-445) and gc cycle INFO lines appear in every service. They are not incidents.\n\nRound 1 (/task/fixtures/round-01/):\n- board.md was empty.\n- changes.md: CHG-108 PROPOSED, raise HPA max replicas for search tier. Not applied, so no effect.\n- Logs showed only noise.\n\nRound 2 (/task/fixtures/round-02/):\n- board.md opened three follow-ups. No incident threads exist yet.\n  - Follow-up OPEN ALERT_TUNING (board.md:3)\n  - Follow-up OPEN RUNBOOK_UPDATE (board.md:4)\n  - Follow-up OPEN VENDOR_TICKET (board.md:5)\n- changes.md:\n  - CHG-116 APPLIED: log sampling for /v1/health reduced to 1% (changes.md:3). This may explain fewer health lines.\n  - CHG-120 APPLIED: build 8.56.0 rolled out to notify-worker; sets `http.max_inflight=0` (changes.md:4). This is a suspicious invalid value and a likely future BAD_CONFIG_ROLLOUT on notify-worker. Watch for it.\n  - CHG-121 APPLIED: build 8.56.0 rolled out to payments-svc; no config changes (changes.md:5).\n- auth-svc shows a new signal: `WARN  auth-svc db pool exhausted wait_ms=N in_use=X/X`.\n  - Lines: round-02/logs/auth-svc.log:1, 3, 15, 22, 23, 25, 44, 65, 69.\n  - wait_ms ranges 807-2877; in_use varies 10/10, 12/12, 16/16, 20/20.\n  - This is a candidate DB_POOL_EXHAUSTED incident on auth-svc, not yet on the board.\n- Other services in round 2: no new error patterns were seen in the scanned output.\n  - The output was truncated after search-api.log line 39.\n  - Still need to check the rest of search-api.log (lines 39-70) for non-noise lines, excluding gc/slow query/ok/heartbeat.\n  - notify-worker showed no errors yet despite CHG-120.\n\nCurrent state:\n- Incident threads: none on the board. Candidate: auth-svc DB_POOL_EXHAUSTED.\n- Open follow-ups: ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET.\n- Closed follow-ups: none.\n\nNotes file: /task/workspace/notes.md has R1 notes. Append R2 notes.\n\nNext steps:\n1. Finish scanning round-02 search-api.log from line 39 on, filtering out gc cycle lines too.\n2. Advance to round 3.\n3. In each round, read board.md (deltas; the latest update for a thread wins) and changes.md (only APPLIED changes count).\n4. Scan logs for new patterns or format changes.\n5. Track per incident: cause, any superseded cause, services, status with its setting record, follow-ups and file:line evidence. Cite the change record when a cause traces back to one (e.g. round-02/changes.md:4 for CHG-120).\n6. Give the final answer only after round 10 is released."
++  },
++  {
++   "id": "s6.act",
++   "role": "assistant",
++   "body": "[step 6] execute\nthought: Finish scanning round-02 search-api and append notes.\ncode:\nimport re\nfor i,l in enumerate(open('/task/fixtures/round-02/logs/search-api.log'),1):\n    if i>=39 and not re.search(r'gc cycle|slow query|request ok|heartbeat|health ok',l): print(i,l.rstrip())\nopen('/task/workspace/notes.md','a').write('\\nR2: follow-ups OPEN ALERT_TUNING(b:3),RUNBOOK_UPDATE(b:4),VENDOR_TICKET(b:5). CHG-120 APPLIED notify-worker max_inflight=0 (changes.md:4). auth-svc db pool exhausted lines 1,3,15,22,23,25,44,65,69.\\n')"
++  },
++  {
++   "id": "s6.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s"
+   }
+  ]
+ }

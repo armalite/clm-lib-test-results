@@ -1,0 +1,4 @@
+import json
+n=json.load(open('/task/workspace/context.json'))['entries'][:4]
+n.append({'id':'n5','role':'note','body':'R5: board.md:3 Thread A mitigated (after CHG-143 changes.md:4 APPLIED inventory-svc mitigation). board.md:4 Thread B +shipping-svc (cause MEMORY_LEAK per board, logs show 429 tax-provider). board.md:5 Thread D closed false alarm. changes.md:3 CHG-137 TLS ticket rotation. 429 lines auth-svc.log 1,2,13,33,35,53,60; shipping-svc.log 9,16,18,23,27,28,30,45,52,62,63,76,77. no pool WARN in R5. Next: advance R6.'})
+json.dump({'format':'clm-context/v1','entries':n},open('/task/workspace/context.json','w'))

@@ -1,0 +1,19 @@
+--- rev-25
++++ rev-26
+@@ -40,6 +40,16 @@
+    "id": "s19.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.2s\n--- stdout ---\n1 # Incident board: updates in round 07\n2 \n3 - Thread B root cause revised: an expired TLS certificate on a dependency (CERT_EXPIRED); this supersedes the earlier suspicion of DB_POOL_EXHAUSTED.\n4 - Thread D opened: an upstream provider rejecting requests with 429 alerts (UPSTREAM_RATE_LIMIT) on search-api. Status: ongoing.\nauth-svc.log 10 [1, 16, 24, 26, 32, 36, 38, 49, 53, 64]\n   {\"ts\":\"2026-09-14T14:00:33Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\ncheckout-api.log 0 []\ninventory-svc.log 0 []\nsearch-api.log 8 [4, 5, 20, 22, 25, 47, 64, 66]\n   {\"ts\":\"2026-09-14T14:04:44Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":16}\nshipping-svc.log 12 [10, 11, 23, 26, 35, 39, 43, 45, 46, 49, 59, 66]\n   {\"ts\":\"2026-09-14T14:07:47Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n"
++  },
++  {
++   "id": "s20.act",
++   "role": "assistant",
++   "body": "[step 20] execute\nthought: Save R7 notes, check search-api msgs variety.\ncode:\nimport collections\nL=open('/task/fixtures/round-07/logs/search-api.log').read().splitlines()\nc=collections.Counter()\nfor l in L:\n    if '\"ERROR\"' in l or '\"WARN\"' in l: c[l.split('\"msg\":')[1][:40]]+=1\nprint(c)\nopen('/task/workspace/notes.md','a').write('R7: board.md:3 ThreadB cause->CERT_EXPIRED. board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing (429 tax-provider). search lines 4,5,20,22,25,47,64,66. auth 1,16,24,26,32,36,38,49,53,64. shipping 10,11,23,26,35,39,43,45,46,49,59,66.\\n');print('ok')"
++  },
++  {
++   "id": "s20.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nCounter({'\"upstream returned 429\",\"upstream\":\"tax-': 8, '\"slow query\",\"ms\":444,\"table\":\"orders\"}': 1, '\"slow query\",\"ms\":238,\"table\":\"orders\"}': 1, '\"slow query\",\"ms\":262,\"table\":\"events\"}': 1, '\"slow query\",\"ms\":390,\"table\":\"items\"}': 1, '\"slow query\",\"ms\":440,\"table\":\"orders\"}': 1, '\"slow query\",\"ms\":443,\"table\":\"orders\"}': 1, '\"slow query\",\"ms\":416,\"table\":\"items\"}': 1, '\"slow query\",\"ms\":446,\"table\":\"events\"}': 1, '\"slow query\",\"ms\":428,\"table\":\"events\"}': 1, '\"slow query\",\"ms\":247,\"table\":\"items\"}': 1, '\"slow query\",\"ms\":227,\"table\":\"orders\"}': 1, '\"slow query\",\"ms\":327,\"table\":\"events\"}': 1, '\"slow query\",\"ms\":227,\"table\":\"items\"}': 1, '\"slow query\",\"ms\":433,\"table\":\"items\"}': 1, '\"slow query\",\"ms\":339,\"table\":\"events\"}': 1, '\"slow query\",\"ms\":248,\"table\":\"orders\"}': 1, '\"slow query\",\"ms\":267,\"table\":\"items\"}': 1, '\"slow query\",\"ms\":332,\"table\":\"events\"}': 1, '\"slow query\",\"ms\":429,\"table\":\"orders\"}': 1})\nok\n"
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-16
++++ rev-17
+@@ -30,6 +30,16 @@
+    "id": "s12.obs",
+    "role": "observation",
+    "body": "Stage 5 of 12 released.\nRound 5 of 12 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (2 lines)\n  round-05/logs/auth-svc.log (66 lines)\n  round-05/logs/inventory-svc.log (55 lines)\n  round-05/logs/ledger-svc.log (63 lines)\n  round-05/logs/payments-svc.log (70 lines)\n  round-05/logs/pricing-svc.log (74 lines)"
++  },
++  {
++   "id": "s13.act",
++   "role": "assistant",
++   "body": "[step 13] execute\nthought: Read R5 board and error lines compactly.\ncode:\nimport os,re\nb='/task/fixtures/round-05/'\nfor i,l in enumerate(open(b+'board.md'),1):print('board',i,l.rstrip())\nfor f in sorted(os.listdir(b+'logs')):\n  L=open(b+'logs/'+f).read().splitlines()\n  print(f,'first:',L[0][:90])\n  c={}\n  for i,l in enumerate(L,1):\n    if ('ERROR' in l or 'WARN' in l or 'heap' in l) and 'slow query' not in l:\n      k=re.sub(r'\\d+','#',l[21:])[:70];c.setdefault(k,[]).append(i)\n  for k,v in c.items():print(' ',k,v[:3],v[-1],len(v))"
++  },
++  {
++   "id": "s13.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.1s\n--- stdout ---\nboard 1 # Incident board: updates in round 05\nboard 2 \nauth-svc.log first: 2026-09-14T12:00:12Z INFO  auth-svc health ok probe=readiness\ninventory-svc.log first: 2026-09-14T12:01:57Z WARN  inventory-svc slow query ms=203 table=items\nledger-svc.log first: 2026-09-14T12:00:47Z INFO  ledger-svc gc cycle pause_ms=30\n  ERROR ledger-svc dns lookup failed host=rates.internal err=SERVFAIL [14, 19, 36] 49 6\npayments-svc.log first: 2026-09-14T12:01:11Z INFO  payments-svc request ok route=/v1/quote status=200 ms=64\npricing-svc.log first: 2026-09-14T12:00:42Z WARN  pricing-svc slow query ms=303 table=items\n"
+   }
+  ]
+ }

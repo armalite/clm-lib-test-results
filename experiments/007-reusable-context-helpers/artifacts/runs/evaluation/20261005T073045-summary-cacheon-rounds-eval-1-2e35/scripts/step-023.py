@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('\nR8: Thread A RESOLVED round-08/board.md:3. Thread B cause CERT_EXPIRED round-08/board.md:4 (shipping-svc,search-api; cert lines search-api:2,22,25 shipping:4,11,19). Thread C auth-svc ongoing round-08/board.md:5, logs JSON format; config validation failed cache.ttl_s=-1 round-08/logs/auth-svc.log:14,16,18,21 -> BAD_CONFIG_ROLLOUT from CHG-113 round-01/changes.md:4. Follow-up OPEN ALERT_TUNING round-08/board.md:6.\n')
+print('ok')

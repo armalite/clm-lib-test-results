@@ -1,0 +1,94 @@
+{
+ "meta": {
+  "kind": "summary",
+  "step": 14,
+  "attempt": 0,
+  "est_input_tokens": 4077,
+  "input_token_bound": 10739,
+  "reserved_usd": 0.135615,
+  "context_revision": 17,
+  "context_sha256": "6fec5abef7d89de4a543a7a6d7674b40e54cdf15cf6a159a94c397a666d790a9",
+  "layout": "blocks/1",
+  "cache_ttl": "5m",
+  "prefix": {
+   "family": "summary",
+   "blocks": 7,
+   "system_blocks": 2,
+   "breakpoint_blocks": [
+    2,
+    5
+   ],
+   "previous": true,
+   "common_blocks": 3,
+   "first_changed_block": 3,
+   "common_prefix_chars": 3510
+  },
+  "summary_policy": "token-tail/1",
+  "older_entries": [
+   "sum4",
+   "s11.obs",
+   "s12.act"
+  ],
+  "kept_tail": [
+   "s12.obs",
+   "s13.act",
+   "s13.obs"
+  ],
+  "summary_attempt": 0,
+  "requested_max_chars": 1057,
+  "forced": false
+ },
+ "sha256": "157e6faf02899b17085b76bb28cd6a664c389f68b0c93743be951527ea774526",
+ "payload": {
+  "model": "claude-opus-5-5",
+  "max_tokens": 4096,
+  "system": [
+   {
+    "type": "text",
+    "text": "run-ref: 7e9f3848d5f47cbe24368c1a7c1e7c61\n"
+   },
+   {
+    "type": "text",
+    "text": "You compress an agent's working transcript. The agent is\ninvestigating a multi-service production incident whose evidence arrives in hourly rounds, and will\nkeep working after your summary replaces the entries below. The transcript may include an earlier\nsummary: carry its facts forward. Preserve, exactly and verbatim where relevant:\n- each incident thread: its current cause and any superseded cause, affected services, current\n  status and the record that set it;\n- follow-up items opened and closed, with their codes;\n- early facts that may matter later (change records, builds, configuration values);\n- every file:line reference needed as evidence, and observed log formats;\n- open questions and the next planned steps, including rounds still to be released.\nDrop repetition and raw log dumps. Use compact bullet points. Plain text only. Stay within the\nrequested length; it is set so the agent has room to continue."
+   }
+  ],
+  "messages": [
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "text",
+      "text": "<task>\nProduction incident investigation across several services. Evidence arrives in\n10 hourly rounds. Only round 1 is available now, under /task/fixtures/round-01/.\n\nEach round directory holds:\n- logs/<service>.log: that hour's structured service logs (the log format may change).\n- board.md: the incident board's updates during that hour. An update lists only what\n  changed; anything it does not mention is unchanged. The latest update for a thread wins.\n- changes.md (some rounds): change records. APPLIED changes took effect; PROPOSED did not.\n\nReply {\"action\": \"advance\"} to release the next round. Released rounds never change and stay\nreadable. A final answer is accepted only after all 10 rounds are released.\n\nFinal answer (all fields required):\n  {\"action\": \"final\", \"answer\": {\n     \"incidents\": [{\"cause\": \"<CAUSE_CODE>\", \"services\": [\"<service>\", ...],\n                    \"status\": \"ongoing|mitigated|resolved\",\n                    \"evidence_refs\": [\"round-NN/<file>:<line>\", ...]}, ...],\n     \"unresolved\": [\"<FOLLOW_UP_CODE>\", ...],\n     \"summary\": \"<short free text>\"}}\n- incidents: every real incident at the end of the final round (not false alarms), one entry\n  per incident, with its current cause, all affected services and its current status.\n- evidence_refs: path:line references (relative to /task/fixtures, ranges up to 20 lines as\n  path:a-b) supporting the incident's current cause and current status; when the cause traces\n  back to an earlier change record, cite that record too.\n- unresolved: follow-up items still open at the end of the final round.\n\nCause codes:\n  DB_POOL_EXHAUSTED: database connection pool exhausted\n  CACHE_STAMPEDE: cache miss storm after mass expiry\n  CERT_EXPIRED: an expired TLS certificate on a dependency\n  DNS_RESOLUTION: DNS lookups failing for a dependency\n  QUEUE_BACKLOG: message consumer lag growing\n  MEMORY_LEAK: process memory growing until restarts\n  UPSTREAM_RATE_LIMIT: an upstream provider rejecting requests with 429\n  DISK_PRESSURE: a data volume running out of space\n  BAD_CONFIG_ROLLOUT: a configuration value shipped by a rollout is invalid\nFollow-up codes:\n  CUSTOMER_COMMS: customer communication about the impact\n  DATA_BACKFILL: backfill of records missed during the incident\n  CAPACITY_REVIEW: capacity review of the affected tier\n  ALERT_TUNING: tuning of noisy or late alerts\n  VENDOR_TICKET: a ticket open with an external vendor\n  POSTMORTEM_DRAFT: drafting the postmortem\n  RUNBOOK_UPDATE: updating the runbook\n</task>\n\n<transcript_to_summarise>\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"sum4\", \"role\": \"summary\", \"body\": \"Progress: rounds 1-4 of 10 released. Rounds 1-3 analysed. Round 4 has been released and a scan has been run, but its output is not yet seen. Round 4 files: board.md (8 lines), changes.md (4), and logs for checkout-api, inventory-svc, ledger-svc, payments-svc and search-api.\\n\\nLog format: \\\"2026-09-14T08:03:34Z WARN  checkout-api slow query ms=269 table=orders\\\". The format may change.\\n\\nChanges:\\n- CHG-109 PROPOSED: search HPA max replicas.\\n- CHG-113 APPLIED: build 4.16.4 to search-api, sets http.max_inflight=-1 (round-01/changes.md:4). Possible future BAD_CONFIG_ROLLOUT.\\n- CHG-114 APPLIED: build 4.16.4 to checkout-api, no config change.\\n- CHG-117 PROPOSED (round 2): batch jobs to off-peak.\\n- CHG-125 APPLIED (round 3): retry budget for idempotent GETs set to 1 (round-03/changes.md:3).\\n\\nThread A: CERT_EXPIRED, affecting ledger-svc and inventory-svc. Status ongoing, set by round-02/board.md:3.\\n- Error format: \\\"ERROR \\u003csvc> tls handshake failed peer=sso.example.net reason=certificate_expired\\\".\\n- Refs: round-01/logs/ledger-svc.log:14,15,21,39,40,55,59,72; round-02/logs/ledger-svc.log:20,23,28,43; round-02/logs/inventory-svc.log:10-13; round-03/logs/inventory-svc.log:9,13,18; round-03/logs/ledger-svc.log:23,24,32.\\n\\nNoise: WARN slow query on all services. These are not DB_POOL_EXHAUSTED.\\n\\nNo search-api errors through round 3. The round 3 board was empty.\\n\\nFollow-ups: none opened or closed.\\n\\nNotes are kept in /task/workspace/notes.md.\\n\\nNext steps:\\n1. Re-run the round 4 scan and read the board, changes and non-INFO lines.\\n2. Advance through rounds 5-10.\\n3. Give the final answer after round 10.\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s11.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.3s\\n--- stdout ---\\nboard.md 1 # Incident board: updates in round 04\\nboard.md 2 \\nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\\nboard.md 4 - Thread B opened: errors in checkout-api. Suspected cause: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT). Status: ongoing.\\nboard.md 5 - Thread D opened: a data volume running out of space alerts (DISK_PRESSURE) on search-api. Status: ongoing.\\nboard.md 6 - Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\\nboard.md 7 - Follow-up OPEN POSTMORTEM_DRAFT: drafting the postmortem.\\nboard.md 8 - Follow-up OPEN CAPACITY_REVIEW: capacity review of the affected tier.\\nchanges.md 1 # Change log: round 04\\nchanges.md 2 \\nchanges.md 3 - CHG-133 APPLIED: retry budget for idempotent GETs set to 1\\nchanges.md 4 - CHG-136 APPLIED: mitigation for thread A deployed to ledger-svc\\ncheckout-api.log L1 2026-09-14T11:00:38Z INFO  checkout-api request ok route=/v1/quote status=200 ms=51\\ncheckout-api.log 18 2026-09-14T11:08:59Z WARN  checkout-api heap usage high rss_mb=1863 gc_pause_ms=1207\\ncheckout-api.log 19 2026-09-14T11:09:43Z WARN  checkout-api heap usage high rss_mb=3127 gc_pause_ms=944\\ncheckout-api.log 20 2026-09-14T11:10:48Z WARN  checkout-api heap usage high rss_mb=2302 gc_pause_ms=984\\ncheckout-api.log count 12\\ninventory-svc.log L1 2026-09-14T11:01:17Z INFO  inventory-svc gc cycle pause_ms=3\\ninventory-svc.log count 0\\nledger-svc.log L1 2026-09-14T11:00:03Z INFO  ledger-svc gc cycle pause_ms=39\\nledger-svc.log count 0\\npayments-svc.log L1 2026-09-14T11:00:12Z INFO  payments-svc heartbeat uptime_s=35504\\npayments-svc.log count 0\\nsearch-api.log L1 2026-09-14T11:00:13Z WARN  search-api slow query ms=286 table=items\\nsearch-api.log 12 2026-09-14T11:07:26Z WARN  search-api disk usage high path=/var/data used_pct=98\\nsearch-api.log 13 2026-09-14T11:07:35Z WARN  search-api disk usage high path=/var/data used_pct=93\\nsearch-api.log 21 2026-09-14T11:19:24Z WARN  search-api disk usage high path=/var/data used_pct=96\\nsearch-api.log count 6\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s12.act\", \"role\": \"assistant\", \"body\": \"[step 12] execute\\nthought: Save round 4 notes, then view checkout and search non-INFO lines.\\ncode:\\nopen('/task/workspace/notes.md','a').write('\\\\nR4: board A mitigated (round-04/board.md:3); B checkout UPSTREAM_RATE_LIMIT ongoing (b:4); D search DISK_PRESSURE ongoing (b:5); FU open CUSTOMER_COMMS, POSTMORTEM_DRAFT, CAPACITY_REVIEW (b:6-8). CHG-136 APPLIED A mitigation ledger (round-04/changes.md:4). checkout heap warns 18-20; search disk 12,13,21.\\\\n')\\nfor s in ['checkout-api','search-api']:\\n  for i,l in enumerate(open(f'/task/fixtures/round-04/logs/{s}.log'),1):\\n    if ' INFO ' not in l and 'slow query' not in l: print(s,i,l.strip()[11:])\"}\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "</transcript_to_summarise>\n\nWrite the replacement summary now, at most 1057 characters."
+     }
+    ]
+   }
+  ],
+  "output_config": {
+   "effort": "low"
+  }
+ }
+}

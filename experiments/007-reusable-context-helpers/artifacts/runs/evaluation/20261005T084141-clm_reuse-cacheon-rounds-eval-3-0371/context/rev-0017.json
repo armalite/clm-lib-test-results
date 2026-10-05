@@ -1,0 +1,44 @@
+{
+ "number": 17,
+ "parent": 16,
+ "source": "runtime",
+ "step": 12,
+ "sha256": "09a2ba8e42f1095c037a800a9510b343ade973c042831d77249b50acef070a30",
+ "entries": [
+  {
+   "id": "n0",
+   "role": "note",
+   "body": "ctx.py has load/save/reset(notes). R1: ledger-svc CERT_EXPIRED peer=sso.example.net round-01/logs/ledger-svc.log:14-21. slow query WARNs noise. round-01/changes.md:4 CHG-113 APPLIED search-api http.max_inflight=-1 (possible BAD_CONFIG_ROLLOUT, no errors yet). CHG-109 proposed only."
+  },
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R2: board.md:3 Thread A CERT_EXPIRED ledger-svc+inventory-svc ongoing. inventory-svc.log:10-19 cert errors; ledger-svc.log:20-28. CHG-117 proposed only. No search-api errors yet. Next: advance to R3."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R3: board empty (no change). CHG-125 APPLIED retry budget=1 (benign). cert errors continue inventory-svc.log:9-18,39-57,71; ledger-svc.log:23-43,61-69. No search-api errors. Next: advance to R4."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R4: board.md:3 Thread A mitigated (CHG-136 APPLIED changes.md:4 mitigation ledger-svc). board.md:4 Thread B checkout-api UPSTREAM_RATE_LIMIT ongoing (verify logs). board.md:5 Thread D DISK_PRESSURE search-api ongoing; search-api.log:12-62 disk WARN 92-98%. Follow-ups OPEN board.md:6-8 CUSTOMER_COMMS, POSTMORTEM_DRAFT, CAPACITY_REVIEW."
+  },
+  {
+   "id": "s12.act",
+   "role": "assistant",
+   "body": "[step 12] execute\nthought: Check checkout-api for 429 errors (none matched ERROR), then compress notes.\ncode:\nimport re,ctx\nfor i,l in enumerate(open('/task/fixtures/round-04/logs/checkout-api.log'),1):\n  if re.search('WARN|ERR|status=4|status=5|upstream',l):print(i,l.rstrip()[:140])\nc=ctx.load()\nnotes=[e['body'] for e in c['entries'] if e['role']=='note']\nnotes.append('R4: board.md:3 Thread A mitigated (CHG-136 APPLIED changes.md:4 mitigation ledger-svc). board.md:4 Thread B checkout-api UPSTREAM_RATE_LIMIT ongoing (verify logs). board.md:5 Thread D DISK_PRESSURE search-api ongoing; search-api.log:12-62 disk WARN 92-98%. Follow-ups OPEN board.md:6-8 CUSTOMER_COMMS, POSTMORTEM_DRAFT, CAPACITY_REVIEW.')\nctx.reset(notes)"
+  },
+  {
+   "id": "s12.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n9 2026-09-14T11:05:26Z WARN  checkout-api slow query ms=304 table=items\n16 2026-09-14T11:08:26Z WARN  checkout-api slow query ms=371 table=orders\n18 2026-09-14T11:08:59Z WARN  checkout-api heap usage high rss_mb=1863 gc_pause_ms=1207\n19 2026-09-14T11:09:43Z WARN  checkout-api heap usage high rss_mb=3127 gc_pause_ms=944\n20 2026-09-14T11:10:48Z WARN  checkout-api heap usage high rss_mb=2302 gc_pause_ms=984\n29 2026-09-14T11:20:07Z WARN  checkout-api slow query ms=217 table=events\n30 2026-09-14T11:20:20Z WARN  checkout-api slow query ms=326 table=events\n35 2026-09-14T11:23:14Z WARN  checkout-api heap usage high rss_mb=3208 gc_pause_ms=1272\n37 2026-09-14T11:23:29Z WARN  checkout-api slow query ms=416 table=events\n38 2026-09-14T11:23:36Z WARN  checkout-api heap usage high rss_mb=2022 gc_pause_ms=777\n41 2026-09-14T11:25:05Z WARN  checkout-api heap usage high rss_mb=3612 gc_pause_ms=1014\n42 2026-09-14T11:25:16Z WARN  checkout-api heap usage high rss_mb=3821 gc_pause_ms=905\n44 2026-09-14T11:27:06Z WARN  checkout-api heap usage high rss_mb=2221 gc_pause_ms=498\n49 2026-09-14T11:29:47Z WARN  checkout-api slow query ms=351 table=orders\n52 2026-09-14T11:31:49Z WARN  checkout-api slow query ms=271 table=events\n53 2026-09-14T11:33:03Z WARN  checkout-api slow query ms=243 table=orders\n58 2026-09-14T11:35:31Z WARN  checkout-api slow query ms=430 table=events\n59 2026-09-14T11:37:29Z WARN  checkout-api slow query ms=329 table=orders\n60 2026-09-14T11:37:50Z WARN  checkout-api heap usage high rss_mb=2594 gc_pause_ms=1315\n61 2026-09-14T11:38:23Z WARN  checkout-api slow query ms=385 table=items\n63 2026-09-14T11:38:52Z WARN  checkout-api slow query ms=305 table=events\n65 2026-09-14T11:41:06Z WARN  checkout-api slow query ms=329 table=events\n75 2026-09-14T11:45:02Z WARN  checkout-api slow query ms=328 table=orders\n76 2026-09-14T11:46:07Z WARN  checkout-api slow query ms=413 table=items\n79 2026-09-14T11:49:21Z WARN  checkout-api slow query ms=346 table=items\n82 2026-09-14T11:52:05Z WARN  checkout-api slow query ms=377 table=events\n86 2026-09-14T11:54:26Z WARN  checkout-api heap usage high rss_mb=2352 gc_pause_ms=1230\n88 2026-09-14T11:57:04Z WARN  checkout-api heap usage high rss_mb=3290 gc_pause_ms=518\n89 2026-09-14T11:57:08Z WARN  checkout-api slow query ms=444 table=events\n90 2026-09-14T11:58:44Z WARN  checkout-api heap usage high rss_mb=2643 gc_pause_ms=1393\n"
+  },
+  {
+   "id": "s12.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 12: revision 15 -> 16; entries 10 -> 4; body chars 3760 -> 1011; removed [s9.act, s9.obs, s9.rcpt, s10.act, s10.obs, s11.act, s11.obs]; added [n3]; rewritten []"
+  }
+ ]
+}

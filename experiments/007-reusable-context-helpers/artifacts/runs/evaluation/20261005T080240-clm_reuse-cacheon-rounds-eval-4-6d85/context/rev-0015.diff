@@ -1,0 +1,24 @@
+--- rev-14
++++ rev-15
+@@ -5,6 +5,21 @@
+    "id": "notes",
+    "role": "note",
+    "body": "R1: changes.md:3 CHG-113 APPLIED search-api cache.ttl_s=-1 (BAD_CONFIG candidate); CHG-114 auth-svc no cfg; CHG-107 PROPOSED. slow query WARNs = noise. ctx.py has load/save/reset(notes).\nR2: board.md:3 Thread A DB_POOL_EXHAUSTED inventory-svc + notify-worker, ongoing. pool WARNs round-02/logs/inventory-svc.log:3-78, notify-worker.log:6-57. No other WARN/ERROR in r2.\nR3: board.md:3 Thread D CACHE_STAMPEDE auth-svc ongoing; auth-svc.log:1-43 miss storm WARNs. Pool WARNs continue inventory-svc.log:12-76, notify-worker.log:4-71. search-api/shipping clean.\nR4: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing; board.md:4 VENDOR_TICKET OPEN. 429 tax-provider ERRORs in auth-svc.log (last :100) and shipping-svc.log:5-61 (UPSTREAM_RATE_LIMIT candidate). Pool WARNs inventory-svc.log:3-84, notify-worker.log:11-73. search-api clean."
++  },
++  {
++   "id": "s11.act",
++   "role": "assistant",
++   "body": "[step 11] execute\nthought: Check auth-svc log breakdown (memory vs 429 vs miss), save notes.\ncode:\nimport re,ctx\nls=open('/task/fixtures/round-04/logs/auth-svc.log').read().splitlines()\nfrom collections import Counter\nc=Counter();first={}\nfor i,l in enumerate(ls):\n    if re.search('WARN|ERROR',l) and 'slow query' not in l:\n        k=re.sub(r'\\d+','N',l[21:80]);c[k]+=1;first.setdefault(k,i+1)\nfor k in c: print(c[k],first[k],k)\nn=ctx.load()['entries'][0]['body']\nctx.reset(n+'\\nR4: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing; board.md:4 VENDOR_TICKET OPEN. 429 tax-provider ERRORs in auth-svc.log (last :100) and shipping-svc.log:5-61 (UPSTREAM_RATE_LIMIT candidate). Pool WARNs inventory-svc.log:3-84, notify-worker.log:11-73. search-api clean.')"
++  },
++  {
++   "id": "s11.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.1s\n--- stdout ---\n5 1 WARN  auth-svc cache miss storm key_prefix=user: misses_per\n4 2 WARN  auth-svc cache miss storm key_prefix=sku: misses_per_\n12 12 ERROR auth-svc upstream returned N upstream=tax-provider \n4 18 WARN  auth-svc cache miss storm key_prefix=price: misses_pe\n"
++  },
++  {
++   "id": "s11.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 11: revision 13 -> 14; entries 8 -> 1; body chars 3421 -> 831; removed [s8.act, s8.obs, s8.rcpt, s9.act, s9.obs, s10.act, s10.obs]; added []; rewritten [notes]"
+   }
+  ]
+ }

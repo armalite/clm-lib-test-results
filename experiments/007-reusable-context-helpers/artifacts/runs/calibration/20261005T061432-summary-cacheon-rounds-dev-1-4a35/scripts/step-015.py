@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('\nR5: Thread A mitigated (round-05/board.md:3), CHG-143 mitigation auth-svc (round-05/changes.md:4); no pool errors in R5 logs. Thread B adds checkout-api (round-05/board.md:4), still CACHE_STAMPEDE per board but logs 429 fx-rates checkout-api.log:21-65, payments-svc.log:13-73. Follow-up OPEN CAPACITY_REVIEW (round-05/board.md:5).\n')
+print('ok')

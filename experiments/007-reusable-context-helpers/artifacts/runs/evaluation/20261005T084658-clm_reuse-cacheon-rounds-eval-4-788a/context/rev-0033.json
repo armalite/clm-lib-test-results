@@ -1,0 +1,49 @@
+{
+ "number": 33,
+ "parent": 32,
+ "source": "runtime",
+ "step": 24,
+ "sha256": "a8f9cb90d07af6212dd220fbc0c1284d948a0539302ee0ef3c57f8833dd3b631",
+ "entries": [
+  {
+   "id": "notes",
+   "role": "note",
+   "body": "R1: inventory-svc db pool exhausted WARN round-01/logs/inventory-svc.log:5,9,28,30,45,52. slow query WARNs = noise. changes r1: CHG-113 APPLIED search-api cache.ttl_s=-1 (round-01/changes.md:4); CHG-114 auth-svc no cfg; CHG-107 PROPOSED. R2: board round-02/board.md:3 Thread A DB_POOL_EXHAUSTED inventory-svc+notify-worker ongoing. logs round-02/logs/inventory-svc.log:3-19, notify-worker.log:6-14. no search-api errors yet. R3: board round-03/board.md:3 Thread D CACHE_STAMPEDE auth-svc ongoing; auth-svc.log:1-18 miss storm; DB pool continues inventory-svc.log:12-30, notify-worker.log:4-23. R4: board round-04/board.md:3 Thread B MEMORY_LEAK auth-svc ongoing (suspect; check logs for memory); board.md:4 VENDOR_TICKET OPEN. 429 tax-provider in auth-svc.log:12 and shipping-svc.log:5,21,28 (UPSTREAM_RATE_LIMIT?). auth-svc miss storm continues round-04 auth-svc.log:1-2. DB pool continues inventory-svc.log:3-21, notify-worker.log:11-41. R5: board round-05/board.md:3 Thread A mitigated (CHG-143 round-05/changes.md:4); board.md:4 Thread B (MEMORY_LEAK) +shipping-svc; board.md:5 Thread D false alarm. logs: 429 tax-provider auth-svc.log:1,2,13,33; shipping-svc.log:9,16,18,23. no memory logs; inventory pool errors gone in r5. R6: board empty; CHG-142 PROPOSED (ignore). 429 tax-provider continues auth-svc.log:8-88 (e.g. 8,23,86,88), shipping-svc.log:11-88 (e.g. 11,23,83,88). no pool/memory errors r6. R7: board round-07/board.md:3 Thread B cause revised UPSTREAM_RATE_LIMIT (auth-svc+shipping-svc). 429 continues auth-svc.log:3-76, shipping-svc.log:15-50. no other errors r7."
+  },
+  {
+   "id": "s22.act",
+   "role": "assistant",
+   "body": "[step 22] execute\nthought: Save R7 notes and compact.\ncode:\nimport ctx,json\nn=json.load(open('/task/workspace/context.json'))['entries'][0]['body']\nctx.keep_notes(n+' R7: board round-07/board.md:3 Thread B cause revised UPSTREAM_RATE_LIMIT (auth-svc+shipping-svc). 429 continues auth-svc.log:3-76, shipping-svc.log:15-50. no other errors r7.')\nprint('ok')"
+  },
+  {
+   "id": "s22.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.2s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s22.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 22: revision 29 -> 30; entries 8 -> 1; body chars 4854 -> 1581; removed [s19.act, s19.obs, s19.rcpt, s20.act, s20.obs, s21.act, s21.obs]; added []; rewritten [notes]"
+  },
+  {
+   "id": "s23.act",
+   "role": "assistant",
+   "body": "[step 23] advance\nthought: "
+  },
+  {
+   "id": "s23.obs",
+   "role": "observation",
+   "body": "Stage 8 of 11 released.\nRound 8 of 11 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (6 lines)\n  round-08/logs/auth-svc.log (63 lines)\n  round-08/logs/inventory-svc.log (68 lines)\n  round-08/logs/notify-worker.log (59 lines)\n  round-08/logs/search-api.log (84 lines)\n  round-08/logs/shipping-svc.log (59 lines)"
+  },
+  {
+   "id": "s24.act",
+   "role": "assistant",
+   "body": "[step 24] execute\nthought: Inspect round 8.\ncode:\nimport re\nprint(open('/task/fixtures/round-08/board.md').read())\nfor s in ['auth-svc','inventory-svc','notify-worker','search-api','shipping-svc']:\n  L=open(f'/task/fixtures/round-08/logs/{s}.log').read().splitlines()\n  h=[(i+1,l[:150]) for i,l in enumerate(L) if re.search(r'ERROR|WARN|error|429|pool|memory|cache|ttl',l,re.I) and 'slow query' not in l]\n  print(s,len(h));[print(x) for x in h[:4]]"
+  },
+  {
+   "id": "s24.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.9s\n--- stdout ---\n# Incident board: updates in round 08\n\n- Thread A status: resolved (no recurrence for two hours).\n- Thread B status: mitigated (workaround in place; permanent fix pending).\n- Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\n- Follow-up OPEN CAPACITY_REVIEW: capacity review of the affected tier.\n\nauth-svc 2\n(29, '{\"ts\":\"2026-09-14T15:20:22Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":42}')\n(40, '{\"ts\":\"2026-09-14T15:40:47Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":53}')\ninventory-svc 0\nnotify-worker 0\nsearch-api 10\n(24, '{\"ts\":\"2026-09-14T15:11:35Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"8.23.7\"}')\n(34, '{\"ts\":\"2026-09-14T15:19:20Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"8.23.7\"}')\n(36, '{\"ts\":\"2026-09-14T15:20:31Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"8.23.7\"}')\n(41, '{\"ts\":\"2026-09-14T15:22:38Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"8.23.7\"}')\nshipping-svc 2\n(41, '{\"ts\":\"2026-09-14T15:36:44Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":37}')\n(42, '{\"ts\":\"2026-09-14T15:37:20Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":19}')\n"
+  }
+ ]
+}

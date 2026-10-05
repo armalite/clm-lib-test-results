@@ -1,0 +1,9 @@
+import ctx
+ctx.keep_notes('R1: inventory-svc db pool exhausted WARN round-01/logs/inventory-svc.log:5,9,28,30,45,52. slow query WARNs = noise. changes r1: CHG-113 APPLIED search-api cache.ttl_s=-1 (round-01/changes.md:4); CHG-114 auth-svc no cfg; CHG-107 PROPOSED. R2: board round-02/board.md:3 Thread A DB_POOL_EXHAUSTED inventory-svc+notify-worker ongoing. logs round-02/logs/inventory-svc.log:3-19, notify-worker.log:6-14. no search-api errors yet. R3: board round-03/board.md:3 Thread D CACHE_STAMPEDE auth-svc ongoing; auth-svc.log:1-18 miss storm; DB pool continues inventory-svc.log:12-30, notify-worker.log:4-23. R4: board round-04/board.md:3 Thread B MEMORY_LEAK auth-svc ongoing (suspect; check logs for memory); board.md:4 VENDOR_TICKET OPEN. 429 tax-provider in auth-svc.log:12 and shipping-svc.log:5,21,28 (UPSTREAM_RATE_LIMIT?). auth-svc miss storm continues round-04 auth-svc.log:1-2. DB pool continues inventory-svc.log:3-21, notify-worker.log:11-41.')
+import re
+n=0
+for i,l in enumerate(open('/task/fixtures/round-04/logs/auth-svc.log'),1):
+    if re.search(r'mem|heap|OOM|restart',l,re.I):
+        n+=1
+        if n<6: print(i,l.strip()[:120])
+print(n)

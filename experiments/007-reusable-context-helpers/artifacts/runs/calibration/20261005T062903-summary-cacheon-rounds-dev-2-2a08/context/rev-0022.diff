@@ -1,0 +1,19 @@
+--- rev-21
++++ rev-22
+@@ -30,6 +30,16 @@
+    "id": "s16.obs",
+    "role": "observation",
+    "body": "Stage 6 of 11 released.\nRound 6 of 11 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (3 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/auth-svc.log (80 lines)\n  round-06/logs/checkout-api.log (62 lines)\n  round-06/logs/inventory-svc.log (69 lines)\n  round-06/logs/search-api.log (64 lines)\n  round-06/logs/shipping-svc.log (74 lines)"
++  },
++  {
++   "id": "s17.act",
++   "role": "assistant",
++   "body": "[step 17] execute\nthought: Read round 6 board, changes, and error summary.\ncode:\nimport os,re\nb='/task/fixtures/round-06/'\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\nfor f in sorted(os.listdir(b+'logs')):\n  L=open(b+'logs/'+f).read().splitlines()\n  e=[(i+1,l) for i,l in enumerate(L) if re.search(r'ERROR|error|level=error|\"error\"',l) and 'slow' not in l]\n  print(f,len(e),[x[0] for x in e[:1]],[x[0] for x in e[-1:]])\n  if e: print('  ',e[0][1][:160])\n  else: print(' first',L[0][:160])\n"
++  },
++  {
++   "id": "s17.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n# Incident board: updates in round 06\n\n- Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\n\n# Change log: round 06\n\n- CHG-144 APPLIED: log sampling for /v1/health reduced to 1%\n\nauth-svc.log 10 [4] [79]\n   {\"ts\":\"2026-09-14T13:02:17Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\ncheckout-api.log 0 [] []\n first {\"ts\":\"2026-09-14T13:02:02Z\",\"level\":\"INFO\",\"svc\":\"checkout-api\",\"msg\":\"gc cycle\",\"pause_ms\":9}\ninventory-svc.log 0 [] []\n first {\"ts\":\"2026-09-14T13:00:59Z\",\"level\":\"INFO\",\"svc\":\"inventory-svc\",\"msg\":\"health ok\",\"probe\":\"readiness\"}\nsearch-api.log 0 [] []\n first {\"ts\":\"2026-09-14T13:00:54Z\",\"level\":\"INFO\",\"svc\":\"search-api\",\"msg\":\"heartbeat\",\"uptime_s\":76131}\nshipping-svc.log 6 [1] [64]\n   {\"ts\":\"2026-09-14T13:00:12Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n"
+   }
+  ]
+ }

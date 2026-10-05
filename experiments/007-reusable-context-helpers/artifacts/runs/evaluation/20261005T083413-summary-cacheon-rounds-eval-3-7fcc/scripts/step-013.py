@@ -1,0 +1,1 @@
+open('/task/workspace/notes.md','a').write('\nR4 logs: checkout-api shows heap usage high (MEMORY_LEAK?), not 429: round-04/logs/checkout-api.log:18-20,35,38,41,42,44,60,86,88,90. search disk: round-04/logs/search-api.log:12,13,21,38,54,62. Board B claims UPSTREAM_RATE_LIMIT; logs disagree.\n');print('ok')

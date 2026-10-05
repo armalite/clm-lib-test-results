@@ -1,0 +1,46 @@
+--- rev-5
++++ rev-6
+@@ -4,42 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: changes.md:3 CHG-107 PROPOSED HPA search; :4 CHG-113 APPLIED search-api cache.ttl_s=-1 (bad config?); :5 CHG-114 auth-svc no config. board empty. slow query WARNs everywhere = noise. inventory-svc db pool exhausted lines 5,9,28,30,45,52 (round-01/logs/inventory-svc.log)."
+-  },
+-  {
+-   "id": "s2.act",
+-   "role": "assistant",
+-   "body": "[step 2] execute\nthought: Compact context into notes, then view rest of search-api.\ncode:\nimport json,re\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: changes.md:3 CHG-107 PROPOSED HPA search; :4 CHG-113 APPLIED search-api cache.ttl_s=-1 (bad config?); :5 CHG-114 auth-svc no config. board empty. slow query WARNs everywhere = noise. inventory-svc db pool exhausted lines 5,9,28,30,45,52 (round-01/logs/inventory-svc.log).'}]}\njson.dump(c,open('/task/workspace/context.json','w'))\nL=open('/task/fixtures/round-01/logs/search-api.log').read().splitlines()\nfor i,l in enumerate(L,1):\n  if ('ERROR' in l or 'WARN' in l) and 'slow query' not in l:print(i,l[:150])"
+-  },
+-  {
+-   "id": "s2.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s"
+-  },
+-  {
+-   "id": "s2.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 6437 -> 275; removed [s1.act, s1.obs]; added [n1]; rewritten []"
+-  },
+-  {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] execute\nthought: search-api showed no non-slow errors; check other logs briefly and advance.\ncode:\nimport os,glob\nfor f in sorted(glob.glob('/task/fixtures/round-01/logs/*.log')):\n  L=open(f).read().splitlines()\n  e=[(i,l[:120]) for i,l in enumerate(L,1) if ('ERROR' in l or 'WARN' in l) and 'slow query' not in l]\n  print(os.path.basename(f),len(L),len(e))\n  for x in e[:4]:print(' ',*x)"
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nauth-svc.log 62 0\ninventory-svc.log 68 6\n  5 2026-09-14T08:02:54Z WARN  inventory-svc db pool exhausted wait_ms=1458 in_use=16/16\n  9 2026-09-14T08:07:56Z WARN  inventory-svc db pool exhausted wait_ms=2962 in_use=12/12\n  28 2026-09-14T08:25:32Z WARN  inventory-svc db pool exhausted wait_ms=1020 in_use=10/10\n  30 2026-09-14T08:28:45Z WARN  inventory-svc db pool exhausted wait_ms=2653 in_use=16/16\nnotify-worker.log 68 0\nsearch-api.log 76 0\nshipping-svc.log 73 0\n"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] advance\nthought: "
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 11 released.\nRound 2 of 11 released. New files are under /task/fixtures/round-02/.\n\nNew files:\n  round-02/board.md (3 lines)\n  round-02/logs/auth-svc.log (78 lines)\n  round-02/logs/inventory-svc.log (82 lines)\n  round-02/logs/notify-worker.log (71 lines)\n  round-02/logs/search-api.log (72 lines)\n  round-02/logs/shipping-svc.log (76 lines)"
++   "body": "R1: changes.md:3 CHG-107 PROPOSED HPA search; :4 CHG-113 APPLIED search-api cache.ttl_s=-1 (bad config?); :5 CHG-114 auth-svc no config. board empty. slow query WARNs = noise. R1 only inventory-svc db pool exhausted WARN lines 5,9,28,30,45,52 (round-01/logs/inventory-svc.log); other svcs clean."
+   }
+  ]
+ }

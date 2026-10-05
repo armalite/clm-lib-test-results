@@ -1,0 +1,39 @@
+--- rev-23
++++ rev-24
+@@ -2,34 +2,9 @@
+  "format": "clm-context/v1",
+  "entries": [
+   {
+-   "id": "sum5",
++   "id": "sum6",
+    "role": "summary",
+-   "body": "R1-5 released; R5 inspected. Next: record R5 notes, advance through R10, then submit the final answer.\n- Log format: \"<ISO ts> LEVEL service msg\", e.g. \"WARN auth-svc db pool exhausted wait_ms=N in_use=X/X\", \"ERROR <svc> upstream returned N upstream=fx-rates retry_after_...\". Noise lines: slow query ms=N table=orders|items|events, plus heartbeat, health ok, gc cycle and request ok.\n- R1: noise only. round-01/changes.md:3 CHG-108 PROPOSED (HPA max for search), not applied.\n- R2 board.md:3-5 opened ALERT_TUNING, RUNBOOK_UPDATE and VENDOR_TICKET.\n- R2 changes.md:4 CHG-120 APPLIED: build 8.56.0 to notify-worker, sets http.max_inflight=0. This could become a BAD_CONFIG_ROLLOUT, but notify-worker shows no errors through R5. R2 changes.md:5 CHG-121 (payments) has no config change.\n- R2 auth-svc.log has pool exhaustion at lines 1,3,15,22,23,25,44,65,69.\n\nThread A: DB_POOL_EXHAUSTED, affecting auth-svc and search-api.\n- Opened ongoing at round-03/board.md:3.\n- Evidence: round-03/logs/auth-svc.log:7-19, round-03/logs/search-api.log:1-14, round-04/logs/auth-svc.log:7-39 (12 hits), round-04/logs/search-api.log:4-30 (12 hits).\n- round-05/board.md:3 set status to mitigated (errors reduced; monitoring).\n- round-05/changes.md:4 CHG-143 APPLIED: mitigation for thread A deployed to auth-svc.\n- R5 logs show no pool exhaustion in auth-svc or search-api.\n- R3 changes.md:3 CHG-125 APPLIED was dashboards only.\n\nThread B: board says CACHE_STAMPEDE, but logs point to UPSTREAM_RATE_LIMIT. Affects payments-svc and checkout-api.\n- round-04/board.md:3 opened it for payments-svc as CACHE_STAMPEDE suspected, ongoing.\n- round-05/board.md:4 added checkout-api; cause and status unchanged.\n- The logs show only 429s from fx-rates, with no cache errors. Watch whether the board revises the cause to UPSTREAM_RATE_LIMIT.\n- payments-svc 429s: round-04/logs/payments-svc.log lines 1,3,7,25,31,45 (12 hits); round-05/logs/payments-svc.log lines 13,19,47,50,55,73 (6 hits).\n- checkout-api 429s: round-04/logs/checkout-api.log lines 9,19,50,53,59,62; round-05/logs/checkout-api.log lines 21,23,30,38,42,59 (7 hits).\n\nOther change records:\n- round-04/changes.md:3 CHG-133 APPLIED: TLS session ticket rotation hourly.\n- round-05/changes.md:3 CHG-138 APPLIED: same TLS rotation change. Not cert expiry; watch for CERT_EXPIRED anyway.\n\nFollow-ups:\n- Open: ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET (R2), CAPACITY_REVIEW (round-05/board.md:5).\n- None closed so far.\n\nNotes are kept in /task/workspace/notes.md (R4 appended; R5 not yet).\n\nOpen questions:\n- Will Thread B's cause be corrected?\n- Will Thread A be resolved?\n- Will CHG-120 max_inflight=0 cause a notify-worker incident?\n- Will any false-alarm threads appear?"
+-  },
+-  {
+-   "id": "s15.act",
+-   "role": "assistant",
+-   "body": "[step 15] execute\nthought: Append R5 notes to file, then advance.\ncode:\nopen('/task/workspace/notes.md','a').write('\\nR5: board:3 A mitigated; board:4 B adds checkout-api; board:5 CAPACITY_REVIEW; changes:4 CHG-143 applied auth-svc mitigation; changes:3 CHG-138 TLS rotation. B 429s r05 payments 13,19,47,50,55,73; checkout 21,23,30,38,42,59.\\n')\nprint('ok')"
+-  },
+-  {
+-   "id": "s15.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=2.0s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s16.act",
+-   "role": "assistant",
+-   "body": "[step 16] advance\nthought: "
+-  },
+-  {
+-   "id": "s16.obs",
+-   "role": "observation",
+-   "body": "Stage 6 of 10 released.\nRound 6 of 10 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (4 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/auth-svc.log (58 lines)\n  round-06/logs/checkout-api.log (81 lines)\n  round-06/logs/notify-worker.log (63 lines)\n  round-06/logs/payments-svc.log (79 lines)\n  round-06/logs/search-api.log (61 lines)"
+-  },
+-  {
+-   "id": "s17.act",
+-   "role": "assistant",
+-   "body": "[step 17] execute\nthought: \ncode:\nimport re,glob\nb='/task/fixtures/round-06/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob(b+'logs/*')):\n  h=[(i,l.strip()[:110]) for i,l in enumerate(open(f),1) if not re.search(r'slow query|heartbeat|health ok|gc cycle|request ok',l)]\n  print(f.split('/')[-1],len(h))\n  for x in h[:6]:print(x)"
++   "body": "R1-6 released; R6 board, changes and logs printed but not yet analyzed. Next: analyze R6, append R5/R6 notes to /task/workspace/notes.md (R5 notes already appended), advance to R10, then submit the final answer.\n- Log format: \"<ts> LEVEL svc msg\". Noise lines: slow query, heartbeat, health ok, gc cycle, request ok.\n- R2 opened ALERT_TUNING, RUNBOOK_UPDATE and VENDOR_TICKET (board.md:3-5). round-05/board.md:5 opened CAPACITY_REVIEW. None closed yet.\n- R2 changes.md:4 CHG-120 APPLIED notify-worker 8.56.0 with http.max_inflight=0. This is a possible BAD_CONFIG_ROLLOUT, but notify-worker showed no errors through R5.\n- Thread A: DB_POOL_EXHAUSTED, affecting auth-svc and search-api. Opened at round-03/board.md:3. round-05/board.md:3 set it to mitigated, and round-05/changes.md:4 CHG-143 applied the mitigation. Evidence: round-03/logs/auth-svc.log:7-19, round-03/logs/search-api.log:1-14, round-04/logs/auth-svc.log:7-39, round-04/logs/search-api.log:4-30.\n- Thread B: the board says CACHE_STAMPEDE (round-04/board.md:3), but the logs show fx-rates 429s, which points to UPSTREAM_RATE_LIMIT. Affects payments-svc and checkout-api (checkout-api added at round-05/board.md:4). Status is ongoing. Evidence: round-04/logs/payments-svc.log:1-45, round-05/logs/checkout-api.log:21-59.\n- CHG-133 and CHG-138 were TLS rotation only."
+   },
+   {
+    "id": "s17.obs",

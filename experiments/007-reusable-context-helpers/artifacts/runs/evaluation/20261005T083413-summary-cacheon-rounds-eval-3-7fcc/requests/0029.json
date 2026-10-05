@@ -1,0 +1,113 @@
+{
+ "meta": {
+  "kind": "summary",
+  "step": 22,
+  "attempt": 0,
+  "est_input_tokens": 4096,
+  "input_token_bound": 10830,
+  "reserved_usd": 0.13607,
+  "context_revision": 28,
+  "context_sha256": "59de5a3e544b75d33f7d1cc8da4d12126628b52c28dcc759190cc7f47e3db47e",
+  "layout": "blocks/1",
+  "cache_ttl": "5m",
+  "prefix": {
+   "family": "summary",
+   "blocks": 11,
+   "system_blocks": 2,
+   "breakpoint_blocks": [
+    2,
+    9
+   ],
+   "previous": true,
+   "common_blocks": 3,
+   "first_changed_block": 3,
+   "common_prefix_chars": 3510
+  },
+  "summary_policy": "token-tail/1",
+  "older_entries": [
+   "sum7",
+   "s18.act",
+   "s18.obs",
+   "s19.act",
+   "s19.obs",
+   "s20.act",
+   "s20.obs"
+  ],
+  "kept_tail": [
+   "s21.act",
+   "s21.obs"
+  ],
+  "summary_attempt": 0,
+  "requested_max_chars": 990,
+  "forced": false
+ },
+ "sha256": "600b75f8db540c69d73afd35388b540096c08a1b8a5f0f7c9ee6801b96beb6e6",
+ "payload": {
+  "model": "claude-opus-5-5",
+  "max_tokens": 4096,
+  "system": [
+   {
+    "type": "text",
+    "text": "run-ref: 7e9f3848d5f47cbe24368c1a7c1e7c61\n"
+   },
+   {
+    "type": "text",
+    "text": "You compress an agent's working transcript. The agent is\ninvestigating a multi-service production incident whose evidence arrives in hourly rounds, and will\nkeep working after your summary replaces the entries below. The transcript may include an earlier\nsummary: carry its facts forward. Preserve, exactly and verbatim where relevant:\n- each incident thread: its current cause and any superseded cause, affected services, current\n  status and the record that set it;\n- follow-up items opened and closed, with their codes;\n- early facts that may matter later (change records, builds, configuration values);\n- every file:line reference needed as evidence, and observed log formats;\n- open questions and the next planned steps, including rounds still to be released.\nDrop repetition and raw log dumps. Use compact bullet points. Plain text only. Stay within the\nrequested length; it is set so the agent has room to continue."
+   }
+  ],
+  "messages": [
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "text",
+      "text": "<task>\nProduction incident investigation across several services. Evidence arrives in\n10 hourly rounds. Only round 1 is available now, under /task/fixtures/round-01/.\n\nEach round directory holds:\n- logs/<service>.log: that hour's structured service logs (the log format may change).\n- board.md: the incident board's updates during that hour. An update lists only what\n  changed; anything it does not mention is unchanged. The latest update for a thread wins.\n- changes.md (some rounds): change records. APPLIED changes took effect; PROPOSED did not.\n\nReply {\"action\": \"advance\"} to release the next round. Released rounds never change and stay\nreadable. A final answer is accepted only after all 10 rounds are released.\n\nFinal answer (all fields required):\n  {\"action\": \"final\", \"answer\": {\n     \"incidents\": [{\"cause\": \"<CAUSE_CODE>\", \"services\": [\"<service>\", ...],\n                    \"status\": \"ongoing|mitigated|resolved\",\n                    \"evidence_refs\": [\"round-NN/<file>:<line>\", ...]}, ...],\n     \"unresolved\": [\"<FOLLOW_UP_CODE>\", ...],\n     \"summary\": \"<short free text>\"}}\n- incidents: every real incident at the end of the final round (not false alarms), one entry\n  per incident, with its current cause, all affected services and its current status.\n- evidence_refs: path:line references (relative to /task/fixtures, ranges up to 20 lines as\n  path:a-b) supporting the incident's current cause and current status; when the cause traces\n  back to an earlier change record, cite that record too.\n- unresolved: follow-up items still open at the end of the final round.\n\nCause codes:\n  DB_POOL_EXHAUSTED: database connection pool exhausted\n  CACHE_STAMPEDE: cache miss storm after mass expiry\n  CERT_EXPIRED: an expired TLS certificate on a dependency\n  DNS_RESOLUTION: DNS lookups failing for a dependency\n  QUEUE_BACKLOG: message consumer lag growing\n  MEMORY_LEAK: process memory growing until restarts\n  UPSTREAM_RATE_LIMIT: an upstream provider rejecting requests with 429\n  DISK_PRESSURE: a data volume running out of space\n  BAD_CONFIG_ROLLOUT: a configuration value shipped by a rollout is invalid\nFollow-up codes:\n  CUSTOMER_COMMS: customer communication about the impact\n  DATA_BACKFILL: backfill of records missed during the incident\n  CAPACITY_REVIEW: capacity review of the affected tier\n  ALERT_TUNING: tuning of noisy or late alerts\n  VENDOR_TICKET: a ticket open with an external vendor\n  POSTMORTEM_DRAFT: drafting the postmortem\n  RUNBOOK_UPDATE: updating the runbook\n</task>\n\n<transcript_to_summarise>\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"sum7\", \"role\": \"summary\", \"body\": \"\\u003csummary>\\nProgress: rounds 1-6 of 10 released, rounds 1-5 analysed. Round 6 (board 3 lines, changes.md 3 lines) is unread. Notes: /task/workspace/notes.md.\\n\\nLog format: \\\"2026-09-14T08:03:34Z WARN  checkout-api ...\\\".\\n\\nChanges:\\n- CHG-113 APPLIED: search-api build 4.16.4, http.max_inflight=-1 (round-01/changes.md:4).\\n- CHG-114 APPLIED: checkout build 4.16.4, no config change.\\n- CHG-125 and CHG-133: GET retry budget set to 1.\\n- CHG-136 APPLIED: ledger mitigation (round-04/changes.md:4).\\n- CHG-109 and CHG-117 PROPOSED: no effect.\\n\\nThreads:\\n- A: CERT_EXPIRED on ledger-svc and inventory-svc, mitigated (round-04/board.md:3). Refs: round-01/logs/ledger-svc.log:14,15,21,39,40; round-02/logs/inventory-svc.log:10-13; round-03/logs/ledger-svc.log:23,24,32.\\n- B: checkout-api. Board says UPSTREAM_RATE_LIMIT, ongoing (round-04/board.md:4). Logs show no 429s, only heap usage high. Likely MEMORY_LEAK. Refs: round-04/logs/checkout-api.log:18-20,35,38; round-05/logs/checkout-api.log:6,24,25,31,32,35.\\n- D: search-api DISK_PRESSURE, ongoing (round-04/board.md:5). Refs: round-04/logs/search-api.log:12,13,21,38; round-05/logs/search-api.log:14,31,35,46,61.\\n\\nFollow-ups open: CUSTOMER_COMMS, POSTMORTEM_DRAFT, CAPACITY_REVIEW (round-04/board.md:6-8), DATA_BACKFILL (round-05/board.md:3). None closed.\\n\\nNoise: slow query warnings.\\n\\nNext: analyse round 6, advance through rounds 7-10, then give the final answer.\\n\\u003c/summary>\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s18.act\", \"role\": \"assistant\", \"body\": \"[step 18] execute\\nthought: Read round 6 board, changes, and non-INFO logs.\\ncode:\\nimport glob\\nprint(open('/task/fixtures/round-06/board.md').read())\\nprint(open('/task/fixtures/round-06/changes.md').read())\\nfor f in sorted(glob.glob('/task/fixtures/round-06/logs/*.log')):\\n  s=f.split('/')[-1][:-4]\\n  n=0\\n  for i,l in enumerate(open(f),1):\\n    if ' INFO ' not in l and 'slow query' not in l and 'INFO' not in l[:40]:\\n      n+=1\\n      if n\\u003c=6: print(s,i,l.strip()[11:120])\\n  print(s,'count',n)\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s18.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.6s\\n--- stdout ---\\n# Incident board: updates in round 06\\n\\n- Follow-up CLOSED CUSTOMER_COMMS.\\n\\n# Change log: round 06\\n\\n- CHG-147 APPLIED: TLS session ticket rotation set to hourly\\n\\ncheckout-api 17 13:13:20Z WARN  checkout-api heap usage high rss_mb=2454 gc_pause_ms=613\\ncheckout-api 24 13:21:50Z WARN  checkout-api heap usage high rss_mb=3445 gc_pause_ms=1304\\ncheckout-api 35 13:31:21Z WARN  checkout-api heap usage high rss_mb=2167 gc_pause_ms=1084\\ncheckout-api 42 13:36:15Z WARN  checkout-api heap usage high rss_mb=3722 gc_pause_ms=495\\ncheckout-api 53 13:43:55Z WARN  checkout-api heap usage high rss_mb=2296 gc_pause_ms=311\\ncheckout-api 59 13:53:43Z WARN  checkout-api heap usage high rss_mb=2749 gc_pause_ms=303\\ncheckout-api count 8\\ninventory-svc count 0\\nledger-svc count 0\\npayments-svc count 0\\nsearch-api 6 13:06:12Z WARN  search-api disk usage high path=/var/data used_pct=91\\nsearch-api 22 13:14:59Z WARN  search-api disk usage high path=/var/data used_pct=96\\nsearch-api 28 13:19:38Z WARN  search-api disk usage high path=/var/data used_pct=97\\nsearch-api 30 13:21:07Z WARN  search-api disk usage high path=/var/data used_pct=93\\nsearch-api 38 13:32:00Z WARN  search-api disk usage high path=/var/data used_pct=94\\nsearch-api 39 13:33:18Z WARN  search-api disk usage high path=/var/data used_pct=95\\nsearch-api count 8\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s19.act\", \"role\": \"assistant\", \"body\": \"[step 19] execute\\nthought: Save round 6 notes, then advance.\\ncode:\\nopen('/task/workspace/notes.md','a').write('\\\\nRound6: CUSTOMER_COMMS CLOSED (round-06/board.md:3). CHG-147 TLS ticket rotation (irrelevant). checkout heap warn round-06/logs/checkout-api.log:17,24,35,42; search disk round-06/logs/search-api.log:6,22,28,39.\\\\n')\\nprint('ok')\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s19.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.8s\\n--- stdout ---\\nok\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s20.act\", \"role\": \"assistant\", \"body\": \"[step 20] advance\\nthought: \"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s20.obs\", \"role\": \"observation\", \"body\": \"Stage 7 of 10 released.\\nRound 7 of 10 released. New files are under /task/fixtures/round-07/.\\n\\nNew files:\\n  round-07/board.md (6 lines)\\n  round-07/logs/checkout-api.log (72 lines)\\n  round-07/logs/inventory-svc.log (66 lines)\\n  round-07/logs/ledger-svc.log (55 lines)\\n  round-07/logs/payments-svc.log (79 lines)\\n  round-07/logs/search-api.log (74 lines)\"}\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "</transcript_to_summarise>\n\nWrite the replacement summary now, at most 990 characters."
+     }
+    ]
+   }
+  ],
+  "output_config": {
+   "effort": "low"
+  }
+ }
+}

@@ -1,0 +1,19 @@
+--- rev-40
++++ rev-41
+@@ -30,6 +30,16 @@
+    "id": "s28.obs",
+    "role": "observation",
+    "body": "Stage 10 of 10 released.\nRound 10 of 10 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (2 lines)\n  round-10/logs/checkout-api.log (79 lines)\n  round-10/logs/inventory-svc.log (65 lines)\n  round-10/logs/ledger-svc.log (74 lines)\n  round-10/logs/payments-svc.log (71 lines)\n  round-10/logs/search-api.log (86 lines)"
++  },
++  {
++   "id": "s29.act",
++   "role": "assistant",
++   "body": "[step 29] execute\nthought: Read R10 board and grep errors.\ncode:\nimport re\np='/task/fixtures/round-10/'\nprint(open(p+'board.md').read())\nfor s in ['search-api','checkout-api','payments-svc','ledger-svc','inventory-svc']:\n  L=open(p+'logs/'+s+'.log').read().splitlines()\n  h=[i+1 for i,l in enumerate(L) if re.search('ERROR|heap|429|cert|config',l,re.I)]\n  print(s,len(h),h[:12],L[h[0]-1][:150] if h else '')"
++  },
++  {
++   "id": "s29.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n# Incident board: updates in round 10\n\n\nsearch-api 12 [2, 4, 21, 24, 28, 36, 47, 51, 52, 55, 60, 72] {\"ts\":\"2026-09-14T17:05:30Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"4.16.\ncheckout-api 2 [20, 75] {\"ts\":\"2026-09-14T17:14:37Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"heap usage high\",\"rss_mb\":3358,\"gc_pause_ms\":831}\npayments-svc 3 [25, 46, 56] {\"ts\":\"2026-09-14T17:19:08Z\",\"level\":\"INFO\",\"svc\":\"payments-svc\",\"msg\":\"heartbeat\",\"uptime_s\":42999}\nledger-svc 0 [] \ninventory-svc 0 [] \n"
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-32
++++ rev-33
+@@ -30,6 +30,16 @@
+    "id": "s23.obs",
+    "role": "observation",
+    "body": "Stage 8 of 11 released.\nRound 8 of 11 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (7 lines)\n  round-08/logs/auth-svc.log (61 lines)\n  round-08/logs/checkout-api.log (75 lines)\n  round-08/logs/inventory-svc.log (58 lines)\n  round-08/logs/search-api.log (75 lines)\n  round-08/logs/shipping-svc.log (65 lines)"
++  },
++  {
++   "id": "s24.act",
++   "role": "assistant",
++   "body": "[step 24] execute\nthought: Inspect R8 board and error lines.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-08/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-08/logs/*.log')):\n    n=0\n    for i,l in enumerate(open(f),1):\n        if re.search(r'ERROR|error|429|SERVFAIL|cert|invalid|FATAL',l) and 'slow query' not in l:\n            n+=1\n            if n<=3: print(f.split('/')[-1],i,l.strip()[:160])\n    print(f.split('/')[-1],'count',n)"
++  },
++  {
++   "id": "s24.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 08\n\n- Thread A status: resolved (no recurrence for two hours).\n- Thread B status: mitigated (workaround in place; permanent fix pending).\n- Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\n- Follow-up OPEN DATA_BACKFILL: backfill of records missed during the incident.\n- Follow-up CLOSED VENDOR_TICKET.\n\nauth-svc.log 8 {\"ts\":\"2026-09-14T15:06:33Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nauth-svc.log 61 {\"ts\":\"2026-09-14T15:59:34Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nauth-svc.log count 2\ncheckout-api.log count 0\ninventory-svc.log count 0\nsearch-api.log 1 {\"ts\":\"2026-09-14T15:01:23Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":51}\nsearch-api.log 2 {\"ts\":\"2026-09-14T15:03:20Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.59.8\"}\nsearch-api.log 5 {\"ts\":\"2026-09-14T15:05:16Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.59.8\"}\nsearch-api.log count 15\nshipping-svc.log 50 {\"ts\":\"2026-09-14T15:46:10Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nshipping-svc.log 60 {\"ts\":\"2026-09-14T15:54:56Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nshipping-svc.log count 2\n"
+   }
+  ]
+ }

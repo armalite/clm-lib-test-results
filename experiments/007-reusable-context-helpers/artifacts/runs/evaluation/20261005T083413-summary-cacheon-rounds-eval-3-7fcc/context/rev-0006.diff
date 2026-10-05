@@ -1,0 +1,19 @@
+--- rev-5
++++ rev-6
+@@ -35,6 +35,16 @@
+    "id": "s4.obs",
+    "role": "observation",
+    "body": "Stage 2 of 10 released.\nRound 2 of 10 released. New files are under /task/fixtures/round-02/.\n\nNew files:\n  round-02/board.md (3 lines)\n  round-02/changes.md (3 lines)\n  round-02/logs/checkout-api.log (69 lines)\n  round-02/logs/inventory-svc.log (80 lines)\n  round-02/logs/ledger-svc.log (77 lines)\n  round-02/logs/payments-svc.log (65 lines)\n  round-02/logs/search-api.log (72 lines)"
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: Scan round 2: board, changes, non-noise log lines.\ncode:\nimport glob\nb='/task/fixtures/round-02/'\nprint(open(b+'board.md').read()[:800])\nprint(open(b+'changes.md').read()[:800])\nfor p in sorted(glob.glob(b+'logs/*')):\n  n=0\n  for i,l in enumerate(open(p),1):\n    if 'slow query' not in l and 'INFO' not in l:\n      n+=1\n      if n<=4: print(p.split('/')[-1],i,l[:130].strip())\n  print(p.split('/')[-1],'count',n)\n"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n# Incident board: updates in round 02\n\n- Thread A opened: an expired TLS certificate on a dependency confirmed as the cause (code CERT_EXPIRED) in ledger-svc; impact also on inventory-svc. Status: ongoing.\n\n# Change log: round 02\n\n- CHG-117 PROPOSED: move batch jobs to off-peak window (not applied)\n\ncheckout-api.log count 0\ninventory-svc.log 10 2026-09-14T09:08:54Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ninventory-svc.log 11 2026-09-14T09:09:36Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ninventory-svc.log 12 2026-09-14T09:11:04Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ninventory-svc.log 13 2026-09-14T09:12:18Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ninventory-svc.log count 13\nledger-svc.log 20 2026-09-14T09:09:43Z ERROR ledger-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nledger-svc.log 23 2026-09-14T09:11:25Z ERROR ledger-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nledger-svc.log 28 2026-09-14T09:14:19Z ERROR ledger-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nledger-svc.log 43 2026-09-14T09:27:13Z ERROR ledger-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nledger-svc.log count 8\npayments-svc.log count 0\nsearch-api.log count 0\n"
+   }
+  ]
+ }

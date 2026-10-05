@@ -1,0 +1,127 @@
+{
+ "meta": {
+  "kind": "summary",
+  "step": 9,
+  "attempt": 0,
+  "est_input_tokens": 4200,
+  "input_token_bound": 11535,
+  "reserved_usd": 0.139595,
+  "context_revision": 9,
+  "context_sha256": "b033b6dc33a74f81ccc24135e70e39aad9312873102e77afe49f5ab9398137bf",
+  "layout": "blocks/1",
+  "cache_ttl": "5m",
+  "prefix": {
+   "family": "summary",
+   "blocks": 13,
+   "system_blocks": 2,
+   "breakpoint_blocks": [
+    2,
+    11
+   ],
+   "previous": true,
+   "common_blocks": 3,
+   "first_changed_block": 3,
+   "common_prefix_chars": 3508
+  },
+  "summary_policy": "token-tail/1",
+  "older_entries": [
+   "sum1",
+   "s2.act",
+   "s2.obs",
+   "s3.act",
+   "s3.obs",
+   "s4.act",
+   "s4.obs",
+   "s5.act",
+   "s5.obs"
+  ],
+  "kept_tail": [
+   "s6.act",
+   "s6.obs",
+   "s7.act",
+   "s7.obs",
+   "s8.act",
+   "s8.obs"
+  ],
+  "summary_attempt": 0,
+  "requested_max_chars": 1552,
+  "forced": false
+ },
+ "sha256": "7b1fdfa8bfa482155822e5491e56b7940cda0c30eef9943985cd01f6c10a9d48",
+ "payload": {
+  "model": "claude-opus-5-5",
+  "max_tokens": 4096,
+  "system": [
+   {
+    "type": "text",
+    "text": "run-ref: 93a32112142857af821d02985b2604bb\n"
+   },
+   {
+    "type": "text",
+    "text": "You compress an agent's working transcript. The agent is\ninvestigating a multi-service production incident whose evidence arrives in hourly rounds, and will\nkeep working after your summary replaces the entries below. The transcript may include an earlier\nsummary: carry its facts forward. Preserve, exactly and verbatim where relevant:\n- each incident thread: its current cause and any superseded cause, affected services, current\n  status and the record that set it;\n- follow-up items opened and closed, with their codes;\n- early facts that may matter later (change records, builds, configuration values);\n- every file:line reference needed as evidence, and observed log formats;\n- open questions and the next planned steps, including rounds still to be released.\nDrop repetition and raw log dumps. Use compact bullet points. Plain text only. Stay within the\nrequested length; it is set so the agent has room to continue."
+   }
+  ],
+  "messages": [
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "text",
+      "text": "<task>\nProduction incident investigation across several services. Evidence arrives in\n10 hourly rounds. Only round 1 is available now, under /task/fixtures/round-01/.\n\nEach round directory holds:\n- logs/<service>.log: that hour's structured service logs (the log format may change).\n- board.md: the incident board's updates during that hour. An update lists only what\n  changed; anything it does not mention is unchanged. The latest update for a thread wins.\n- changes.md (some rounds): change records. APPLIED changes took effect; PROPOSED did not.\n\nReply {\"action\": \"advance\"} to release the next round. Released rounds never change and stay\nreadable. A final answer is accepted only after all 10 rounds are released.\n\nFinal answer (all fields required):\n  {\"action\": \"final\", \"answer\": {\n     \"incidents\": [{\"cause\": \"<CAUSE_CODE>\", \"services\": [\"<service>\", ...],\n                    \"status\": \"ongoing|mitigated|resolved\",\n                    \"evidence_refs\": [\"round-NN/<file>:<line>\", ...]}, ...],\n     \"unresolved\": [\"<FOLLOW_UP_CODE>\", ...],\n     \"summary\": \"<short free text>\"}}\n- incidents: every real incident at the end of the final round (not false alarms), one entry\n  per incident, with its current cause, all affected services and its current status.\n- evidence_refs: path:line references (relative to /task/fixtures, ranges up to 20 lines as\n  path:a-b) supporting the incident's current cause and current status; when the cause traces\n  back to an earlier change record, cite that record too.\n- unresolved: follow-up items still open at the end of the final round.\n\nCause codes:\n  DB_POOL_EXHAUSTED: database connection pool exhausted\n  CACHE_STAMPEDE: cache miss storm after mass expiry\n  CERT_EXPIRED: an expired TLS certificate on a dependency\n  DNS_RESOLUTION: DNS lookups failing for a dependency\n  QUEUE_BACKLOG: message consumer lag growing\n  MEMORY_LEAK: process memory growing until restarts\n  UPSTREAM_RATE_LIMIT: an upstream provider rejecting requests with 429\n  DISK_PRESSURE: a data volume running out of space\n  BAD_CONFIG_ROLLOUT: a configuration value shipped by a rollout is invalid\nFollow-up codes:\n  CUSTOMER_COMMS: customer communication about the impact\n  DATA_BACKFILL: backfill of records missed during the incident\n  CAPACITY_REVIEW: capacity review of the affected tier\n  ALERT_TUNING: tuning of noisy or late alerts\n  VENDOR_TICKET: a ticket open with an external vendor\n  POSTMORTEM_DRAFT: drafting the postmortem\n  RUNBOOK_UPDATE: updating the runbook\n</task>\n\n<transcript_to_summarise>\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"sum1\", \"role\": \"summary\", \"body\": \"Summary of work so far (round 1 of 10 released; rounds 2-10 still to be released):\\n\\nRound 1 files:\\n- board.md: header \\\"# Incident board: updates in round 01\\\" and no thread updates (empty board).\\n- changes.md: exists but has NOT been read yet. Next step: read it.\\n- logs: checkout-api.log (58 lines), payments-svc.log (78), ledger-svc.log (78), inventory-svc.log (55), search-api.log (not yet inspected; output was truncated).\\n\\nLog format: `\\u003cISO ts> LEVEL  \\u003cservice> \\u003cmessage> key=val`\\n- Example: `2026-09-14T08:03:34Z WARN  checkout-api slow query ms=269 table=orders`\\n\\nFindings:\\n- Background noise, likely not an incident: \\\"slow query ms=200-440 table=orders|items|events\\\" WARNs appear in every service (checkout, payments, ledger, inventory).\\n- Candidate incident CERT_EXPIRED on ledger-svc:\\n  - Repeated `ERROR ledger-svc tls handshake failed peer=sso.example.net reason=certificate_expired`.\\n  - Evidence: round-01/logs/ledger-svc.log lines 14, 15, 21, 39, 40, 55, 59, 72 (08:11-08:58).\\n  - Not yet on the board; status unknown, treat as ongoing.\\n\\nIncident threads: none declared on the board yet.\\n\\nFollow-ups: none opened or closed yet.\\n\\nNext steps:\\n1. Read round-01/changes.md (note APPLIED vs PROPOSED records and any config values or builds).\\n2. Grep search-api.log and the rest of inventory-svc.log for ERROR lines, filtering out slow-query noise.\\n3. Advance through rounds 2-10. Track board threads (cause, services, status and the record that set each), follow-up codes, and file:line evidence.\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s2.act\", \"role\": \"assistant\", \"body\": \"[step 2] execute\\nthought: Save notes; look at changes and remaining errors, filtering out slow query noise.\\ncode:\\nimport glob\\nb='/task/fixtures/round-01/'\\nprint(open(b+'changes.md').read()[:1500])\\nfor f in sorted(glob.glob(b+'logs/*')):\\n  for i,l in enumerate(open(f).read().splitlines(),1):\\n    if ('ERROR' in l or 'WARN' in l) and 'slow query' not in l and 'certificate_expired' not in l:print(f.split('/')[-1],i,l[:150])\\nopen('/task/workspace/notes.md','w').write('R1: ledger-svc CERT_EXPIRED sso.example.net round-01/logs/ledger-svc.log:14-72 ; slow query WARN is noise everywhere\\\\n')\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s2.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.4s\\n--- stdout ---\\n# Change log: round 01\\n\\n- CHG-109 PROPOSED: raise HPA max replicas for search tier (not applied)\\n- CHG-113 APPLIED: build 4.16.4 rolled out to search-api; sets `http.max_inflight=-1`\\n- CHG-114 APPLIED: build 4.16.4 rolled out to checkout-api; no config changes\\n\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s3.act\", \"role\": \"assistant\", \"body\": \"[step 3] execute\\nthought: Record change note, then advance.\\ncode:\\nopen('/task/workspace/notes.md','a').write('R1 changes: CHG-113 APPLIED search-api http.max_inflight=-1 (possible BAD_CONFIG) round-01/changes.md:4 ; CHG-109 proposed only. No other errors R1.\\\\n')\\nprint(open('/task/workspace/notes.md').read())\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s3.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=1.5s\\n--- stdout ---\\nR1: ledger-svc CERT_EXPIRED sso.example.net round-01/logs/ledger-svc.log:14-72 ; slow query WARN is noise everywhere\\nR1 changes: CHG-113 APPLIED search-api http.max_inflight=-1 (possible BAD_CONFIG) round-01/changes.md:4 ; CHG-109 proposed only. No other errors R1.\\n\\n\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s4.act\", \"role\": \"assistant\", \"body\": \"[step 4] advance\\nthought: \"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s4.obs\", \"role\": \"observation\", \"body\": \"Stage 2 of 10 released.\\nRound 2 of 10 released. New files are under /task/fixtures/round-02/.\\n\\nNew files:\\n  round-02/board.md (3 lines)\\n  round-02/changes.md (3 lines)\\n  round-02/logs/checkout-api.log (69 lines)\\n  round-02/logs/inventory-svc.log (80 lines)\\n  round-02/logs/ledger-svc.log (77 lines)\\n  round-02/logs/payments-svc.log (65 lines)\\n  round-02/logs/search-api.log (72 lines)\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s5.act\", \"role\": \"assistant\", \"body\": \"[step 5] execute\\nthought: Inspect round 2 board, changes, and non-noise errors.\\ncode:\\nimport glob\\nb='/task/fixtures/round-02/'\\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\\nfor f in sorted(glob.glob(b+'logs/*')):\\n  c={}\\n  for i,l in enumerate(open(f).read().splitlines(),1):\\n    if ('ERROR' in l or 'WARN' in l) and 'slow query' not in l:\\n      k=l.split(None,3)[3][:60] if len(l.split(None,3))>3 else l\\n      c.setdefault(k,[]).append(i)\\n  for k,v in c.items():print(f.split('/')[-1],v[:8],len(v),k)\"}\n"
+     },
+     {
+      "type": "text",
+      "text": "{\"id\": \"s5.obs\", \"role\": \"observation\", \"body\": \"exit_code=0 duration=4.0s\\n--- stdout ---\\n# Incident board: updates in round 02\\n\\n- Thread A opened: an expired TLS certificate on a dependency confirmed as the cause (code CERT_EXPIRED) in ledger-svc; impact also on inventory-svc. Status: ongoing.\\n\\n# Change log: round 02\\n\\n- CHG-117 PROPOSED: move batch jobs to off-peak window (not applied)\\n\\ninventory-svc.log [10, 11, 12, 13, 19, 26, 31, 33] 13 tls handshake failed peer=sso.example.net reason=certificate\\nledger-svc.log [20, 23, 28, 43, 45, 47, 51, 57] 8 tls handshake failed peer=sso.example.net reason=certificate\\n\"}\n",
+      "cache_control": {
+       "type": "ephemeral",
+       "ttl": "5m"
+      }
+     },
+     {
+      "type": "text",
+      "text": "</transcript_to_summarise>\n\nWrite the replacement summary now, at most 1552 characters."
+     }
+    ]
+   }
+  ],
+  "output_config": {
+   "effort": "low"
+  }
+ }
+}

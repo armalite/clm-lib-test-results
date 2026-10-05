@@ -1,0 +1,24 @@
+--- rev-46
++++ rev-47
+@@ -40,6 +40,21 @@
+    "id": "n8",
+    "role": "note",
+    "body": "R8: board empty. CHG-156 APPLIED log sampling only. CERT_EXPIRED partner-gw continues (round-08/logs/inventory-svc.log:6,16). DNS SERVFAIL continues ledger (round-08/logs/ledger-svc.log:2,13) pricing (round-08/logs/pricing-svc.log:4,14). Next: advance to R9."
++  },
++  {
++   "id": "s29.act",
++   "role": "assistant",
++   "body": "[step 29] execute\nthought: Prune context and read spill summary compactly.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))\nt=open('/task/workspace/spill/s28.obs.txt').read()\nlines=t.splitlines()\nprint('\\n'.join(lines[:8]))\nfrom collections import defaultdict\nd=defaultdict(list)\nfor l in lines[8:]:\n    p=l.split(' ',2)\n    if len(p)<3: continue\n    m=re.search(r'(SERVFAIL|certificate_expired|429|ERROR)\\S*.{0,40}',p[2])\n    d[(p[0],m.group(0)[:50] if m else p[2][:50])].append(p[1])\nfor k,v in d.items(): print(k,v[:6])"
++  },
++  {
++   "id": "s29.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.2s\n--- stdout ---\nexit_code=0 duration=2.2s\n--- stdout ---\n# Incident board: updates in round 09\n\n- Thread B root cause revised: DNS lookups failing for a dependency (DNS_RESOLUTION); this supersedes the earlier suspicion of CACHE_STAMPEDE.\n- Thread C opened: request failures on some inventory-svc pods; cause not yet identified. Status: ongoing.\n- Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\n- Follow-up OPEN POSTMORTEM_DRAFT: drafting the postmortem.\n('inventory-svc.log', 'ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"config validat') ['2', '15', '28', '29', '42', '44']\n('ledger-svc.log', 'ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed') ['3', '9', '10', '13', '31', '55']\n('ledger-svc.log', '429,\"table\":\"orders\"}') ['8']\n('pricing-svc.log', 'ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup faile') ['3', '14', '22', '39', '49', '53']\n"
++  },
++  {
++   "id": "s29.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 29: revision 45 -> 46; entries 15 -> 8; body chars 3716 -> 2082; removed [s26.act, s26.obs, s26.rcpt, s27.act, s27.obs, s28.act, s28.obs]; added []; rewritten []"
+   }
+  ]
+ }

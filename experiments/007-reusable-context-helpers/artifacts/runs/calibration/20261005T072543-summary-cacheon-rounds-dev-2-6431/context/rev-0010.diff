@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -35,6 +35,16 @@
+    "id": "s7.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=2.1s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 03\nboard.md 2 \nboard.md 3 - Thread B opened: errors in auth-svc. Suspected cause: database connection pool exhausted (DB_POOL_EXHAUSTED). Status: ongoing.\nchanges.md 1 # Change log: round 03\nchanges.md 2 \nchanges.md 3 - CHG-126 PROPOSED: raise HPA max replicas for search tier (not applied)\nauth-svc.log 6 2026-09-14T10:01:11Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nauth-svc.log 9 2026-09-14T10:02:37Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nauth-svc.log 15 2026-09-14T10:10:16Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nauth-svc.log 21 2026-09-14T10:19:36Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nauth-svc.log count 10\nauth-svc.log L1 2026-09-14T10:00:15Z INFO  auth-svc heartbeat uptime_s=3665\ncheckout-api.log 33 2026-09-14T10:22:15Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\ncheckout-api.log 37 2026-09-14T10:24:43Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\ncheckout-api.log 44 2026-09-14T10:31:19Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\ncheckout-api.log 45 2026-09-14T10:32:24Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\ncheckout-api.log count 8\ncheckout-api.log L1 2026-09-14T10:01:43Z INFO  checkout-api health ok probe=readiness\ninventory-svc.log 3 2026-09-14T10:01:47Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 7 2026-09-14T10:04:06Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 15 2026-09-14T10:13:19Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 28 2026-09-14T10:24:26Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log count 7\ninventory-svc.log L1 2026-09-14T10:00:03Z INFO  inventory-svc health ok probe=readiness\nsearch-api.log count 0\nsearch-api.log L1 2026-09-14T10:00:11Z INFO  search-api health ok probe=readiness\nshipping-svc.log count 0\nshipping-svc.log L1 2026-09-14T10:00:05Z INFO  shipping-svc health ok probe=readiness\n"
++  },
++  {
++   "id": "s8.act",
++   "role": "assistant",
++   "body": "[step 8] execute\nthought: Save round 3 notes with full auth line numbers.\ncode:\nimport re\nf='/task/fixtures/round-03/logs/auth-svc.log'\nL=[i for i,l in enumerate(open(f),1) if 'certificate_expired' in l]\nc=[i for i,l in enumerate(open('/task/fixtures/round-03/logs/checkout-api.log'),1) if 'SERVFAIL' in l]\nv=[i for i,l in enumerate(open('/task/fixtures/round-03/logs/inventory-svc.log'),1) if 'SERVFAIL' in l]\ns='R3: Thread B opened auth-svc DB_POOL_EXHAUSTED ongoing (round-03/board.md:3) BUT logs show CERT_EXPIRED peer=sso.example.net auth lines %s. DNS continues checkout %s inventory %s. CHG-126 PROPOSED only.\\n'%(L,c,v)\nopen('/task/workspace/notes.md','a').write(s);print(s)"
++  },
++  {
++   "id": "s8.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nR3: Thread B opened auth-svc DB_POOL_EXHAUSTED ongoing (round-03/board.md:3) BUT logs show CERT_EXPIRED peer=sso.example.net auth lines [6, 9, 15, 21, 25, 26, 33, 48, 64, 72]. DNS continues checkout [33, 37, 44, 45, 47, 54, 69, 74] inventory [3, 7, 15, 28, 34, 41, 50]. CHG-126 PROPOSED only.\n\n"
+   }
+  ]
+ }

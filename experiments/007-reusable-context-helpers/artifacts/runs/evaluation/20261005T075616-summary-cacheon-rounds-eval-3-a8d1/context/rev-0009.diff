@@ -1,0 +1,19 @@
+--- rev-8
++++ rev-9
+@@ -65,6 +65,16 @@
+    "id": "s7.obs",
+    "role": "observation",
+    "body": "Stage 3 of 10 released.\nRound 3 of 10 released. New files are under /task/fixtures/round-03/.\n\nNew files:\n  round-03/board.md (2 lines)\n  round-03/changes.md (3 lines)\n  round-03/logs/checkout-api.log (56 lines)\n  round-03/logs/inventory-svc.log (79 lines)\n  round-03/logs/ledger-svc.log (70 lines)\n  round-03/logs/payments-svc.log (65 lines)\n  round-03/logs/search-api.log (57 lines)"
++  },
++  {
++   "id": "s8.act",
++   "role": "assistant",
++   "body": "[step 8] execute\nthought: Inspect round 3.\ncode:\nimport glob\nb='/task/fixtures/round-03/'\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\nfor f in sorted(glob.glob(b+'logs/*')):\n  c={}\n  for i,l in enumerate(open(f).read().splitlines(),1):\n    if ('ERROR' in l or 'WARN' in l or 'error' in l.lower()) and 'slow query' not in l:\n      p=l.split(None,3);k=p[3][:60] if len(p)>3 else l[:60]\n      c.setdefault(k,[]).append(i)\n  for k,v in c.items():print(f.split('/')[-1],v[:8],len(v),k)"
++  },
++  {
++   "id": "s8.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.7s\n--- stdout ---\n# Incident board: updates in round 03\n\n\n# Change log: round 03\n\n- CHG-125 APPLIED: retry budget for idempotent GETs set to 1\n\ninventory-svc.log [9, 13, 18, 39, 43, 51, 56, 57] 9 tls handshake failed peer=sso.example.net reason=certificate\nledger-svc.log [23, 24, 32, 40, 41, 42, 43, 61] 10 tls handshake failed peer=sso.example.net reason=certificate\n"
+   }
+  ]
+ }

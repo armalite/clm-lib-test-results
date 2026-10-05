@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('\nR5: search-api cert lines round-05/logs/search-api.log:14,35,50; shipping round-05:1,2,18. R6: board.md:3 Thread B adds search-api (cause/status unchanged). cert search-api round-06:11,14,25; shipping round-06:4,35,40. no lag.\n')
+print('ok')

@@ -1,0 +1,29 @@
+{
+ "number": 22,
+ "parent": 21,
+ "source": "runtime",
+ "step": 16,
+ "sha256": "1802df1acda451ff820c42b1da895e1734b5c39c268514cda601f1f877e6feb1",
+ "entries": [
+  {
+   "id": "notes",
+   "role": "note",
+   "body": "R1: CHG-113 APPLIED auth-svc cache.ttl_s=-1 (round-01/changes.md:4) suspect BAD_CONFIG (no auth errors seen r1-r5). payments lag r01 payments-svc.log:7,9. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc. lag r02 payments-svc.log:3-40, ledger-svc.log:5-77. CHG-117 TLS hourly noise. R3: CHG-124 PROPOSED; slow queries=noise. R4: board.md:3 Thread B shipping-svc suspected DB_POOL (logs show CERT_EXPIRED peer=sso.example.net shipping-svc.log:1-13); board.md:4 RUNBOOK_UPDATE OPEN. R5: board.md:3 Thread A mitigated; changes.md:3 CHG-143 APPLIED payments mitigation; CERT_EXPIRED now also search-api (r05 search-api.log:14-81) and shipping-svc.log:1-2. ctx.py load/save/setnote/prune(keep)."
+  },
+  {
+   "id": "s16.act",
+   "role": "assistant",
+   "body": "[step 16] execute\nthought: Save R5 notes, prune, check payments lag and search-api cert line ranges.\ncode:\nimport ctx,re\nctx.prune(keep=())\nn=ctx.load()['entries'][0]['body'] if False else None\nb='/task/fixtures/round-05/logs/'\nfor s in ['payments-svc.log','ledger-svc.log','search-api.log','shipping-svc.log']:\n    L=open(b+s).read().splitlines()\n    h=[i for i,l in enumerate(L,1) if re.search(r'lag|certificate',l)]\n    print(s,len(h),h[:1],h[-1:])\nctx.setnote('notes','R1: CHG-113 APPLIED auth-svc cache.ttl_s=-1 (round-01/changes.md:4) suspect BAD_CONFIG (no auth errors seen r1-r5). payments lag r01 payments-svc.log:7,9. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc. lag r02 payments-svc.log:3-40, ledger-svc.log:5-77. CHG-117 TLS hourly noise. R3: CHG-124 PROPOSED; slow queries=noise. R4: board.md:3 Thread B shipping-svc suspected DB_POOL (logs show CERT_EXPIRED peer=sso.example.net shipping-svc.log:1-13); board.md:4 RUNBOOK_UPDATE OPEN. R5: board.md:3 Thread A mitigated; changes.md:3 CHG-143 APPLIED payments mitigation; CERT_EXPIRED now also search-api (r05 search-api.log:14-81) and shipping-svc.log:1-2. ctx.py load/save/setnote/prune(keep).')"
+  },
+  {
+   "id": "s16.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.6s\n--- stdout ---\npayments-svc.log 0 [] []\nledger-svc.log 0 [] []\nsearch-api.log 6 [14] [81]\nshipping-svc.log 8 [1] [59]\n"
+  },
+  {
+   "id": "s16.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 16: revision 20 -> 21; entries 8 -> 1; body chars 5661 -> 702; removed [s13.act, s13.obs, s13.rcpt, s14.act, s14.obs, s15.act, s15.obs]; added []; rewritten [notes]"
+  }
+ ]
+}

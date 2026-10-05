@@ -1,0 +1,3 @@
+import ctx
+ctx.keep_notes('R1: changes.md:3 CHG-112 TLS rotation APPLIED; r01 changes.md:4 CHG-113 auth-svc 4.51.3 cache.ttl_s=-1 (suspect BAD_CONFIG/CACHE); :5 CHG-114 shipping no config. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc ongoing; changes.md:3 CHG-117 TLS hourly APPLIED. Lag lines r02 ledger 5-77, payments 3-40 (stock-updates). Noise: slow-query WARN. ctx.py keep_notes(body) replaces context. Filter: skip slow/INFO. Next: advance.')
+print('ok')

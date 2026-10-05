@@ -1,0 +1,24 @@
+--- rev-33
++++ rev-34
+@@ -5,6 +5,21 @@
+    "id": "notes",
+    "role": "note",
+    "body": "R1: round-01/changes.md:3 CHG-107 APPLIED retry budget GETs=1. board empty. R1 errs: round-01/logs/inventory-svc.log:7-90 dns SERVFAIL rates.internal.\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspicious); CHG-121 auth-svc no cfg. logs checkout-api.log:8-59, inventory-svc.log:8-74 dns SERVFAIL.\nR3: board.md:3 Thread B DB_POOL_EXHAUSTED auth-svc ongoing. changes CHG-126 PROPOSED only. WARN slow query all svcs. R3 logs: auth-svc.log:6-72 ERROR tls certificate_expired peer=sso.example.net (board says DB pool - likely wrong cause); checkout-api.log:33-74, inventory-svc.log:3-50 dns SERVFAIL; search-api 0 errs.\nR4: board empty. auth-svc.log:6-77 cert_expired sso.example.net; shipping-svc.log:3-66 cert_expired sso (new svc); checkout-api.log:1-71, inventory-svc.log:32-75 dns SERVFAIL; search-api 0 errs.\nR5: board.md:3 Thread A mitigated (CHG-143 APPLIED inventory-svc changes.md:3); board.md:4 Thread B +shipping-svc; board.md:5 OPEN VENDOR_TICKET, :6 OPEN ALERT_TUNING. logs: auth-svc.log:11-64, shipping-svc.log:9-65 cert_expired sso; checkout/inventory/search 0 errs.\nR6: board.md:3 OPEN RUNBOOK_UPDATE. changes CHG-144 log sampling (irrelevant). auth-svc.log:4-79, shipping-svc.log:1-64 cert_expired sso; others 0 errs.\nR7: board.md:3 Thread B cause revised CERT_EXPIRED; board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing (429 tax-provider, search-api.log:4-66). auth-svc.log:1-64, shipping-svc.log:10-66 cert_expired; checkout/inventory 0 errs.\nR8: board.md:3 A resolved; :4 B mitigated; :5 Thread C search-api failures cause unknown ongoing; :6 OPEN DATA_BACKFILL; :7 CLOSED VENDOR_TICKET. auth-svc.log:8-61, shipping-svc.log:50-60 cert errs (2 each, dropping); search-api.log:1-72 429 tax-provider (15)."
++  },
++  {
++   "id": "s24.act",
++   "role": "assistant",
++   "body": "[step 24] execute\nthought: Record R8 and compact, check search-api errors other than 429.\ncode:\nfrom ctx import keep_notes\nimport json,re\nn=json.load(open('context.json'))['entries'][0]['body']\nL=[(i+1,l.strip()[:160]) for i,l in enumerate(open('/task/fixtures/round-08/logs/search-api.log')) if re.search(r'ERROR',l) and '429' not in l]\nprint(L[:5],len(L))\nkeep_notes(n+'\\nR8: board.md:3 A resolved; :4 B mitigated; :5 Thread C search-api failures cause unknown ongoing; :6 OPEN DATA_BACKFILL; :7 CLOSED VENDOR_TICKET. auth-svc.log:8-61, shipping-svc.log:50-60 cert errs (2 each, dropping); search-api.log:1-72 429 tax-provider (15).')"
++  },
++  {
++   "id": "s24.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n[(2, '{\"ts\":\"2026-09-14T15:03:20Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.59.8\"}'), (5, '{\"ts\":\"2026-09-14T15:05:16Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.59.8\"}'), (10, '{\"ts\":\"2026-09-14T15:10:00Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.59.8\"}'), (26, '{\"ts\":\"2026-09-14T15:21:20Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.59.8\"}'), (42, '{\"ts\":\"2026-09-14T15:33:58Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.59.8\"}')] 9\n"
++  },
++  {
++   "id": "s24.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 24: revision 32 -> 33; entries 8 -> 1; body chars 3980 -> 1820; removed [s21.act, s21.obs, s21.rcpt, s22.act, s22.obs, s23.act, s23.obs]; added []; rewritten [notes]"
+   }
+  ]
+ }

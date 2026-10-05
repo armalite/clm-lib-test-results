@@ -1,0 +1,24 @@
+--- rev-29
++++ rev-30
+@@ -5,6 +5,21 @@
+    "id": "notes",
+    "role": "note",
+    "body": "R1: CHG-113 APPLIED auth-svc cache.ttl_s=-1 (round-01/changes.md:4) suspect BAD_CONFIG (no auth errors seen r1-r6). payments lag r01 payments-svc.log:7,9. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc. lag r02 payments-svc.log:3-40, ledger-svc.log:5-77. CHG-117 TLS hourly noise. R3: CHG-124 PROPOSED; slow queries=noise. R4: board.md:3 Thread B shipping-svc suspected DB_POOL (logs show CERT_EXPIRED peer=sso.example.net shipping-svc.log:1-13); board.md:4 RUNBOOK_UPDATE OPEN. R5: board.md:3 Thread A mitigated; changes.md:3 CHG-143 APPLIED payments mitigation; CERT_EXPIRED search-api.log:14-81. R6: board.md:3 Thread B adds search-api; cert errs r06 search-api.log:11-63, shipping-svc.log:4-78 (no lag lines r5,r6). ctx.py load/save/setnote/prune(keep). R7: board.md:3 POSTMORTEM_DRAFT OPEN, :4 DATA_BACKFILL OPEN; CHG-154 APPLIED retry budget (noise?)."
++  },
++  {
++   "id": "s22.act",
++   "role": "assistant",
++   "body": "[step 22] execute\nthought: Check r7 cert/lag lines briefly, save notes, prune.\ncode:\nimport re,glob,ctx\nfor p in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n  L=open(p).read().splitlines();h=[i for i,l in enumerate(L,1) if re.search(r'cert|lag|ttl|429|pool|ERROR',l,re.I) and 'slow query' not in l]\n  print(p.split('/')[-1],len(h),h[:1],h[-1:])\n  if h:print(' ',L[h[0]-1][:160])\nn=[e for e in ctx.load()['entries'] if e['id']=='notes'][0]['body']\nctx.prune(keep=())\nctx.setnote('notes',n+' R7: board.md:3 POSTMORTEM_DRAFT OPEN, :4 DATA_BACKFILL OPEN; CHG-154 APPLIED retry budget (noise?).')\n"
++  },
++  {
++   "id": "s22.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.7s\n--- stdout ---\nauth-svc.log 0 [] []\nledger-svc.log 0 [] []\npayments-svc.log 0 [] []\nsearch-api.log 13 [8] [71]\n  {\"ts\":\"2026-09-14T14:06:35Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nshipping-svc.log 10 [3] [76]\n  {\"ts\":\"2026-09-14T14:01:10Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n"
++  },
++  {
++   "id": "s22.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 22: revision 28 -> 29; entries 8 -> 1; body chars 3947 -> 872; removed [s19.act, s19.obs, s19.rcpt, s20.act, s20.obs, s21.act, s21.obs]; added []; rewritten [notes]"
+   }
+  ]
+ }

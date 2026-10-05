@@ -1,0 +1,5 @@
+import ctx
+ctx.prune(keep=())
+ctx.setnote('notes','R1: CHG-113 APPLIED auth-svc cache.ttl_s=-1 (round-01/changes.md:4) suspect BAD_CONFIG (no auth errors seen r1-r4). payments lag r01 payments-svc.log:7,9. R2: board.md:3 Thread A QUEUE_BACKLOG payments-svc+ledger-svc ongoing. lag r02 payments-svc.log:3-40, ledger-svc.log:5-77. CHG-117 TLS hourly noise. R3: board empty; CHG-124 PROPOSED; lag r03 payments-svc.log:3-55 ledger-svc.log:20-61; slow queries = noise. R4: board.md:3 Thread B shipping-svc suspected DB_POOL (but logs show CERT_EXPIRED peer=sso.example.net shipping-svc.log:1-13, 13 hits); board.md:4 RUNBOOK_UPDATE OPEN; lag continues r04 payments-svc.log:27-52 ledger-svc.log:28-65; CHG-133 dashboards irrelevant. ctx.py load/save/setnote/prune(keep).')
+for i,l in enumerate(open('/task/fixtures/round-04/logs/shipping-svc.log'),1):
+    if 'pool' in l.lower(): print(i,l.strip()[:150])

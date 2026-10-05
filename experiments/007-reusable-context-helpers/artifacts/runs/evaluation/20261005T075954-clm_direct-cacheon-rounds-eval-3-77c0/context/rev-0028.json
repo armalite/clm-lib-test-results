@@ -1,0 +1,49 @@
+{
+ "number": 28,
+ "parent": 27,
+ "source": "runtime",
+ "step": 20,
+ "sha256": "efe55a5732f52a102e72fae4ed5a70bc8b7e160662cb1b27484b85f2d3b63d0f",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. changes.md:3 CHG-113 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG); CHG-114 checkout no cfg; CHG-109 PROPOSED. slow query WARNs everywhere = noise. ledger-svc.log:14,15,21,39,40 CERT_EXPIRED peer=sso.example.net. | R2: board.md:3 Thread A CERT_EXPIRED ledger-svc+inventory-svc ongoing. inventory-svc.log:10-19 cert errs; ledger-svc.log:20-57. CHG-117 PROPOSED. search-api no errors seen R2. | R3: board empty. CHG-125 APPLIED retry budget (irrelevant). cert errs continue: inventory-svc.log:9-71, ledger-svc.log:23-69. no other errors. | R4: board.md:3 A mitigated; :4 Thread B checkout-api UPSTREAM_RATE_LIMIT ongoing; :5 Thread D search-api DISK_PRESSURE ongoing; :6-8 OPEN CUSTOMER_COMMS,POSTMORTEM_DRAFT,CAPACITY_REVIEW. changes.md:4 CHG-136 APPLIED mitigation A ledger. No ERROR lines in R4 logs (verify B/D). R4 logs: checkout-api.log:18-20 heap high rss WARN (MEMORY_LEAK? board says rate limit; check 429 later), lines 34-90 more; search-api.log:12,13,21,38,54,62 disk usage high /var/data (DISK_PRESSURE confirmed). R4 done -> advance next. | R5: board.md:3 OPEN DATA_BACKFILL. no ERRORs, no 429 seen in checkout (only heap WARN checkout-api.log:6-77, possible MEMORY_LEAK). search-api.log:14-76 disk high 91-98%. R5 done -> advance next. | R6: board.md:3 CLOSED CUSTOMER_COMMS. CHG-147 APPLIED TLS ticket rotation (irrelevant). checkout heap WARN checkout-api.log:17-66 (no 429). search-api.log:6-74 disk 91-97%. R6 done -> advance next."
+  },
+  {
+   "id": "s18.act",
+   "role": "assistant",
+   "body": "[step 18] execute\nthought: Record R6, compact, then advance next step.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']+=\" | R6: board.md:3 CLOSED CUSTOMER_COMMS. CHG-147 APPLIED TLS ticket rotation (irrelevant). checkout heap WARN checkout-api.log:17-66 (no 429). search-api.log:6-74 disk 91-97%. R6 done -> advance next.\"\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s18.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.5s"
+  },
+  {
+   "id": "s18.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 18: revision 24 -> 25; entries 8 -> 1; body chars 4558 -> 1479; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs, s17.act, s17.obs]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s19.act",
+   "role": "assistant",
+   "body": "[step 19] advance\nthought: "
+  },
+  {
+   "id": "s19.obs",
+   "role": "observation",
+   "body": "Stage 7 of 10 released.\nRound 7 of 10 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (6 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (66 lines)\n  round-07/logs/ledger-svc.log (55 lines)\n  round-07/logs/payments-svc.log (79 lines)\n  round-07/logs/search-api.log (74 lines)"
+  },
+  {
+   "id": "s20.act",
+   "role": "assistant",
+   "body": "[step 20] execute\nthought: Inspect R7 board and key log lines.\ncode:\nimport re\nb='/task/fixtures/round-07/'\nfor i,l in enumerate(open(b+'board.md'),1):print('board',i,l.rstrip())\nfor s in ['checkout-api','inventory-svc','ledger-svc','payments-svc','search-api']:\n  L=open(b+'logs/'+s+'.log').read().splitlines()\n  hits=[(i,l) for i,l in enumerate(L,1) if re.search(r'ERROR|429|cert|disk|heap|rss|OOM|restart|level=error|\"error\"',l,re.I) and 'slow query' not in l]\n  print(s,len(hits),[i for i,_ in hits][:40])\n  for i,l in hits[:2]:print(' ',i,l[:200])\n  if not hits:print(' first',L[0][:200])"
+  },
+  {
+   "id": "s20.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nboard 1 # Incident board: updates in round 07\nboard 2 \nboard 3 - Thread A status: resolved (no recurrence for two hours).\nboard 4 - Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\nboard 5 - Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\nboard 6 - Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\ncheckout-api 13 [6, 7, 17, 19, 22, 30, 35, 36, 41, 54, 56, 57, 67]\n  6 2026-09-14T14:04:01Z WARN  checkout-api heap usage high rss_mb=3858 gc_pause_ms=861\n  7 2026-09-14T14:05:48Z WARN  checkout-api heap usage high rss_mb=2007 gc_pause_ms=1341\ninventory-svc 0 []\n first 2026-09-14T14:00:02Z INFO  inventory-svc gc cycle pause_ms=39\nledger-svc 0 []\n first 2026-09-14T14:01:25Z INFO  ledger-svc request ok route=/v1/health status=200 ms=77\npayments-svc 0 []\n first 2026-09-14T14:00:40Z INFO  payments-svc heartbeat uptime_s=70376\nsearch-api 9 [17, 20, 23, 28, 30, 39, 50, 52, 58]\n  17 2026-09-14T14:12:20Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4\n  20 2026-09-14T14:14:27Z ERROR search-api config validation failed key=http.max_inflight value=-1 build=4.16.4\n"
+  }
+ ]
+}

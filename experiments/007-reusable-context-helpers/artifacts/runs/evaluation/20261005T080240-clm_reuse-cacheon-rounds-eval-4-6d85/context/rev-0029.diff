@@ -1,0 +1,36 @@
+--- rev-28
++++ rev-29
+@@ -4,32 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "R1: changes.md:3 CHG-113 APPLIED search-api cache.ttl_s=-1 (BAD_CONFIG candidate); CHG-114 auth-svc no cfg; CHG-107 PROPOSED. slow query WARNs = noise. ctx.py has load/save/reset(notes).\nR2: board.md:3 Thread A DB_POOL_EXHAUSTED inventory-svc + notify-worker, ongoing. pool WARNs round-02/logs/inventory-svc.log:3-78, notify-worker.log:6-57. No other WARN/ERROR in r2.\nR3: board.md:3 Thread D CACHE_STAMPEDE auth-svc ongoing; auth-svc.log:1-43 miss storm WARNs. Pool WARNs continue inventory-svc.log:12-76, notify-worker.log:4-71. search-api/shipping clean.\nR4: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing; board.md:4 VENDOR_TICKET OPEN. 429 tax-provider ERRORs in auth-svc.log (last :100) and shipping-svc.log:5-61 (UPSTREAM_RATE_LIMIT candidate). Pool WARNs inventory-svc.log:3-84, notify-worker.log:11-73. search-api clean.\nR5: board.md:3 Thread A mitigated (CHG-143 changes.md:4 APPLIED inventory-svc); board.md:4 Thread B services += shipping-svc; board.md:5 Thread D false alarm. CHG-137 TLS ticket rotation APPLIED. 429 tax-provider ERRORs auth-svc.log:1-60, shipping-svc.log:9-77. No pool WARNs r5.\nR6: board empty; CHG-142 PROPOSED (ignore). 429 tax-provider auth-svc.log:8-88, shipping-svc.log:11-88. No pool WARNs.\nR7: board.md:3 Thread B cause revised UPSTREAM_RATE_LIMIT. auth-svc.log upstream returned 429 3-76 n=12; shipping-svc.log upstream returned 429 15-50 n=9"
+-  },
+-  {
+-   "id": "s20.act",
+-   "role": "assistant",
+-   "body": "[step 20] execute\nthought: Summarize non-slow-query msgs in r7, save notes, compact.\ncode:\nimport re,glob,json,collections,ctx\nout=[]\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n    c=collections.defaultdict(list)\n    for i,l in enumerate(open(f)):\n        if re.search(r'WARN|ERROR',l) and 'slow query' not in l:\n            m=re.search(r'\"msg\":\"([^\"]*)\"',l); c[m.group(1) if m else l[:60]].append(i+1)\n    for k,v in c.items(): out.append(f\"{f.split('/')[-1]} {k} {v[0]}-{v[-1]} n={len(v)}\")\nprint('\\n'.join(out))\nn=ctx.load()['entries'][0]['body']\nctx.reset(n+'\\nR7: board.md:3 Thread B cause revised UPSTREAM_RATE_LIMIT. '+'; '.join(out))"
+-  },
+-  {
+-   "id": "s20.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nauth-svc.log upstream returned 429 3-76 n=12\nshipping-svc.log upstream returned 429 15-50 n=9\n"
+-  },
+-  {
+-   "id": "s20.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 20: revision 25 -> 26; entries 8 -> 1; body chars 4088 -> 1384; removed [s17.act, s17.obs, s17.rcpt, s18.act, s18.obs, s19.act, s19.obs]; added []; rewritten [notes]"
+-  },
+-  {
+-   "id": "s21.act",
+-   "role": "assistant",
+-   "body": "[step 21] advance\nthought: "
+-  },
+-  {
+-   "id": "s21.obs",
+-   "role": "observation",
+-   "body": "Stage 8 of 11 released.\nRound 8 of 11 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (6 lines)\n  round-08/logs/auth-svc.log (63 lines)\n  round-08/logs/inventory-svc.log (68 lines)\n  round-08/logs/notify-worker.log (59 lines)\n  round-08/logs/search-api.log (84 lines)\n  round-08/logs/shipping-svc.log (59 lines)"
++   "body": "R1: changes.md:3 CHG-113 APPLIED search-api cache.ttl_s=-1 (BAD_CONFIG candidate); CHG-114 auth-svc no cfg; CHG-107 PROPOSED. slow query WARNs = noise. ctx.py has load/save/reset(notes).\nR2: board.md:3 Thread A DB_POOL_EXHAUSTED inventory-svc + notify-worker, ongoing. pool WARNs round-02/logs/inventory-svc.log:3-78, notify-worker.log:6-57. No other WARN/ERROR in r2.\nR3: board.md:3 Thread D CACHE_STAMPEDE auth-svc ongoing; auth-svc.log:1-43 miss storm WARNs. Pool WARNs continue inventory-svc.log:12-76, notify-worker.log:4-71. search-api/shipping clean.\nR4: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing; board.md:4 VENDOR_TICKET OPEN. 429 tax-provider ERRORs in auth-svc.log (last :100) and shipping-svc.log:5-61 (UPSTREAM_RATE_LIMIT candidate). Pool WARNs inventory-svc.log:3-84, notify-worker.log:11-73. search-api clean.\nR5: board.md:3 Thread A mitigated (CHG-143 changes.md:4 APPLIED inventory-svc); board.md:4 Thread B services += shipping-svc; board.md:5 Thread D false alarm. CHG-137 TLS ticket rotation APPLIED. 429 tax-provider ERRORs auth-svc.log:1-60, shipping-svc.log:9-77. No pool WARNs r5.\nR6: board empty; CHG-142 PROPOSED (ignore). 429 tax-provider auth-svc.log:8-88, shipping-svc.log:11-88. No pool WARNs.\nR7: board.md:3 Thread B cause revised UPSTREAM_RATE_LIMIT. auth-svc.log upstream returned 429 3-76 n=12; shipping-svc.log upstream returned 429 15-50 n=9\nR8: board 1:# Incident board: updates in round 08 | 3:- Thread A status: resolved (no recurrence for two hours). | 4:- Thread B status: mitigated (workaround in place; permanent fix pending). | 5:- Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing. | 6:- Follow-up OPEN CAPACITY_REVIEW: capacity review of the affected tier.. auth-svc.log upstream returned 429 29-40 n=2; search-api.log config validation failed 24-84 n=10; shipping-svc.log upstream returned 429 41-42 n=2"
+   }
+  ]
+ }

@@ -1,0 +1,24 @@
+--- rev-36
++++ rev-37
+@@ -40,6 +40,21 @@
+    "id": "n8",
+    "role": "note",
+    "body": "R8: board.md:3 Thread A resolved; :4 Thread B cause UPSTREAM_RATE_LIMIT; :5 Thread C notify-worker ongoing cause unknown. changes.md:3 CHG-159 PROPOSED. notify-worker.log:5,45,50,58,65,72 config validation failed key http.* (BAD_CONFIG via CHG-120 r02 changes.md:4). checkout-api.log:1,6,20,29,35,39,49,51,54 429; payments-svc.log:2,24,25,34,39,41,45,46,52 429. Next: advance to R9."
++  },
++  {
++   "id": "s26.act",
++   "role": "assistant",
++   "body": "[step 26] execute\nthought: Inspect R9 board/changes and error lines; compact context.\ncode:\nimport json,re\nb='/task/fixtures/round-09/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nimport os\nfor s in sorted(os.listdir(b+'logs')):\n  hits=[str(i) for i,l in enumerate(open(b+'logs/'+s),1) if not re.search(r'slow query|INFO',l)]\n  print(s,','.join(hits[:15]))\n  if hits:print(' ex:',open(b+'logs/'+s).read().splitlines()[int(hits[0])-1][:160])\np='/task/workspace/context.json'\nc=json.load(open(p))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open(p,'w'))"
++  },
++  {
++   "id": "s26.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.1s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 09\nboard.md 2 \nboard.md 3 - Thread B status: mitigated (workaround in place; permanent fix pending).\nboard.md 4 - Thread C note: failing pods still restarting; investigation continues.\nchanges.md 1 # Change log: round 09\nchanges.md 2 \nchanges.md 3 - CHG-164 APPLIED: retry budget for idempotent GETs set to 1\nauth-svc.log \ncheckout-api.log 34,55\n ex: {\"ts\":\"2026-09-14T16:27:49Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":30}\nnotify-worker.log 3,5,12,14,15,48,52,63,67\n ex: {\"ts\":\"2026-09-14T16:00:20Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.56.0\"}\npayments-svc.log 34,42\n ex: {\"ts\":\"2026-09-14T16:30:47Z\",\"level\":\"ERROR\",\"svc\":\"payments-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":48}\nsearch-api.log \n"
++  },
++  {
++   "id": "s26.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 26: revision 35 -> 36; entries 13 -> 8; body chars 3581 -> 2260; removed [s24.act, s24.obs, s24.rcpt, s25.act, s25.obs]; added []; rewritten []"
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-15
++++ rev-16
+@@ -30,6 +30,16 @@
+    "id": "s10.obs",
+    "role": "observation",
+    "body": "Stage 4 of 11 released.\nRound 4 of 11 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (2 lines)\n  round-04/logs/auth-svc.log (83 lines)\n  round-04/logs/checkout-api.log (77 lines)\n  round-04/logs/inventory-svc.log (81 lines)\n  round-04/logs/search-api.log (59 lines)\n  round-04/logs/shipping-svc.log (81 lines)"
++  },
++  {
++   "id": "s11.act",
++   "role": "assistant",
++   "body": "[step 11] execute\nthought: Inspect round 4 board and error lines summary.\ncode:\nimport re,glob,collections\nprint(open('/task/fixtures/round-04/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-04/logs/*.log')):\n    c=collections.Counter();first={}\n    for i,l in enumerate(open(f),1):\n        if re.search(r'ERROR|error|FATAL',l):\n            k=re.sub(r'\\d+','N',l)[30:110];c[k]+=1;first.setdefault(k,[i,i]);first[k][1]=i\n    print(f.split('/')[-1]);[print(' ',v,first[k],k) for k,v in c.most_common(3)]\n    print(' sample:',open(f).readline()[:150])"
++  },
++  {
++   "id": "s11.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.9s\n--- stdout ---\n# Incident board: updates in round 04\n\n\nauth-svc.log\n  9 [6, 77] s handshake failed peer=sso.example.net reason=certificate_expired\n\n sample: 2026-09-14T11:01:02Z INFO  auth-svc request ok route=/v1/items status=200 ms=19\n\ncheckout-api.log\n  12 [1, 71] i dns lookup failed host=rates.internal err=SERVFAIL\n\n sample: 2026-09-14T11:00:28Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\n\ninventory-svc.log\n  11 [32, 75] vc dns lookup failed host=rates.internal err=SERVFAIL\n\n sample: 2026-09-14T11:01:10Z INFO  inventory-svc heartbeat uptime_s=60815\n\nsearch-api.log\n sample: 2026-09-14T11:00:36Z INFO  search-api gc cycle pause_ms=2\n\nshipping-svc.log\n  9 [3, 66] c tls handshake failed peer=sso.example.net reason=certificate_expired\n\n sample: 2026-09-14T11:01:58Z INFO  shipping-svc gc cycle pause_ms=5\n\n"
+   }
+  ]
+ }

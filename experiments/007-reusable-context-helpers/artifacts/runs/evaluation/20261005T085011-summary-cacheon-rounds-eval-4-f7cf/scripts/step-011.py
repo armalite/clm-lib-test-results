@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('\nR4: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing (suspected; logs show 429 tax-provider in auth-svc.log:12-100 and shipping-svc.log:5-61 -> likely UPSTREAM_RATE_LIMIT). board.md:4 VENDOR_TICKET OPEN. Thread D stampede continues auth-svc.log:1-74. Thread A continues inventory-svc.log:3-84, notify-worker.log:11-73.\n')
+print('ok')

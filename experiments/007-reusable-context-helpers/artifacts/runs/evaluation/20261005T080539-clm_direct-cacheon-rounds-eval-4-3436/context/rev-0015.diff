@@ -1,0 +1,19 @@
+--- rev-14
++++ rev-15
+@@ -40,6 +40,16 @@
+    "id": "s10.obs",
+    "role": "observation",
+    "body": "Stage 4 of 11 released.\nRound 4 of 11 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (4 lines)\n  round-04/logs/auth-svc.log (101 lines)\n  round-04/logs/inventory-svc.log (89 lines)\n  round-04/logs/notify-worker.log (74 lines)\n  round-04/logs/search-api.log (69 lines)\n  round-04/logs/shipping-svc.log (79 lines)"
++  },
++  {
++   "id": "s11.act",
++   "role": "assistant",
++   "body": "[step 11] execute\nthought: Inspect round 4 board and WARN/ERROR lines.\ncode:\nimport re\nb='/task/fixtures/round-04/'\nprint(open(b+'board.md').read())\nimport os\nfor f in sorted(os.listdir(b+'logs')):\n    L=open(b+'logs/'+f).read().splitlines()\n    hits=[(i+1,l) for i,l in enumerate(L) if re.search('WARN|ERROR|FATAL',l) and 'slow query' not in l]\n    print(f,len(hits))\n    for i,l in hits[:4]: print(' ',i,l[:150])"
++  },
++  {
++   "id": "s11.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 04\n\n- Thread B opened: errors in auth-svc. Suspected cause: process memory growing until restarts (MEMORY_LEAK). Status: ongoing.\n- Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\n\nauth-svc.log 25\n  1 2026-09-14T11:00:27Z WARN  auth-svc cache miss storm key_prefix=user: misses_per_s=2802\n  2 2026-09-14T11:01:16Z WARN  auth-svc cache miss storm key_prefix=sku: misses_per_s=3199\n  12 2026-09-14T11:05:03Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=53\n  16 2026-09-14T11:09:39Z ERROR auth-svc upstream returned 429 upstream=tax-provider retry_after_s=57\ninventory-svc.log 10\n  3 2026-09-14T11:02:24Z WARN  inventory-svc db pool exhausted wait_ms=1403 in_use=10/10\n  19 2026-09-14T11:14:42Z WARN  inventory-svc db pool exhausted wait_ms=1685 in_use=16/16\n  21 2026-09-14T11:15:44Z WARN  inventory-svc db pool exhausted wait_ms=2757 in_use=12/12\n  23 2026-09-14T11:16:49Z WARN  inventory-svc db pool exhausted wait_ms=2543 in_use=10/10\nnotify-worker.log 13\n  11 2026-09-14T11:10:57Z WARN  notify-worker db pool exhausted wait_ms=892 in_use=16/16\n  31 2026-09-14T11:29:02Z WARN  notify-worker db pool exhausted wait_ms=1221 in_use=10/10\n  41 2026-09-14T11:33:58Z WARN  notify-worker db pool exhausted wait_ms=2417 in_use=16/16\n  42 2026-09-14T11:35:08Z WARN  notify-worker db pool exhausted wait_ms=1837 in_use=12/12\nsearch-api.log 0\nshipping-svc.log 10\n  5 2026-09-14T11:02:22Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=53\n  21 2026-09-14T11:12:18Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=48\n  28 2026-09-14T11:18:21Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=54\n  29 2026-09-14T11:18:40Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=25\n"
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-31
++++ rev-32
+@@ -30,6 +30,16 @@
+    "id": "s24.obs",
+    "role": "observation",
+    "body": "Stage 8 of 11 released.\nRound 8 of 11 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (6 lines)\n  round-08/changes.md (3 lines)\n  round-08/logs/auth-svc.log (77 lines)\n  round-08/logs/ledger-svc.log (75 lines)\n  round-08/logs/payments-svc.log (74 lines)\n  round-08/logs/search-api.log (72 lines)\n  round-08/logs/shipping-svc.log (84 lines)"
++  },
++  {
++   "id": "s25.act",
++   "role": "assistant",
++   "body": "[step 25] execute\nthought: Read round 8 board, changes, and grouped non-INFO logs (handles both formats).\ncode:\nimport os,json,re,collections\nb='/task/fixtures/round-08/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):\n    if l.strip(): print(f,i,l.rstrip())\nfor f in sorted(os.listdir(b+'logs')):\n  g=collections.OrderedDict()\n  for i,l in enumerate(open(b+'logs/'+f),1):\n    l=l.strip()\n    try:\n      d=json.loads(l);lv=d.pop('level');d.pop('ts',None);d.pop('svc',None);m=d.pop('msg');ex=str({k:v for k,v in d.items() if k not in('ms','table')})\n    except Exception:\n      p=l.split(None,3);lv=p[1] if len(p)>1 else '?';m=re.sub(r'\\d+','N',p[3] if len(p)>3 else l);ex=''\n    if lv=='INFO' or 'slow query' in m: continue\n    k=(lv,m,ex);g.setdefault(k,[0,i,i]);g[k][0]+=1;g[k][2]=i\n  for k,v in g.items(): print(f,k,v)"
++  },
++  {
++   "id": "s25.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.3s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 08\nboard.md 3 - Thread A status: resolved (no recurrence for two hours).\nboard.md 4 - Thread B root cause revised: an expired TLS certificate on a dependency (CERT_EXPIRED); this supersedes the earlier suspicion of DB_POOL_EXHAUSTED.\nboard.md 5 - Thread C opened: request failures on some auth-svc pods; cause not yet identified. Status: ongoing.\nboard.md 6 - Follow-up OPEN ALERT_TUNING: tuning of noisy or late alerts.\nchanges.md 1 # Change log: round 08\nchanges.md 3 - CHG-157 APPLIED: dashboard panels for p99 latency added\nauth-svc.log ('ERROR', 'config validation failed', \"{'key': 'cache.ttl_s', 'value': '-1', 'build': '4.51.3'}\") [13, 14, 77]\nsearch-api.log ('ERROR', 'tls handshake failed', \"{'peer': 'sso.example.net', 'reason': 'certificate_expired'}\") [11, 2, 62]\nshipping-svc.log ('ERROR', 'tls handshake failed', \"{'peer': 'sso.example.net', 'reason': 'certificate_expired'}\") [10, 4, 79]\n"
+   }
+  ]
+ }

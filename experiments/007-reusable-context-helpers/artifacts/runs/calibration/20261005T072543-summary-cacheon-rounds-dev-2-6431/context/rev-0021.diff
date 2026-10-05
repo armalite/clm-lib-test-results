@@ -1,0 +1,19 @@
+--- rev-20
++++ rev-21
+@@ -35,6 +35,16 @@
+    "id": "s15.obs",
+    "role": "observation",
+    "body": "Stage 6 of 11 released.\nRound 6 of 11 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (3 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/auth-svc.log (80 lines)\n  round-06/logs/checkout-api.log (62 lines)\n  round-06/logs/inventory-svc.log (69 lines)\n  round-06/logs/search-api.log (64 lines)\n  round-06/logs/shipping-svc.log (74 lines)"
++  },
++  {
++   "id": "s16.act",
++   "role": "assistant",
++   "body": "[step 16] execute\nthought: Inspect round 6 and save notes.\ncode:\nimport os,glob\nd='/task/fixtures/round-06/'\nfor i,l in enumerate(open(d+'board.md'),1):print(i,l.rstrip())\nfor i,l in enumerate(open(d+'changes.md'),1):print(i,l.rstrip())\nout=[]\nfor f in sorted(glob.glob(d+'logs/*.log')):\n  n=os.path.basename(f);hits=[]\n  for i,l in enumerate(open(f),1):\n    if ('ERROR' in l or 'WARN' in l or 'error' in l) and 'slow query' not in l: hits.append((i,l.strip()[:130]))\n  print(n,len(hits),[h[0] for h in hits])\n  for h in hits[:1]: print(' ',h)\n  out.append(n+' '+str([h[0] for h in hits]))\nopen('/task/workspace/notes.md','a').write('R6 logs: '+'; '.join(out)+'\\n')\n"
++  },
++  {
++   "id": "s16.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n1 # Incident board: updates in round 06\n2 \n3 - Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\n1 # Change log: round 06\n2 \n3 - CHG-144 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc.log 10 [4, 10, 14, 19, 20, 30, 50, 60, 76, 79]\n  (4, '{\"ts\":\"2026-09-14T13:02:17Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"cert')\ncheckout-api.log 0 []\ninventory-svc.log 0 []\nsearch-api.log 0 []\nshipping-svc.log 6 [1, 18, 21, 22, 36, 64]\n  (1, '{\"ts\":\"2026-09-14T13:00:12Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"')\n"
+   }
+  ]
+ }

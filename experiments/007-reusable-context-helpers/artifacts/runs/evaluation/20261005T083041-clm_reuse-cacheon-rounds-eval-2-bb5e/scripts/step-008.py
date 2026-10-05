@@ -1,0 +1,2 @@
+import ctx
+d=ctx.load();d['entries']=[e for e in d['entries'] if e['id'] in('n1','n2')]+[{'id':'n3','role':'note','body':'R3: board.md:3 CUSTOMER_COMMS CLOSED. changes.md:3 CHG-121 APPLIED retry budget idempotent GETs=1. Logs: auth heap warns (auth-svc.log:19-88, rss to 3708), payments heap warns (payments-svc.log:8-76, rss to 3835). No restarts yet. Others quiet.'}];ctx.save(d);print('ok')

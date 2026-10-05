@@ -1,0 +1,19 @@
+--- rev-14
++++ rev-15
+@@ -40,6 +40,16 @@
+    "id": "s10.obs",
+    "role": "observation",
+    "body": "Stage 4 of 11 released.\nRound 4 of 11 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (4 lines)\n  round-04/logs/auth-svc.log (101 lines)\n  round-04/logs/inventory-svc.log (89 lines)\n  round-04/logs/notify-worker.log (74 lines)\n  round-04/logs/search-api.log (69 lines)\n  round-04/logs/shipping-svc.log (79 lines)"
++  },
++  {
++   "id": "s11.act",
++   "role": "assistant",
++   "body": "[step 11] execute\nthought: Inspect R4 board and grep key log patterns.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-04/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-04/logs/*.log')):\n    c={}\n    for i,l in enumerate(open(f),1):\n        if re.search(r'WARN|ERROR|FATAL|level=(warn|error)',l,re.I) and 'slow query' not in l:\n            k=re.sub(r'\\d+','#',l.strip())[:90]\n            c.setdefault(k,[]).append(i)\n    print(f.split('/')[-1])\n    for k,v in c.items(): print(' ',len(v),v[:6],k)"
++  },
++  {
++   "id": "s11.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n# Incident board: updates in round 04\n\n- Thread B opened: errors in auth-svc. Suspected cause: process memory growing until restarts (MEMORY_LEAK). Status: ongoing.\n- Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\n\nauth-svc.log\n  5 [1, 23, 42, 55, 65] #-#-#T#:#:#Z WARN  auth-svc cache miss storm key_prefix=user: misses_per_s=#\n  4 [2, 52, 63, 72] #-#-#T#:#:#Z WARN  auth-svc cache miss storm key_prefix=sku: misses_per_s=#\n  12 [12, 16, 17, 34, 36, 41] #-#-#T#:#:#Z ERROR auth-svc upstream returned # upstream=tax-provider retry_after_s=#\n  4 [18, 53, 71, 74] #-#-#T#:#:#Z WARN  auth-svc cache miss storm key_prefix=price: misses_per_s=#\ninventory-svc.log\n  10 [3, 19, 21, 23, 34, 35] #-#-#T#:#:#Z WARN  inventory-svc db pool exhausted wait_ms=# in_use=#/#\nnotify-worker.log\n  13 [11, 31, 41, 42, 46, 48] #-#-#T#:#:#Z WARN  notify-worker db pool exhausted wait_ms=# in_use=#/#\nsearch-api.log\nshipping-svc.log\n  10 [5, 21, 28, 29, 33, 36] #-#-#T#:#:#Z ERROR shipping-svc upstream returned # upstream=tax-provider retry_after_s=#\n"
+   }
+  ]
+ }

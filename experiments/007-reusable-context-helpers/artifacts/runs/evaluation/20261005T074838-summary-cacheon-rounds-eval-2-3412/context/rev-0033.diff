@@ -1,0 +1,19 @@
+--- rev-32
++++ rev-33
+@@ -35,6 +35,16 @@
+    "id": "s25.obs",
+    "role": "observation",
+    "body": "Stage 9 of 12 released.\nRound 9 of 12 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (6 lines)\n  round-09/logs/auth-svc.log (73 lines)\n  round-09/logs/inventory-svc.log (71 lines)\n  round-09/logs/ledger-svc.log (72 lines)\n  round-09/logs/payments-svc.log (64 lines)\n  round-09/logs/pricing-svc.log (73 lines)"
++  },
++  {
++   "id": "s26.act",
++   "role": "assistant",
++   "body": "[step 26] execute\nthought: Scan round 9.\ncode:\nimport os\nb='/task/fixtures/round-09/'\nfor i,l in enumerate(open(b+'board.md'),1):\n  if l.strip(): print(i,l.rstrip())\nfor f in sorted(os.listdir(b+'logs')):\n  L=open(b+'logs/'+f).read().splitlines()\n  idx=[i for i,l in enumerate(L,1) if ('ERROR' in l or 'WARN' in l) and 'slow query' not in l]\n  print(f,len(idx),idx[:12])\n  if idx: print('  ',L[idx[0]-1][:200])\n"
++  },
++  {
++   "id": "s26.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.8s\n--- stdout ---\n1 # Incident board: updates in round 09\n3 - Thread B root cause revised: DNS lookups failing for a dependency (DNS_RESOLUTION); this supersedes the earlier suspicion of CACHE_STAMPEDE.\n4 - Thread C opened: request failures on some inventory-svc pods; cause not yet identified. Status: ongoing.\n5 - Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\n6 - Follow-up OPEN POSTMORTEM_DRAFT: drafting the postmortem.\nauth-svc.log 0 []\ninventory-svc.log 11 [2, 15, 28, 29, 42, 44, 47, 54, 61, 68, 71]\n   {\"ts\":\"2026-09-14T16:03:15Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"7.30.0\"}\nledger-svc.log 9 [3, 9, 10, 13, 31, 55, 58, 59, 68]\n   {\"ts\":\"2026-09-14T16:04:49Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\npayments-svc.log 0 []\npricing-svc.log 9 [3, 14, 22, 39, 49, 53, 58, 60, 62]\n   {\"ts\":\"2026-09-14T16:01:53Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"dns lookup failed\",\"host\":\"rates.internal\",\"err\":\"SERVFAIL\"}\n"
+   }
+  ]
+ }

@@ -1,0 +1,4 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: changes.md:3 CHG-107 PROPOSED HPA search; :4 CHG-113 APPLIED search-api cache.ttl_s=-1 (bad config?); :5 CHG-114 auth-svc no config. board empty. slow query WARNs = noise. R1 only inventory-svc db pool exhausted WARN lines 5,9,28,30,45,52 (round-01/logs/inventory-svc.log); other svcs clean.'},{'id':'n2','role':'note','body':'R2: board.md:3 Thread A DB_POOL_EXHAUSTED inventory-svc+notify-worker ongoing. inventory-svc.log pool WARN 3,9,19,30; notify-worker.log 6,14,29,32. no changes.md seen. others clean. Next: advance to R3.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))
+import os;print(os.path.exists('/task/fixtures/round-02/changes.md'))

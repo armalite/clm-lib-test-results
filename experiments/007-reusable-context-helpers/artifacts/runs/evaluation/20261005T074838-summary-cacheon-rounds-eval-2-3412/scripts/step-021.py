@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('\nR7: log format now JSON. Thread B board adds pricing-svc (round-07/board.md:3); logs DNS SERVFAIL ledger round-07/logs/ledger-svc.log:4-21, pricing round-07/logs/pricing-svc.log:6-26. Thread D CERT_EXPIRED inventory-svc ongoing round-07/board.md:4; logs round-07/logs/inventory-svc.log:7-21 (partner-gw certificate_expired). CHG-151 PROPOSED ignore.\n')
+print('ok')

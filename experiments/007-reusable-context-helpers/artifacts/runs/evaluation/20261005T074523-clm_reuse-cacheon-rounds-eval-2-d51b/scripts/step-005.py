@@ -1,0 +1,3 @@
+import ctx
+ctx.replace_all('NOTES r01: board empty. CHG-112 APPLIED log sampling (noise). slow query WARNs noise. auth heap WARNs r01 auth-svc.log:3-61.\nR02: board.md:3 Thread A MEMORY_LEAK auth-svc + payments-svc ongoing; board.md:4 follow-up OPEN CUSTOMER_COMMS. changes.md:3 CHG-120 APPLIED inventory-svc retry.backoff_ms=0 (watch BAD_CONFIG_ROLLOUT); changes.md:4 CHG-121 ledger no config. Logs r02: auth heap WARN auth-svc.log:5-76, payments heap WARN payments-svc.log:5-48. Filter used: skip slow query|INFO|/v1/health. Next: advance.')
+print('ok')

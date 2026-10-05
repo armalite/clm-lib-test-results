@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('R1: CHG-113 APPLIED round-01/changes.md:4 auth-svc build 4.51.3 sets cache.ttl_s=-1 (possible BAD_CONFIG_ROLLOUT). CHG-114 shipping no config. board empty. payments consumer lag stock-updates fluctuating (noise?). slow query WARNs everywhere = noise.\n')
+print('ok')

@@ -1,0 +1,19 @@
+--- rev-12
++++ rev-13
+@@ -55,6 +55,16 @@
+    "id": "s10.obs",
+    "role": "observation",
+    "body": "Stage 4 of 10 released.\nRound 4 of 10 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (8 lines)\n  round-04/changes.md (4 lines)\n  round-04/logs/checkout-api.log (90 lines)\n  round-04/logs/inventory-svc.log (55 lines)\n  round-04/logs/ledger-svc.log (60 lines)\n  round-04/logs/payments-svc.log (76 lines)\n  round-04/logs/search-api.log (67 lines)"
++  },
++  {
++   "id": "s11.act",
++   "role": "assistant",
++   "body": "[step 11] execute\nthought: Inspect round 4.\ncode:\nimport glob\nb='/task/fixtures/round-04/'\nfor n in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+n).read().splitlines(),1):print(n,i,l)\nfor f in sorted(glob.glob(b+'logs/*')):\n  c={}\n  for i,l in enumerate(open(f).read().splitlines(),1):\n    if ('ERROR' in l or 'WARN' in l or 'error' in l.lower()) and 'slow query' not in l:\n      p=l.split(None,3);k=p[3][:60] if len(p)>3 else l[:60]\n      c.setdefault(k,[]).append(i)\n  for k,v in c.items():print(f.split('/')[-1],v[:8],len(v),k)\n  if not c: print(f.split('/')[-1],'first:',open(f).readline()[:120])"
++  },
++  {
++   "id": "s11.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.7s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 04\nboard.md 2 \nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nboard.md 4 - Thread B opened: errors in checkout-api. Suspected cause: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT). Status: ongoing.\nboard.md 5 - Thread D opened: a data volume running out of space alerts (DISK_PRESSURE) on search-api. Status: ongoing.\nboard.md 6 - Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\nboard.md 7 - Follow-up OPEN POSTMORTEM_DRAFT: drafting the postmortem.\nboard.md 8 - Follow-up OPEN CAPACITY_REVIEW: capacity review of the affected tier.\nchanges.md 1 # Change log: round 04\nchanges.md 2 \nchanges.md 3 - CHG-133 APPLIED: retry budget for idempotent GETs set to 1\nchanges.md 4 - CHG-136 APPLIED: mitigation for thread A deployed to ledger-svc\ncheckout-api.log [18] 1 heap usage high rss_mb=1863 gc_pause_ms=1207\ncheckout-api.log [19] 1 heap usage high rss_mb=3127 gc_pause_ms=944\ncheckout-api.log [20] 1 heap usage high rss_mb=2302 gc_pause_ms=984\ncheckout-api.log [35] 1 heap usage high rss_mb=3208 gc_pause_ms=1272\ncheckout-api.log [38] 1 heap usage high rss_mb=2022 gc_pause_ms=777\ncheckout-api.log [41] 1 heap usage high rss_mb=3612 gc_pause_ms=1014\ncheckout-api.log [42] 1 heap usage high rss_mb=3821 gc_pause_ms=905\ncheckout-api.log [44] 1 heap usage high rss_mb=2221 gc_pause_ms=498\ncheckout-api.log [60] 1 heap usage high rss_mb=2594 gc_pause_ms=1315\ncheckout-api.log [86] 1 heap usage high rss_mb=2352 gc_pause_ms=1230\ncheckout-api.log [88] 1 heap usage high rss_mb=3290 gc_pause_ms=518\ncheckout-api.log [90] 1 heap usage high rss_mb=2643 gc_pause_ms=1393\ninventory-svc.log first: 2026-09-14T11:01:17Z INFO  inventory-svc gc cycle pause_ms=3\n\nledger-svc.log first: 2026-09-14T11:00:03Z INFO  ledger-svc gc cycle pause_ms=39\n\npayments-svc.log first: 2026-09-14T11:00:12Z INFO  payments-svc heartbeat uptime_s=35504\n\nsearch-api.log [12] 1 disk usage high path=/var/data used_pct=98\nsearch-api.log [13, 38] 2 disk usage high path=/var/data used_pct=93\nsearch-api.log [21] 1 disk usage high path=/var/data used_pct=96\nsearch-api.log [54] 1 disk usage high path=/var/data used_pct=92\nsearch-api.log [62] 1 disk usage high path=/var/data used_pct=97\n"
+   }
+  ]
+ }

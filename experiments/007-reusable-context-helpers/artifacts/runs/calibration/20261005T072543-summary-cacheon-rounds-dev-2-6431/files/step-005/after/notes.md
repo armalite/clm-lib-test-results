@@ -1,0 +1,2 @@
+R1: CHG-107 APPLIED retry budget GETs=1 (round-01/changes.md:3). inventory-svc DNS SERVFAIL rates.internal lines 7-90 (round-01/logs/inventory-svc.log:7,85-90). board empty. slow query WARN noise everywhere.
+R2: Thread A opened DNS_RESOLUTION inventory-svc+checkout-api ongoing (round-02/board.md:3). checkout dns errors round-02/logs/checkout-api.log:8-59; inventory round-02/logs/inventory-svc.log:8-74. CHG-120 APPLIED search-api http.max_inflight=-1 (round-02/changes.md:3) possible BAD_CONFIG later. CHG-121 auth no config.

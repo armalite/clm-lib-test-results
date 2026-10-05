@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','w').write('R1: no board items. CHG-112 applied (log sampling, benign). auth-svc heap warnings rss 2-3.8GB (watch MEMORY_LEAK) round-01/logs/auth-svc.log:3,40. slow query noise everywhere.\n')
+print('ok')

@@ -1,0 +1,4 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: nothing; CHG-108 PROPOSED (search HPA) not applied. R2: auth-svc db pool exhausted WARNs (round-02/logs/auth-svc.log:1,3,15,22,23,25; 9 total) -> DB_POOL_EXHAUSTED auth-svc, no board thread yet. CHG-120 APPLIED notify-worker http.max_inflight=0 (round-02/changes.md, possible BAD_CONFIG_ROLLOUT; no errors yet). Board R2 follow-ups OPEN: ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET. Next: advance to R3.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))
+print(open('/task/fixtures/round-02/changes.md').read().splitlines())

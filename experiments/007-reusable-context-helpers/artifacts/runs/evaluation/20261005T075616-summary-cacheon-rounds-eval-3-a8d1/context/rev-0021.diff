@@ -1,0 +1,19 @@
+--- rev-20
++++ rev-21
+@@ -50,6 +50,16 @@
+    "id": "s16.obs",
+    "role": "observation",
+    "body": "Stage 6 of 10 released.\nRound 6 of 10 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (3 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/checkout-api.log (67 lines)\n  round-06/logs/inventory-svc.log (63 lines)\n  round-06/logs/ledger-svc.log (69 lines)\n  round-06/logs/payments-svc.log (78 lines)\n  round-06/logs/search-api.log (77 lines)"
++  },
++  {
++   "id": "s17.act",
++   "role": "assistant",
++   "body": "[step 17] execute\nthought: Read round 6 board, changes, and scan logs.\ncode:\nimport re,glob\nfrom collections import defaultdict\nfor n in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-06/'+n),1): print(n,i,l.rstrip())\nfor f in sorted(glob.glob('/task/fixtures/round-06/logs/*.log')):\n  d=defaultdict(list)\n  for i,l in enumerate(open(f),1):\n    if re.search(r'WARN|ERROR|429|restart|OOM|cert|disk|heap',l,re.I) and 'slow query' not in l:\n      m=re.sub(r'=\\S+','=',l.split(None,3)[-1].strip())[:70]; d[m].append(i)\n  for m,v in d.items(): print(f.split('/')[-1],v[0],v[-1],len(v),m)"
++  },
++  {
++   "id": "s17.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 2 \nboard.md 3 - Follow-up CLOSED CUSTOMER_COMMS.\nchanges.md 1 # Change log: round 06\nchanges.md 2 \nchanges.md 3 - CHG-147 APPLIED: TLS session ticket rotation set to hourly\ncheckout-api.log 17 66 8 heap usage high rss_mb= gc_pause_ms=\nsearch-api.log 6 74 8 disk usage high path= used_pct=\n"
+   }
+  ]
+ }

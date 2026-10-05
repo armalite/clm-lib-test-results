@@ -1,0 +1,19 @@
+--- rev-29
++++ rev-30
+@@ -30,6 +30,16 @@
+    "id": "s24.obs",
+    "role": "observation",
+    "body": "Stage 9 of 11 released.\nRound 9 of 11 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (6 lines)\n  round-09/changes.md (3 lines)\n  round-09/logs/auth-svc.log (67 lines)\n  round-09/logs/ledger-svc.log (60 lines)\n  round-09/logs/payments-svc.log (58 lines)\n  round-09/logs/search-api.log (64 lines)\n  round-09/logs/shipping-svc.log (76 lines)"
++  },
++  {
++   "id": "s25.act",
++   "role": "assistant",
++   "body": "[step 25] execute\nthought: Read round 9 board, changes, and key log signals.\ncode:\nimport os,re\nb='/task/fixtures/round-09/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):\n    if l.strip(): print(f,i,l.rstrip())\nfor s in sorted(os.listdir(b+'logs')):\n  L=open(b+'logs/'+s).read().splitlines()\n  hits=[i for i,l in enumerate(L,1) if re.search('certificate_expired|config validation|lag|ERROR',l)]\n  print(s,len(hits),hits[:8])\n  if hits: print('  ',L[hits[0]-1][:200])\n"
++  },
++  {
++   "id": "s25.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 09\nboard.md 3 - Thread B status: mitigated (workaround in place; permanent fix pending).\nboard.md 4 - Thread C note: failing pods still restarting; investigation continues.\nboard.md 5 - Follow-up CLOSED POSTMORTEM_DRAFT.\nboard.md 6 - Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\nchanges.md 1 # Change log: round 09\nchanges.md 3 - CHG-168 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc.log 11 [10, 12, 22, 24, 49, 51, 55, 57]\n   {\"ts\":\"2026-09-14T16:08:16Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"4.51.3\"}\nledger-svc.log 0 []\npayments-svc.log 0 []\nsearch-api.log 2 [12, 36]\n   {\"ts\":\"2026-09-14T16:10:27Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nshipping-svc.log 2 [53, 59]\n   {\"ts\":\"2026-09-14T16:38:50Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n"
+   }
+  ]
+ }

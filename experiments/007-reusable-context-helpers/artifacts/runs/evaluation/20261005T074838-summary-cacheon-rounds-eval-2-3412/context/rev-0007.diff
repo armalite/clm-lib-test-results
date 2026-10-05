@@ -1,0 +1,19 @@
+--- rev-6
++++ rev-7
+@@ -5,6 +5,16 @@
+    "id": "sum2",
+    "role": "summary",
+    "body": "Summary of work so far (rounds 1-2 of 12 released; rounds 03-12 still to be released via {\"action\":\"advance\"}). Notes are also appended to /task/workspace/notes.md.\n\nLog format (plain text, one line per event):\n- Form: `2026-09-14THH:MM:SSZ LEVEL  <service> <message> key=value...`\n- Round 2 timestamps are 09:xx.\n- Message types seen: slow query ms= table=; heap usage high rss_mb= gc_pause_ms=; gc cycle pause_ms=; request ok route= status= ms=; health ok probe=readiness; heartbeat uptime_s=.\n- The format may change in later rounds.\n\nRound 1 (round-01):\n- board.md: header only, no threads.\n- changes.md: CHG-112 APPLIED, log sampling for /v1/health reduced to 1%. Benign; possible ALERT_TUNING link later.\n- Logs:\n  - All services show slow query WARNs (ms 200-450, tables items/orders/events). Treated as baseline noise.\n  - auth-svc heap warnings at round-01/logs/auth-svc.log:3,14,32,35,40,46,60,61 (rss_mb 1967-3800, fluctuating).\n\nRound 2 (round-02):\n- board.md:3: Thread A opened.\n  - Cause: MEMORY_LEAK in auth-svc; impact also on payments-svc.\n  - Status: ongoing.\n- board.md:4: Follow-up OPEN CUSTOMER_COMMS.\n- changes.md:3: CHG-120 APPLIED, build 7.30.0 rolled out to inventory-svc, sets `retry.backoff_ms=0`. Suspicious; a possible future BAD_CONFIG_ROLLOUT cause, so watch inventory-svc errors.\n- changes.md:4: CHG-121 APPLIED, build 7.30.0 rolled out to ledger-svc, no config changes.\n- auth-svc.log, first ~71 lines reviewed:\n  - heap usage high at lines 5,10,15,18,21,42,53,55,65,70 (rss_mb 1840-3658, gc_pause up to 1094).\n  - Heartbeat uptime_s values vary (84966, 12095, 28039, 12350, 37368, 72801), suggesting multiple instances or restarts.\n  - No ERROR lines seen yet.\n- Output was truncated, so the following still need review:\n  - auth-svc.log lines 72-81.\n  - Non-slow-query lines in inventory-svc (76 lines), ledger-svc (60), payments-svc (67) and pricing-svc (71). Check especially inventory-svc for retry storms or config errors and payments-svc for impact.\n\nCurrent state:\n- Incidents:\n  - Thread A: MEMORY_LEAK, services auth-svc and payments-svc, status ongoing.\n  - Status set by round-02/board.md:3.\n  - Evidence: round-02/board.md:3 and auth heap lines.\n- Follow-ups:\n  - Open: CUSTOMER_COMMS (round-02/board.md:4).\n  - Closed: none.\n\nNext steps:\n1. Finish reviewing the remaining round-02 logs. Print fewer lines, e.g. filter out INFO and slow query lines.\n2. Append the findings to notes.md.\n3. Advance through rounds 3-12. Each round, read board.md (latest update per thread wins), changes.md (APPLIED vs PROPOSED) and logs.\n4. Track each thread's causes (including superseded ones), services and status line, plus follow-up open/close lines.\n5. Collect file:line refs, including change records such as CHG-120 if a cause traces back to them."
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: Review remaining round-02 logs, filtered.\ncode:\nimport glob,re\nfor f in sorted(glob.glob('/task/fixtures/round-02/logs/*.log')):\n    for i,l in enumerate(open(f),1):\n        if 'slow query' in l or ' INFO ' in l or 'heap usage' in l or 'gc cycle' in l: continue\n        print(f.split('/')[-1],i,l.strip()[:150])\n"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.6s"
+   }
+  ]
+ }

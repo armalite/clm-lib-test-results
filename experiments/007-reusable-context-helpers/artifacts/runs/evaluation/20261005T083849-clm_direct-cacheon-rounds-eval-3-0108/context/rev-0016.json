@@ -1,0 +1,29 @@
+{
+ "number": 16,
+ "parent": 15,
+ "source": "runtime",
+ "step": 12,
+ "sha256": "50861c8c9c4b74f678a9c251815f668c289ef87fc9bda951d8155b3ab0a3b27e",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: CHG-113 APPLIED search-api 4.16.4 sets http.max_inflight=-1 (round-01/changes.md:4); CHG-114 checkout no cfg; CHG-109 PROPOSED. ledger-svc CERT_EXPIRED sso.example.net round-01/logs/ledger-svc.log:14-21 (ERRORs thru :72). board r1 empty. slow query WARNs everywhere = noise.\nR2: board Thread A CERT_EXPIRED ledger-svc+inventory-svc ongoing (round-02/board.md:3); inventory errs round-02/logs/inventory-svc.log:10-13; ledger round-02/logs/ledger-svc.log:20-43. CHG-117 PROPOSED. search-api no errors yet r2.\nR3: board empty; CHG-125 APPLIED retry budget=1 (round-03/changes.md:3). cert errs continue inventory round-03/logs/inventory-svc.log:9-39, ledger round-03/logs/ledger-svc.log:23-40. others clean.\nR4: board A mitigated (round-04/board.md:3); B checkout-api UPSTREAM_RATE_LIMIT ongoing (:4); D search-api DISK_PRESSURE ongoing (:5); FU OPEN CUSTOMER_COMMS,POSTMORTEM_DRAFT,CAPACITY_REVIEW (:6-8). CHG-136 APPLIED ledger mitigation A (round-04/changes.md:4); CHG-133 retry."
+  },
+  {
+   "id": "s12.act",
+   "role": "assistant",
+   "body": "[step 12] execute\nthought: Check r4 logs for checkout/search errors with broader patterns, save notes, compress.\ncode:\nimport re,os,json\nb='/task/fixtures/round-04/logs/'\nfor f in sorted(os.listdir(b)):\n  for i,l in enumerate(open(b+f),1):\n    if re.search(r'429|disk|space|cert|inflight|WARN|fail',l,re.I) and 'slow query' not in l:print(f,i,l.rstrip()[:140])\nnotes=open('/task/workspace/notes.txt').read()+'\\nR4: board A mitigated (round-04/board.md:3); B checkout-api UPSTREAM_RATE_LIMIT ongoing (:4); D search-api DISK_PRESSURE ongoing (:5); FU OPEN CUSTOMER_COMMS,POSTMORTEM_DRAFT,CAPACITY_REVIEW (:6-8). CHG-136 APPLIED ledger mitigation A (round-04/changes.md:4); CHG-133 retry.'\nopen('/task/workspace/notes.txt','w').write(notes)\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':notes}]},open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s12.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\ncheckout-api.log 18 2026-09-14T11:08:59Z WARN  checkout-api heap usage high rss_mb=1863 gc_pause_ms=1207\ncheckout-api.log 19 2026-09-14T11:09:43Z WARN  checkout-api heap usage high rss_mb=3127 gc_pause_ms=944\ncheckout-api.log 20 2026-09-14T11:10:48Z WARN  checkout-api heap usage high rss_mb=2302 gc_pause_ms=984\ncheckout-api.log 34 2026-09-14T11:22:51Z INFO  checkout-api heartbeat uptime_s=42934\ncheckout-api.log 35 2026-09-14T11:23:14Z WARN  checkout-api heap usage high rss_mb=3208 gc_pause_ms=1272\ncheckout-api.log 38 2026-09-14T11:23:36Z WARN  checkout-api heap usage high rss_mb=2022 gc_pause_ms=777\ncheckout-api.log 41 2026-09-14T11:25:05Z WARN  checkout-api heap usage high rss_mb=3612 gc_pause_ms=1014\ncheckout-api.log 42 2026-09-14T11:25:16Z WARN  checkout-api heap usage high rss_mb=3821 gc_pause_ms=905\ncheckout-api.log 44 2026-09-14T11:27:06Z WARN  checkout-api heap usage high rss_mb=2221 gc_pause_ms=498\ncheckout-api.log 60 2026-09-14T11:37:50Z WARN  checkout-api heap usage high rss_mb=2594 gc_pause_ms=1315\ncheckout-api.log 86 2026-09-14T11:54:26Z WARN  checkout-api heap usage high rss_mb=2352 gc_pause_ms=1230\ncheckout-api.log 88 2026-09-14T11:57:04Z WARN  checkout-api heap usage high rss_mb=3290 gc_pause_ms=518\ncheckout-api.log 90 2026-09-14T11:58:44Z WARN  checkout-api heap usage high rss_mb=2643 gc_pause_ms=1393\nsearch-api.log 12 2026-09-14T11:07:26Z WARN  search-api disk usage high path=/var/data used_pct=98\nsearch-api.log 13 2026-09-14T11:07:35Z WARN  search-api disk usage high path=/var/data used_pct=93\nsearch-api.log 21 2026-09-14T11:19:24Z WARN  search-api disk usage high path=/var/data used_pct=96\nsearch-api.log 38 2026-09-14T11:33:51Z WARN  search-api disk usage high path=/var/data used_pct=93\nsearch-api.log 54 2026-09-14T11:43:58Z WARN  search-api disk usage high path=/var/data used_pct=92\nsearch-api.log 62 2026-09-14T11:53:32Z WARN  search-api disk usage high path=/var/data used_pct=97\n"
+  },
+  {
+   "id": "s12.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 12: revision 14 -> 15; entries 8 -> 1; body chars 3181 -> 982; removed [s9.act, s9.obs, s9.rcpt, s10.act, s10.obs, s11.act, s11.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

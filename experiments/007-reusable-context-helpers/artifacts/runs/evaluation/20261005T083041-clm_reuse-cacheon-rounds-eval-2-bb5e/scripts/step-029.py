@@ -1,0 +1,2 @@
+import ctx
+d=ctx.load();d['entries']=[e for e in d['entries'] if e['id'].startswith('n')]+[{'id':'n10','role':'note','body':'R10: board.md:3 Thread C still restarting (ongoing). changes.md:3 CHG-170 PROPOSED (ignore). inventory config validation failed retry.backoff_ms=0 inventory-svc.log:13-50 (n=7); DNS ledger-svc.log:2-81, pricing-svc.log:1-54. auth/payments clean.'}];ctx.save(d);print('ok')

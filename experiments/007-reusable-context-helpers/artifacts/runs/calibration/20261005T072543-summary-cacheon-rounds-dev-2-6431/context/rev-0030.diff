@@ -1,0 +1,39 @@
+--- rev-29
++++ rev-30
+@@ -2,34 +2,9 @@
+  "format": "clm-context/v1",
+  "entries": [
+   {
+-   "id": "sum7",
++   "id": "sum8",
+    "role": "summary",
+-   "body": "Summary through step 19. Rounds 1-7 released; 8-11 to release.\n\nLog format: since R6, JSON {\"ts\",\"level\",\"svc\",\"msg\",...}; earlier `<ts>Z LEVEL <svc> <msg> key=val`. Ignore \"slow query\".\n\nChanges:\n- CHG-107 APPLIED round-01/changes.md:3.\n- CHG-120 APPLIED round-02/changes.md:3: search-api 8.59.8 sets http.max_inflight=-1 (possible BAD_CONFIG link for search-api).\n- CHG-121 APPLIED round-02/changes.md:4 (auth-svc).\n- CHG-126 PROPOSED round-03/changes.md:3.\n- CHG-143 APPLIED round-05/changes.md:3 (Thread A mitigation).\n- CHG-144 APPLIED round-06/changes.md:3 (log sampling, irrelevant).\n\nThread A, DNS_RESOLUTION: inventory-svc, checkout-api. Cause from round-02/board.md:3. Mitigated per round-05/board.md:3. Logs clean in R5-R7.\n\nThread B, CERT_EXPIRED (peer=sso.example.net): set at round-07/board.md:3, superseding DB_POOL_EXHAUSTED (round-03/board.md:3). Services auth-svc and shipping-svc (round-05/board.md:4). Status ongoing.\n- R7 auth lines: 1,16,24,26,32,36,38,49,53,64.\n- R7 shipping lines: 10,11,23,26,35,39,43,45,46,49,59,66.\n\nThread D, UPSTREAM_RATE_LIMIT: search-api, upstream tax-provider, 429s. Opened ongoing at round-07/board.md:4. R7 search lines: 4,5,20,22,25,47,64,66.\n\nFollow-ups open:\n- VENDOR_TICKET (round-05/board.md:5)\n- ALERT_TUNING (round-05/board.md:6)\n- RUNBOOK_UPDATE (round-06/board.md:3)\n\nEarlier refs are in /task/workspace/notes.md (R7 line refs not yet saved there).\n\nNext: advance and read each round through 11, then give the final answer."
+-  },
+-  {
+-   "id": "s20.act",
+-   "role": "assistant",
+-   "body": "[step 20] execute\nthought: Save R7 notes, check search-api msgs variety.\ncode:\nimport collections\nL=open('/task/fixtures/round-07/logs/search-api.log').read().splitlines()\nc=collections.Counter()\nfor l in L:\n    if '\"ERROR\"' in l or '\"WARN\"' in l: c[l.split('\"msg\":')[1][:40]]+=1\nprint(c)\nopen('/task/workspace/notes.md','a').write('R7: board.md:3 ThreadB cause->CERT_EXPIRED. board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing (429 tax-provider). search lines 4,5,20,22,25,47,64,66. auth 1,16,24,26,32,36,38,49,53,64. shipping 10,11,23,26,35,39,43,45,46,49,59,66.\\n');print('ok')"
+-  },
+-  {
+-   "id": "s20.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nCounter({'\"upstream returned 429\",\"upstream\":\"tax-': 8, '\"slow query\",\"ms\":444,\"table\":\"orders\"}': 1, '\"slow query\",\"ms\":238,\"table\":\"orders\"}': 1, '\"slow query\",\"ms\":262,\"table\":\"events\"}': 1, '\"slow query\",\"ms\":390,\"table\":\"items\"}': 1, '\"slow query\",\"ms\":440,\"table\":\"orders\"}': 1, '\"slow query\",\"ms\":443,\"table\":\"orders\"}': 1, '\"slow query\",\"ms\":416,\"table\":\"items\"}': 1, '\"slow query\",\"ms\":446,\"table\":\"events\"}': 1, '\"slow query\",\"ms\":428,\"table\":\"events\"}': 1, '\"slow query\",\"ms\":247,\"table\":\"items\"}': 1, '\"slow query\",\"ms\":227,\"table\":\"orders\"}': 1, '\"slow query\",\"ms\":327,\"table\":\"events\"}': 1, '\"slow query\",\"ms\":227,\"table\":\"items\"}': 1, '\"slow query\",\"ms\":433,\"table\":\"items\"}': 1, '\"slow query\",\"ms\":339,\"table\":\"events\"}': 1, '\"slow query\",\"ms\":248,\"table\":\"orders\"}': 1, '\"slow query\",\"ms\":267,\"table\":\"items\"}': 1, '\"slow query\",\"ms\":332,\"table\":\"events\"}': 1, '\"slow query\",\"ms\":429,\"table\":\"orders\"}': 1})\nok\n"
+-  },
+-  {
+-   "id": "s21.act",
+-   "role": "assistant",
+-   "body": "[step 21] advance\nthought: "
+-  },
+-  {
+-   "id": "s21.obs",
+-   "role": "observation",
+-   "body": "Stage 8 of 11 released.\nRound 8 of 11 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (7 lines)\n  round-08/logs/auth-svc.log (61 lines)\n  round-08/logs/checkout-api.log (75 lines)\n  round-08/logs/inventory-svc.log (58 lines)\n  round-08/logs/search-api.log (75 lines)\n  round-08/logs/shipping-svc.log (65 lines)"
+-  },
+-  {
+-   "id": "s22.act",
+-   "role": "assistant",
+-   "body": "[step 22] execute\nthought: \ncode:\nimport re\nprint(open('/task/fixtures/round-08/board.md').read())\nimport glob\nfor f in sorted(glob.glob('/task/fixtures/round-08/logs/*.log')):\n    for i,l in enumerate(open(f),1):\n        if ('ERROR' in l or 'WARN' in l) and 'slow query' not in l: print(f.split('/')[-1][:6],i,l.strip()[:110])"
++   "body": "Summary through step 22. Rounds 1-8 released; 9-11 to release.\nLogs: JSON since R6. Ignore \"slow query\".\nChanges: CHG-107 APPLIED r01/changes.md:3. CHG-120 APPLIED r02/changes.md:3, search-api http.max_inflight=-1. CHG-121 APPLIED r02:4. CHG-143 APPLIED r05:3.\nA DNS_RESOLUTION inventory,checkout mitigated r05/board.md:3 (cause r02:3).\nB CERT_EXPIRED auth,shipping ongoing r07/board.md:3 (was DB_POOL r03:3).\nD UPSTREAM_RATE_LIMIT search-api ongoing r07/board.md:4.\nOpen: VENDOR_TICKET r05:5, ALERT_TUNING r05:6, RUNBOOK_UPDATE r06:3.\nRefs in /task/workspace/notes.md.\nNext: read R8 board+logs, advance."
+   },
+   {
+    "id": "s22.obs",

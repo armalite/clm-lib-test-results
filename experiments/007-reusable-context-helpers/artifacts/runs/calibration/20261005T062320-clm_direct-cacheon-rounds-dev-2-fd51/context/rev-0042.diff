@@ -1,0 +1,19 @@
+--- rev-41
++++ rev-42
+@@ -30,6 +30,16 @@
+    "id": "s29.obs",
+    "role": "observation",
+    "body": "Stage 10 of 11 released.\nRound 10 of 11 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (4 lines)\n  round-10/changes.md (3 lines)\n  round-10/logs/auth-svc.log (72 lines)\n  round-10/logs/checkout-api.log (75 lines)\n  round-10/logs/inventory-svc.log (75 lines)\n  round-10/logs/search-api.log (82 lines)\n  round-10/logs/shipping-svc.log (75 lines)"
++  },
++  {
++   "id": "s30.act",
++   "role": "assistant",
++   "body": "[step 30] execute\nthought: Inspect R10 board, changes, and key errors.\ncode:\nimport re,glob\nb='/task/fixtures/round-10/'\nfor f in ['board.md','changes.md']:\n    for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob(b+'logs/*')):\n    hits=[]\n    for i,l in enumerate(open(f),1):\n        if re.search(r'ERROR|error|429|cert|SERVFAIL|validation|OOM|memory',l,re.I):hits.append(i)\n    print(f.split('/')[-1],len(hits),hits[:8])\n    if hits:print(open(f).readlines()[hits[0]-1][:200])"
++  },
++  {
++   "id": "s30.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 10\nboard.md 2 \nboard.md 3 - Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\nboard.md 4 - Follow-up CLOSED DATA_BACKFILL.\nchanges.md 1 # Change log: round 10\nchanges.md 2 \nchanges.md 3 - CHG-175 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc.log 2 [10, 17]\n{\"ts\":\"2026-09-14T17:06:15Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n\ncheckout-api.log 0 []\ninventory-svc.log 0 []\nsearch-api.log 9 [1, 4, 7, 8, 20, 30, 50, 54]\n{\"ts\":\"2026-09-14T17:01:11Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.59.8\"}\n\nshipping-svc.log 2 [3, 60]\n{\"ts\":\"2026-09-14T17:01:30Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n\n"
+   }
+  ]
+ }

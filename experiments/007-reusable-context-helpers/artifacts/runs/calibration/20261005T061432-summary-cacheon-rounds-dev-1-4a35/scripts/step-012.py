@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('\nR4: Thread B opened payments-svc suspected CACHE_STAMPEDE ongoing (round-04/board.md:3). But logs show 429 upstream=fx-rates in payments-svc.log:1,3,7,25,31,45 and checkout-api.log:9,19,50,53,59,62 -> likely UPSTREAM_RATE_LIMIT. auth/search pool exhausted continues (auth 7-39, search 4-30). CHG-133 TLS tickets irrelevant?\n')
+print('ok')

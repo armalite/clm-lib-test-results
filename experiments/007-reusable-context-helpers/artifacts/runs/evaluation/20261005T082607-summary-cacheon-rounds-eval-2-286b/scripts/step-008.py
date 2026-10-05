@@ -1,0 +1,2 @@
+open('/task/workspace/notes.md','a').write('\nR3: CUSTOMER_COMMS CLOSED (round-03/board.md:3). CHG-121 APPLIED retry budget GETs=1 (round-03/changes.md:3). Leak continues auth round-03/logs/auth-svc.log:19-26, payments round-03/logs/payments-svc.log:8-24. No other errors seen.\n')
+print('ok')

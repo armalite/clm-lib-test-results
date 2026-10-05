@@ -1,0 +1,19 @@
+--- rev-36
++++ rev-37
+@@ -30,6 +30,16 @@
+    "id": "s26.obs",
+    "role": "observation",
+    "body": "Stage 9 of 11 released.\nRound 9 of 11 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (5 lines)\n  round-09/changes.md (3 lines)\n  round-09/logs/auth-svc.log (66 lines)\n  round-09/logs/inventory-svc.log (65 lines)\n  round-09/logs/notify-worker.log (64 lines)\n  round-09/logs/search-api.log (69 lines)\n  round-09/logs/shipping-svc.log (79 lines)"
++  },
++  {
++   "id": "s27.act",
++   "role": "assistant",
++   "body": "[step 27] execute\nthought: Read round 9 board/changes and grep errors.\ncode:\nimport re\nb='/task/fixtures/round-09/'\nfor f in ['board.md','changes.md']:\n    for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nimport os\nfor s in sorted(os.listdir(b+'logs')):\n    hits=[(i,l.strip()[:110]) for i,l in enumerate(open(b+'logs/'+s),1) if re.search(r'ERROR|WARN|429|config|pool|memory|cert|dns',l,re.I) and 'slow query' not in l]\n    print(s,len(hits))\n    for h in hits[:4]:print(' ',h)"
++  },
++  {
++   "id": "s27.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.8s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 09\nboard.md 2 \nboard.md 3 - Thread C note: failing pods still restarting; investigation continues.\nboard.md 4 - Follow-up OPEN DATA_BACKFILL: backfill of records missed during the incident.\nboard.md 5 - Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\nchanges.md 1 # Change log: round 09\nchanges.md 2 \nchanges.md 3 - CHG-163 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc.log 2\n  (1, '{\"ts\":\"2026-09-14T16:00:17Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-pr')\n  (6, '{\"ts\":\"2026-09-14T16:03:07Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-pr')\ninventory-svc.log 0\nnotify-worker.log 0\nsearch-api.log 10\n  (1, '{\"ts\":\"2026-09-14T16:01:40Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.')\n  (4, '{\"ts\":\"2026-09-14T16:04:49Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.')\n  (12, '{\"ts\":\"2026-09-14T16:08:26Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.')\n  (13, '{\"ts\":\"2026-09-14T16:09:04Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"cache.')\nshipping-svc.log 2\n  (43, '{\"ts\":\"2026-09-14T16:31:06Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"ta')\n  (59, '{\"ts\":\"2026-09-14T16:42:32Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"ta')\n"
+   }
+  ]
+ }
