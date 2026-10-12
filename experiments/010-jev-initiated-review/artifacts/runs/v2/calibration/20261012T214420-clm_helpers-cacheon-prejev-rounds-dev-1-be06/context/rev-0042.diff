@@ -1,0 +1,55 @@
+--- rev-41
++++ rev-42
+@@ -37,49 +37,9 @@
+    "body": "R7: board empty (no changes). No changes.md. 429 fx-rates continue: checkout-api round-07/logs/checkout-api.log:11-66; payments-svc round-07/logs/payments-svc.log:1-36,71-82. auth/search/notify clean. Next: advance R8."
+   },
+   {
+-   "id": "s29.act",
+-   "role": "assistant",
+-   "body": "[step 29] execute\nthought: Compact R7 into n7, drop step entries.\ncode:\nimport json\np='/task/workspace/context.json'\nc=json.load(open(p))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4','n5','n6')]\nc['entries'].append({'id':'n7','role':'note','body':'R7: board empty (no changes). No changes.md. 429 fx-rates continue: checkout-api round-07/logs/checkout-api.log:11-66; payments-svc round-07/logs/payments-svc.log:1-36,71-82. auth/search/notify clean. Next: advance R8.'})\njson.dump(c,open(p,'w'))\nprint('ok')"
+-  },
+-  {
+-   "id": "s29.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s29.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 29: revision 36 -> 37; entries 15 -> 7; body chars 6952 -> 2287; removed [s25.act, s25.obs, s25.rcpt, s26.act, s26.obs, s27.act, s27.obs, s28.act, s28.obs]; added [n7]; rewritten []"
+-  },
+-  {
+-   "id": "s30.act",
+-   "role": "assistant",
+-   "body": "[step 30] advance\nthought: "
+-  },
+-  {
+-   "id": "s30.obs",
+-   "role": "observation",
+-   "body": "Stage 8 of 10 released.\nRound 8 of 10 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (5 lines)\n  round-08/changes.md (3 lines)\n  round-08/logs/auth-svc.log (71 lines)\n  round-08/logs/checkout-api.log (65 lines)\n  round-08/logs/notify-worker.log (79 lines)\n  round-08/logs/payments-svc.log (87 lines)\n  round-08/logs/search-api.log (62 lines)"
+-  },
+-  {
+-   "id": "s31.act",
+-   "role": "assistant",
+-   "body": "[step 31] execute\nthought: Inspect R8 board, changes, and error lines.\ncode:\nimport glob,re\nb='/task/fixtures/round-08/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1): print(f,i,l.rstrip())\nfor f in sorted(glob.glob(b+'logs/*.log')):\n  n=f.split('/')[-1];c=0\n  for i,l in enumerate(open(f),1):\n    if 'slow query' in l or re.search(r'\\bINFO\\b|level=info',l): continue\n    c+=1\n    if c<=4: print(n,i,l.rstrip()[:150])\n  print(n,'nonINFO',c)"
+-  },
+-  {
+-   "id": "s31.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 08\nboard.md 2 \nboard.md 3 - Thread A status: resolved (no recurrence for two hours).\nboard.md 4 - Thread B root cause revised: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT); this supersedes the earlier suspicion of CACHE_STAMPEDE.\nboard.md 5 - Thread C opened: request failures on some notify-worker pods; cause not yet identified. Status: ongoing.\nchanges.md 1 # Change log: round 08\nchanges.md 2 \nchanges.md 3 - CHG-159 PROPOSED: move batch jobs to off-peak window (not applied)\nauth-svc.log nonINFO 0\ncheckout-api.log 1 {\"ts\":\"2026-09-14T15:00:24Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":39}\ncheckout-api.log 6 {\"ts\":\"2026-09-14T15:07:31Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":27}\ncheckout-api.log 20 {\"ts\":\"2026-09-14T15:15:24Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":43}\ncheckout-api.log 29 {\"ts\":\"2026-09-14T15:25:11Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":46}\ncheckout-api.log nonINFO 9\nnotify-worker.log 5 {\"ts\":\"2026-09-14T15:02:40Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.5\nnotify-worker.log 45 {\"ts\":\"2026-09-14T15:35:56Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.5\nnotify-worker.log 50 {\"ts\":\"2026-09-14T15:38:32Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.5\nnotify-worker.log 58 {\"ts\":\"2026-09-14T15:43:42Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.5\nnotify-worker.log nonINFO 6\npayments-svc.log 2 {\"ts\":\"2026-09-14T15:02:33Z\",\"level\":\"ERROR\",\"svc\":\"payments-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":51}\npayments-svc.log 24 {\"ts\":\"2026-09-14T15:19:59Z\",\"level\":\"ERROR\",\"svc\":\"payments-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":30}\npayments-svc.log 25 {\"ts\":\"2026-09-14T15:20:46Z\",\"level\":\"ERROR\",\"svc\":\"payments-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":33}\npayments-svc.log 34 {\"ts\":\"2026-09-14T15:27:26Z\",\"level\":\"ERROR\",\"svc\":\"payments-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":9}\npayments-svc.log nonINFO 13\nsearch-api.log nonINFO 0\n"
+-  },
+-  {
+-   "id": "s32.act",
+-   "role": "assistant",
+-   "body": "[step 32] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s32.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/2; context revision 40; purpose: compaction).\nEntries to review (10): n1, n2, n3, n4, n5, n6, n7, s29.obs, s30.obs, s31.obs (4 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged.\nContext review advice: not applicable (compaction review: no new information stated)."
++   "id": "n8",
++   "role": "note",
++   "body": "R8: Thread A RESOLVED (round-08/board.md:3). Thread B cause revised UPSTREAM_RATE_LIMIT (round-08/board.md:4); 429 fx-rates continue checkout-api round-08/logs/checkout-api.log:1-29, payments-svc round-08/logs/payments-svc.log:2-34. Thread C opened notify-worker ongoing cause unknown (round-08/board.md:5); logs show config validation failed http.max_inflight=0 round-08/logs/notify-worker.log:5,45,50,58 => BAD_CONFIG_ROLLOUT from CHG-120 (round-02/changes.md:4). CHG-159 PROPOSED noise. Next: advance R9."
+   }
+  ]
+ }

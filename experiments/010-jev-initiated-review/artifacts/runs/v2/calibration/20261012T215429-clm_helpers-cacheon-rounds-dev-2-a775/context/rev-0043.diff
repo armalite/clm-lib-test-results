@@ -1,0 +1,44 @@
+--- rev-42
++++ rev-43
+@@ -5,41 +5,6 @@
+    "id": "notes",
+    "role": "note",
+    "body": "R1: changes.md:3 CHG-107 APPLIED retry budget GETs=1. slow query WARNs = noise. inventory-svc DNS SERVFAIL rates.internal round-01/logs/inventory-svc.log:7,20. R2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (BAD_CONFIG candidate, watch search-api); CHG-121 auth-svc no config. checkout-api.log:8 dns err. Workflow: per round print board, changes, ERROR lines (skip slow query), update note, drop old entries. R3: board.md:3 Thread B auth-svc suspected DB_POOL_EXHAUSTED ongoing, BUT logs show CERT_EXPIRED peer=sso.example.net round-03/logs/auth-svc.log:6,9,72 (board cause likely wrong). checkout+inventory DNS still failing r3 checkout-api.log:33-74, inventory-svc.log:3-50. CHG-126 PROPOSED (ignore). search-api no errors yet. R4: board empty (no changes). No changes.md. CERT_EXPIRED sso.example.net now also shipping-svc round-04/logs/shipping-svc.log:3,66; auth-svc.log:6,77. DNS still failing checkout-api.log:1,71 inventory-svc.log:32,75. search-api no errors. R5: board.md:3 Thread A mitigated; board.md:4 Thread B +shipping-svc; board.md:5 OPEN VENDOR_TICKET, :6 OPEN ALERT_TUNING. changes.md:3 CHG-143 APPLIED thread A mitigation inventory-svc. No DNS errors in r5 checkout/inventory. CERT still auth-svc.log:2,64 shipping-svc.log:9,65. search-api no errors. R6: board.md:3 OPEN RUNBOOK_UPDATE. changes.md:3 CHG-144 log sampling (noise). CERT auth-svc.log:4,10 shipping-svc.log:1,18. No other errors. Round 6 reviewed; next: advance. R7: board.md:3 Thread B revised CERT_EXPIRED; board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing, search-api.log:4,5 429 upstream tax-. CERT auth-svc.log:1,16 shipping-svc.log:10,11. No DNS. Round 7 reviewed; next: advance. R8: board.md:3 Thread A resolved; :4 Thread B mitigated; :5 Thread C search-api pod failures ongoing cause unknown; :6 OPEN DATA_BACKFILL; :7 CLOSED VENDOR_TICKET. search-api 429 tax-provider search-api.log:1,2. CERT auth-svc.log:8,61 shipping-svc.log:50,60. R8 search-api config validation failed http.max_inflight=-1 (CHG-120 r2 changes.md:3) round-08/logs/search-api.log:2,5,10 => Thread C likely BAD_CONFIG_ROLLOUT. No changes.md r8. Round 8 reviewed; next: advance."
+-  },
+-  {
+-   "id": "s26.act",
+-   "role": "assistant",
+-   "body": "[step 26] execute\nthought: Record r8 config errors in notes, drop old entries.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='notes'][0]\nn['body']+=' R8 search-api config validation failed http.max_inflight=-1 (CHG-120 r2 changes.md:3) round-08/logs/search-api.log:2,5,10 => Thread C likely BAD_CONFIG_ROLLOUT. No changes.md r8. Round 8 reviewed; next: advance.'\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s26.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s"
+-  },
+-  {
+-   "id": "s26.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 26: revision 37 -> 38; entries 4 -> 1; body chars 4454 -> 2236; removed [s25.act, s25.obs, s25.rcpt]; added []; rewritten [notes]"
+-  },
+-  {
+-   "id": "s27.act",
+-   "role": "assistant",
+-   "body": "[step 27] advance\nthought: "
+-  },
+-  {
+-   "id": "s27.obs",
+-   "role": "observation",
+-   "body": "Stage 9 of 11 released.\nRound 9 of 11 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (3 lines)\n  round-09/changes.md (3 lines)\n  round-09/logs/auth-svc.log (64 lines)\n  round-09/logs/checkout-api.log (65 lines)\n  round-09/logs/inventory-svc.log (75 lines)\n  round-09/logs/search-api.log (78 lines)\n  round-09/logs/shipping-svc.log (59 lines)"
+-  },
+-  {
+-   "id": "s28.act",
+-   "role": "assistant",
+-   "body": "[step 28] execute\nthought: Review round 9.\ncode:\nimport re\nb='/task/fixtures/round-09/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nimport os\nfor f in sorted(os.listdir(b+'logs')):\n  for i,l in enumerate(open(b+'logs/'+f),1):\n    if re.search('ERROR|error|fail|429|cert|max_inflight',l,re.I) and 'slow query' not in l:print(f,i,l.rstrip()[:150])"
+-  },
+-  {
+-   "id": "s28.obs",
+-   "role": "observation",
+-   "body": "[runtime: observation of 4573 chars moved to /task/workspace/spill/s28.obs.txt because the request exceeded the hard limit]"
+   }
+  ]
+ }

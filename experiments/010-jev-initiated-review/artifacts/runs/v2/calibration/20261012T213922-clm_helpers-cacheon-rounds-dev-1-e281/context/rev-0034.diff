@@ -1,0 +1,46 @@
+--- rev-33
++++ rev-34
+@@ -4,42 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "R1: board empty; r01 changes.md:3 CHG-108 PROPOSED (not applied). Slow query WARN = noise everywhere.\nR2: board:3-5 follow-ups OPEN ALERT_TUNING,RUNBOOK_UPDATE,VENDOR_TICKET. changes:4 CHG-120 APPLIED notify-worker build 8.56.0 sets http.max_inflight=0 (suspect BAD_CONFIG later); changes:5 CHG-121 payments no config. auth-svc.log db pool exhausted lines 1,3,15,22,23,25,44,65,69. Filter: skip slow query & INFO.\nR3: board:3 Thread A DB_POOL_EXHAUSTED auth-svc+search-api ongoing. changes:3 CHG-125 dashboards (irrelevant). auth-svc.log pool 7,12,13,15,19,29,40,53,63; search-api.log 1,14,30,36,39,53,58,67,70,71,77.\nR4: board:3 Thread B payments-svc suspected CACHE_STAMPEDE ongoing BUT logs show 429 upstream=fx-rates (UPSTREAM_RATE_LIMIT) in payments-svc.log 1,3,7,25,31,45,48,51,54,57,59,79 and checkout-api.log 9,19,50,53,59,62. changes:3 CHG-133 TLS ticket rotation (irrelevant). auth pool 7,9,19,26,29,39,46,61-67,81; search pool 4,11,13,14,20,30,31,37,43,64,71,83. notify-worker no errors yet.\nR5: board:3 Thread A mitigated; board:4 Thread B adds checkout-api; board:5 OPEN CAPACITY_REVIEW. changes:4 CHG-143 APPLIED mitigation auth-svc. auth/search no pool errors now. 429 fx-rates payments 13,19,47,50,55,73; checkout 21,23,30,38,42,59,65. notify no errors.\nR6: board:3 CLOSED ALERT_TUNING; board:4 OPEN CUSTOMER_COMMS. changes:3 CHG-147 retry budget (irrelevant). 429 fx-rates payments 3,10,11,16,18,33,40,42-44,76; checkout 19,30,56,73,76,77. auth/search/notify no errors.\nR7: board empty. 429 fx-rates payments 1,7,13,23,28,33,36,71,75,82; checkout 11,19,25,26,29,33,39,49,56,58,62,66. auth/search/notify no errors.\nR8: board:3 Thread A RESOLVED; board:4 Thread B cause revised UPSTREAM_RATE_LIMIT; board:5 Thread C notify-worker ongoing cause unknown. changes:3 CHG-159 PROPOSED. notify-worker.log config validation failed key http.. lines 5,45,50,58,65,72 (BAD_CONFIG from r02 changes:4 CHG-120). 429 payments 2,24,25,34,39,41,45,46,52,54,56,65,83; checkout 1,6,20,29,35,39,49,51,54. auth/search none."
+-  },
+-  {
+-   "id": "s23.act",
+-   "role": "assistant",
+-   "body": "[step 23] execute\nthought: Compress R8 into notes.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nn=c['entries'][0]['body']+'\\nR8: board:3 Thread A RESOLVED; board:4 Thread B cause revised UPSTREAM_RATE_LIMIT; board:5 Thread C notify-worker ongoing cause unknown. changes:3 CHG-159 PROPOSED. notify-worker.log config validation failed key http.. lines 5,45,50,58,65,72 (BAD_CONFIG from r02 changes:4 CHG-120). 429 payments 2,24,25,34,39,41,45,46,52,54,56,65,83; checkout 1,6,20,29,35,39,49,51,54. auth/search none.'\nc['entries']=[{'id':'notes','role':'note','body':n}]\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s23.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s"
+-  },
+-  {
+-   "id": "s23.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 23: revision 29 -> 30; entries 8 -> 1; body chars 5446 -> 2018; removed [s20.act, s20.obs, s20.rcpt, s21.act, s21.obs, s22.act, s22.obs]; added []; rewritten [notes]"
+-  },
+-  {
+-   "id": "s24.act",
+-   "role": "assistant",
+-   "body": "[step 24] advance\nthought: "
+-  },
+-  {
+-   "id": "s24.obs",
+-   "role": "observation",
+-   "body": "Stage 9 of 10 released.\nRound 9 of 10 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (4 lines)\n  round-09/changes.md (3 lines)\n  round-09/logs/auth-svc.log (63 lines)\n  round-09/logs/checkout-api.log (76 lines)\n  round-09/logs/notify-worker.log (69 lines)\n  round-09/logs/payments-svc.log (73 lines)\n  round-09/logs/search-api.log (65 lines)"
+-  },
+-  {
+-   "id": "s25.act",
+-   "role": "assistant",
+-   "body": "[step 25] execute\nthought: Inspect round 9 board, changes, and error lines.\ncode:\nimport re,glob\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-09/'+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob('/task/fixtures/round-09/logs/*')):\n  L=[str(i) for i,l in enumerate(open(f),1) if ('slow query' not in l and re.search('ERROR|WARN|429|exhaust|valid',l))]\n  print(f.split('/')[-1],','.join(L))\n  for i,l in enumerate(open(f),1):\n    if str(i) in L[:1]:print(l.rstrip()[:200])"
+-  },
+-  {
+-   "id": "s25.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 09\nboard.md 2 \nboard.md 3 - Thread B status: mitigated (workaround in place; permanent fix pending).\nboard.md 4 - Thread C note: failing pods still restarting; investigation continues.\nchanges.md 1 # Change log: round 09\nchanges.md 2 \nchanges.md 3 - CHG-164 APPLIED: retry budget for idempotent GETs set to 1\nauth-svc.log \ncheckout-api.log 34,55\n{\"ts\":\"2026-09-14T16:27:49Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":30}\nnotify-worker.log 3,5,12,14,15,48,52,63,67\n{\"ts\":\"2026-09-14T16:00:20Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.56.0\"}\npayments-svc.log 34,42\n{\"ts\":\"2026-09-14T16:30:47Z\",\"level\":\"ERROR\",\"svc\":\"payments-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":48}\nsearch-api.log \n"
++   "body": "R1: board empty; r01 changes.md:3 CHG-108 PROPOSED (not applied). Slow query WARN = noise everywhere.\nR2: board:3-5 follow-ups OPEN ALERT_TUNING,RUNBOOK_UPDATE,VENDOR_TICKET. changes:4 CHG-120 APPLIED notify-worker build 8.56.0 sets http.max_inflight=0 (suspect BAD_CONFIG later); changes:5 CHG-121 payments no config. auth-svc.log db pool exhausted lines 1,3,15,22,23,25,44,65,69. Filter: skip slow query & INFO.\nR3: board:3 Thread A DB_POOL_EXHAUSTED auth-svc+search-api ongoing. changes:3 CHG-125 dashboards (irrelevant). auth-svc.log pool 7,12,13,15,19,29,40,53,63; search-api.log 1,14,30,36,39,53,58,67,70,71,77.\nR4: board:3 Thread B payments-svc suspected CACHE_STAMPEDE ongoing BUT logs show 429 upstream=fx-rates (UPSTREAM_RATE_LIMIT) in payments-svc.log 1,3,7,25,31,45,48,51,54,57,59,79 and checkout-api.log 9,19,50,53,59,62. changes:3 CHG-133 TLS ticket rotation (irrelevant). auth pool 7,9,19,26,29,39,46,61-67,81; search pool 4,11,13,14,20,30,31,37,43,64,71,83. notify-worker no errors yet.\nR5: board:3 Thread A mitigated; board:4 Thread B adds checkout-api; board:5 OPEN CAPACITY_REVIEW. changes:4 CHG-143 APPLIED mitigation auth-svc. auth/search no pool errors now. 429 fx-rates payments 13,19,47,50,55,73; checkout 21,23,30,38,42,59,65. notify no errors.\nR6: board:3 CLOSED ALERT_TUNING; board:4 OPEN CUSTOMER_COMMS. changes:3 CHG-147 retry budget (irrelevant). 429 fx-rates payments 3,10,11,16,18,33,40,42-44,76; checkout 19,30,56,73,76,77. auth/search/notify no errors.\nR7: board empty. 429 fx-rates payments 1,7,13,23,28,33,36,71,75,82; checkout 11,19,25,26,29,33,39,49,56,58,62,66. auth/search/notify no errors.\nR8: board:3 Thread A RESOLVED; board:4 Thread B cause revised UPSTREAM_RATE_LIMIT; board:5 Thread C notify-worker ongoing cause unknown. changes:3 CHG-159 PROPOSED. notify-worker.log config validation failed key http.. lines 5,45,50,58,65,72 (BAD_CONFIG from r02 changes:4 CHG-120). 429 payments 2,24,25,34,39,41,45,46,52,54,56,65,83; checkout 1,6,20,29,35,39,49,51,54. auth/search none.\nR9: board:3 Thread B mitigated; board:4 Thread C pods restarting. changes:3 CHG-164 APPLIED retry budget (irrelevant). notify config fail 3,5,12,14,15,48,52,63,67; 429 checkout 34,55; payments 34,42. auth/search none."
+   }
+  ]
+ }

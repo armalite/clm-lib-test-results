@@ -1,0 +1,24 @@
+--- rev-24
++++ rev-25
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "Round1: board empty. r01 changes.md:3 CHG-108 PROPOSED HPA search (not applied). slow query WARN = noise.\nRound2: board.md:3-5 follow-ups OPEN ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET. changes.md:4 CHG-120 APPLIED notify-worker build 8.56.0 sets http.max_inflight=0 (suspect BAD_CONFIG_ROLLOUT, watch notify-worker); changes.md:5 CHG-121 payments no config. auth-svc db pool exhausted r02 lines 1,3,15,22.\nRound3: board.md:3 Thread A DB_POOL_EXHAUSTED auth-svc + search-api ongoing. changes.md:3 CHG-125 dashboards (irrelevant). auth-svc.log pool exhausted 7-63; search-api.log 1-77. notify-worker no errors r3.\nRound4: board.md:3 Thread B payments-svc suspected CACHE_STAMPEDE ongoing, BUT logs show 429 upstream=fx-rates in payments-svc (lines 1,3,7..79) and checkout-api (9,19) -> real cause likely UPSTREAM_RATE_LIMIT, services payments-svc+checkout-api. changes.md:3 CHG-133 TLS ticket rotation (likely irrelevant). auth-svc pool exhausted 7-81, search-api 4. notify-worker still clean.\nRound5: board.md:3 Thread A mitigated (auth-svc DB pool); board.md:4 Thread B adds checkout-api; board.md:5 OPEN CAPACITY_REVIEW. changes.md:4 CHG-143 APPLIED thread A mitigation auth-svc; CHG-138 TLS hourly (irrelevant?). checkout-api 429 fx-rates r05 lines 21,23. notify-worker r5 only slow-query WARNs so far (check lines 26-70 for errors). Next: inspect r5 non-slow-query errors, then advance."
++  },
++  {
++   "id": "s20.act",
++   "role": "assistant",
++   "body": "[step 20] execute\nthought: \ncode:\nimport json\nn=open('/task/workspace/context.json').read()\nd=json.loads(n)\nb=[e for e in d['entries'] if e['id']=='n1'][0]['body']\nb=b.replace(' Next: advance to round 5.','')\nb+='\\nRound5: board.md:3 Thread A mitigated (auth-svc DB pool); board.md:4 Thread B adds checkout-api; board.md:5 OPEN CAPACITY_REVIEW. changes.md:4 CHG-143 APPLIED thread A mitigation auth-svc; CHG-138 TLS hourly (irrelevant?). checkout-api 429 fx-rates r05 lines 21,23. notify-worker r5 only slow-query WARNs so far (check lines 26-70 for errors). Next: inspect r5 non-slow-query errors, then advance.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':b}]},open('/task/workspace/context.json','w'))\nimport re\nfor s in ['auth-svc','notify-worker','payments-svc','search-api']:\n  L=open('/task/fixtures/round-05/logs/'+s+'.log').read().splitlines()\n  e=[(i+1,l[21:120]) for i,l in enumerate(L) if re.search('ERROR|error|fail|429|exhaust',l) and 'slow query' not in l]\n  print(s,[x[0] for x in e]);[print(x) for x in e[:2]]"
++  },
++  {
++   "id": "s20.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nauth-svc []\nnotify-worker []\npayments-svc [13, 19, 47, 50, 55, 73]\n(13, 'ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=23')\n(19, 'ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=40')\nsearch-api []\n"
++  },
++  {
++   "id": "s20.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 20: revision 23 -> 24; entries 10 -> 1; body chars 5891 -> 1392; removed [s16.act, s16.obs, s16.rcpt, s17.act, s17.obs, s18.act, s18.obs, s19.act, s19.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

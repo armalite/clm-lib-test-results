@@ -29,7 +29,7 @@ These are different interventions. Results from one say nothing directly about t
 | --- | --- | --- | --- |
 | [008](008-jev-context-review/README.md) | model-controlled | an optional Jev tool Claude may call | Complete: the tool was never used (evidence about optional-tool availability) |
 | [009](009-jev-update-review/README.md) | model-controlled | automatically at every incoming update, before Claude's next turn | Complete: no cost, time or established correctness benefit in 24 evaluation runs |
-| [010](010-jev-initiated-review/README.md) | model-controlled | when **Claude** starts a context review | Stopped at its calibration gate: Claude started **no** reviews in 4 runs, so the question was not tested |
+| [010](010-jev-initiated-review/README.md) | model-controlled | when **Claude** starts a context review (v1: optional; v2: required before every edit) | Both versions stopped at their calibration gates: v1 had no reviews; v2 had every edit reviewed, but all reviews declared "compaction", so Jev was never applicable |
 | [011](011-jev-edit-check/protocol.md) | model-controlled | on a proposed context rewrite, before acceptance | Planned (design open) |
 | W2 workload | a workload, not a strategy | changing requirements that interact | Planned (not implemented) |
 | 012 | runtime policy beside CLM | automatic screening of incoming tool results | Planned: the first proposed screening experiment |
@@ -159,3 +159,19 @@ On this workload, optional steps that cost Claude a turn are not adopted, and th
 - **Why:** 010's exploratory check found one omission that was never recorded and one that was miscited at answer time. Neither was a loss during an edit, so 011 should also confirm that edit-time losses occur at all on this workload, before agent runs.
 - **A workload with interacting obligations (W2)** may be needed to create that opportunity.
 - **Revising 010:** any revised 010 design, for example making review the route for note rewrites, would be a new, labelled protocol version, and is close to 011.
+
+## Note after 010 v2's calibration (2026-10-13)
+
+**010 v2** made a review mandatory before every context edit. A was ordinary CLM, B the review only, and C the review with Jev.
+- **The workflow worked:** 48/48 edits were preceded by a review, with no bypass.
+- **Jev never acted:** Claude declared every review "compaction", including the per-round consolidations that brought in new evidence. Jev was therefore never applicable and made **0** calls.
+- **The review's cost:** even inactive, the required review cost about 15% more, took 28% longer, and raised context pressure about fourfold on the calibration instances.
+- **No evaluation was run.** See [010](010-jev-initiated-review/README.md).
+
+**What the programme has learned so far** (incident-rounds workload):
+- **What makes Jev act:** it runs only when the update source is mechanical and runtime-supplied (009). Every design that relied on Claude choosing to invoke or classify an update left it unused: 008, 010 v1 and 010 v2.
+- **What 009 showed:** automatic advice ran but brought no efficiency or established correctness benefit.
+
+**Recommendation (the decision is the maintainer's):**
+- **A 010 v3 is possible:** a required pre-edit review whose update source is the evidence released since the previous review, supplied by the runtime. It would test advice at Claude's edit decisions without depending on Claude's classification. It would need its own protocol and authorisation.
+- **The stronger next step is still 011's component diagnostic:** it targets the observed failures (omissions and miscitations) and can be checked cheaply before any agent run.

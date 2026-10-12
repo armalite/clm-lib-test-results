@@ -34,6 +34,9 @@ Write-ups, findings and historical protocols live here.
   - `guided`: prompted demonstrations;
   - `calibration`: development runs;
   - `smoke` and `access-failure`: connectivity checks.
+- `artifacts/runs/<group>/<role>/<run_id>/`: the same, for runs that the run selection places in
+  an optional `group` (for example a protocol version, as in experiment 010 v2), so versions of
+  one experiment never share a folder.
 
   Inside a run folder:
   - `run.json`: configuration;

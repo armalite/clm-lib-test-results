@@ -1,0 +1,3 @@
+import json
+n=[{'id':'n1','role':'note','body':'R1: board empty; slow query WARN = noise everywhere. CHG-108 PROPOSED (HPA search) not applied.'},{'id':'n2','role':'note','body':'R2: board follow-ups OPEN: ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET (round-02/board.md:3-5). changes: CHG-116 APPLIED health log sampling; CHG-120 APPLIED notify-worker build 8.56.0 sets http.max_inflight=0 (round-02/changes.md:4, suspect BAD_CONFIG, no errors yet); CHG-121 payments 8.56.0 no config. auth-svc db pool exhausted WARNs round-02/logs/auth-svc.log:1,3,15,22,23,25,44,65,69 (DB_POOL_EXHAUSTED candidate, not on board yet). Filter used: skip slow query, INFO, level=info.'}]
+json.dump({'format':'clm-context/v1','entries':n},open('/task/workspace/context.json','w'))

@@ -1,0 +1,19 @@
+--- rev-21
++++ rev-22
+@@ -30,6 +30,16 @@
+    "id": "s17.obs",
+    "role": "observation",
+    "body": "Stage 5 of 10 released.\nRound 5 of 10 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (5 lines)\n  round-05/changes.md (4 lines)\n  round-05/logs/auth-svc.log (70 lines)\n  round-05/logs/checkout-api.log (72 lines)\n  round-05/logs/notify-worker.log (74 lines)\n  round-05/logs/payments-svc.log (73 lines)\n  round-05/logs/search-api.log (57 lines)"
++  },
++  {
++   "id": "s18.act",
++   "role": "assistant",
++   "body": "[step 18] execute\nthought: \ncode:\nimport re\nb='/task/fixtures/round-05/'\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\nfor s in ['auth-svc','checkout-api','notify-worker','payments-svc','search-api']:\n  L=open(b+'logs/'+s+'.log').read().splitlines()\n  e=[(i+1,l[:110]) for i,l in enumerate(L) if re.search('ERROR|WARN|error|fail|429|exhaust',l)]\n  print(s,len(e));[print(x) for x in e[:3]];print('lines',[x[0] for x in e][:30])"
++  },
++  {
++   "id": "s18.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 05\n\n- Thread A status: mitigated (errors reduced after the applied change; monitoring).\n- Thread B update: affected services now also include checkout-api; cause and status unchanged.\n- Follow-up OPEN CAPACITY_REVIEW: capacity review of the affected tier.\n\n# Change log: round 05\n\n- CHG-138 APPLIED: TLS session ticket rotation set to hourly\n- CHG-143 APPLIED: mitigation for thread A deployed to auth-svc\n\nauth-svc 12\n(1, '2026-09-14T12:00:20Z WARN  auth-svc slow query ms=324 table=events')\n(15, '2026-09-14T12:14:12Z WARN  auth-svc slow query ms=235 table=orders')\n(26, '2026-09-14T12:21:40Z WARN  auth-svc slow query ms=413 table=items')\nlines [1, 15, 26, 40, 41, 44, 48, 51, 60, 63, 66, 69]\ncheckout-api 14\n(18, '2026-09-14T12:20:23Z WARN  checkout-api slow query ms=291 table=events')\n(21, '2026-09-14T12:24:41Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=40')\n(23, '2026-09-14T12:24:47Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=41')\nlines [18, 21, 23, 30, 34, 37, 38, 42, 50, 54, 59, 60, 65, 71]\nnotify-worker 13\n(10, '2026-09-14T12:04:59Z WARN  notify-worker slow query ms=255 table=orders')\n(18, '2026-09-14T12:07:33Z WARN  notify-worker slow query ms=238 table=orders')\n(19, '2026-09-14T12:07:42Z WARN  notify-worker slow query ms=434 table=events')\nlines [10, 18, 19, 26, 28, 37, 49, 59, 63, 66, 67, 68, 70]\npayments-svc 16\n(4, '2026-09-14T12:04:27Z WARN  payments-svc slow query ms=345 table=events')\n(5, '2026-09-14T12:05:16Z WARN  payments-svc slow query ms=218 table=events')\n(12, '2026-09-14T12:13:52Z WARN  payments-svc slow query ms=317 table=events')\nlines [4, 5, 12, 13, 19, 20, 38, 45, 46, 47, 50, 55, 57, 61, 69, 73]\nsearch-api 13\n(5, '2026-09-14T12:04:16Z WARN  search-api slow query ms=277 table=events')\n(12, '2026-09-14T12:11:13Z WARN  search-api slow query ms=430 table=events')\n(16, '2026-09-14T12:15:56Z WARN  search-api slow query ms=356 table=items')\nlines [5, 12, 16, 17, 20, 24, 26, 28, 30, 39, 47, 49, 53]\n"
+   }
+  ]
+ }

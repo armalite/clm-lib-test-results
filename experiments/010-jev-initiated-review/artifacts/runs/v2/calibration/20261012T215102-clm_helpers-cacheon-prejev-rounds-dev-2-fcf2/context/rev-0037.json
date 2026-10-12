@@ -1,0 +1,39 @@
+{
+ "number": 37,
+ "parent": 36,
+ "source": "runtime",
+ "step": 28,
+ "sha256": "09d375a91243bf7a5bbda0a6cf61cb27e31a353b06dff2c7293cecd0395d2b49",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. Slow query WARNs (200-450ms) everywhere = noise. inventory-svc DNS SERVFAIL host=rates.internal at round-01/logs/inventory-svc.log:7,20,50. round-01/changes.md:3 CHG-107 APPLIED retry budget GETs=1.\nR2: round-02/board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. round-02/changes.md:3 CHG-120 APPLIED build 8.59.8 search-api sets http.max_inflight=-1 (possible BAD_CONFIG_ROLLOUT, watch search-api); changes.md:4 CHG-121 auth-svc no config. DNS errors round-02/logs/checkout-api.log:8,24,59; round-02/logs/inventory-svc.log:8,12,74.\nR3: round-03/board.md:3 Thread B auth-svc suspected DB_POOL_EXHAUSTED ongoing, BUT logs show only tls certificate_expired peer=sso.example.net at round-03/logs/auth-svc.log:6,9,15,21,25 (likely real cause CERT_EXPIRED). DNS continues round-03/logs/checkout-api.log:33,37,44; inventory-svc.log:3,7,15. changes.md:3 CHG-126 PROPOSED (ignore). search-api no errors yet.\nGrep pattern used: ERROR|FATAL|CRIT|SERVFAIL|429|refused|exhaust|OOM|expired|lag|disk|invalid, excluding slow query.\nR4: board empty. CERT errors round-04/logs/auth-svc.log:6,8,16 and shipping-svc.log:3,20,27 (shipping-svc also cert expired sso). DNS continues checkout-api.log:1,8,11; inventory-svc.log:32,36,38. search-api clean.\nR5: round-05/board.md:3 Thread A mitigated after round-05/changes.md:3 CHG-143 APPLIED. board.md:4 Thread B adds shipping-svc, cause still DB_POOL (board) but logs CERT_EXPIRED round-05/logs/auth-svc.log:2,8,14; shipping-svc.log:9,11,34. board.md:5 OPEN VENDOR_TICKET; board.md:6 OPEN ALERT_TUNING. No DNS errors in R5.\nR6: round-06/board.md:3 OPEN RUNBOOK_UPDATE. changes.md:3 CHG-144 noise. CERT continues round-06/logs/auth-svc.log:4,10,14; shipping-svc.log:1,18,21. No DNS, search-api clean."
+  },
+  {
+   "id": "s27.act",
+   "role": "assistant",
+   "body": "[step 27] execute\nthought: Read spill compactly, and compact context in same step.\ncode:\nimport json,re\nt=open('/task/workspace/spill/s25.obs.txt').read()\nprint(open('/task/fixtures/round-07/board.md').read())\nfrom collections import defaultdict\nd=defaultdict(list)\nfor l in t.splitlines():\n  p=l.split(' ',2)\n  if len(p)==3 and p[1].isdigit():\n    k=re.sub(r'\\d+','#',p[2])[:70]\n    d[(p[0],k)].append(p[1])\nfor k,v in d.items(): print(k[0],v[:4],len(v),k[1])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s27.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 07\n\n- Thread B root cause revised: an expired TLS certificate on a dependency (CERT_EXPIRED); this supersedes the earlier suspicion of DB_POOL_EXHAUSTED.\n- Thread D opened: an upstream provider rejecting requests with 429 alerts (UPSTREAM_RATE_LIMIT) on search-api. Status: ongoing.\n\nauth-svc.log ['1', '16', '24', '26'] 10 {\"ts\":\"#-#-#T#:#:#Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls hands\nsearch-api.log ['4', '5', '20', '22'] 8 {\"ts\":\"#-#-#T#:#:#Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstrea\nshipping-svc.log ['10', '11', '23', '26'] 12 {\"ts\":\"#-#-#T#:#:#Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls h\n"
+  },
+  {
+   "id": "s27.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 27: revision 34 -> 35; entries 10 -> 1; body chars 3880 -> 1764; removed [s23.act, s23.obs, s23.rcpt, s24.act, s24.obs, s25.act, s25.obs, s26.act, s26.obs]; added []; rewritten []"
+  },
+  {
+   "id": "s28.act",
+   "role": "assistant",
+   "body": "[step 28] execute\nthought: Check search-api errors in R7 for 429 vs invalid config.\ncode:\nfor i,l in enumerate(open('/task/fixtures/round-07/logs/search-api.log'),1):\n  if 'ERROR' in l: print(i,l[60:200])\nimport os;print(os.listdir('/task/fixtures/round-07'))"
+  },
+  {
+   "id": "s28.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n4 pi\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":16}\n\n5 pi\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":51}\n\n20 pi\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":6}\n\n22 pi\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":18}\n\n25 pi\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":43}\n\n47 pi\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":57}\n\n64 pi\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":38}\n\n66 pi\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":10}\n\n['board.md', 'logs']\n"
+  }
+ ]
+}

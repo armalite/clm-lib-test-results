@@ -1,0 +1,34 @@
+--- rev-33
++++ rev-34
+@@ -5,31 +5,6 @@
+    "id": "notes",
+    "role": "note",
+    "body": "R1: changes.md:3 CHG-107 APPLIED retry budget GETs=1. slow query WARNs = noise. inventory-svc DNS SERVFAIL rates.internal round-01/logs/inventory-svc.log:7,20. R2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (BAD_CONFIG candidate, watch search-api); CHG-121 auth-svc no config. checkout-api.log:8 dns err. Workflow: per round print board, changes, ERROR lines (skip slow query), update note, drop old entries. R3: board.md:3 Thread B auth-svc suspected DB_POOL_EXHAUSTED ongoing, BUT logs show CERT_EXPIRED peer=sso.example.net round-03/logs/auth-svc.log:6,9,72 (board cause likely wrong). checkout+inventory DNS still failing r3 checkout-api.log:33-74, inventory-svc.log:3-50. CHG-126 PROPOSED (ignore). search-api no errors yet. R4: board empty (no changes). No changes.md. CERT_EXPIRED sso.example.net now also shipping-svc round-04/logs/shipping-svc.log:3,66; auth-svc.log:6,77. DNS still failing checkout-api.log:1,71 inventory-svc.log:32,75. search-api no errors. R5: board.md:3 Thread A mitigated; board.md:4 Thread B +shipping-svc; board.md:5 OPEN VENDOR_TICKET, :6 OPEN ALERT_TUNING. changes.md:3 CHG-143 APPLIED thread A mitigation inventory-svc. No DNS errors in r5 checkout/inventory. CERT still auth-svc.log:2,64 shipping-svc.log:9,65. search-api no errors. R6: board.md:3 OPEN RUNBOOK_UPDATE. changes.md:3 CHG-144 log sampling (noise). CERT auth-svc.log:4,10 shipping-svc.log:1,18. No other errors. Round 6 reviewed; next: advance. R7: board.md:3 Thread B revised CERT_EXPIRED; board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing, search-api.log:4,5 429 upstream tax-. CERT auth-svc.log:1,16 shipping-svc.log:10,11. No DNS. Round 7 reviewed; next: advance."
+-  },
+-  {
+-   "id": "s22.act",
+-   "role": "assistant",
+-   "body": "[step 22] execute\nthought: Record R7 findings in notes and drop old entries.\ncode:\nimport json\nb='/task/fixtures/round-07/'\nL=open(b+'logs/search-api.log').read().splitlines()\nprint(L[3][:200])\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='notes'][0]\nn['body']+=' R7: board.md:3 Thread B revised CERT_EXPIRED; board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing, search-api.log:4,5 429 upstream tax-. CERT auth-svc.log:1,16 shipping-svc.log:10,11. No DNS. Round 7 reviewed; next: advance.'\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s22.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n{\"ts\":\"2026-09-14T14:04:44Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":16}\n"
+-  },
+-  {
+-   "id": "s22.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 22: revision 30 -> 31; entries 4 -> 1; body chars 3238 -> 1765; removed [s21.act, s21.obs, s21.rcpt]; added []; rewritten [notes]"
+-  },
+-  {
+-   "id": "s23.act",
+-   "role": "assistant",
+-   "body": "[step 23] advance\nthought: "
+-  },
+-  {
+-   "id": "s23.obs",
+-   "role": "observation",
+-   "body": "Stage 8 of 11 released.\nRound 8 of 11 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (7 lines)\n  round-08/logs/auth-svc.log (61 lines)\n  round-08/logs/checkout-api.log (75 lines)\n  round-08/logs/inventory-svc.log (58 lines)\n  round-08/logs/search-api.log (75 lines)\n  round-08/logs/shipping-svc.log (65 lines)"
+   }
+  ]
+ }
