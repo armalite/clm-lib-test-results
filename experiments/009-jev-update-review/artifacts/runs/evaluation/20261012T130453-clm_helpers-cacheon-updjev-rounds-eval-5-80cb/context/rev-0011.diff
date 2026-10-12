@@ -1,0 +1,24 @@
+--- rev-10
++++ rev-11
+@@ -15,6 +15,21 @@
+    "id": "n3",
+    "role": "note",
+    "body": "R3: board.md:3 Thread B auth-svc MEMORY_LEAK ongoing (verify vs logs)."
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: Check round 3 auth-svc logs for memory evidence, and compress context.\ncode:\nimport json,re\nfor s in ['auth-svc','checkout-api','ledger-svc']:\n  for i,l in enumerate(open(f'/task/fixtures/round-03/logs/{s}.log'),1):\n    if re.search(r'ERROR|WARN|mem|rss|restart|pool',l,re.I) and 'slow' not in l: print(s,i,l.strip()[:150])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[x for x in c['entries'] if x['id'] in('n1','n2')]\nc['entries'].append({'id':'n3','role':'note','body':'R3: board.md:3 Thread B auth-svc MEMORY_LEAK ongoing (verify vs logs).'})\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nauth-svc 1 2026-09-14T10:01:39Z ERROR auth-svc tls handshake failed peer=bank-api reason=certificate_expired\nauth-svc 16 2026-09-14T10:10:11Z ERROR auth-svc tls handshake failed peer=bank-api reason=certificate_expired\nauth-svc 21 2026-09-14T10:15:24Z ERROR auth-svc tls handshake failed peer=bank-api reason=certificate_expired\nauth-svc 25 2026-09-14T10:18:47Z ERROR auth-svc tls handshake failed peer=bank-api reason=certificate_expired\nauth-svc 35 2026-09-14T10:26:34Z ERROR auth-svc tls handshake failed peer=bank-api reason=certificate_expired\nauth-svc 62 2026-09-14T10:45:02Z ERROR auth-svc tls handshake failed peer=bank-api reason=certificate_expired\n"
++  },
++  {
++   "id": "s7.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 7: revision 9 -> 10; entries 7 -> 3; body chars 2285 -> 634; removed [s5.act, s5.obs, s5.rcpt, s6.act, s6.obs]; added [n3]; rewritten []"
+   }
+  ]
+ }

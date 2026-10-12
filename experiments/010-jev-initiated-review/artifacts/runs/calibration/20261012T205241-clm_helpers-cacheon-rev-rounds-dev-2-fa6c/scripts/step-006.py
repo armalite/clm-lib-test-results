@@ -1,0 +1,4 @@
+import json
+n='R1: changes.md:3 CHG-107 APPLIED retry budget idempotent GETs=1. Slow query WARNs = noise. DNS_RESOLUTION host=rates.internal SERVFAIL round-01/logs/inventory-svc.log:7,20,50-90.\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspicious BAD_CONFIG; no search-api errors yet in R2). changes.md:4 CHG-121 auth-svc no config. checkout-api.log:8-59 dns errs; inventory-svc.log:8-74 dns errs.'
+c={'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':n}]}
+json.dump(c,open('/task/workspace/context.json','w'))

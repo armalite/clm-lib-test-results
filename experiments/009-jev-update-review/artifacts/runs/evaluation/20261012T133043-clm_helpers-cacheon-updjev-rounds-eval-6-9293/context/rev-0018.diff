@@ -1,0 +1,26 @@
+--- rev-17
++++ rev-18
+@@ -4,22 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: no board/changes. Slow-query WARN=noise. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11,17,19,32,42,62.\nR2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc batch_size=0 (BAD_CONFIG_ROLLOUT candidate); CHG-121 payments no config. R2 logs: inventory 429 fx-rates round-02/logs/inventory-svc.log:18-38,46-63; ledger round-02/logs/ledger-svc.log:6-23,42-56. No pricing errors seen in R2 logs. R2 pricing-svc logs: only slow-query WARN noise. R3: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing; changes.md:3 CHG-124 APPLIED retry budget=1. R3 logs plain format (ts LEVEL svc msg)."
+-  },
+-  {
+-   "id": "s11.act",
+-   "role": "assistant",
+-   "body": "[step 11] execute\nthought: Format looks plain; zero matches odd. Check non-INFO lines in R3 logs and compact context.\ncode:\nimport os,json\nd='/task/fixtures/round-03/logs/'\nfor s in sorted(os.listdir(d)):\n  L=open(d+s).read().splitlines()\n  h=[(i+1,l[:130]) for i,l in enumerate(L) if ' INFO ' not in l and 'slow query' not in l]\n  print(s,len(h));[print(i,l) for i,l in h[:6]]\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']+=' R3 logs plain format (ts LEVEL svc msg).'\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s11.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\ncheckout-api.log 0\ninventory-svc.log 6\n13 2026-09-14T10:10:02Z ERROR inventory-svc upstream returned 429 upstream=fx-rates retry_after_s=43\n19 2026-09-14T10:16:53Z ERROR inventory-svc upstream returned 429 upstream=fx-rates retry_after_s=9\n21 2026-09-14T10:17:19Z ERROR inventory-svc upstream returned 429 upstream=fx-rates retry_after_s=56\n28 2026-09-14T10:21:38Z ERROR inventory-svc upstream returned 429 upstream=fx-rates retry_after_s=32\n65 2026-09-14T10:43:39Z ERROR inventory-svc upstream returned 429 upstream=fx-rates retry_after_s=50\n74 2026-09-14T10:55:21Z ERROR inventory-svc upstream returned 429 upstream=fx-rates retry_after_s=58\nledger-svc.log 11\n7 2026-09-14T10:08:42Z ERROR ledger-svc upstream returned 429 upstream=fx-rates retry_after_s=58\n17 2026-09-14T10:12:24Z ERROR ledger-svc upstream returned 429 upstream=fx-rates retry_after_s=43\n27 2026-09-14T10:19:09Z ERROR ledger-svc upstream returned 429 upstream=fx-rates retry_after_s=35\n35 2026-09-14T10:25:33Z ERROR ledger-svc upstream returned 429 upstream=fx-rates retry_after_s=43\n38 2026-09-14T10:29:34Z ERROR ledger-svc upstream returned 429 upstream=fx-rates retry_after_s=19\n43 2026-09-14T10:32:00Z ERROR ledger-svc upstream returned 429 upstream=fx-rates retry_after_s=11\npayments-svc.log 6\n12 2026-09-14T10:10:25Z WARN  payments-svc disk usage high path=/var/data used_pct=95\n20 2026-09-14T10:15:47Z WARN  payments-svc disk usage high path=/var/data used_pct=91\n22 2026-09-14T10:16:50Z WARN  payments-svc disk usage high path=/var/data used_pct=93\n46 2026-09-14T10:30:37Z WARN  payments-svc disk usage high path=/var/data used_pct=91\n54 2026-09-14T10:34:13Z WARN  payments-svc disk usage high path=/var/data used_pct=96\n80 2026-09-14T10:57:53Z WARN  payments-svc disk usage high path=/var/data used_pct=97\npricing-svc.log 0\n"
+-  },
+-  {
+-   "id": "s11.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 11: revision 15 -> 16; entries 6 -> 1; body chars 3128 -> 716; removed [s9.act, s9.obs, s9.rcpt, s10.act, s10.obs]; added []; rewritten [n1]"
++   "body": "R1: no board/changes. Slow-query WARN=noise. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11,17,19,32,42,62.\nR2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc batch_size=0 (BAD_CONFIG_ROLLOUT candidate); CHG-121 payments no config. R2 logs: inventory 429 fx-rates round-02/logs/inventory-svc.log:18-38,46-63; ledger round-02/logs/ledger-svc.log:6-23,42-56. No pricing errors seen in R2 logs. R2 pricing-svc logs: only slow-query WARN noise. R3: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing; changes.md:3 CHG-124 APPLIED retry budget=1. R3 logs plain format (ts LEVEL svc msg). R3 logs: payments-svc disk usage high /var/data 91-97% round-03/logs/payments-svc.log:12,20,22,46,54,80 (no cache errors seen -> board B CACHE_STAMPEDE may be wrong, real=DISK_PRESSURE?). inventory 429 round-03/logs/inventory-svc.log:13-28,65,74; ledger 429 round-03/logs/ledger-svc.log:7-43. pricing/checkout clean R3. Next: advance to R4."
+   }
+  ]
+ }

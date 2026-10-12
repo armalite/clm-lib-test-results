@@ -1,0 +1,29 @@
+{
+ "number": 27,
+ "parent": 26,
+ "source": "runtime",
+ "step": 17,
+ "sha256": "56873c39201fcba89e359b4be73b5379fc9ad6562fff33f265d561b77dac3437",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: CHG-113 APPLIED ledger-svc pool_max=0 r1 changes.md:3 (suspect BAD_CONFIG, no ledger errors r1-r3). R2: board.md:3 OPEN POSTMORTEM_DRAFT; shipping 429 tax-provider round-02/logs/shipping-svc.log:7,22,35. R3: board.md:3 Thread A UPSTREAM_RATE_LIMIT shipping-svc+search-api ongoing; board.md:4 OPEN DATA_BACKFILL; :5 OPEN CAPACITY_REVIEW; changes.md:3 CHG-124 TLS ticket rotation (watch CERT). r3 429s: search-api.log:2,10,23; shipping-svc.log:5,13,17. Round 3 fully checked; next: advance. R4: board.md:3 Thread B CACHE_STAMPEDE checkout-api ongoing (verify logs); changes.md:3 CHG-128 log sampling (irrelevant). r4 logs: checkout-api disk used_pct 91-98 /var/data (DISK_PRESSURE? lines 7,19,76) no cache errors seen; search-api 429 lines 1,14,32; slow-query WARNs everywhere = noise. r4 search-api 429 also 41,43,44,59; shipping 429 r4 7,18,27,38,54,69. R5: changes.md:3 CHG-137 PROPOSED HPA (no effect). r5 board empty; checkout disk 91-97 lines 1,7,56; search 429 18,25,77; shipping 429 26,38,71. R6: board.md:3 Thread A now MITIGATED; changes.md:3 CHG-150 APPLIED shipping-svc mitigation."
+  },
+  {
+   "id": "s17.act",
+   "role": "assistant",
+   "body": "[step 17] execute\nthought: Update note with round 6 info and check r6 logs for key signals.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-06/logs/*.log')):\n    for i,l in enumerate(open(f),1):\n        if re.search(r'429|used_pct|pool|cert|expired|ERROR',l,re.I) and 'slow' not in l: print(f.split('/')[-1],i,l.strip()[:140])\nd=json.load(open('/task/workspace/context.json'))\nd['entries']=[e for e in d['entries'] if e['id']=='n1']\nb=d['entries'][0]['body'].replace(' Round 5 done; next: advance.','')\nd['entries'][0]['body']=b+' R6: board.md:3 Thread A now MITIGATED; changes.md:3 CHG-150 APPLIED shipping-svc mitigation.'\njson.dump(d,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s17.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\ncheckout-api.log 1 2026-09-14T13:00:29Z WARN  checkout-api disk usage high path=/var/data used_pct=94\ncheckout-api.log 11 2026-09-14T13:09:07Z WARN  checkout-api disk usage high path=/var/data used_pct=91\ncheckout-api.log 31 2026-09-14T13:22:19Z WARN  checkout-api disk usage high path=/var/data used_pct=98\ncheckout-api.log 34 2026-09-14T13:24:59Z WARN  checkout-api disk usage high path=/var/data used_pct=93\ncheckout-api.log 39 2026-09-14T13:33:39Z WARN  checkout-api disk usage high path=/var/data used_pct=97\ncheckout-api.log 48 2026-09-14T13:39:36Z WARN  checkout-api disk usage high path=/var/data used_pct=96\ncheckout-api.log 57 2026-09-14T13:45:05Z WARN  checkout-api disk usage high path=/var/data used_pct=97\ncheckout-api.log 60 2026-09-14T13:46:21Z WARN  checkout-api disk usage high path=/var/data used_pct=92\ncheckout-api.log 63 2026-09-14T13:48:31Z WARN  checkout-api disk usage high path=/var/data used_pct=96\ncheckout-api.log 74 2026-09-14T13:57:06Z WARN  checkout-api disk usage high path=/var/data used_pct=96\nledger-svc.log 25 2026-09-14T13:21:12Z INFO  ledger-svc heartbeat uptime_s=4295\n"
+  },
+  {
+   "id": "s17.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 17: revision 25 -> 26; entries 6 -> 1; body chars 2822 -> 1095; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

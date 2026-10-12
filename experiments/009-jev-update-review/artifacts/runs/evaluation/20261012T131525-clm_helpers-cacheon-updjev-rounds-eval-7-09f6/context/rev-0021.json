@@ -1,0 +1,29 @@
+{
+ "number": 21,
+ "parent": 20,
+ "source": "runtime",
+ "step": 13,
+ "sha256": "27da75cba8aefe6627329d55cbb5ce40c79a2e1059a0f0cb4d38cc965a1e826e",
+ "entries": [
+  {
+   "id": "notes",
+   "role": "note",
+   "body": "R1: CHG-113 APPLIED round-01/changes.md:3 ledger-svc build 7.35.5 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT). CHG-114 checkout-api no config (r1 changes.md:4). Svcs: checkout-api, ledger-svc, payments-svc, search-api, shipping-svc. R2: board.md:3 followup OPEN POSTMORTEM_DRAFT. R2 shipping 429 round-02/logs/shipping-svc.log:7,22,35-41,60. R3: board.md:3 Thread A UPSTREAM_RATE_LIMIT (tax-provider) shipping-svc+search-api ongoing; board.md:4 OPEN DATA_BACKFILL; board.md:5 OPEN CAPACITY_REVIEW; CHG-124 TLS ticket rotation (r3 changes.md:3, likely irrelevant). R3 logs: search-api.log:2-76 429s (e.g. 58-76), shipping-svc.log:5-63 429s (e.g. 45-63); ledger no pool errors r3. R4: board.md:3 Thread B CACHE_STAMPEDE checkout-api ongoing; CHG-128 log sampling (irrelevant). R4 logs: checkout-api disk used_pct 93-98 /var/data (checkout-api.log:7,17,19,28) - possible DISK_PRESSURE; slow queries noise. No cache-miss lines seen in R4 checkout log (check later). R5: CHG-137 PROPOSED HPA search (not applied, r5 changes.md:3)."
+  },
+  {
+   "id": "s13.act",
+   "role": "assistant",
+   "body": "[step 13] execute\nthought: Check R5 logs briefly for key signals, and compact context.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*.log')):\n    L=open(f).read().splitlines()\n    hits=[(i+1,l[:110]) for i,l in enumerate(L) if re.search(r'429|pool|miss|disk|cert|dns|lag|memory|OOM',l,re.I)]\n    print(f.split('/')[-1],len(hits),hits[:4])\nprint(open('/task/fixtures/round-05/board.md').read())\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='notes'][0]['body']\nn=n.replace(' Next: advance to R5.','')+' R5: CHG-137 PROPOSED HPA search (not applied, r5 changes.md:3).'\njson.dump({'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':n}]},open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s13.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\ncheckout-api.log 9 [(1, '2026-09-14T12:00:28Z WARN  checkout-api disk usage high path=/var/data used_pct=95'), (7, '2026-09-14T12:03:42Z WARN  checkout-api disk usage high path=/var/data used_pct=97'), (22, '2026-09-14T12:14:55Z WARN  checkout-api disk usage high path=/var/data used_pct=92'), (32, '2026-09-14T12:22:10Z WARN  checkout-api disk usage high path=/var/data used_pct=91')]\nledger-svc.log 1 [(18, '2026-09-14T12:11:12Z WARN  ledger-svc slow query ms=429 table=events')]\npayments-svc.log 0 []\nsearch-api.log 6 [(18, '2026-09-14T12:08:47Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=34'), (25, '2026-09-14T12:16:01Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=43'), (36, '2026-09-14T12:26:25Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=19'), (68, '2026-09-14T12:49:36Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=49')]\nshipping-svc.log 8 [(26, '2026-09-14T12:17:06Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=26'), (32, '2026-09-14T12:21:11Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=13'), (33, '2026-09-14T12:21:54Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=20'), (38, '2026-09-14T12:24:22Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=39')]\n# Incident board: updates in round 05\n\n\n"
+  },
+  {
+   "id": "s13.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 13: revision 19 -> 20; entries 6 -> 1; body chars 2866 -> 1029; removed [s11.act, s11.obs, s11.rcpt, s12.act, s12.obs]; added []; rewritten [notes]"
+  }
+ ]
+}

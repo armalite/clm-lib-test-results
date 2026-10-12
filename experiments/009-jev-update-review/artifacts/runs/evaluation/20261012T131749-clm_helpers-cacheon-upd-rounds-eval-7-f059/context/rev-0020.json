@@ -1,0 +1,29 @@
+{
+ "number": 20,
+ "parent": 19,
+ "source": "runtime",
+ "step": 12,
+ "sha256": "3c0ac5550e4efd9ae08e78978d187988484f8cbdcfaf06c08e349860b79ba84a",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty; logs (shipping,checkout,payments,ledger,search) only background WARN slow query ms~200-450 (noise). No non-slow-query WARN/ERROR. changes: round-01/changes.md:3 CHG-113 APPLIED ledger-svc build 7.35.5 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT); :4 CHG-114 APPLIED checkout-api 7.35.5 no config. R2: board.md:3 follow-up OPEN POSTMORTEM_DRAFT; changes.md:3 CHG-119 dashboards (irrelevant). R2 logs: shipping-svc 429 upstream=tax-provider at round-02/logs/shipping-svc.log:7,22,35,38,41,60 (UPSTREAM_RATE_LIMIT candidate). R3: board.md:3 Thread A UPSTREAM_RATE_LIMIT shipping-svc+search-api ongoing; :4 OPEN DATA_BACKFILL; :5 OPEN CAPACITY_REVIEW; changes.md:3 CHG-124 TLS ticket rotation (irrelevant?). R3 logs: 429 tax-provider search-api.log:2,10,23,30 (12 total); shipping-svc.log:5,13,17,32 (12). ledger/checkout/payments clean. R3 done; next advance. R4: board.md:3 Thread B CACHE_STAMPEDE checkout-api ongoing (verify; CHG-113 pool_max=0 is ledger). changes.md:3 CHG-128 log sampling (irrelevant). R4 logs: checkout-api disk usage high /var/data used_pct 93-98 at round-04/logs/checkout-api.log:7,17,19,28 (10 hits) -> DISK_PRESSURE, board says CACHE_STAMPEDE (likely wrong). 429 tax-provider continues search-api.log:1,14,32,41; shipping-svc.log:7,18,27,38. ledger/payments clean. R4 done; next advance."
+  },
+  {
+   "id": "s12.act",
+   "role": "assistant",
+   "body": "[step 12] execute\nthought: Record R4 findings (checkout disk pressure, not cache stampede?), prune, then advance next step.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']+=' R4 logs: checkout-api disk usage high /var/data used_pct 93-98 at round-04/logs/checkout-api.log:7,17,19,28 (10 hits) -> DISK_PRESSURE, board says CACHE_STAMPEDE (likely wrong). 429 tax-provider continues search-api.log:1,14,32,41; shipping-svc.log:7,18,27,38. ledger/payments clean. R4 done; next advance.'\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+  },
+  {
+   "id": "s12.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s12.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 12: revision 18 -> 19; entries 4 -> 1; body chars 3301 -> 1331; removed [s11.act, s11.obs, s11.rcpt]; added []; rewritten [n1]"
+  }
+ ]
+}

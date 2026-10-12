@@ -1,0 +1,29 @@
+{
+ "number": 23,
+ "parent": 22,
+ "source": "runtime",
+ "step": 14,
+ "sha256": "1563ca18068f1c3d1504a814f18e1a98e7f2dd1c3eae4b74638fa17b6ae9bde2",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: no board. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11-62. R2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc feature.batch_size=0 (BAD_CONFIG candidate); :5 CHG-121 payments no config. R2 logs: 429 fx-rates inventory-svc.log:18-86, ledger-svc.log:6-71. R2 pricing/payments: only slow-query WARNs, no batch_size errors (CHG-120 no visible impact yet). R3: board.md:3 Thread B payments-svc CACHE_STAMPEDE ongoing (suspected). changes.md:3 CHG-124 APPLIED retry budget GETs=1. R3 logs: 429 fx-rates inventory-svc.log:13-74, ledger-svc.log:7-68; payments/pricing no cache/batch errors (Thread B unconfirmed in logs). R4: board.md:3 Thread A mitigated; board.md:4 OPEN RUNBOOK_UPDATE; changes.md:3 CHG-128 APPLIED retry GETs=1; changes.md:4 CHG-136 APPLIED mitigation A ledger-svc. R4 logs: 429 gone all services; payments-svc DISK_PRESSURE /var/data used_pct=94 payments-svc.log:4-73 (11 hits). R5: board.md:3 OPEN VENDOR_TICKET."
+  },
+  {
+   "id": "s14.act",
+   "role": "assistant",
+   "body": "[step 14] execute\nthought: Record R5 board, check R5 logs for key patterns, prune context.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*.log')):\n    L=open(f).read().splitlines();h=[i+1 for i,l in enumerate(L) if re.search(r'ERROR|WARN',l)]\n    s=set(re.sub(r'\\d+','#',L[i-1].split(' ',3)[-1])[:90] for i in h)\n    print(f.split('/')[-1],len(h),h[:1],h[-1:] if h else '',list(s)[:4])\nd=json.load(open('/task/workspace/context.json'))\nn=[x for x in d['entries'] if x['id']=='n1'][0]\nn['body']+=' R5: board.md:3 OPEN VENDOR_TICKET.'\nd['entries']=[n]\njson.dump(d,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s14.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\ncheckout-api.log 17 [1] [55] ['checkout-api slow query ms=# table=items', 'checkout-api slow query ms=# table=orders', 'checkout-api slow query ms=# table=events']\ninventory-svc.log 10 [12] [62] ['inventory-svc slow query ms=# table=events', 'inventory-svc slow query ms=# table=items', 'inventory-svc slow query ms=# table=orders']\nledger-svc.log 11 [9] [48] ['ledger-svc slow query ms=# table=events', 'ledger-svc slow query ms=# table=items', 'ledger-svc slow query ms=# table=orders']\npayments-svc.log 18 [1] [74] ['payments-svc disk usage high path=/var/data used_pct=#', 'payments-svc slow query ms=# table=items', 'payments-svc slow query ms=# table=orders', 'payments-svc slow query ms=# table=events']\npricing-svc.log 17 [1] [59] ['pricing-svc slow query ms=# table=events', 'pricing-svc slow query ms=# table=items', 'pricing-svc slow query ms=# table=orders']\n"
+  },
+  {
+   "id": "s14.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 14: revision 21 -> 22; entries 6 -> 1; body chars 3741 -> 1051; removed [s12.act, s12.obs, s12.rcpt, s13.act, s13.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

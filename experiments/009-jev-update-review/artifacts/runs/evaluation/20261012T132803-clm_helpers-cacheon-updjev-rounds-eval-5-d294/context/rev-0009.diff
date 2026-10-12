@@ -1,0 +1,24 @@
+--- rev-8
++++ rev-9
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: changes.md:3 CHG-110 APPLIED TLS ticket rotation; :4 CHG-113 APPLIED checkout-api db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT, unconfirmed); :5 CHG-114 auth-svc no config. slow-query WARNs = noise. search-api disk 91-97% (round-01/logs/search-api.log:4,12,38,48).\nR2: board.md:3 Thread A DISK_PRESSURE search-api + shipping-svc ongoing; board.md:4 follow-up OPEN CUSTOMER_COMMS. changes.md:3 CHG-117 dashboards (irrelevant).\nR3: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing (suspected; verify vs CHG-114)."
++  },
++  {
++   "id": "s6.act",
++   "role": "assistant",
++   "body": "[step 6] execute\nthought: Check auth-svc memory evidence in round 3, update note, trim context.\ncode:\nimport json\np='/task/fixtures/round-03/logs/auth-svc.log'\nfor i,l in enumerate(open(p),1):\n  s=l.lower()\n  if 'error' in s or 'mem' in s or 'restart' in s or 'oom' in s: print(i,l.strip()[:140])\nfor f in ['checkout-api','search-api','shipping-svc','ledger-svc']:\n  for i,l in enumerate(open(f'/task/fixtures/round-03/logs/{f}.log'),1):\n    if 'ERROR' in l or 'disk' in l.lower(): print(f,i,l.strip()[:120])\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='n1'][0]\nn['body']+='\\nR3: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing (suspected; verify vs CHG-114).'\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s6.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n1 2026-09-14T10:01:39Z ERROR auth-svc tls handshake failed peer=bank-api reason=certificate_expired\n16 2026-09-14T10:10:11Z ERROR auth-svc tls handshake failed peer=bank-api reason=certificate_expired\n21 2026-09-14T10:15:24Z ERROR auth-svc tls handshake failed peer=bank-api reason=certificate_expired\n25 2026-09-14T10:18:47Z ERROR auth-svc tls handshake failed peer=bank-api reason=certificate_expired\n35 2026-09-14T10:26:34Z ERROR auth-svc tls handshake failed peer=bank-api reason=certificate_expired\n62 2026-09-14T10:45:02Z ERROR auth-svc tls handshake failed peer=bank-api reason=certificate_expired\nsearch-api 16 2026-09-14T10:10:20Z WARN  search-api disk usage high path=/var/data used_pct=97\nsearch-api 20 2026-09-14T10:14:06Z WARN  search-api disk usage high path=/var/data used_pct=97\nsearch-api 28 2026-09-14T10:19:24Z WARN  search-api disk usage high path=/var/data used_pct=92\nsearch-api 36 2026-09-14T10:28:54Z WARN  search-api disk usage high path=/var/data used_pct=94\nsearch-api 50 2026-09-14T10:41:38Z WARN  search-api disk usage high path=/var/data used_pct=95\nsearch-api 61 2026-09-14T10:46:48Z WARN  search-api disk usage high path=/var/data used_pct=91\nsearch-api 68 2026-09-14T10:54:11Z WARN  search-api disk usage high path=/var/data used_pct=96\nsearch-api 77 2026-09-14T10:59:06Z WARN  search-api disk usage high path=/var/data used_pct=98\nshipping-svc 15 2026-09-14T10:10:14Z WARN  shipping-svc disk usage high path=/var/data used_pct=91\nshipping-svc 20 2026-09-14T10:15:36Z WARN  shipping-svc disk usage high path=/var/data used_pct=91\nshipping-svc 30 2026-09-14T10:23:09Z WARN  shipping-svc disk usage high path=/var/data used_pct=91\nshipping-svc 49 2026-09-14T10:37:00Z WARN  shipping-svc disk usage high path=/var/data used_pct=98\nshipping-svc 66 2026-09-14T10:46:34Z WARN  shipping-svc disk usage high path=/var/data used_pct=97\nshipping-svc 80 2026-09-14T10:58:34Z WARN  shipping-svc disk usage high path=/var/data used_pct=94\n"
++  },
++  {
++   "id": "s6.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 6: revision 7 -> 8; entries 6 -> 1; body chars 2560 -> 512; removed [s4.act, s4.obs, s4.rcpt, s5.act, s5.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

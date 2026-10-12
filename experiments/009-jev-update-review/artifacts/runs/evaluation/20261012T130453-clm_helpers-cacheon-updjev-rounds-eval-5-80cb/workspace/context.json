@@ -1,0 +1,85 @@
+{
+ "format": "clm-context/v1",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: changes.md:3 CHG-110 TLS ticket hourly; :4 CHG-113 checkout-api build 7.35.8 sets db.pool_max=-4 (BAD_CONFIG suspect); :5 CHG-114 auth-svc no cfg. Logs: slow-query WARNs noise. search-api disk used_pct 91-97 (round-01/logs/search-api.log:4,12,38,48)."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 Thread A DISK_PRESSURE search-api+shipping-svc ongoing; board.md:4 follow-up OPEN CUSTOMER_COMMS; changes.md:3 CHG-117 dashboards (noise). R2 logs: search-api disk WARN used_pct 91-98 (round-02/logs/search-api.log:4-63), shipping-svc 91-98 (round-02/logs/shipping-svc.log:4-71). No other errors."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread B claims auth-svc MEMORY_LEAK, but logs show TLS certificate_expired peer=bank-api (round-03/logs/auth-svc.log:1,16,21,25,35,62) -> real cause CERT_EXPIRED; no mem evidence. checkout/ledger clean R3."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board.md:3 Thread A mitigated; :4 OPEN DATA_BACKFILL; :5 OPEN VENDOR_TICKET; changes.md:4 CHG-136 APPLIED mitigation search-api; :3 CHG-131 PROPOSED (ignore). R4 logs: auth-svc cert_expired continues (round-04/logs/auth-svc.log:3-55); others clean."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board.md:3 OPEN CAPACITY_REVIEW. R5 logs: auth-svc cert_expired continues (round-05/logs/auth-svc.log:1-75); search/shipping disk clean now; others clean."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board.md:3 Thread D DB_POOL_EXHAUSTED checkout-api ongoing (likely really BAD_CONFIG_ROLLOUT via CHG-113 pool_max=-4, round-01/changes.md:4); changes.md:3 CHG-147 dashboards noise. R6 logs: checkout-api WARN db pool exhausted (round-06/logs/checkout-api.log:8-76, in_use varies 10-20); auth-svc cert_expired continues (round-06/logs/auth-svc.log:2-81). R6 done; next: advance."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board.md:3 Thread A (DISK search+shipping) RESOLVED; :4 Thread B cause revised to CERT_EXPIRED (auth-svc); :5 OPEN ALERT_TUNING. R7 logs: auth-svc cert_expired continues (round-07/logs/auth-svc.log:12-79); checkout-api db pool exhausted in_use 16/16 (round-07/logs/checkout-api.log:2-66); others clean. R7 done; next: advance."
+  },
+  {
+   "id": "n8",
+   "role": "note",
+   "body": "R8: board.md:3 claims Thread D false alarm (synthetic monitor). R8 logs: checkout-api clean (no pool errors) - maybe it stopped; R6/R7 logs did show real exhaustion + CHG-113 pool_max=-4; keep watching. auth-svc cert_expired continues (round-08/logs/auth-svc.log:6-85); others clean. changes.md:3 CHG-156 PROPOSED (ignore). R8 done; next: advance."
+  },
+  {
+   "id": "n9",
+   "role": "note",
+   "body": "R9: board empty; no changes; auth-svc cert_expired continues (round-09/logs/auth-svc.log:6-71); others clean."
+  },
+  {
+   "id": "n10",
+   "role": "note",
+   "body": "R10 logs: checkout-api ERROR config validation failed db.pool_max=-4 build 7.35.8 (round-10/logs/checkout-api.log:9,11,16,18,44,58,66,69,73,87) -> BAD_CONFIG_ROLLOUT real (CHG-113). auth-svc cert_expired (round-10/logs/auth-svc.log:1-84); ledger-svc now also cert_expired bank-api (round-10/logs/ledger-svc.log:7-67). search/shipping clean. R10 board.md:3 Thread C opened checkout-api failures cause unknown ongoing (=BAD_CONFIG). changes.md:3 CHG-173 PROPOSED ignore. R10 done; next: advance."
+  },
+  {
+   "id": "n11",
+   "role": "note",
+   "body": "R11: board.md:3 Thread B adds ledger-svc; :4 Thread B mitigated; :5 Thread C pods restarting ongoing; :6 CLOSED CUSTOMER_COMMS; changes.md:3 CHG-179 PROPOSED ignore."
+  },
+  {
+   "id": "n11b",
+   "role": "note",
+   "body": "R11 logs: checkout-api config validation failed pool_max=-4 (round-11/logs/checkout-api.log:3,17,24,64); auth-svc cert_expired reduced (round-11/logs/auth-svc.log:11,21); ledger cert_expired (round-11/logs/ledger-svc.log:7,32). R11 done; next: advance."
+  },
+  {
+   "id": "n12",
+   "role": "note",
+   "body": "R12: changes.md:3 CHG-185 APPLIED dashboards noise. Next: read board, logs, then final."
+  },
+  {
+   "id": "s35.act",
+   "role": "assistant",
+   "body": "[step 35] execute\nthought: Compact context and read R12 board and key logs.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[x for x in c['entries'] if x['id'].startswith('n')]\nc['entries'].append({'id':'n12','role':'note','body':'R12: changes.md:3 CHG-185 APPLIED dashboards noise. Next: read board, logs, then final.'})\njson.dump(c,open('/task/workspace/context.json','w'))\nb='/task/fixtures/round-12/'\nprint(open(b+'board.md').read())\nfor s in ['auth-svc','checkout-api','ledger-svc','search-api','shipping-svc']:\n  L=open(b+'logs/'+s+'.log').read().splitlines()\n  h=[str(i+1) for i,l in enumerate(L) if re.search('ERROR|WARN|expired|pool|disk',l)]\n  print(s,len(h),','.join(h[:20]))\n  if h: print(L[int(h[0])-1][:200])"
+  },
+  {
+   "id": "s35.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n# Incident board: updates in round 12\n\n\nauth-svc 21 8,10,13,18,19,21,24,25,26,31,32,42,47,49,53,59,62,66,68,70\n{\"ts\":\"2026-09-14T19:08:24Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\ncheckout-api 23 1,2,6,14,15,20,24,30,36,37,46,48,49,51,54,55,59,62,65,66\n{\"ts\":\"2026-09-14T19:01:33Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"db.pool_max\",\"value\":\"-4\",\"build\":\"7.35.8\"}\nledger-svc 14 1,10,11,15,19,21,22,26,28,35,39,46,50,51\n{\"ts\":\"2026-09-14T19:00:49Z\",\"level\":\"WARN\",\"svc\":\"ledger-svc\",\"msg\":\"slow query\",\"ms\":316,\"table\":\"items\"}\nsearch-api 13 1,4,15,19,24,26,35,38,42,49,59,60,71\n{\"ts\":\"2026-09-14T19:00:49Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":350,\"table\":\"events\"}\nshipping-svc 12 1,5,6,18,19,24,39,42,45,48,53,54\n{\"ts\":\"2026-09-14T19:02:11Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"slow query\",\"ms\":231,\"table\":\"events\"}\n"
+  },
+  {
+   "id": "s35.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 35: revision 56 -> 57; entries 17 -> 13; body chars 5209 -> 3358; removed [s33.act, s33.obs, s33.rcpt, s34.act, s34.obs]; added [n12]; rewritten []"
+  }
+ ]
+}

@@ -1,0 +1,29 @@
+{
+ "number": 24,
+ "parent": 23,
+ "source": "runtime",
+ "step": 14,
+ "sha256": "c5f9e44d97dab4a6276b25439bdaf36bd368eb13a22651136cc57ee85fc3571b",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: no board. Slow query WARNs = noise. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11,17,19,32,42,62.\nR2: board Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing (round-02/board.md:3); follow-up OPEN CAPACITY_REVIEW (board.md:4). changes: CHG-120 APPLIED pricing-svc 4.35.8 feature.batch_size=0 (round-02/changes.md:4) -> watch BAD_CONFIG_ROLLOUT; CHG-121 payments no config (changes.md:5); CHG-116 log sampling (changes.md:3).\nR2 logs: inventory-svc 429 fx-rates round-02/logs/inventory-svc.log:18,38,46,72,86; ledger-svc 429 round-02/logs/ledger-svc.log:6,23,42,71. pricing-svc no errors yet in R2.\nR3: board Thread B CACHE_STAMPEDE payments-svc ongoing (round-03/board.md:3). CHG-124 APPLIED retry budget GETs=1 (round-03/changes.md:3).\nR3 logs: payments-svc only disk WARNs /var/data used_pct 91-97 round-03/logs/payments-svc.log:12,20,22,46,54,80 (no cache misses -> board CACHE_STAMPEDE may be wrong; real cause likely DISK_PRESSURE). 429s continue inventory round-03/logs/inventory-svc.log:13,19,21,28,65,74; ledger round-03/logs/ledger-svc.log:7,17,27,35,38,43. pricing-svc no errors R3.\nR4: Thread A mitigated (round-04/board.md:3); CHG-136 APPLIED mitigation ledger-svc (round-04/changes.md:4); CHG-128 retry GETs=1 (changes.md:3). Follow-up OPEN RUNBOOK_UPDATE (board.md:4).\nR4 logs: only payments disk WARNs used_pct 92-98 round-04/logs/payments-svc.log:4,11,12,13,15; no 429s in R4 (mitigation is working).\nR5: board follow-up OPEN VENDOR_TICKET (round-05/board.md:3)."
+  },
+  {
+   "id": "s14.act",
+   "role": "assistant",
+   "body": "[step 14] execute\nthought: Summarize spilled R5 obs compactly and prune context.\ncode:\nimport json,re,collections\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\njson.dump(c,open('/task/workspace/context.json','w'))\nd=collections.defaultdict(list)\nfor l in open('/task/workspace/spill/s13.obs.txt'):\n  p=l.split(None,2)\n  if len(p)<3: continue\n  k=p[0]+' '+re.sub(r'\\d+','N',p[2])[:70]\n  d[k].append(p[1])\nfor k,v in d.items(): print(k,','.join(v[:8]),len(v))"
+  },
+  {
+   "id": "s14.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n--- ---\n stdout 1\ncheckout-api.log N-N-NTN:N:NZ WARN  checkout-api slow query ms=N table=events\n 1,12,14,17,25,31,32,51 8\ncheckout-api.log N-N-NTN:N:NZ WARN  checkout-api slow query ms=N table=orders\n 7,10,19,27,28,55 6\ncheckout-api.log N-N-NTN:N:NZ WARN  checkout-api slow query ms=N table=items\n 13,22,36 3\ninventory-svc.log N-N-NTN:N:NZ WARN  inventory-svc slow query ms=N table=orders\n 12,56,60,62 4\ninventory-svc.log N-N-NTN:N:NZ WARN  inventory-svc slow query ms=N table=events\n 24,50 2\ninventory-svc.log N-N-NTN:N:NZ WARN  inventory-svc slow query ms=N table=items\n 31,33,47,54 4\nledger-svc.log N-N-NTN:N:NZ WARN  ledger-svc slow query ms=N table=events\n 9,24,29,37 4\nledger-svc.log N-N-NTN:N:NZ WARN  ledger-svc slow query ms=N table=items\n 11,16,23,43,48 5\nledger-svc.log N-N-NTN:N:NZ WARN  ledger-svc slow query ms=N table=orders\n 15,19 2\npayments-svc.log N-N-NTN:N:NZ WARN  payments-svc disk usage high path=/var/data used_pc 1,5,22,30,39,43,59,67 9\npayments-svc.log N-N-NTN:N:NZ WARN  payments-svc slow query ms=N table=events\n 16,27,44,74 4\npayments-svc.log N-N-NTN:N:NZ WARN  payments-svc slow query ms=N table=items\n 32,37,72 3\npayments-svc.log N-N-NTN:N:NZ WARN  payments-svc slow query ms=N table=orders\n 61,64 2\npricing-svc.log N-N-NTN:N:NZ WARN  pricing-svc slow query ms=N table=items\n 1,2,24,28 4\npricing-svc.log N-N-NTN:N:NZ WARN  pricing-svc slow query ms=N table=events\n 5,32 2\npricing-svc.log N-N-NTN:N:NZ WARN  pricing-svc slow query ms=N table=orders\n 8,11,16 3\npricing-svc.log N-N-NTN:N:NZ WARN  p\n 36 1\n[stdout N bytes produced, first N chars shown] truncated: 1\n"
+  },
+  {
+   "id": "s14.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 14: revision 22 -> 23; entries 4 -> 1; body chars 2372 -> 1512; removed [s13.act, s13.obs, s13.rcpt]; added []; rewritten []"
+  }
+ ]
+}

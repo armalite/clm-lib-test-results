@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. changes.md:3 CHG-113 APPLIED ledger-svc build 7.35.5 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT); :4 CHG-114 checkout-api no config. Logs r1: slow query WARNs everywhere (noise). R2: board.md:3 follow-up OPEN POSTMORTEM_DRAFT; changes:3 CHG-119 dashboards (irrelevant). R2 logs: shipping-svc 429 upstream=tax-provider lines 7,22,35,38,41,60 (UPSTREAM_RATE_LIMIT candidate, not on board yet). ledger-svc no errors r2. Next: advance to r3.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

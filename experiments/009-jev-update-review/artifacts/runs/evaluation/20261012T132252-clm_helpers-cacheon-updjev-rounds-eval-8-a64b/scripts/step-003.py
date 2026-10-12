@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. changes.md: CHG-109 APPLIED TLS ticket rotation hourly (round-01/changes.md:3); CHG-113 APPLIED notify-worker 8.20.0 sets db.pool_max=-4 (round-01/changes.md:4) -> suspect BAD_CONFIG_ROLLOUT; CHG-114 APPLIED inventory-svc 8.20.0 no config (changes.md:5). Logs: only slow query WARNs (noise), no other errors.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

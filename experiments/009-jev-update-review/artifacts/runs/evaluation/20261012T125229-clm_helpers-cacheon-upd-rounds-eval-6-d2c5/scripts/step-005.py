@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. slow query WARNs = noise. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11,17,19,32,42,62.\nR2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc batch_size=0 (BAD_CONFIG candidate); :5 CHG-121 payments no config. R2 logs: inventory-svc 429 fx-rates round-02/logs/inventory-svc.log:18,38,46,49; ledger round-02/logs/ledger-svc.log:6,9,12,18; pricing/payments/checkout no errors.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

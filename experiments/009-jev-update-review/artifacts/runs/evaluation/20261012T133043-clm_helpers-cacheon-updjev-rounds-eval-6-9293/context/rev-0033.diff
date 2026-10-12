@@ -1,0 +1,24 @@
+--- rev-32
++++ rev-33
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: no board/changes. Slow-query WARN=noise. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11,17,19,32,42,62.\nR2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc batch_size=0 (BAD_CONFIG_ROLLOUT candidate); CHG-121 payments no config. R2 logs: inventory 429 fx-rates round-02/logs/inventory-svc.log:18-38,46-63; ledger round-02/logs/ledger-svc.log:6-23,42-56. No pricing errors seen in R2 logs. R2 pricing-svc logs: only slow-query WARN noise. R3: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing; changes.md:3 CHG-124 APPLIED retry budget=1. R3 logs plain format (ts LEVEL svc msg). R3 logs: payments-svc disk usage high /var/data 91-97% round-03/logs/payments-svc.log:12,20,22,46,54,80 (no cache errors seen -> board B CACHE_STAMPEDE may be wrong, real=DISK_PRESSURE?). inventory 429 round-03/logs/inventory-svc.log:13-28,65,74; ledger 429 round-03/logs/ledger-svc.log:7-43. pricing/checkout clean R3. R4: board.md:3 Thread A mitigated; board.md:4 OPEN RUNBOOK_UPDATE; changes.md:4 CHG-136 APPLIED mitigation A on ledger-svc; CHG-128 retry budget=1. R4 logs: only payments disk WARN (round-04/logs/payments-svc.log:4-73); ledger/inventory 429 gone. R5: board.md:3 OPEN VENDOR_TICKET. R5 logs: only payments disk WARN round-05/logs/payments-svc.log:1-73. R6: board.md:3 Thread D MEMORY_LEAK ledger-svc ongoing; changes.md:3 CHG-147 PROPOSED (ignore). R6 logs: ledger heap high round-06/logs/ledger-svc.log:2,6,14,35,45,52; payments disk round-06/logs/payments-svc.log:3-83. R7: board.md:3 Thread A RESOLVED; board.md:4 OPEN DATA_BACKFILL; board.md:5 OPEN POSTMORTEM_DRAFT."
++  },
++  {
++   "id": "s21.act",
++   "role": "assistant",
++   "body": "[step 21] execute\nthought: Record R7 board, scan R7 logs for errors, compact.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n    L=open(f).read().splitlines()\n    hits=[i+1 for i,l in enumerate(L) if re.search(r'ERROR|WARN|429|heap|disk|cert|DNS|lag|pool|cache',l,re.I) and 'slow' not in l.lower()]\n    print(f.split('/')[-1],len(hits),hits[:15])\n    if hits: print(' ',L[hits[0]-1][:160])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']=c['entries'][0]['body'].replace(' Next: advance to R7.','')+' R7: board.md:3 Thread A RESOLVED; board.md:4 OPEN DATA_BACKFILL; board.md:5 OPEN POSTMORTEM_DRAFT.'\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s21.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\ncheckout-api.log 0 []\ninventory-svc.log 0 []\nledger-svc.log 9 [7, 10, 16, 23, 25, 26, 40, 45, 60]\n  2026-09-14T14:07:00Z WARN  ledger-svc heap usage high rss_mb=3004 gc_pause_ms=1110\npayments-svc.log 10 [3, 8, 10, 34, 35, 39, 53, 54, 59, 62]\n  2026-09-14T14:02:24Z WARN  payments-svc disk usage high path=/var/data used_pct=97\npricing-svc.log 0 []\n"
++  },
++  {
++   "id": "s21.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 21: revision 31 -> 32; entries 6 -> 1; body chars 3464 -> 1706; removed [s19.act, s19.obs, s19.rcpt, s20.act, s20.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

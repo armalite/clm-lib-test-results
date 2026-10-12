@@ -1,0 +1,24 @@
+--- rev-42
++++ rev-43
+@@ -40,6 +40,21 @@
+    "id": "n8",
+    "role": "note",
+    "body": "R8: board: Thread A resolved (round-08/board.md:3); Thread B cause revised UPSTREAM_RATE_LIMIT (round-08/board.md:4); Thread C notify-worker failures ongoing, cause unknown (round-08/board.md:5). notify config validation failed http.max_inflight=0 build 8.56.0 -> BAD_CONFIG_ROLLOUT from CHG-120 (round-02/changes.md:4); lines round-08/logs/notify-worker.log:5,45,50,58,65,72. 429 fx-rates: checkout round-08/logs/checkout-api.log:1,6; payments round-08/logs/payments-svc.log:2. CHG-159 PROPOSED irrelevant. Next: advance R9."
++  },
++  {
++   "id": "s28.act",
++   "role": "assistant",
++   "body": "[step 28] execute\nthought: Inspect R9 board/changes and key log lines; prune step entries.\ncode:\nimport json,re\nr='/task/fixtures/round-09/'\nprint(open(r+'board.md').read());print(open(r+'changes.md').read())\nfor s in ['notify-worker','payments-svc','checkout-api','auth-svc','search-api']:\n  L=[(i,l.strip()[:110]) for i,l in enumerate(open(r+'logs/'+s+'.log'),1) if re.search('ERROR|WARN|429|config|exhaust',l)]\n  print(s,len(L),[i for i,_ in L][:10]);print(L[:1])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s28.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=3.0s\n--- stdout ---\n# Incident board: updates in round 09\n\n- Thread B status: mitigated (workaround in place; permanent fix pending).\n- Thread C note: failing pods still restarting; investigation continues.\n\n# Change log: round 09\n\n- CHG-164 APPLIED: retry budget for idempotent GETs set to 1\n\nnotify-worker 22 [1, 3, 5, 7, 11, 12, 14, 15, 20, 23]\n[(1, '{\"ts\":\"2026-09-14T16:00:02Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":300,\"table\":\"events\"')]\npayments-svc 23 [4, 6, 9, 11, 12, 13, 16, 30, 33, 34]\n[(4, '{\"ts\":\"2026-09-14T16:02:41Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"slow query\",\"ms\":259,\"table\":\"events\"}')]\ncheckout-api 11 [1, 9, 10, 18, 26, 34, 52, 55, 62, 68]\n[(1, '{\"ts\":\"2026-09-14T16:00:55Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"slow query\",\"ms\":235,\"table\":\"items\"}')]\nauth-svc 15 [3, 4, 18, 19, 35, 38, 39, 43, 45, 46]\n[(3, '{\"ts\":\"2026-09-14T16:01:24Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":215,\"table\":\"orders\"}')]\nsearch-api 9 [1, 8, 21, 27, 32, 36, 44, 45, 48]\n[(1, '{\"ts\":\"2026-09-14T16:00:27Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":363,\"table\":\"orders\"}')]\n"
++  },
++  {
++   "id": "s28.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 28: revision 41 -> 42; entries 13 -> 8; body chars 4351 -> 2671; removed [s26.act, s26.obs, s26.rcpt, s27.act, s27.obs]; added []; rewritten []"
+   }
+  ]
+ }

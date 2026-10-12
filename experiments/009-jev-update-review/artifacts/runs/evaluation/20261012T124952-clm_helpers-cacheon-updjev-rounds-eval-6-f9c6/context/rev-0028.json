@@ -1,0 +1,29 @@
+{
+ "number": 28,
+ "parent": 27,
+ "source": "runtime",
+ "step": 17,
+ "sha256": "c1630ff01296d3f4913c859dd525d36a7b3c34f5994df73894224b5ffb9aa8cb",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: no board. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11-62. R2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc feature.batch_size=0 (BAD_CONFIG candidate); :5 CHG-121 payments no config. R2 logs: 429 fx-rates inventory-svc.log:18-86, ledger-svc.log:6-71. R2 pricing/payments: only slow-query WARNs, no batch_size errors (CHG-120 no visible impact yet). R3: board.md:3 Thread B payments-svc CACHE_STAMPEDE ongoing (suspected). changes.md:3 CHG-124 APPLIED retry budget GETs=1. R3 logs: 429 fx-rates inventory-svc.log:13-74, ledger-svc.log:7-68; payments/pricing no cache/batch errors (Thread B unconfirmed in logs). R4: board.md:3 Thread A mitigated; board.md:4 OPEN RUNBOOK_UPDATE; changes.md:3 CHG-128 APPLIED retry GETs=1; changes.md:4 CHG-136 APPLIED mitigation A ledger-svc. R4 logs: 429 gone all services; payments-svc DISK_PRESSURE /var/data used_pct=94 payments-svc.log:4-73 (11 hits). R5: board.md:3 OPEN VENDOR_TICKET. R5 logs: payments-svc disk usage high /var/data persists (payments-svc.log:1-74); others only slow-query WARNs. R6: board.md:3 Thread D MEMORY_LEAK ledger-svc ongoing; changes.md:3 CHG-147 PROPOSED (ignore)."
+  },
+  {
+   "id": "s17.act",
+   "role": "assistant",
+   "body": "[step 17] execute\nthought: Check R6 logs for memory and disk, update note, prune.\ncode:\nimport json,glob,re\nfor f in sorted(glob.glob('/task/fixtures/round-06/logs/*.log')):\n    L=open(f).read().splitlines()\n    hits=[i+1 for i,l in enumerate(L) if re.search(r'memory|heap|oom|restart|disk|used_pct|429|batch|cache|ERROR',l,re.I)]\n    print(f.split('/')[-1],len(hits),hits[:3],hits[-1:] if hits else '')\n    if hits: print('  ',L[hits[0]-1][:200])\nd=json.load(open('/task/workspace/context.json'))\nn=[x for x in d['entries'] if x['id']=='n1'][0]\nn['body']+=' R6: board.md:3 Thread D MEMORY_LEAK ledger-svc ongoing; changes.md:3 CHG-147 PROPOSED (ignore).'\nd['entries']=[n]\njson.dump(d,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s17.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\ncheckout-api.log 0 [] \ninventory-svc.log 0 [] \nledger-svc.log 6 [2, 6, 14] [52]\n   2026-09-14T13:00:35Z WARN  ledger-svc heap usage high rss_mb=2582 gc_pause_ms=694\npayments-svc.log 10 [3, 16, 30] [83]\n   2026-09-14T13:01:05Z WARN  payments-svc disk usage high path=/var/data used_pct=96\npricing-svc.log 0 [] \n"
+  },
+  {
+   "id": "s17.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 17: revision 26 -> 27; entries 6 -> 1; body chars 2966 -> 1259; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

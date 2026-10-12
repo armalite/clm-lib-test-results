@@ -1,0 +1,24 @@
+--- rev-28
++++ rev-29
+@@ -25,6 +25,21 @@
+    "id": "n5",
+    "role": "note",
+    "body": "R5: Thread A mitigated after CHG-143 APPLIED auth-svc mitigation (round-05/board.md:3; round-05/changes.md:4). Thread B now also checkout-api, cause CACHE_STAMPEDE per board (round-05/board.md:4) but logs still 429 fx-rates: checkout round-05/logs/checkout-api.log:21,23,30; payments round-05/logs/payments-svc.log:13. Follow-up OPEN CAPACITY_REVIEW (round-05/board.md:5). CHG-138 TLS irrelevant. Next: advance R6."
++  },
++  {
++   "id": "s19.act",
++   "role": "assistant",
++   "body": "[step 19] execute\nthought: Inspect R6 board/changes and error lines; trim old step entries.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4','n5')]\njson.dump(c,open('/task/workspace/context.json','w'))\nb='/task/fixtures/round-06/'\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\nfor n in ['auth-svc','checkout-api','notify-worker','payments-svc','search-api']:\n  L=open(b+'logs/'+n+'.log').readlines()\n  h=[(i,l.strip()[:110]) for i,l in enumerate(L,1) if re.search(r'ERROR|error|pool|429|inflight|WARN',l)]\n  print(n,len(h));[print(' ',i,l) for i,l in h[:4]]"
++  },
++  {
++   "id": "s19.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 06\n\n- Follow-up CLOSED ALERT_TUNING.\n- Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\n\n# Change log: round 06\n\n- CHG-147 APPLIED: retry budget for idempotent GETs set to 1\n\nauth-svc 12\n  1 2026-09-14T13:01:28Z WARN  auth-svc slow query ms=366 table=orders\n  4 2026-09-14T13:03:45Z WARN  auth-svc slow query ms=350 table=events\n  7 2026-09-14T13:08:20Z WARN  auth-svc slow query ms=400 table=items\n  9 2026-09-14T13:09:07Z WARN  auth-svc slow query ms=300 table=orders\ncheckout-api 23\n  1 2026-09-14T13:01:16Z WARN  checkout-api slow query ms=366 table=events\n  3 2026-09-14T13:01:44Z WARN  checkout-api slow query ms=394 table=orders\n  9 2026-09-14T13:10:27Z WARN  checkout-api slow query ms=436 table=orders\n  13 2026-09-14T13:13:26Z WARN  checkout-api slow query ms=352 table=events\nnotify-worker 15\n  4 2026-09-14T13:02:56Z WARN  notify-worker slow query ms=409 table=orders\n  8 2026-09-14T13:06:20Z WARN  notify-worker slow query ms=223 table=events\n  13 2026-09-14T13:07:49Z WARN  notify-worker slow query ms=406 table=orders\n  17 2026-09-14T13:10:51Z WARN  notify-worker slow query ms=328 table=orders\npayments-svc 25\n  3 2026-09-14T13:02:27Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=38\n  9 2026-09-14T13:08:03Z WARN  payments-svc slow query ms=272 table=events\n  10 2026-09-14T13:08:17Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=26\n  11 2026-09-14T13:09:26Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=49\nsearch-api 16\n  1 2026-09-14T13:00:11Z WARN  search-api slow query ms=313 table=items\n  4 2026-09-14T13:02:25Z WARN  search-api slow query ms=416 table=events\n  7 2026-09-14T13:06:21Z WARN  search-api slow query ms=437 table=orders\n  9 2026-09-14T13:09:16Z WARN  search-api slow query ms=357 table=items\n"
++  },
++  {
++   "id": "s19.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 19: revision 27 -> 28; entries 10 -> 5; body chars 3387 -> 1744; removed [s17.act, s17.obs, s17.rcpt, s18.act, s18.obs]; added []; rewritten []"
+   }
+  ]
+ }

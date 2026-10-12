@@ -1,0 +1,24 @@
+--- rev-18
++++ rev-19
+@@ -25,6 +25,21 @@
+    "id": "n5",
+    "role": "note",
+    "body": "R5: board.md:3 OPEN CAPACITY_REVIEW."
++  },
++  {
++   "id": "s12.act",
++   "role": "assistant",
++   "body": "[step 12] execute\nthought: Record R5 board, scan R5 logs, prune old entries.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*.log')):\n  L=open(f).read().splitlines()\n  hits=[(i+1,l[:130]) for i,l in enumerate(L) if re.search(r'ERROR|WARN|expired|pool|disk|429|lag|mem',l,re.I) and 'slow' not in l]\n  print(f.split('/')[-1],len(hits))\n  for h in hits[:3]+hits[-1:]: print(h)\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[x for x in c['entries'] if x['id'] in('n1','n2','n3','n4')]\nc['entries'][3]['body']+=' R4 logs: auth-svc cert_expired continues (round-04/logs/auth-svc.log:3-55); others clean.'\nc['entries'].append({'id':'n5','role':'note','body':'R5: board.md:3 OPEN CAPACITY_REVIEW.'})\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s12.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nauth-svc.log 11\n(1, '{\"ts\":\"2026-09-14T12:01:20Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate')\n(3, '{\"ts\":\"2026-09-14T12:02:48Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate')\n(13, '{\"ts\":\"2026-09-14T12:14:15Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate')\n(75, '{\"ts\":\"2026-09-14T12:58:08Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate')\ncheckout-api.log 1\n(69, '{\"ts\":\"2026-09-14T12:56:41Z\",\"level\":\"INFO\",\"svc\":\"checkout-api\",\"msg\":\"heartbeat\",\"uptime_s\":64291}')\n(69, '{\"ts\":\"2026-09-14T12:56:41Z\",\"level\":\"INFO\",\"svc\":\"checkout-api\",\"msg\":\"heartbeat\",\"uptime_s\":64291}')\nledger-svc.log 0\nsearch-api.log 0\nshipping-svc.log 0\n"
++  },
++  {
++   "id": "s12.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 12: revision 17 -> 18; entries 9 -> 5; body chars 3725 -> 1073; removed [s10.act, s10.obs, s10.rcpt, s11.act, s11.obs]; added [n5]; rewritten [n4]"
+   }
+  ]
+ }

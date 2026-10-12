@@ -1,0 +1,24 @@
+--- rev-19
++++ rev-20
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: changes.md:3 CHG-110 APPLIED TLS rotation; :4 CHG-113 APPLIED checkout-api db.pool_max=-4 (BAD_CONFIG cand); search-api disk 91-97% (round-01/logs/search-api.log:4,12,38,48). Slow-query WARN = noise.\nR2: board.md:3 Thread A DISK_PRESSURE search-api+shipping-svc ongoing; :4 OPEN CUSTOMER_COMMS. changes:3 CHG-117 dashboards (irrelevant).\nR3: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing. But R3 logs: auth-svc tls handshake certificate_expired peer=bank-api (round-03/logs/auth-svc.log:1,16,21,62) -> likely CERT_EXPIRED (CHG-110 TLS rotation link?). Disk still high search-api (log:16-77, 98%) & shipping-svc (log:15,49 98%).\nR4: board.md:3 Thread A mitigated; :4 OPEN DATA_BACKFILL; :5 OPEN VENDOR_TICKET. changes:4 CHG-136 APPLIED mitigation A search-api; :3 CHG-131 PROPOSED (ignore).\nR4 logs: auth-svc cert_expired continues (round-04/logs/auth-svc.log:3,55); others quiet.\nR5: board.md:3 OPEN CAPACITY_REVIEW.\nR5 logs: auth cert_expired continues (round-05/logs/auth-svc.log:1,75); others quiet.\nR6: board.md:3 Thread D DB_POOL_EXHAUSTED checkout-api ongoing (likely root BAD_CONFIG CHG-113 pool_max=-4). changes:3 CHG-147 irrelevant."
++  },
++  {
++   "id": "s13.act",
++   "role": "assistant",
++   "body": "[step 13] execute\nthought: Record R6, compact, scan R6 checkout logs.\ncode:\nimport json,re,glob\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='n1'][0]\nn['body']+='\\nR5 logs: auth cert_expired continues (round-05/logs/auth-svc.log:1,75); others quiet.\\nR6: board.md:3 Thread D DB_POOL_EXHAUSTED checkout-api ongoing (likely root BAD_CONFIG CHG-113 pool_max=-4). changes:3 CHG-147 irrelevant.'\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))\nfor f in sorted(glob.glob('/task/fixtures/round-06/logs/*.log')):\n  L=open(f).read().splitlines()\n  hits=[(i+1,l[:150]) for i,l in enumerate(L) if re.search('ERROR|disk|certif|pool|429|memory|oom|config',l,re.I)]\n  print(f.split('/')[-1],len(hits))\n  for h in hits[:3]+hits[-2:]: print(' ',h)"
++  },
++  {
++   "id": "s13.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nauth-svc.log 10\n  (2, '{\"ts\":\"2026-09-14T13:02:13Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}')\n  (31, '{\"ts\":\"2026-09-14T13:20:19Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}')\n  (32, '{\"ts\":\"2026-09-14T13:21:07Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}')\n  (76, '{\"ts\":\"2026-09-14T13:53:05Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}')\n  (81, '{\"ts\":\"2026-09-14T13:56:24Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}')\ncheckout-api.log 11\n  (8, '{\"ts\":\"2026-09-14T13:10:29Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"db pool exhausted\",\"wait_ms\":983,\"in_use\":\"16/16\"}')\n  (25, '{\"ts\":\"2026-09-14T13:21:47Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"db pool exhausted\",\"wait_ms\":1821,\"in_use\":\"12/12\"}')\n  (27, '{\"ts\":\"2026-09-14T13:22:29Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"db pool exhausted\",\"wait_ms\":2406,\"in_use\":\"10/10\"}')\n  (72, '{\"ts\":\"2026-09-14T13:48:22Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"db pool exhausted\",\"wait_ms\":2395,\"in_use\":\"20/20\"}')\n  (76, '{\"ts\":\"2026-09-14T13:51:14Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"db pool exhausted\",\"wait_ms\":1052,\"in_use\":\"20/20\"}')\nledger-svc.log 0\nsearch-api.log 1\n  (49, '{\"ts\":\"2026-09-14T13:38:41Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":429,\"table\":\"items\"}')\n  (49, '{\"ts\":\"2026-09-14T13:38:41Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":429,\"table\":\"items\"}')\nshipping-svc.log 0\n"
++  },
++  {
++   "id": "s13.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 13: revision 18 -> 19; entries 6 -> 1; body chars 3559 -> 1148; removed [s11.act, s11.obs, s11.rcpt, s12.act, s12.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

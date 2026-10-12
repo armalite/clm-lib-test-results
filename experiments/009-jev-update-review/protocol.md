@@ -204,3 +204,81 @@ Experiment 008's build session reported "155 tests passed". Its next session the
 - **The committed state:** `0884608` (and `a1f3dd5`, which changed only `CLAUDE.md`) therefore had **1 failing test of 155**. In an extract of `0884608`, `test_jev.py` gives 1 failed and 16 passed.
 - **The fix:** that test was corrected in `3733c9c`. Adding `configs/exp009.toml` broke it again in the same way, so its historical set is now explicitly the configs written before 008.
 - **Impact:** the failure is in a test's choice of configs, not in runtime behaviour. No 008 or earlier evidence is affected, and none is rewritten.
+
+## Evaluation freeze (2026-10-13, before any evaluation call)
+
+**Authorised by the maintainer:** the planned 24-run evaluation, with at most **USD 20 of additional total spend** across both providers, including retries and any live verification. This replaces the unused pilot allowance.
+- **Ledger at the start:** settled spend USD 50.210028 across 3,046 entries, with 0 pending.
+- **Ceiling set explicitly** from USD 58.408962 to **USD 70.210028** (`ceiling_history` entry 8).
+
+**Instances:** `rounds-eval-5`, `-6`, `-7` and `-8`.
+- **Generation:** seeds 7205–7208 of `incident-rounds-gen/1`, scorer `rounds-score/1`. They were registered in `tasks.py` this session, with the eval split extended from 4 to 8; seeds 7201–7204 are unchanged.
+- **Never used before:** they appear in no earlier run, run selection or export, and were not used in development, calibration, the pilot or 007's evaluation.
+- **Mechanical validation only:**
+  - 12, 10, 11 and 12 rounds;
+  - every round has a board and five logs;
+  - non-empty payloads at 10/11, 9/9, 10/10 and 10/11 releases;
+  - three incidents in each truth record;
+  - a scripted offline run completes and scores in both arms.
+
+  No answer, truth value or scenario detail was read to tune anything.
+- **Fixture SHA-256 prefixes** (JSON of all files): `a5d30f776d93394f`, `dc12b9c9d3694a4a`, `62497650c0ae8aa7`, `dc2c479d613c0c40`.
+
+**Sample:** 4 instances × 3 repetitions × 2 conditions = **24 runs**, sequential. The runs on one instance are repeated measurements of four task instances, not twelve independent task designs.
+
+**Conditions and settings:** unchanged from the pilot.
+- **Conditions:** A `clm_helpers+upd:on`, B `clm_helpers+upd-jev:on`.
+- **Config:** `configs/exp009.toml` (SHA-256 `44f86c4c…26a4`). It differs from the pilot's committed config only in the non-behavioural ceiling value and its comment.
+- **Main model:** `claude-opus-5-5`, effort low; an 8,000-token request budget, 4,096 output tokens and 60 task calls.
+- **Request:** the `blocks/1` layout, 5-minute caching on in both arms, and `run-tag/1` cold isolation per run.
+- **Runtime fixes:** spill and pressure-notice fixes on, plus the revision status line.
+- **Prompts:** version `2026-10-13.1`. Clause hash prefixes are `fab94d7c8aaa5029` (both arms) and `c5439547714382ef` (B).
+- **Jev:**
+  - model `jev-1.13.0`;
+  - question `jev-review/1` (text hash `f98789b3280d4a6d`, criteria `809831976af7ac21`);
+  - payload `round-files/1`;
+  - candidates: every entry of the current revision, capped at 60 with any beyond listed;
+  - batches of 20 questions and 60,000 characters;
+  - a 15 s timeout, 1 retry for 429/529/5xx/timeouts, and failures shown as "no answer" plus a notice.
+- **Prices:** `configs/prices.toml` (SHA-256 `fb4521b7…85e4`).
+
+**Run order** (from `condition_schedule`: alternating by instance index + repetition; A first in 6 of 12 blocks):
+
+| Rep | eval-5 | eval-6 | eval-7 | eval-8 |
+| --- | --- | --- | --- | --- |
+| 1 | A, B | B, A | A, B | B, A |
+| 2 | B, A | A, B | B, A | A, B |
+| 3 | A, B | B, A | A, B | B, A |
+
+**Code provenance:**
+- **Commit:** `0247b1c`, plus uncommitted `tasks.py` (instance registration) and `exp009.toml` (ceiling), saved as a patch (SHA-256 `5bafc10e…39a3`).
+- **Patch check:** `compare` saves its own patch at the start, and it is checked against this one.
+- **Pre-run checks:** ruff, format and mypy clean; 171 tests passed (including Docker-backed tests).
+
+**Failure rules (unchanged, predeclared):**
+- every run is kept, including failures, exhaustion and invalid runs;
+- `compare` halts on the existing halt statuses, such as an accounting-bound violation;
+- no run is replaced or repeated, and no setting changes after results;
+- a material implementation defect stops the evaluation and is documented, and results from before and after a fix are never pooled.
+
+**Analysis (as planned):**
+- **Primary:** strict success and mean all-attempt cost per run.
+- **Secondary:** categories, medians, elapsed, provider and Jev time, calls, edits, tokens and cache use, and advice-to-edit records.
+- **Matching:** paired by (instance, repetition) block, and aggregated by instance as well as across runs.
+
+## Evaluation execution notes (2026-10-13)
+
+- **Comparison `20261012T124415`:** run sequentially in one `compare` invocation with `configs/exp009.toml` and `--max-usd 19`.
+- **Completion:** all **24 of 24** cells completed, in the frozen order. There was no halt, no missing cell, and no invalid, repeated or replaced run.
+- **Provenance:** the patch saved by `compare` is byte-identical to the frozen patch (SHA-256 `5bafc10e…39a3`).
+- **No deviations** from the freeze. Nothing was tuned, and no setting was changed during or after the evaluation.
+- **No implementation defect was found.**
+  - **Jev:** all 117 calls succeeded, with `jev-1.13.0`, no retries and no errors.
+  - **Payload updates:** every update with a payload in the assisted arm was scored against a non-empty current context.
+  - **Main model:** there were no repairs, API retries, recoveries or rejected edits.
+- **Scoring:** 6 runs were not strict successes (4 A, 2 B). All are kept and reported; the README has the details.
+- **Answers:** these were read only after all 24 runs had finished, to classify failures and select trace examples.
+- **Spend:** USD 9.477545 (Anthropic 9.467744, TypeSafe 0.009801). The ledger stands at USD 59.687573 of the USD 70.210028 ceiling, with nothing pending.
+- **Result:**
+  - **Cost and time:** the pilot's cost and time advantage for the assisted arm did not repeat. Its mean cost was USD 0.415 vs 0.375 for the control, and its mean elapsed time 158 s vs 149 s. It was cheaper in 4 of 12 blocks.
+  - **Strict success:** 10/12 vs 8/12, which is not conclusive.

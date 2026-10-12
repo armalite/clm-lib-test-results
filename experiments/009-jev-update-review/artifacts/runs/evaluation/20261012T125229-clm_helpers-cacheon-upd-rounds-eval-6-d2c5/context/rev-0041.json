@@ -1,0 +1,29 @@
+{
+ "number": 41,
+ "parent": 40,
+ "source": "runtime",
+ "step": 25,
+ "sha256": "9d4f47b9fa48a33f38398effc6c211974220a051c011c0a9977cb0795665dc9d",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. slow query WARNs = noise. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11,17,19,32,42,62.\nR2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc batch_size=0 (BAD_CONFIG candidate); :5 CHG-121 payments no config. R2 logs: inventory-svc 429 fx-rates round-02/logs/inventory-svc.log:18,38,46,49; ledger round-02/logs/ledger-svc.log:6,9,12,18; pricing/payments/checkout no errors.\nR3: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing; changes.md:3 CHG-124 APPLIED retry budget GETs=1. R3 logs: 429 fx-rates continue inventory round-03/logs/inventory-svc.log:13,74; ledger round-03/logs/ledger-svc.log:7,68; no payments cache/miss errors seen (Thread B unconfirmed by logs).\nR4: board.md:3 Thread A mitigated; board.md:4 follow-up OPEN RUNBOOK_UPDATE; changes.md:3 CHG-128 APPLIED retry GETs=1; changes.md:4 CHG-136 APPLIED mitigation thread A ledger-svc.\nR4 logs: payments-svc DISK_PRESSURE /var/data used_pct 91-98 round-04/logs/payments-svc.log:4,11-16,29,36,64-65,73 (Thread B cache stampede likely wrong cause; real=disk). No other errors R4.\nR5: board.md:3 follow-up OPEN VENDOR_TICKET.\nR5 logs: payments-svc disk used_pct 91-98 continues round-05/logs/payments-svc.log:1,5,22,30,39,43,59,67,73; no 429s R5 (ledger/inventory quiet).\nR6: board.md:3 Thread D MEMORY_LEAK ledger-svc ongoing; changes.md:3 CHG-147 PROPOSED (ignore).\nR6 logs: ledger-svc heap rss_mb high round-06/logs/ledger-svc.log:2,6,14,35,45,52 (memory leak confirmed); payments disk used_pct continues round-06/logs/payments-svc.log:3,16,30,36,83.\nR7: board.md:3 Thread A resolved; :4 OPEN DATA_BACKFILL; :5 OPEN POSTMORTEM_DRAFT.\nR7 logs: ledger heap continues round-07/logs/ledger-svc.log:7,10,16,23,60; payments disk round-07/logs/payments-svc.log:3,8,34,53,62.\nR8: board.md:3 Thread B cause revised DISK_PRESSURE (payments-svc); board.md:4 Thread C pricing-svc failures ongoing cause unknown.\nR8 logs: pricing-svc config validation failed feature.batch_size=0 (CHG-120 round-02/changes.md:4) round-08/logs/pricing-svc.log:2,16,18-22,48,57,64,72,78,81 => Thread C=BAD_CONFIG_ROLLOUT. payments disk round-08/logs/payments-svc.log:1,38,48,57,75,84; ledger heap round-08/logs/ledger-svc.log:6,26,30,43,53,57,59,78. Next: advance to R9.\nR9: board.md:3 Thread B +checkout-api; :4 Thread B mitigated; :5 Thread C ongoing; :6 Thread D false alarm (drop MEMORY_LEAK); :7 DATA_BACKFILL CLOSED."
+  },
+  {
+   "id": "s25.act",
+   "role": "assistant",
+   "body": "[step 25] execute\nthought: Record R9 board updates in n1, drop step entries, scan R9 logs briefly.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\ne=[x for x in c['entries'] if x['id']=='n1']\ne[0]['body']+='\\nR9: board.md:3 Thread B +checkout-api; :4 Thread B mitigated; :5 Thread C ongoing; :6 Thread D false alarm (drop MEMORY_LEAK); :7 DATA_BACKFILL CLOSED.'\nc['entries']=e\njson.dump(c,open('/task/workspace/context.json','w'))\nimport glob\nfor f in sorted(glob.glob('/task/fixtures/round-09/logs/*.log')):\n  for i,l in enumerate(open(f),1):\n    if any(k in l for k in ['ERROR','used_pct','batch_size','429']):\n      print(f.split('/')[-1],i,l.strip()[:110])"
+  },
+  {
+   "id": "s25.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\ncheckout-api.log 31 {\"ts\":\"2026-09-14T16:24:45Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"u\ncheckout-api.log 51 {\"ts\":\"2026-09-14T16:41:55Z\",\"level\":\"INFO\",\"svc\":\"checkout-api\",\"msg\":\"heartbeat\",\"uptime_s\":44429}\ncheckout-api.log 53 {\"ts\":\"2026-09-14T16:43:34Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"u\npayments-svc.log 11 {\"ts\":\"2026-09-14T16:07:03Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"u\npayments-svc.log 38 {\"ts\":\"2026-09-14T16:33:21Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"u\npricing-svc.log 7 {\"ts\":\"2026-09-14T16:09:53Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"featu\npricing-svc.log 9 {\"ts\":\"2026-09-14T16:13:36Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"featu\npricing-svc.log 12 {\"ts\":\"2026-09-14T16:15:55Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"featu\npricing-svc.log 33 {\"ts\":\"2026-09-14T16:27:34Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"featu\npricing-svc.log 47 {\"ts\":\"2026-09-14T16:36:34Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"featu\npricing-svc.log 51 {\"ts\":\"2026-09-14T16:38:11Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"featu\npricing-svc.log 52 {\"ts\":\"2026-09-14T16:38:42Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"featu\npricing-svc.log 56 {\"ts\":\"2026-09-14T16:42:32Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"featu\n"
+  },
+  {
+   "id": "s25.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 25: revision 39 -> 40; entries 6 -> 1; body chars 4228 -> 2504; removed [s23.act, s23.obs, s23.rcpt, s24.act, s24.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

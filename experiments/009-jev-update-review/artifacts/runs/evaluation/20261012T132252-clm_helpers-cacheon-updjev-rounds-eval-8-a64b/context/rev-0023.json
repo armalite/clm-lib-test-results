@@ -1,0 +1,49 @@
+{
+ "number": 23,
+ "parent": 22,
+ "source": "runtime",
+ "step": 15,
+ "sha256": "368a9d7e88f0070b8596813a8fdd375a69e01e11bdc689054c230b2305fe30fc",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: CHG-109 APPLIED TLS ticket rotation (round-01/changes.md:3); CHG-113 APPLIED notify-worker db.pool_max=-4 (round-01/changes.md:4) suspect BAD_CONFIG_ROLLOUT, no errors seen yet; CHG-114 APPLIED inventory-svc 8.20.0 (round-01/changes.md:5). R2 nothing (CHG-114 PROPOSED dup id irrelevant)."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3 board: A MEMORY_LEAK pricing-svc+auth-svc ongoing (round-03/board.md:3); B suspected CERT_EXPIRED inventory-svc ongoing (round-03/board.md:4). CHG-124 APPLIED retry budget=1 (round-03/changes.md:3)."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4 board: Follow-up OPEN ALERT_TUNING (round-04/board.md:3). R4 logs: inventory-svc db pool exhausted WARNs (round-04/logs/inventory-svc.log:19-37,57,80) -> possible DB_POOL_EXHAUSTED inventory-svc (vs board CERT suspicion)."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: CHG-135 APPLIED log sampling health (round-05/changes.md:3) irrelevant. R5 logs: auth/pricing heap high WARNs (round-05/logs/auth-svc.log:6, round-05/logs/pricing-svc.log:3); inventory pool exhausted (round-05/logs/inventory-svc.log:6). R5 board empty."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6 board: A mitigated (round-06/board.md:3) via CHG-150 APPLIED pricing-svc (round-06/changes.md:4); D DNS_RESOLUTION notify-worker ongoing (round-06/board.md:4) - check vs CHG-113 pool config. CHG-147 irrelevant."
+  },
+  {
+   "id": "s15.act",
+   "role": "assistant",
+   "body": "[step 15] execute\nthought: Record R6 board, check notify-worker logs for DNS vs pool config, compact.\ncode:\nimport json,re\nfor s in ['notify-worker','inventory-svc','pricing-svc','auth-svc']:\n  L=open(f'/task/fixtures/round-06/logs/{s}.log').read().splitlines()\n  h=[(i+1,l[:110]) for i,l in enumerate(L) if re.search(r'WARN|ERROR|error|fail|pool|dns|heap',l,re.I)]\n  print(s,len(h));[print(x) for x in h[:5]]\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n3','n4','n5')]\nc['entries'][-1]['body']=c['entries'][-1]['body'].replace(' Next: advance to R6.','')\nc['entries'].append({'id':'n6','role':'note','body':'R6 board: A mitigated (round-06/board.md:3) via CHG-150 APPLIED pricing-svc (round-06/changes.md:4); D DNS_RESOLUTION notify-worker ongoing (round-06/board.md:4) - check vs CHG-113 pool config. CHG-147 irrelevant.'})\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s15.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nnotify-worker 15\n(2, '{\"ts\":\"2026-09-14T13:02:36Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":237,\"table\":\"items\"}')\n(7, '{\"ts\":\"2026-09-14T13:07:29Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"dns lookup failed\",\"host\":\"geo.inter')\n(13, '{\"ts\":\"2026-09-14T13:13:46Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":371,\"table\":\"items\"}')\n(32, '{\"ts\":\"2026-09-14T13:32:38Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":440,\"table\":\"items\"}')\n(33, '{\"ts\":\"2026-09-14T13:32:43Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":400,\"table\":\"items\"}')\ninventory-svc 18\n(1, '{\"ts\":\"2026-09-14T13:00:53Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":228,\"table\":\"items\"}')\n(3, '{\"ts\":\"2026-09-14T13:01:47Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":205,\"table\":\"items\"}')\n(5, '{\"ts\":\"2026-09-14T13:03:46Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":281,\"table\":\"events\"')\n(7, '{\"ts\":\"2026-09-14T13:04:36Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2959,\"in')\n(9, '{\"ts\":\"2026-09-14T13:08:00Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":1750,\"in')\npricing-svc 9\n(17, '{\"ts\":\"2026-09-14T13:16:44Z\",\"level\":\"WARN\",\"svc\":\"pricing-svc\",\"msg\":\"slow query\",\"ms\":244,\"table\":\"events\"}')\n(18, '{\"ts\":\"2026-09-14T13:17:04Z\",\"level\":\"WARN\",\"svc\":\"pricing-svc\",\"msg\":\"slow query\",\"ms\":349,\"table\":\"orders\"}')\n(19, '{\"ts\":\"2026-09-14T13:19:01Z\",\"level\":\"WARN\",\"svc\":\"pricing-svc\",\"msg\":\"slow query\",\"ms\":230,\"table\":\"items\"}')\n(23, '{\"ts\":\"2026-09-14T13:21:27Z\",\"level\":\"WARN\",\"svc\":\"pricing-svc\",\"msg\":\"slow query\",\"ms\":341,\"table\":\"events\"}')\n(24, '{\"ts\":\"2026-09-14T13:22:36Z\",\"level\":\"WARN\",\"svc\":\"pricing-svc\",\"msg\":\"slow query\",\"ms\":296,\"table\":\"events\"}')\nauth-svc 10\n(4, '{\"ts\":\"2026-09-14T13:04:29Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":423,\"table\":\"events\"}')\n(11, '{\"ts\":\"2026-09-14T13:11:13Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":419,\"table\":\"items\"}')\n(22, '{\"ts\":\"2026-09-14T13:17:24Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":236,\"table\":\"items\"}')\n(40, '{\"ts\":\"2026-09-14T13:30:23Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":343,\"table\":\"items\"}')\n(41, '{\"ts\":\"2026-09-14T13:30:37Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":262,\"table\":\"events\"}')\n"
+  },
+  {
+   "id": "s15.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 15: revision 21 -> 22; entries 9 -> 5; body chars 3159 -> 1186; removed [s13.act, s13.obs, s13.rcpt, s14.act, s14.obs]; added [n6]; rewritten [n5]"
+  }
+ ]
+}

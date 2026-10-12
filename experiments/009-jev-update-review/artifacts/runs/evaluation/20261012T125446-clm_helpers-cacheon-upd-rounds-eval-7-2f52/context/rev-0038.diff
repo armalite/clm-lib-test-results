@@ -1,0 +1,24 @@
+--- rev-37
++++ rev-38
+@@ -40,6 +40,21 @@
+    "id": "n8",
+    "role": "note",
+    "body": "R8: board.md:3 Thread B (CACHE_STAMPEDE per board) now also payments-svc, unchanged status ongoing. board.md:4 OPEN RUNBOOK_UPDATE. No changes.md. Logs: see below step."
++  },
++  {
++   "id": "s23.act",
++   "role": "assistant",
++   "body": "[step 23] execute\nthought: Scan R8 logs and compact context.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-08/logs/*.log')):\n  h=[(i,l) for i,l in enumerate(open(f),1) if ('ERROR' in l or 'WARN' in l) and 'slow query' not in l]\n  print(f.split('/')[-1],len(h),[i for i,_ in h][:8]);\n  for i,l in h[:2]: print(' ',i,l.strip()[:150])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[x for x in c['entries'] if x['id'].startswith('n')]\nc['entries'].append({'id':'n8','role':'note','body':'R8: board.md:3 Thread B (CACHE_STAMPEDE per board) now also payments-svc, unchanged status ongoing. board.md:4 OPEN RUNBOOK_UPDATE. No changes.md. Logs: see below step.'})\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s23.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\ncheckout-api.log 8 [1, 5, 19, 23, 37, 48, 63, 73]\n  1 {\"ts\":\"2026-09-14T15:00:38Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":93}\n  5 {\"ts\":\"2026-09-14T15:04:36Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":95}\nledger-svc.log 0 []\npayments-svc.log 8 [2, 7, 9, 14, 15, 25, 31, 40]\n  2 {\"ts\":\"2026-09-14T15:02:07Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":95}\n  7 {\"ts\":\"2026-09-14T15:05:09Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":98}\nsearch-api.log 0 []\nshipping-svc.log 0 []\n"
++  },
++  {
++   "id": "s23.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 23: revision 36 -> 37; entries 12 -> 8; body chars 3641 -> 2231; removed [s21.act, s21.obs, s21.rcpt, s22.act, s22.obs]; added [n8]; rewritten []"
+   }
+  ]
+ }

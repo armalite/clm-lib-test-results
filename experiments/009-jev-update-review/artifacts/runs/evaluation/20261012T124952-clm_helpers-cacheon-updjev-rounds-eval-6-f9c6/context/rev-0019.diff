@@ -1,0 +1,26 @@
+--- rev-18
++++ rev-19
+@@ -4,22 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: no board. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11-62. R2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc feature.batch_size=0 (BAD_CONFIG candidate); :5 CHG-121 payments no config. R2 logs: 429 fx-rates inventory-svc.log:18-86, ledger-svc.log:6-71. R2 pricing/payments: only slow-query WARNs, no batch_size errors (CHG-120 no visible impact yet). R3: board.md:3 Thread B payments-svc CACHE_STAMPEDE ongoing (suspected). changes.md:3 CHG-124 APPLIED retry budget GETs=1. R3 logs: 429 fx-rates inventory-svc.log:13-74, ledger-svc.log:7-68; payments/pricing no cache/batch errors (Thread B unconfirmed in logs). R4: board.md:3 Thread A mitigated; board.md:4 OPEN RUNBOOK_UPDATE; changes.md:3 CHG-128 APPLIED retry GETs=1; changes.md:4 CHG-136 APPLIED mitigation A ledger-svc."
+-  },
+-  {
+-   "id": "s11.act",
+-   "role": "assistant",
+-   "body": "[step 11] execute\nthought: Record R4 board/changes, check R4 logs briefly, compact context.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-04/logs/*.log')):\n    L=open(f).read().splitlines()\n    hits=[i+1 for i,l in enumerate(L) if re.search(r'429|ERROR|cache|batch|pool|cert|dns|disk|memory|lag',l,re.I)]\n    print(f.split('/')[-1],len(hits),hits[:3],hits[-1:] , L[hits[0]-1][:160] if hits else '')\nd=json.load(open('/task/workspace/context.json'))\nn=[x for x in d['entries'] if x['id']=='n1'][0]\nn['body']+=' R4: board.md:3 Thread A mitigated; board.md:4 OPEN RUNBOOK_UPDATE; changes.md:3 CHG-128 APPLIED retry GETs=1; changes.md:4 CHG-136 APPLIED mitigation A ledger-svc.'\nd['entries']=[n]\njson.dump(d,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s11.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\ncheckout-api.log 0 [] [] \ninventory-svc.log 0 [] [] \nledger-svc.log 0 [] [] \npayments-svc.log 11 [4, 11, 12] [73] 2026-09-14T11:04:09Z WARN  payments-svc disk usage high path=/var/data used_pct=94\npricing-svc.log 0 [] [] \n"
+-  },
+-  {
+-   "id": "s11.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 11: revision 16 -> 17; entries 6 -> 1; body chars 2719 -> 902; removed [s9.act, s9.obs, s9.rcpt, s10.act, s10.obs]; added []; rewritten [n1]"
++   "body": "R1: no board. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11-62. R2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc feature.batch_size=0 (BAD_CONFIG candidate); :5 CHG-121 payments no config. R2 logs: 429 fx-rates inventory-svc.log:18-86, ledger-svc.log:6-71. R2 pricing/payments: only slow-query WARNs, no batch_size errors (CHG-120 no visible impact yet). R3: board.md:3 Thread B payments-svc CACHE_STAMPEDE ongoing (suspected). changes.md:3 CHG-124 APPLIED retry budget GETs=1. R3 logs: 429 fx-rates inventory-svc.log:13-74, ledger-svc.log:7-68; payments/pricing no cache/batch errors (Thread B unconfirmed in logs). R4: board.md:3 Thread A mitigated; board.md:4 OPEN RUNBOOK_UPDATE; changes.md:3 CHG-128 APPLIED retry GETs=1; changes.md:4 CHG-136 APPLIED mitigation A ledger-svc. R4 logs: 429 gone all services; payments-svc DISK_PRESSURE /var/data used_pct=94 payments-svc.log:4-73 (11 hits)."
+   }
+  ]
+ }

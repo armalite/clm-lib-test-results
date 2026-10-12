@@ -1,0 +1,29 @@
+{
+ "number": 22,
+ "parent": 21,
+ "source": "spill",
+ "step": 14,
+ "sha256": "85286efe5571463f2ad56b58819e69ef0707303915d9c8fe587f80b8ffd401ab",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: no board. Slow query WARNs = noise. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11,17,19,32,42,62.\nR2: board Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing (round-02/board.md:3); follow-up OPEN CAPACITY_REVIEW (board.md:4). changes: CHG-120 APPLIED pricing-svc 4.35.8 feature.batch_size=0 (round-02/changes.md:4) -> watch BAD_CONFIG_ROLLOUT; CHG-121 payments no config (changes.md:5); CHG-116 log sampling (changes.md:3).\nR2 logs: inventory-svc 429 fx-rates round-02/logs/inventory-svc.log:18,38,46,72,86; ledger-svc 429 round-02/logs/ledger-svc.log:6,23,42,71. pricing-svc no errors yet in R2.\nR3: board Thread B CACHE_STAMPEDE payments-svc ongoing (round-03/board.md:3). CHG-124 APPLIED retry budget GETs=1 (round-03/changes.md:3).\nR3 logs: payments-svc only disk WARNs /var/data used_pct 91-97 round-03/logs/payments-svc.log:12,20,22,46,54,80 (no cache misses -> board CACHE_STAMPEDE may be wrong; real cause likely DISK_PRESSURE). 429s continue inventory round-03/logs/inventory-svc.log:13,19,21,28,65,74; ledger round-03/logs/ledger-svc.log:7,17,27,35,38,43. pricing-svc no errors R3.\nR4: Thread A mitigated (round-04/board.md:3); CHG-136 APPLIED mitigation ledger-svc (round-04/changes.md:4); CHG-128 retry GETs=1 (changes.md:3). Follow-up OPEN RUNBOOK_UPDATE (board.md:4).\nR4 logs: only payments disk WARNs used_pct 92-98 round-04/logs/payments-svc.log:4,11,12,13,15; no 429s in R4 (mitigation is working).\nR5: board follow-up OPEN VENDOR_TICKET (round-05/board.md:3)."
+  },
+  {
+   "id": "s13.act",
+   "role": "assistant",
+   "body": "[step 13] execute\nthought: Record R5 board, scan R5 logs for errors/warns.\ncode:\nimport json,re,glob\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='n1'][0]\nn['body']+='\\nR5: board follow-up OPEN VENDOR_TICKET (round-05/board.md:3).'\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*.log')):\n  for i,l in enumerate(open(f),1):\n    if re.search(r'ERROR|WARN|429|batch|miss|disk|used_pct',l,re.I): print(f.split('/')[-1],i,l.strip()[:150])"
+  },
+  {
+   "id": "s13.obs",
+   "role": "observation",
+   "body": "[runtime: observation of 6105 chars moved to /task/workspace/spill/s13.obs.txt because the request exceeded the hard limit]"
+  },
+  {
+   "id": "s13.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 13: revision 19 -> 20; entries 6 -> 1; body chars 3074 -> 1512; removed [s11.act, s11.obs, s11.rcpt, s12.act, s12.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

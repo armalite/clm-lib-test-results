@@ -1,0 +1,36 @@
+--- rev-41
++++ rev-42
+@@ -4,32 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: board empty; logs (shipping,checkout,payments,ledger,search) only background WARN slow query ms~200-450 (noise). No non-slow-query WARN/ERROR. changes: round-01/changes.md:3 CHG-113 APPLIED ledger-svc build 7.35.5 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT); :4 CHG-114 APPLIED checkout-api 7.35.5 no config. R2: board.md:3 follow-up OPEN POSTMORTEM_DRAFT; changes.md:3 CHG-119 dashboards (irrelevant). R2 logs: shipping-svc 429 upstream=tax-provider at round-02/logs/shipping-svc.log:7,22,35,38,41,60 (UPSTREAM_RATE_LIMIT candidate). R3: board.md:3 Thread A UPSTREAM_RATE_LIMIT shipping-svc+search-api ongoing; :4 OPEN DATA_BACKFILL; :5 OPEN CAPACITY_REVIEW; changes.md:3 CHG-124 TLS ticket rotation (irrelevant?). R3 logs: 429 tax-provider search-api.log:2,10,23,30 (12 total); shipping-svc.log:5,13,17,32 (12). ledger/checkout/payments clean. R3 done; next advance. R4: board.md:3 Thread B CACHE_STAMPEDE checkout-api ongoing (verify; CHG-113 pool_max=0 is ledger). changes.md:3 CHG-128 log sampling (irrelevant). R4 logs: checkout-api disk usage high /var/data used_pct 93-98 at round-04/logs/checkout-api.log:7,17,19,28 (10 hits) -> DISK_PRESSURE, board says CACHE_STAMPEDE (likely wrong). 429 tax-provider continues search-api.log:1,14,32,41; shipping-svc.log:7,18,27,38. ledger/payments clean. R4 done; next advance. R5: changes.md:3 CHG-137 PROPOSED (not applied, ignore). R5 board empty. R5 logs: checkout-api disk /var/data round-05/logs/checkout-api.log:1,7,22,32 (9); 429 tax-provider search-api.log:18,25,36,68; shipping-svc.log:26,32,33,38. R5 done; next advance. R6: board.md:3 Thread A mitigated; changes.md:3 CHG-150 APPLIED mitigation shipping-svc. R6 logs: checkout-api disk round-06/logs/checkout-api.log:1,11,31,34 (10); 429 stopped in search/shipping (0). ledger line25 heartbeat only. R6 done; next advance. R7: board empty; changes.md:3 CHG-154 PROPOSED (ignore). R7 logs: checkout-api disk round-07/logs/checkout-api.log:13,17,19 (11); payments-svc disk /var/data NEW round-07/logs/payments-svc.log:3,4,9 (12) -> DISK_PRESSURE spreads to payments. 429 none. R7 done; next advance. R8: board.md:3 Thread B adds payments-svc (cause still CACHE_STAMPEDE on board); :4 OPEN RUNBOOK_UPDATE. R8 logs: checkout-api disk round-08/logs/checkout-api.log:1,5,19,23 (8); payments-svc disk round-08/logs/payments-svc.log:2,7,9,14 (8); others clean. R8 done; next advance."
+-  },
+-  {
+-   "id": "s24.act",
+-   "role": "assistant",
+-   "body": "[step 24] execute\nthought: Record R8 log findings, compact context.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']+=' R8 logs: checkout-api disk round-08/logs/checkout-api.log:1,5,19,23 (8); payments-svc disk round-08/logs/payments-svc.log:2,7,9,14 (8); others clean. R8 done; next advance.'\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+-  },
+-  {
+-   "id": "s24.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s24.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 24: revision 38 -> 39; entries 4 -> 1; body chars 3495 -> 2391; removed [s23.act, s23.obs, s23.rcpt]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s25.act",
+-   "role": "assistant",
+-   "body": "[step 25] advance\nthought: "
+-  },
+-  {
+-   "id": "s25.obs",
+-   "role": "observation",
+-   "body": "Stage 9 of 11 released.\nRound 9 of 11 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (6 lines)\n  round-09/changes.md (3 lines)\n  round-09/logs/checkout-api.log (70 lines)\n  round-09/logs/ledger-svc.log (74 lines)\n  round-09/logs/payments-svc.log (84 lines)\n  round-09/logs/search-api.log (74 lines)\n  round-09/logs/shipping-svc.log (73 lines)\n\nUPDATE (round-files/1; context revision 40 was current at this release). Incident-board and change-log lines released this round, verbatim:\nround-09/board.md:3: - Thread A status: resolved (no recurrence for two hours).\nround-09/board.md:4: - Thread B root cause revised: a data volume running out of space (DISK_PRESSURE); this supersedes the earlier suspicion of CACHE_STAMPEDE.\nround-09/board.md:5: - Thread C opened: request failures on some ledger-svc pods; cause not yet identified. Status: ongoing.\nround-09/board.md:6: - Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\nround-09/changes.md:3: - CHG-163 APPLIED: log sampling for /v1/health reduced to 1%\nConsider whether this update affects your working context."
++   "body": "R1: board empty; logs (shipping,checkout,payments,ledger,search) only background WARN slow query ms~200-450 (noise). No non-slow-query WARN/ERROR. changes: round-01/changes.md:3 CHG-113 APPLIED ledger-svc build 7.35.5 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT); :4 CHG-114 APPLIED checkout-api 7.35.5 no config. R2: board.md:3 follow-up OPEN POSTMORTEM_DRAFT; changes.md:3 CHG-119 dashboards (irrelevant). R2 logs: shipping-svc 429 upstream=tax-provider at round-02/logs/shipping-svc.log:7,22,35,38,41,60 (UPSTREAM_RATE_LIMIT candidate). R3: board.md:3 Thread A UPSTREAM_RATE_LIMIT shipping-svc+search-api ongoing; :4 OPEN DATA_BACKFILL; :5 OPEN CAPACITY_REVIEW; changes.md:3 CHG-124 TLS ticket rotation (irrelevant?). R3 logs: 429 tax-provider search-api.log:2,10,23,30 (12 total); shipping-svc.log:5,13,17,32 (12). ledger/checkout/payments clean. R3 done; next advance. R4: board.md:3 Thread B CACHE_STAMPEDE checkout-api ongoing (verify; CHG-113 pool_max=0 is ledger). changes.md:3 CHG-128 log sampling (irrelevant). R4 logs: checkout-api disk usage high /var/data used_pct 93-98 at round-04/logs/checkout-api.log:7,17,19,28 (10 hits) -> DISK_PRESSURE, board says CACHE_STAMPEDE (likely wrong). 429 tax-provider continues search-api.log:1,14,32,41; shipping-svc.log:7,18,27,38. ledger/payments clean. R4 done; next advance. R5: changes.md:3 CHG-137 PROPOSED (not applied, ignore). R5 board empty. R5 logs: checkout-api disk /var/data round-05/logs/checkout-api.log:1,7,22,32 (9); 429 tax-provider search-api.log:18,25,36,68; shipping-svc.log:26,32,33,38. R5 done; next advance. R6: board.md:3 Thread A mitigated; changes.md:3 CHG-150 APPLIED mitigation shipping-svc. R6 logs: checkout-api disk round-06/logs/checkout-api.log:1,11,31,34 (10); 429 stopped in search/shipping (0). ledger line25 heartbeat only. R6 done; next advance. R7: board empty; changes.md:3 CHG-154 PROPOSED (ignore). R7 logs: checkout-api disk round-07/logs/checkout-api.log:13,17,19 (11); payments-svc disk /var/data NEW round-07/logs/payments-svc.log:3,4,9 (12) -> DISK_PRESSURE spreads to payments. 429 none. R7 done; next advance. R8: board.md:3 Thread B adds payments-svc (cause still CACHE_STAMPEDE on board); :4 OPEN RUNBOOK_UPDATE. R8 logs: checkout-api disk round-08/logs/checkout-api.log:1,5,19,23 (8); payments-svc disk round-08/logs/payments-svc.log:2,7,9,14 (8); others clean. R8 done; next advance. R9: board.md:3 Thread A resolved; :4 Thread B cause revised DISK_PRESSURE; :5 Thread C ledger-svc failures ongoing cause unknown; :6 OPEN VENDOR_TICKET; changes CHG-163 irrelevant."
+   }
+  ]
+ }

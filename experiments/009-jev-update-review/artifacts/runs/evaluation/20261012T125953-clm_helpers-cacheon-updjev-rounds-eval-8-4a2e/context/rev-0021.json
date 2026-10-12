@@ -1,0 +1,29 @@
+{
+ "number": 21,
+ "parent": 20,
+ "source": "runtime",
+ "step": 13,
+ "sha256": "ea9330970582f4a65996f7034a752507da29b2b944aeb4ef445a812d7ef4749e",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: CHG-109 APPLIED TLS ticket rotation (r1 changes.md:3); CHG-113 APPLIED notify-worker 8.20.0 db.pool_max=-4 (r1 changes.md:4, suspect BAD_CONFIG_ROLLOUT); CHG-114 inventory no config (r1 changes.md:5). R2: pricing-svc heap WARNs rss 2200-3660 (round-02/logs/pricing-svc.log:6,7,55,66,83). R3: board.md:3 Thread A MEMORY_LEAK pricing-svc+auth-svc ongoing; board.md:4 Thread B inventory-svc suspected CERT_EXPIRED ongoing; changes.md:3 CHG-124 retry budget=1 (minor). R3 logs: inventory-svc db pool exhausted WARNs (round-03/logs/inventory-svc.log:9,12,16,29,34,46,60,66,72,82), so the evidence points to DB_POOL_EXHAUSTED rather than cert. No cert errors in r3. auth-svc shows no OOM/restart in r3 (uptime 42965 at log:59), so its inclusion in Thread A is doubtful. notify-worker shows nothing in r3. R4: board.md:3 Follow-up OPEN ALERT_TUNING. R4 logs: auth-svc heap WARNs rss 2204-3791 (round-04/logs/auth-svc.log:6,14,16,22,31,49,53,54) so auth-svc does belong in MEMORY_LEAK; pricing-svc heap WARNs continue (round-04/logs/pricing-svc.log:1,5,6,9); inventory-svc db pool exhausted (round-04/logs/inventory-svc.log:19,25,29,36,37,57,80); notify-worker and payments-svc show only slow queries. R5: changes.md:3 CHG-135 log sampling (minor)."
+  },
+  {
+   "id": "s13.act",
+   "role": "assistant",
+   "body": "[step 13] execute\nthought: Scan r5 logs for key patterns and compact context.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*.log'))+['/task/fixtures/round-05/board.md']:\n  hits=[]\n  for i,l in enumerate(open(f),1):\n    if re.search(r'ERROR|WARN|heap|pool|cert|429|OOM|restart|disk|dns|lag|Thread|Follow',l,re.I): hits.append((i,l.strip()[:110]))\n  print(f.split('round-05/')[1],len(hits))\n  for h in hits[:5]: print(' ',h)\nc=json.load(open('/task/workspace/context.json'))\nn1=[e for e in c['entries'] if e['id']=='n1'][0]\nn1['body']=n1['body'].replace(' Next: advance to r5.',' R5: changes.md:3 CHG-135 log sampling (minor).')\nc['entries']=[n1]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s13.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.3s\n--- stdout ---\nlogs/auth-svc.log 21\n  (3, '2026-09-14T12:01:54Z WARN  auth-svc slow query ms=219 table=items')\n  (6, '2026-09-14T12:03:32Z WARN  auth-svc heap usage high rss_mb=3123 gc_pause_ms=1035')\n  (10, '2026-09-14T12:10:01Z WARN  auth-svc heap usage high rss_mb=2096 gc_pause_ms=796')\n  (13, '2026-09-14T12:15:57Z WARN  auth-svc heap usage high rss_mb=1906 gc_pause_ms=1351')\n  (16, '2026-09-14T12:16:19Z WARN  auth-svc heap usage high rss_mb=2566 gc_pause_ms=759')\nlogs/inventory-svc.log 21\n  (4, '2026-09-14T12:04:18Z WARN  inventory-svc slow query ms=306 table=items')\n  (5, '2026-09-14T12:04:28Z WARN  inventory-svc slow query ms=270 table=items')\n  (6, '2026-09-14T12:04:37Z WARN  inventory-svc db pool exhausted wait_ms=1337 in_use=12/12')\n  (12, '2026-09-14T12:10:33Z WARN  inventory-svc slow query ms=336 table=orders')\n  (17, '2026-09-14T12:17:48Z WARN  inventory-svc db pool exhausted wait_ms=2515 in_use=10/10')\nlogs/notify-worker.log 9\n  (5, '2026-09-14T12:06:14Z WARN  notify-worker slow query ms=362 table=items')\n  (10, '2026-09-14T12:10:21Z WARN  notify-worker slow query ms=342 table=items')\n  (20, '2026-09-14T12:25:16Z WARN  notify-worker slow query ms=278 table=events')\n  (24, '2026-09-14T12:27:47Z WARN  notify-worker slow query ms=439 table=events')\n  (34, '2026-09-14T12:38:43Z WARN  notify-worker slow query ms=277 table=items')\nlogs/payments-svc.log 11\n  (2, '2026-09-14T12:00:41Z WARN  payments-svc slow query ms=265 table=items')\n  (4, '2026-09-14T12:01:33Z WARN  payments-svc slow query ms=358 table=items')\n  (6, '2026-09-14T12:03:11Z WARN  payments-svc slow query ms=315 table=items')\n  (12, '2026-09-14T12:13:06Z WARN  payments-svc slow query ms=416 table=events')\n  (24, '2026-09-14T12:24:28Z WARN  payments-svc slow query ms=346 table=items')\nlogs/pricing-svc.log 23\n  (3, '2026-09-14T12:03:08Z WARN  pricing-svc heap usage high rss_mb=3023 gc_pause_ms=1130')\n  (4, '2026-09-14T12:03:51Z WARN  pricing-svc slow query ms=411 table=orders')\n  (7, '2026-09-14T12:08:02Z WARN  pricing-svc heap usage high rss_mb=1885 gc_pause_ms=438')\n  (8, '2026-09-14T12:10:35Z WARN  pricing-svc slow query ms=320 table=events')\n  (11, '2026-09-14T12:12:46Z WARN  pricing-svc heap usage high rss_mb=2969 gc_pause_ms=1042')\nboard.md 0\n"
+  },
+  {
+   "id": "s13.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 13: revision 19 -> 20; entries 6 -> 1; body chars 3139 -> 1244; removed [s11.act, s11.obs, s11.rcpt, s12.act, s12.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

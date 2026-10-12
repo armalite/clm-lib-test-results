@@ -1,0 +1,25 @@
+--- rev-53
++++ rev-54
+@@ -57,19 +57,9 @@
+    "body": "R11: board.md:3 Thread B adds ledger-svc; :4 Thread B mitigated; :5 Thread C pods restarting ongoing; :6 CLOSED CUSTOMER_COMMS; changes.md:3 CHG-179 PROPOSED ignore."
+   },
+   {
+-   "id": "s32.act",
+-   "role": "assistant",
+-   "body": "[step 32] execute\nthought: Check R11 logs quickly and compact context.\ncode:\nimport json,re\nfor s in ['auth-svc','checkout-api','ledger-svc','search-api','shipping-svc']:\n  L=open(f'/task/fixtures/round-11/logs/{s}.log').read().splitlines()\n  h=[i+1 for i,l in enumerate(L) if re.search('ERROR|WARN',l) and 'slow' not in l]\n  print(s,len(h),h[:3],h[-1:] if h else '',L[h[0]-1][:150] if h else '')\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[x for x in c['entries'] if x['id'].startswith('n')]\nc['entries'].append({'id':'n11','role':'note','body':'R11: board.md:3 Thread B adds ledger-svc; :4 Thread B mitigated; :5 Thread C pods restarting ongoing; :6 CLOSED CUSTOMER_COMMS; changes.md:3 CHG-179 PROPOSED ignore.'})\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s32.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nauth-svc 2 [11, 21] [21] {\"ts\":\"2026-09-14T18:11:25Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\ncheckout-api 9 [3, 17, 24] [64] {\"ts\":\"2026-09-14T18:01:32Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"db.pool_max\",\"value\":\"-4\",\"build\":\"7.35.8\"}\nledger-svc 2 [7, 32] [32] {\"ts\":\"2026-09-14T18:04:21Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nsearch-api 0 []  \nshipping-svc 0 []  \n"
+-  },
+-  {
+-   "id": "s32.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 32: revision 51 -> 52; entries 15 -> 11; body chars 5072 -> 3019; removed [s30.act, s30.obs, s30.rcpt, s31.act, s31.obs]; added [n11]; rewritten []"
++   "id": "n11b",
++   "role": "note",
++   "body": "R11 logs: checkout-api config validation failed pool_max=-4 (round-11/logs/checkout-api.log:3,17,24,64); auth-svc cert_expired reduced (round-11/logs/auth-svc.log:11,21); ledger cert_expired (round-11/logs/ledger-svc.log:7,32). R11 done; next: advance."
+   }
+  ]
+ }

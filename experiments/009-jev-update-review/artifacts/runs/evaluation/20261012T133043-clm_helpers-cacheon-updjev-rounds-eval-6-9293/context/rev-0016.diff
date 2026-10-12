@@ -1,0 +1,36 @@
+--- rev-15
++++ rev-16
+@@ -4,32 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: no board/changes. Slow-query WARN=noise. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11,17,19,32,42,62.\nR2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc batch_size=0 (BAD_CONFIG_ROLLOUT candidate); CHG-121 payments no config. R2 logs: inventory 429 fx-rates round-02/logs/inventory-svc.log:18-38,46-63; ledger round-02/logs/ledger-svc.log:6-23,42-56. No pricing errors seen in R2 logs. R2 pricing-svc logs: only slow-query WARN noise. R3: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing; changes.md:3 CHG-124 APPLIED retry budget=1."
+-  },
+-  {
+-   "id": "s9.act",
+-   "role": "assistant",
+-   "body": "[step 9] execute\nthought: Check R3 logs for payments cache stampede evidence and pricing errors; compact context.\ncode:\nimport json,re\nfor s in ['payments-svc','pricing-svc','checkout-api']:\n  L=open(f'/task/fixtures/round-03/logs/{s}.log').read().splitlines()\n  h=[(i+1,l[:110]) for i,l in enumerate(L) if re.search(r'ERROR|cache|miss|batch|429|stampede',l,re.I)]\n  print(s,len(h));[print(i,l) for i,l in h[:8]]\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']+=' R3: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing; changes.md:3 CHG-124 APPLIED retry budget=1.'\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s9.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\npayments-svc 0\npricing-svc 0\ncheckout-api 0\n"
+-  },
+-  {
+-   "id": "s9.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 9: revision 12 -> 13; entries 6 -> 1; body chars 2313 -> 675; removed [s7.act, s7.obs, s7.rcpt, s8.act, s8.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s10.act",
+-   "role": "assistant",
+-   "body": "[step 10] execute\nthought: R3 logs had zero matches; the log format may have changed, so sample the raw lines.\ncode:\nimport os\nd='/task/fixtures/round-03/logs/'\nfor s in sorted(os.listdir(d)):\n  L=open(d+s).read().splitlines()\n  print(s,len(L));[print(' ',l[:150]) for l in L[:3]]"
+-  },
+-  {
+-   "id": "s10.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\ncheckout-api.log 71\n  2026-09-14T10:00:29Z INFO  checkout-api heartbeat uptime_s=55218\n  2026-09-14T10:00:49Z INFO  checkout-api heartbeat uptime_s=27233\n  2026-09-14T10:01:08Z INFO  checkout-api heartbeat uptime_s=68126\ninventory-svc.log 81\n  2026-09-14T10:01:43Z INFO  inventory-svc health ok probe=readiness\n  2026-09-14T10:01:56Z INFO  inventory-svc health ok probe=readiness\n  2026-09-14T10:02:30Z INFO  inventory-svc gc cycle pause_ms=26\nledger-svc.log 73\n  2026-09-14T10:00:43Z INFO  ledger-svc gc cycle pause_ms=25\n  2026-09-14T10:00:45Z INFO  ledger-svc gc cycle pause_ms=30\n  2026-09-14T10:02:42Z INFO  ledger-svc request ok route=/v1/health status=200 ms=59\npayments-svc.log 85\n  2026-09-14T10:00:43Z WARN  payments-svc slow query ms=209 table=orders\n  2026-09-14T10:01:45Z INFO  payments-svc request ok route=/v1/orders status=200 ms=57\n  2026-09-14T10:01:52Z INFO  payments-svc request ok route=/v1/orders status=200 ms=37\npricing-svc.log 56\n  2026-09-14T10:03:57Z INFO  pricing-svc heartbeat uptime_s=9994\n  2026-09-14T10:04:16Z INFO  pricing-svc heartbeat uptime_s=9128\n  2026-09-14T10:06:40Z INFO  pricing-svc request ok route=/v1/items status=200 ms=4\n"
++   "body": "R1: no board/changes. Slow-query WARN=noise. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11,17,19,32,42,62.\nR2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc batch_size=0 (BAD_CONFIG_ROLLOUT candidate); CHG-121 payments no config. R2 logs: inventory 429 fx-rates round-02/logs/inventory-svc.log:18-38,46-63; ledger round-02/logs/ledger-svc.log:6-23,42-56. No pricing errors seen in R2 logs. R2 pricing-svc logs: only slow-query WARN noise. R3: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing; changes.md:3 CHG-124 APPLIED retry budget=1. R3 logs plain format (ts LEVEL svc msg)."
+   }
+  ]
+ }

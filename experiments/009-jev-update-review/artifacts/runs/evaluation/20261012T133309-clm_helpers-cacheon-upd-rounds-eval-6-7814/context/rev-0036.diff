@@ -1,0 +1,24 @@
+--- rev-35
++++ rev-36
+@@ -5,6 +5,21 @@
+    "id": "notes",
+    "role": "note",
+    "body": "R1: no board. slow query WARNs = noise. ledger-svc 429 fx-rates round-01/logs/ledger-svc.log:11-62. R2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 CAPACITY_REVIEW open. changes.md:4 CHG-120 APPLIED pricing-svc feature.batch_size=0 (suspect BAD_CONFIG); CHG-121 payments no cfg. R2 logs: only 429 fx-rates errors in inventory-svc (round-02/logs/inventory-svc.log:18-86) and ledger-svc (round-02/logs/ledger-svc.log:6-71); pricing-svc no errors yet. R3: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing. changes.md:3 CHG-124 APPLIED retry budget GETs=1. R3 logs: inventory 429s round-03/logs/inventory-svc.log:13-74; ledger round-03/logs/ledger-svc.log:7-68; pricing/checkout no errors. R3 payments-svc: no cache errors; disk usage high /var/data 91-97% round-03/logs/payments-svc.log:12-80 (board B says CACHE_STAMPEDE, logs suggest DISK_PRESSURE). Next: advance to R4. R4: board.md:3 Thread A mitigated; board.md:4 RUNBOOK_UPDATE open. changes.md:4 CHG-136 APPLIED mitigation A ledger-svc; CHG-128 retry GETs=1. R4 logs: inventory/ledger no 429s (A mitigated); payments disk WARN 94% round-04/logs/payments-svc.log:4-73. Next: advance to R5. R5: board.md:3 VENDOR_TICKET open. R5 logs: only payments disk WARN. R6: board.md:3 Thread D MEMORY_LEAK ledger-svc ongoing; changes.md:3 CHG-147 PROPOSED (ignore). R6 logs: ledger heap WARN round-06/logs/ledger-svc.log:2-52; payments disk round-06/logs/payments-svc.log:3-83. Next: advance to R7. R7: board.md:3 Thread A resolved; board.md:4 DATA_BACKFILL open; board.md:5 POSTMORTEM_DRAFT open. R7 logs: ledger heap WARN round-07/logs/ledger-svc.log:7-60; payments disk 97% round-07/logs/payments-svc.log:3-62. Next: advance to R8. R8: board.md:3 Thread B revised DISK_PRESSURE; board.md:4 Thread C pricing-svc failures ongoing cause unknown (suspect CHG-120 batch_size=0)."
++  },
++  {
++   "id": "s22.act",
++   "role": "assistant",
++   "body": "[step 22] execute\nthought: Record R8 board, check pricing-svc errors and ledger/payments.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='notes'][0]\nn['body']+=' R8: board.md:3 Thread B revised DISK_PRESSURE; board.md:4 Thread C pricing-svc failures ongoing cause unknown (suspect CHG-120 batch_size=0).'\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))\nfor s in ['pricing-svc','ledger-svc','payments-svc','checkout-api','inventory-svc']:\n  L=open(f'/task/fixtures/round-08/logs/{s}.log').read().splitlines()\n  h=[(i+1,l) for i,l in enumerate(L) if re.search('ERROR|WARN|error|warn',l) and 'slow query' not in l]\n  print(s,len(h),h[0][0] if h else '',h[-1][0] if h else '')\n  for i,l in h[:2]: print(' ',i,l[:200])"
++  },
++  {
++   "id": "s22.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\npricing-svc 12 2 81\n  2 {\"ts\":\"2026-09-14T15:00:43Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"feature.batch_size\",\"value\":\"0\",\"build\":\"4.35.8\"}\n  16 {\"ts\":\"2026-09-14T15:10:52Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"feature.batch_size\",\"value\":\"0\",\"build\":\"4.35.8\"}\nledger-svc 11 6 88\n  6 {\"ts\":\"2026-09-14T15:02:54Z\",\"level\":\"WARN\",\"svc\":\"ledger-svc\",\"msg\":\"heap usage high\",\"rss_mb\":3387,\"gc_pause_ms\":476}\n  26 {\"ts\":\"2026-09-14T15:14:32Z\",\"level\":\"WARN\",\"svc\":\"ledger-svc\",\"msg\":\"heap usage high\",\"rss_mb\":2888,\"gc_pause_ms\":1256}\npayments-svc 6 1 84\n  1 {\"ts\":\"2026-09-14T15:00:07Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":91}\n  38 {\"ts\":\"2026-09-14T15:32:15Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":97}\ncheckout-api 13 3 59\n  3 {\"ts\":\"2026-09-14T15:01:33Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":92}\n  4 {\"ts\":\"2026-09-14T15:02:38Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":98}\ninventory-svc 0  \n"
++  },
++  {
++   "id": "s22.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 22: revision 34 -> 35; entries 6 -> 1; body chars 3208 -> 1866; removed [s20.act, s20.obs, s20.rcpt, s21.act, s21.obs]; added []; rewritten [notes]"
+   }
+  ]
+ }

@@ -1,0 +1,39 @@
+{
+ "number": 37,
+ "parent": 36,
+ "source": "runtime",
+ "step": 23,
+ "sha256": "d72032059a517ad967ebb56f9310f2ef9cb1cf4fb841ac1d8e7cc31b915ef4ff",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: changes.md:3 CHG-110 APPLIED TLS ticket rotation; :4 CHG-113 APPLIED checkout-api db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT, unconfirmed); :5 CHG-114 auth-svc no config. slow-query WARNs = noise. search-api disk 91-97% (round-01/logs/search-api.log:4,12,38,48).\nR2: board.md:3 Thread A DISK_PRESSURE search-api + shipping-svc ongoing; board.md:4 follow-up OPEN CUSTOMER_COMMS. changes.md:3 CHG-117 dashboards (irrelevant).\nR3: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing (suspected; verify vs CHG-114).\nR3 logs: auth-svc ERRORs are tls certificate_expired peer=bank-api (round-03/logs/auth-svc.log:1,16,21,62) -> likely CERT_EXPIRED not MEMORY_LEAK (CHG-110 TLS rotation suspect); no mem logs. disk: search-api 91-98% (round-03/logs/search-api.log:16,77), shipping-svc 91-98% (round-03/logs/shipping-svc.log:15,49). No checkout-api errors yet.\nR4: board.md:3 Thread A mitigated (after changes.md:4 CHG-136 APPLIED search-api mitigation); board.md:4 OPEN DATA_BACKFILL; :5 OPEN VENDOR_TICKET. CHG-131 PROPOSED (ignore).\nR4 logs: auth-svc cert_expired bank-api continues (round-04/logs/auth-svc.log:3,55); others clean.\nR5: board.md:3 OPEN CAPACITY_REVIEW.\nR5 logs: auth-svc cert_expired bank-api continues (round-05/logs/auth-svc.log:1,75); others clean.\nR6: board.md:3 Thread D DB_POOL_EXHAUSTED checkout-api ongoing (likely from CHG-113 pool_max=-4 -> BAD_CONFIG_ROLLOUT?). changes.md:3 CHG-147 dashboards irrelevant.\nR6 logs: checkout-api db pool exhausted WARNs in_use 16/16,12/12,10/10 (round-06/logs/checkout-api.log:8,25,27,34) pool shrinking; auth-svc cert_expired continues (round-06/logs/auth-svc.log:2,31).\nR7: board.md:3 Thread A RESOLVED; :4 Thread B revised CERT_EXPIRED auth-svc (status ongoing); :5 OPEN ALERT_TUNING.\nR7 logs: checkout-api pool exhausted continues (round-07/logs/checkout-api.log:2,66); auth-svc tls fail bank-api (round-07/logs/auth-svc.log:12,79).\nR8: board.md:3 Thread D closed as false alarm (synthetic monitor), BUT R6-7 logs showed real pool exhaustion; verify with logs. changes.md:3 CHG-156 PROPOSED (ignore).\nR8 logs: checkout-api no WARN/ERROR (format same; only slow-query noise); auth-svc cert_expired continues (round-08/logs/auth-svc.log:6,32)."
+  },
+  {
+   "id": "s22.act",
+   "role": "assistant",
+   "body": "[step 22] execute\nthought: Check R8 checkout pool lines more specifically, then compact.\ncode:\nimport re,json\nL=open('/task/fixtures/round-08/logs/checkout-api.log').read().splitlines()\nh=[(i+1,l[:110]) for i,l in enumerate(L) if re.search('pool|exhaust|ERROR',l)]\nprint(len(h));[print(x) for x in h[:5]]\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='n1'][0]\nn['body']=n['body'].replace('(check format)','(format same; only slow-query noise)')\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s22.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n0\n"
+  },
+  {
+   "id": "s22.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 22: revision 34 -> 35; entries 4 -> 1; body chars 3920 -> 2200; removed [s21.act, s21.obs, s21.rcpt]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s23.act",
+   "role": "assistant",
+   "body": "[step 23] advance\nthought: "
+  },
+  {
+   "id": "s23.obs",
+   "role": "observation",
+   "body": "Stage 9 of 12 released.\nRound 9 of 12 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (2 lines)\n  round-09/logs/auth-svc.log (80 lines)\n  round-09/logs/checkout-api.log (67 lines)\n  round-09/logs/ledger-svc.log (58 lines)\n  round-09/logs/search-api.log (64 lines)\n  round-09/logs/shipping-svc.log (63 lines)\n\nUPDATE (round-files/1; context revision 36 was current at this release). No incident-board or change-log lines were released this round."
+  }
+ ]
+}

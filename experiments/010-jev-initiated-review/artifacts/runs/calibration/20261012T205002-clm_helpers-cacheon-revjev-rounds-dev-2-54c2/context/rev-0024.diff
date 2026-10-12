@@ -1,0 +1,45 @@
+--- rev-23
++++ rev-24
+@@ -27,39 +27,9 @@
+    "body": "R5: board.md:3 Thread A mitigated; board.md:4 Thread B services +shipping-svc (cause still says DB_POOL on board, logs say CERT_EXPIRED). board.md:5-6 OPEN VENDOR_TICKET, ALERT_TUNING. changes.md:3 CHG-143 APPLIED mitigation inventory-svc (thread A). No DNS errors in checkout/inventory R5. CERT errs round-05/logs/auth-svc.log:2-64, shipping-svc.log:9-65. search-api no errors. Next: advance."
+   },
+   {
+-   "id": "s15.act",
+-   "role": "assistant",
+-   "body": "[step 15] execute\nthought: Compact R5 into note and drop step entries.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nkeep=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4')]\nkeep.append({'id':'n5','role':'note','body':'R5: board.md:3 Thread A mitigated; board.md:4 Thread B services +shipping-svc (cause still says DB_POOL on board, logs say CERT_EXPIRED). board.md:5-6 OPEN VENDOR_TICKET, ALERT_TUNING. changes.md:3 CHG-143 APPLIED mitigation inventory-svc (thread A). No DNS errors in checkout/inventory R5. CERT errs round-05/logs/auth-svc.log:2-64, shipping-svc.log:9-65. search-api no errors. Next: advance.'})\nc['entries']=keep\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+-  },
+-  {
+-   "id": "s15.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s15.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 15: revision 19 -> 20; entries 11 -> 5; body chars 3952 -> 1568; removed [s12.act, s12.obs, s12.rcpt, s13.act, s13.obs, s14.act, s14.obs]; added [n5]; rewritten []"
+-  },
+-  {
+-   "id": "s16.act",
+-   "role": "assistant",
+-   "body": "[step 16] advance\nthought: "
+-  },
+-  {
+-   "id": "s16.obs",
+-   "role": "observation",
+-   "body": "Stage 6 of 11 released.\nRound 6 of 11 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (3 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/auth-svc.log (80 lines)\n  round-06/logs/checkout-api.log (62 lines)\n  round-06/logs/inventory-svc.log (69 lines)\n  round-06/logs/search-api.log (64 lines)\n  round-06/logs/shipping-svc.log (74 lines)"
+-  },
+-  {
+-   "id": "s17.act",
+-   "role": "assistant",
+-   "body": "[step 17] execute\nthought: Inspect round 6 board, changes, and error lines.\ncode:\nimport os,re\nb='/task/fixtures/round-06/'\nfor f in['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor f in sorted(os.listdir(b+'logs')):\n  L=open(b+'logs/'+f).read().splitlines()\n  hits=[(i,l) for i,l in enumerate(L,1) if re.search(r'ERROR|FATAL|CRIT|error|fail',l) and not re.search(r'slow query|heartbeat|gc',l)]\n  print(f,len(hits),[h[0] for h in hits][:40])\n  for i,l in hits[:2]:print(' ',i,l[:200])\n  if not hits:print(' first:',L[0][:200])"
+-  },
+-  {
+-   "id": "s17.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 2 \nboard.md 3 - Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\nchanges.md 1 # Change log: round 06\nchanges.md 2 \nchanges.md 3 - CHG-144 APPLIED: log sampling for /v1/health reduced to 1%\nauth-svc.log 10 [4, 10, 14, 19, 20, 30, 50, 60, 76, 79]\n  4 {\"ts\":\"2026-09-14T13:02:17Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n  10 {\"ts\":\"2026-09-14T13:09:13Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\ncheckout-api.log 0 []\n first: {\"ts\":\"2026-09-14T13:02:02Z\",\"level\":\"INFO\",\"svc\":\"checkout-api\",\"msg\":\"gc cycle\",\"pause_ms\":9}\ninventory-svc.log 0 []\n first: {\"ts\":\"2026-09-14T13:00:59Z\",\"level\":\"INFO\",\"svc\":\"inventory-svc\",\"msg\":\"health ok\",\"probe\":\"readiness\"}\nsearch-api.log 0 []\n first: {\"ts\":\"2026-09-14T13:00:54Z\",\"level\":\"INFO\",\"svc\":\"search-api\",\"msg\":\"heartbeat\",\"uptime_s\":76131}\nshipping-svc.log 6 [1, 18, 21, 22, 36, 64]\n  1 {\"ts\":\"2026-09-14T13:00:12Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n  18 {\"ts\":\"2026-09-14T13:15:51Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n"
++   "id": "n6",
++   "role": "note",
++   "body": "R6: board.md:3 OPEN RUNBOOK_UPDATE. changes.md:3 CHG-144 log sampling (noise). Logs now JSON format. CERT errs round-06/logs/auth-svc.log:4-79, shipping-svc.log:1-64. No errors checkout/inventory/search. Next: advance."
+   }
+  ]
+ }

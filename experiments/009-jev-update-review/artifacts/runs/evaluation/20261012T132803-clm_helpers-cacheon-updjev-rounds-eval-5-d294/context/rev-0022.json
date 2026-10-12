@@ -1,0 +1,29 @@
+{
+ "number": 22,
+ "parent": 21,
+ "source": "runtime",
+ "step": 14,
+ "sha256": "0c27350034eefc5713a19f065004fc845f6cd925576376152960b2eda6bdfdc6",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: changes.md:3 CHG-110 APPLIED TLS ticket rotation; :4 CHG-113 APPLIED checkout-api db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT, unconfirmed); :5 CHG-114 auth-svc no config. slow-query WARNs = noise. search-api disk 91-97% (round-01/logs/search-api.log:4,12,38,48).\nR2: board.md:3 Thread A DISK_PRESSURE search-api + shipping-svc ongoing; board.md:4 follow-up OPEN CUSTOMER_COMMS. changes.md:3 CHG-117 dashboards (irrelevant).\nR3: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing (suspected; verify vs CHG-114).\nR3 logs: auth-svc ERRORs are tls certificate_expired peer=bank-api (round-03/logs/auth-svc.log:1,16,21,62) -> likely CERT_EXPIRED not MEMORY_LEAK (CHG-110 TLS rotation suspect); no mem logs. disk: search-api 91-98% (round-03/logs/search-api.log:16,77), shipping-svc 91-98% (round-03/logs/shipping-svc.log:15,49). No checkout-api errors yet.\nR4: board.md:3 Thread A mitigated (after changes.md:4 CHG-136 APPLIED search-api mitigation); board.md:4 OPEN DATA_BACKFILL; :5 OPEN VENDOR_TICKET. CHG-131 PROPOSED (ignore).\nR4 logs: auth-svc cert_expired bank-api continues (round-04/logs/auth-svc.log:3,55); others clean.\nR5: board.md:3 OPEN CAPACITY_REVIEW.\nR5 logs: auth-svc cert_expired bank-api continues (round-05/logs/auth-svc.log:1,75); others clean.\nR6: board.md:3 Thread D DB_POOL_EXHAUSTED checkout-api ongoing (likely from CHG-113 pool_max=-4 -> BAD_CONFIG_ROLLOUT?). changes.md:3 CHG-147 dashboards irrelevant."
+  },
+  {
+   "id": "s14.act",
+   "role": "assistant",
+   "body": "[step 14] execute\nthought: Record R6 board, check checkout-api logs for pool errors, compact context.\ncode:\nimport json,re\nfor f in ['checkout-api','auth-svc','search-api','shipping-svc','ledger-svc']:\n  L=open(f'/task/fixtures/round-06/logs/{f}.log').read().splitlines()\n  h=[(i+1,l) for i,l in enumerate(L) if re.search(r'ERROR|pool|disk|cert|FATAL',l,re.I) and 'slow' not in l]\n  print(f,len(h));[print(i,l[:150]) for i,l in h[:4]]\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='n1'][0]\nn['body']+='\\nR6: board.md:3 Thread D DB_POOL_EXHAUSTED checkout-api ongoing (likely from CHG-113 pool_max=-4 -> BAD_CONFIG_ROLLOUT?). changes.md:3 CHG-147 dashboards irrelevant.'\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s14.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\ncheckout-api 11\n8 {\"ts\":\"2026-09-14T13:10:29Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"db pool exhausted\",\"wait_ms\":983,\"in_use\":\"16/16\"}\n25 {\"ts\":\"2026-09-14T13:21:47Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"db pool exhausted\",\"wait_ms\":1821,\"in_use\":\"12/12\"}\n27 {\"ts\":\"2026-09-14T13:22:29Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"db pool exhausted\",\"wait_ms\":2406,\"in_use\":\"10/10\"}\n34 {\"ts\":\"2026-09-14T13:25:07Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"db pool exhausted\",\"wait_ms\":2225,\"in_use\":\"10/10\"}\nauth-svc 10\n2 {\"ts\":\"2026-09-14T13:02:13Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\n31 {\"ts\":\"2026-09-14T13:20:19Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\n32 {\"ts\":\"2026-09-14T13:21:07Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\n33 {\"ts\":\"2026-09-14T13:23:07Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nsearch-api 0\nshipping-svc 0\nledger-svc 0\n"
+  },
+  {
+   "id": "s14.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 14: revision 20 -> 21; entries 6 -> 1; body chars 3024 -> 1428; removed [s12.act, s12.obs, s12.rcpt, s13.act, s13.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

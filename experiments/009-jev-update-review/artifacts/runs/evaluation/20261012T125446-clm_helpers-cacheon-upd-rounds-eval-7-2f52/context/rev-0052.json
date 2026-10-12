@@ -1,0 +1,94 @@
+{
+ "number": 52,
+ "parent": 51,
+ "source": "runtime",
+ "step": 32,
+ "sha256": "035ee192add9b63d29549fa907d8d5a06805b7c2dab2af2a09abc4d6fe4364d6",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. changes round-01/changes.md: CHG-113 APPLIED build 7.35.5 ledger-svc sets db.pool_max=0 (line ~3); CHG-114 APPLIED checkout-api no config. Logs: only routine WARN slow query noise in all services (checkout-api, ledger-svc, payments-svc, search-api, shipping-svc). Scan method: grep ERROR/WARN excluding \"slow query\"."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 Follow-up OPEN POSTMORTEM_DRAFT. changes.md:3 CHG-119 APPLIED dashboards (irrelevant). Logs: shipping-svc 429 upstream=tax-provider at lines 7,22,35,38,41,60 (UPSTREAM_RATE_LIMIT candidate). R2 scanned; next: advance."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread A UPSTREAM_RATE_LIMIT shipping-svc (+search-api impact) ongoing. board.md:4 OPEN DATA_BACKFILL; :5 OPEN CAPACITY_REVIEW. changes.md:3 CHG-124 APPLIED TLS ticket rotation hourly. Logs R3: 429 tax-provider in search-api.log lines 2-76 (e.g. 2,10,23) and shipping-svc.log 5-63. R3 scanned; next: advance."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board.md:3 Thread B CACHE_STAMPEDE checkout-api ongoing. changes.md:3 CHG-128 APPLIED log sampling (irrelevant). Logs R4: checkout-api.log disk usage high /var/data used_pct 93-98 at lines 7,17,19,28 (DISK_PRESSURE candidate, board says CACHE_STAMPEDE - check). 429 tax-provider continues search-api.log 1,14,32,41; shipping-svc.log 7,18,27,38. R4 scanned; next: advance."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board empty. changes.md:3 CHG-137 PROPOSED (irrelevant). Logs R5: checkout-api.log disk used_pct 91-97 lines 1,7,56,70 (DISK_PRESSURE continues). 429 tax-provider search-api.log 18,25,77; shipping-svc.log 26,38,71. R5 scanned; next: advance."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board.md:3 Thread A mitigated. changes.md:3 CHG-150 APPLIED mitigation thread A shipping-svc. Logs R6: 429 stopped (search/shipping 0 hits). checkout-api.log disk used_pct 91-98 lines 1,11,31,34 (DISK_PRESSURE continues). R6 scanned; next: advance."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board empty, changes.md: - CHG-154 PROPOSED: raise HPA max replicas for search tier (not applied). Logs R7: checkout-api.log disk used_pct 92-98 lines 13,19,46,61; NEW payments-svc.log disk used_pct 91-98 lines 3,27,62,68 (DISK_PRESSURE spreading to payments-svc). No 429. R7 scanned; next: advance."
+  },
+  {
+   "id": "n8",
+   "role": "note",
+   "body": "R8: board.md:3 Thread B (CACHE_STAMPEDE per board) now also payments-svc, ongoing. board.md:4 OPEN RUNBOOK_UPDATE. No changes.md. Logs R8: checkout-api.log disk used_pct lines 1,5,19,23; payments-svc.log disk lines 2,7,9,14. No 429. R8 scanned; next: advance."
+  },
+  {
+   "id": "n9",
+   "role": "note",
+   "body": "R9: board.md:3 Thread A resolved. :4 Thread B revised DISK_PRESSURE (checkout-api,payments-svc). :5 Thread C ledger-svc failures cause unknown, ongoing (suspect CHG-113 db.pool_max=0 -> BAD_CONFIG_ROLLOUT, round-01/changes.md:3). :6 OPEN VENDOR_TICKET. changes.md:3 CHG-163 irrelevant. Logs R9: ledger-svc.log config validation failed db.pool_max=0 build 7.35.5 lines 13,20,23,24 (confirms BAD_CONFIG_ROLLOUT). checkout-api disk lines 17,19,40,43; payments-svc disk 3,4,18,43. No 429. R9 scanned; next: advance."
+  },
+  {
+   "id": "n10",
+   "role": "note",
+   "body": "R10: board.md:3 Thread B DISK_PRESSURE mitigated. :4 Thread C ledger-svc still ongoing. :5 CLOSED RUNBOOK_UPDATE. Logs R10: ledger-svc.log config validation failed lines 12,13,15,18; checkout-api disk 20,29; payments-svc disk 2,26. R10 scanned; next: advance."
+  },
+  {
+   "id": "s30.act",
+   "role": "assistant",
+   "body": "[step 30] execute\nthought: Record R10 log hits and compact, then advance next step.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[x for x in c['entries'] if x['id'].startswith('n')]\nfor x in c['entries']:\n  if x['id']=='n10': x['body']+=' Logs R10: ledger-svc.log config validation failed lines 12,13,15,18; checkout-api disk 20,29; payments-svc disk 2,26. R10 scanned; next: advance.'\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+  },
+  {
+   "id": "s30.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s30.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 30: revision 48 -> 49; entries 13 -> 10; body chars 4430 -> 3092; removed [s29.act, s29.obs, s29.rcpt]; added []; rewritten [n10]"
+  },
+  {
+   "id": "s31.act",
+   "role": "assistant",
+   "body": "[step 31] advance\nthought: "
+  },
+  {
+   "id": "s31.obs",
+   "role": "observation",
+   "body": "Stage 11 of 11 released.\nRound 11 of 11 released. New files are under /task/fixtures/round-11/.\n\nNew files:\n  round-11/board.md (2 lines)\n  round-11/changes.md (3 lines)\n  round-11/logs/checkout-api.log (64 lines)\n  round-11/logs/ledger-svc.log (64 lines)\n  round-11/logs/payments-svc.log (59 lines)\n  round-11/logs/search-api.log (70 lines)\n  round-11/logs/shipping-svc.log (55 lines)\n\nUPDATE (round-files/1; context revision 50 was current at this release). Incident-board and change-log lines released this round, verbatim:\nround-11/changes.md:3: - CHG-181 APPLIED: log sampling for /v1/health reduced to 1%\nConsider whether this update affects your working context."
+  },
+  {
+   "id": "s32.act",
+   "role": "assistant",
+   "body": "[step 32] execute\nthought: Scan R11 logs and board quickly.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-11/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-11/logs/*.log')):\n  h=[i for i,l in enumerate(open(f),1) if ('ERROR' in l or 'WARN' in l) and 'slow query' not in l]\n  print(f.split('/')[-1],len(h),h[:6])\n  if h: print(open(f).readlines()[h[0]-1][:200])"
+  },
+  {
+   "id": "s32.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n# Incident board: updates in round 11\n\n\ncheckout-api.log 2 [31, 45]\n{\"ts\":\"2026-09-14T18:39:41Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":95}\n\nledger-svc.log 8 [19, 29, 31, 36, 39, 55]\n{\"ts\":\"2026-09-14T18:18:31Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"config validation failed\",\"key\":\"db.pool_max\",\"value\":\"0\",\"build\":\"7.35.5\"}\n\npayments-svc.log 2 [38, 47]\n{\"ts\":\"2026-09-14T18:36:21Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":96}\n\nsearch-api.log 0 []\nshipping-svc.log 0 []\n"
+  }
+ ]
+}

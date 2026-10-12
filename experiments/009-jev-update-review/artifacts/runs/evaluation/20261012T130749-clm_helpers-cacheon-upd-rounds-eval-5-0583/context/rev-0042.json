@@ -1,0 +1,94 @@
+{
+ "number": 42,
+ "parent": 41,
+ "source": "runtime",
+ "step": 26,
+ "sha256": "60feac4a9e654f4728bd108a9e989ab38095f335665aac4ca2ba9927855afe43",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. changes.md: CHG-110 APPLIED TLS ticket rotation hourly (round-01/changes.md:3); CHG-113 APPLIED build 7.35.8 checkout-api sets db.pool_max=-4 (round-01/changes.md:4) -> likely BAD_CONFIG_ROLLOUT later; CHG-114 auth-svc no config (:5). R1 logs: search-api disk /var/data 92-95% (round-01/logs/search-api.log:4,12)."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: Thread A DISK_PRESSURE search-api + shipping-svc, ongoing (round-02/board.md:3). Follow-up OPEN CUSTOMER_COMMS (round-02/board.md:4). CHG-117 dashboards irrelevant."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R2 logs: disk warnings search-api & shipping-svc 91-98% throughout. R3: Thread B opened MEMORY_LEAK auth-svc ongoing (round-03/board.md:3)."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R3 logs: auth-svc tls handshake failed peer=bank-api certificate_expired (round-03/logs/auth-svc.log:1,16,21,25,35,62) -> board says MEMORY_LEAK but evidence suggests CERT_EXPIRED; watch for board correction. Next: advance to R4."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R4: Thread A -> mitigated (round-04/board.md:3) after CHG-136 APPLIED to search-api (round-04/changes.md:4). OPEN DATA_BACKFILL (:4), VENDOR_TICKET (:5). CHG-131 PROPOSED ignore."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R4 logs: auth-svc certificate_expired peer=bank-api continues (round-04/logs/auth-svc.log:3,5,7,20,40,42,55). Slow-query WARNs everywhere = noise. Next: advance to R5."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R5: OPEN CAPACITY_REVIEW (round-05/board.md:3)."
+  },
+  {
+   "id": "n8",
+   "role": "note",
+   "body": "R5 logs: auth-svc certificate_expired peer=bank-api continues (round-05/logs/auth-svc.log:1,3,13,75). No other errors. Next: advance to R6."
+  },
+  {
+   "id": "n9",
+   "role": "note",
+   "body": "R6: Thread D opened DB_POOL_EXHAUSTED checkout-api ongoing (round-06/board.md:3); likely really BAD_CONFIG_ROLLOUT via CHG-113 pool_max=-4. CHG-147 dashboards irrelevant."
+  },
+  {
+   "id": "n10",
+   "role": "note",
+   "body": "R6 logs: checkout-api db pool exhausted WARNs (round-06/logs/checkout-api.log:8,25,27,44,72), pool sizes vary 10-20; no explicit invalid-config line yet. Next: advance to R7."
+  },
+  {
+   "id": "n11",
+   "role": "note",
+   "body": "R7: Thread A resolved (round-07/board.md:3). Thread B revised CERT_EXPIRED auth-svc (round-07/board.md:4). OPEN ALERT_TUNING (:5)."
+  },
+  {
+   "id": "n12",
+   "role": "note",
+   "body": "R7 logs: checkout-api db pool exhausted continues (round-07/logs/checkout-api.log:2,8,33,47,66); auth-svc certificate_expired bank-api continues (round-07/logs/auth-svc.log:12,79). Next: advance to R8."
+  },
+  {
+   "id": "n13",
+   "role": "note",
+   "body": "R8: Thread D closed false alarm (round-08/board.md:3) -> drop DB_POOL; but watch checkout-api CHG-113 pool_max=-4. CHG-156 PROPOSED ignore."
+  },
+  {
+   "id": "n14",
+   "role": "note",
+   "body": "R8 logs: auth-svc certificate_expired bank-api continues (round-08/logs/auth-svc.log:6,9,29,58,85); checkout-api no pool errors in R8. Next: advance to R9."
+  },
+  {
+   "id": "s26.act",
+   "role": "assistant",
+   "body": "[step 26] execute\nthought: Check R9 logs for errors, compress context.\ncode:\nimport json,glob\nfor f in sorted(glob.glob('/task/fixtures/round-09/logs/*.log')):\n    for i,l in enumerate(open(f),1):\n        s=l.lower()\n        if any(k in s for k in ['error','invalid','exhaust','certificate','disk','pool_max','fatal']) and 'slow' not in s:\n            print(f.split('/')[-1],i,l.strip()[:150])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s26.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nauth-svc.log 6 {\"ts\":\"2026-09-14T16:05:32Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 18 {\"ts\":\"2026-09-14T16:12:34Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 22 {\"ts\":\"2026-09-14T16:15:09Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 25 {\"ts\":\"2026-09-14T16:19:09Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 53 {\"ts\":\"2026-09-14T16:39:20Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 54 {\"ts\":\"2026-09-14T16:39:29Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 56 {\"ts\":\"2026-09-14T16:41:28Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 59 {\"ts\":\"2026-09-14T16:45:12Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 61 {\"ts\":\"2026-09-14T16:46:14Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 65 {\"ts\":\"2026-09-14T16:48:43Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 71 {\"ts\":\"2026-09-14T16:53:58Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\n"
+  },
+  {
+   "id": "s26.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 26: revision 40 -> 41; entries 19 -> 14; body chars 3580 -> 2366; removed [s24.act, s24.obs, s24.rcpt, s25.act, s25.obs]; added []; rewritten []"
+  }
+ ]
+}

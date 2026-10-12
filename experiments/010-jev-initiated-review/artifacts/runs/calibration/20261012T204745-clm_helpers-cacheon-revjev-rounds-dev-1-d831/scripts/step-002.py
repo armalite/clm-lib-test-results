@@ -1,0 +1,5 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':'R1: board empty; CHG-108 PROPOSED (HPA search, not applied). Logs only routine slow-query WARNs in all svcs (notify-worker, checkout-api, auth-svc, payments-svc, search-api). No incidents yet.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))
+open('/task/workspace/scan.py','w').write('''import os,sys\ndef scan(n,keys=('ERROR','429','fail','expired','OOM','disk','DNS','pool','lag')):\n  b='/task/fixtures/round-%02d/'%n\n  for r,d,f in os.walk(b):\n    for x in sorted(f):\n      p=os.path.join(r,x);L=open(p).read().splitlines();print('##',p[len(b):],len(L))\n      for i,l in enumerate(L,1):\n        if x.endswith('.md') and l.strip() or any(k.lower() in l.lower() for k in keys):print(i,l[:150])\n''')
+print('ok')

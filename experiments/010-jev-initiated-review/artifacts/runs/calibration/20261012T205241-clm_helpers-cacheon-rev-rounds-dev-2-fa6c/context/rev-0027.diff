@@ -1,0 +1,46 @@
+--- rev-26
++++ rev-27
+@@ -4,42 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "R1: changes.md:3 CHG-107 APPLIED retry budget idempotent GETs=1. Slow query WARNs = noise. DNS_RESOLUTION host=rates.internal SERVFAIL round-01/logs/inventory-svc.log:7,20,50-90.\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspicious BAD_CONFIG; no search-api errors yet). changes.md:4 CHG-121 auth-svc no config. checkout-api.log:8-59 dns errs; inventory-svc.log:8-74 dns errs.\nR3: board.md:3 Thread B auth-svc suspected DB_POOL_EXHAUSTED ongoing, BUT logs show CERT_EXPIRED peer=sso.example.net auth-svc.log:6,9,15,21 (10 errs). changes.md:3 CHG-126 PROPOSED (ignore). DNS errs continue checkout-api.log:33-45, inventory-svc.log:3-28. search/shipping clean.\nR4: board empty, no changes.md. CERT_EXPIRED sso.example.net now ALSO shipping-svc round-04/logs/shipping-svc.log:3-20,27-44,58-66; auth-svc.log:6-16,39-59,63-77. DNS continues checkout-api.log:1-21,38-71; inventory-svc.log:32-52,56-75. search clean.\nR5: board.md:3 Thread A mitigated; board.md:4 Thread B +shipping-svc; board.md:5 OPEN VENDOR_TICKET; board.md:6 OPEN ALERT_TUNING. changes.md:3 CHG-143 APPLIED mitigation thread A inventory-svc. checkout/inventory/search 0 errs. CERT errs auth-svc.log:2-64, shipping-svc.log:9-65.\nR6: board.md:3 OPEN RUNBOOK_UPDATE. changes.md:3 CHG-144 APPLIED log sampling (noise). checkout/inventory/search 0 errs. CERT errs auth-svc.log:4-79 (10), shipping-svc.log:1-64 (6)."
+-  },
+-  {
+-   "id": "s18.act",
+-   "role": "assistant",
+-   "body": "[step 18] execute\nthought: Compress R6 into notes.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nn=c['entries'][0]['body']+'\\nR6: board.md:3 OPEN RUNBOOK_UPDATE. changes.md:3 CHG-144 APPLIED log sampling (noise). checkout/inventory/search 0 errs. CERT errs auth-svc.log:4-79 (10), shipping-svc.log:1-64 (6).'\nc['entries']=[{'id':'notes','role':'note','body':n}]\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s18.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s"
+-  },
+-  {
+-   "id": "s18.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 18: revision 22 -> 23; entries 8 -> 1; body chars 4487 -> 1466; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs, s17.act, s17.obs]; added []; rewritten [notes]"
+-  },
+-  {
+-   "id": "s19.act",
+-   "role": "assistant",
+-   "body": "[step 19] advance\nthought: "
+-  },
+-  {
+-   "id": "s19.obs",
+-   "role": "observation",
+-   "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/logs/auth-svc.log (66 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (59 lines)\n  round-07/logs/search-api.log (69 lines)\n  round-07/logs/shipping-svc.log (67 lines)"
+-  },
+-  {
+-   "id": "s20.act",
+-   "role": "assistant",
+-   "body": "[step 20] execute\nthought: Inspect round 7 board and error lines.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-07/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n    L=open(f).read().splitlines()\n    e=[(i+1,l) for i,l in enumerate(L) if re.search(r'ERROR|error|FATAL|level=err',l)]\n    print(f.split('/')[-1],len(e))\n    for i,l in e[:3]: print(' ',i,l[:200])\n    if e: print('  lines',[i for i,_ in e])"
+-  },
+-  {
+-   "id": "s20.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 07\n\n- Thread B root cause revised: an expired TLS certificate on a dependency (CERT_EXPIRED); this supersedes the earlier suspicion of DB_POOL_EXHAUSTED.\n- Thread D opened: an upstream provider rejecting requests with 429 alerts (UPSTREAM_RATE_LIMIT) on search-api. Status: ongoing.\n\nauth-svc.log 10\n  1 {\"ts\":\"2026-09-14T14:00:33Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n  16 {\"ts\":\"2026-09-14T14:13:22Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n  24 {\"ts\":\"2026-09-14T14:19:46Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n  lines [1, 16, 24, 26, 32, 36, 38, 49, 53, 64]\ncheckout-api.log 0\ninventory-svc.log 0\nsearch-api.log 8\n  4 {\"ts\":\"2026-09-14T14:04:44Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":16}\n  5 {\"ts\":\"2026-09-14T14:04:48Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":51}\n  20 {\"ts\":\"2026-09-14T14:19:20Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":6}\n  lines [4, 5, 20, 22, 25, 47, 64, 66]\nshipping-svc.log 12\n  10 {\"ts\":\"2026-09-14T14:07:47Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n  11 {\"ts\":\"2026-09-14T14:07:55Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n  23 {\"ts\":\"2026-09-14T14:19:36Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n  lines [10, 11, 23, 26, 35, 39, 43, 45, 46, 49, 59, 66]\n"
++   "body": "R1: changes.md:3 CHG-107 APPLIED retry budget idempotent GETs=1. Slow query WARNs = noise. DNS_RESOLUTION host=rates.internal SERVFAIL round-01/logs/inventory-svc.log:7,20,50-90.\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspicious BAD_CONFIG; no search-api errors yet). changes.md:4 CHG-121 auth-svc no config. checkout-api.log:8-59 dns errs; inventory-svc.log:8-74 dns errs.\nR3: board.md:3 Thread B auth-svc suspected DB_POOL_EXHAUSTED ongoing, BUT logs show CERT_EXPIRED peer=sso.example.net auth-svc.log:6,9,15,21 (10 errs). changes.md:3 CHG-126 PROPOSED (ignore). DNS errs continue checkout-api.log:33-45, inventory-svc.log:3-28. search/shipping clean.\nR4: board empty, no changes.md. CERT_EXPIRED sso.example.net now ALSO shipping-svc round-04/logs/shipping-svc.log:3-20,27-44,58-66; auth-svc.log:6-16,39-59,63-77. DNS continues checkout-api.log:1-21,38-71; inventory-svc.log:32-52,56-75. search clean.\nR5: board.md:3 Thread A mitigated; board.md:4 Thread B +shipping-svc; board.md:5 OPEN VENDOR_TICKET; board.md:6 OPEN ALERT_TUNING. changes.md:3 CHG-143 APPLIED mitigation thread A inventory-svc. checkout/inventory/search 0 errs. CERT errs auth-svc.log:2-64, shipping-svc.log:9-65.\nR6: board.md:3 OPEN RUNBOOK_UPDATE. changes.md:3 CHG-144 APPLIED log sampling (noise). checkout/inventory/search 0 errs. CERT errs auth-svc.log:4-79 (10), shipping-svc.log:1-64 (6).\nR7: board.md:3 Thread B cause revised CERT_EXPIRED (supersedes DB_POOL). board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing; search-api.log:4-66 429 upstream=tax-provider (8 errs). CERT errs auth-svc.log:1-64, shipping-svc.log:10-66. checkout/inventory 0 errs. Note CHG-120 search-api max_inflight=-1 may relate."
+   }
+  ]
+ }

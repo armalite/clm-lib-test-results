@@ -1,0 +1,24 @@
+--- rev-29
++++ rev-30
+@@ -35,21 +35,6 @@
+    "id": "n7",
+    "role": "note",
+    "body": "R7: board.md:3 Thread A (DISK search+shipping) RESOLVED; :4 Thread B cause revised to CERT_EXPIRED (auth-svc); :5 OPEN ALERT_TUNING."
+-  },
+-  {
+-   "id": "s18.act",
+-   "role": "assistant",
+-   "body": "[step 18] execute\nthought: Record R7 board updates, scan R7 logs for errors, compact context.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n  L=open(f).read().splitlines()\n  hits=[i+1 for i,l in enumerate(L) if re.search(r'ERROR|WARN|exhaust|expired|disk|pool',l,re.I)]\n  print(f.split('/')[-1],len(hits),hits[:3],hits[-1:] if hits else '')\n  if hits: print('  ',L[hits[0]-1][:200])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[x for x in c['entries'] if x['id'].startswith('n')]\nc['entries'].append({'id':'n7','role':'note','body':'R7: board.md:3 Thread A (DISK search+shipping) RESOLVED; :4 Thread B cause revised to CERT_EXPIRED (auth-svc); :5 OPEN ALERT_TUNING.'})\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s18.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nauth-svc.log 24 [7, 12, 13] [85]\n   {\"ts\":\"2026-09-14T14:03:56Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":278,\"table\":\"orders\"}\ncheckout-api.log 17 [2, 6, 8] [66]\n   {\"ts\":\"2026-09-14T14:02:25Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"db pool exhausted\",\"wait_ms\":1032,\"in_use\":\"16/16\"}\nledger-svc.log 9 [2, 6, 14] [53]\n   {\"ts\":\"2026-09-14T14:01:50Z\",\"level\":\"WARN\",\"svc\":\"ledger-svc\",\"msg\":\"slow query\",\"ms\":261,\"table\":\"items\"}\nsearch-api.log 17 [3, 6, 13] [65]\n   {\"ts\":\"2026-09-14T14:00:42Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":241,\"table\":\"items\"}\nshipping-svc.log 12 [4, 5, 16] [69]\n   {\"ts\":\"2026-09-14T14:02:52Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"slow query\",\"ms\":392,\"table\":\"events\"}\n"
+-  },
+-  {
+-   "id": "s18.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 18: revision 27 -> 28; entries 11 -> 7; body chars 3625 -> 1707; removed [s16.act, s16.obs, s16.rcpt, s17.act, s17.obs]; added [n7]; rewritten []"
+   }
+  ]
+ }

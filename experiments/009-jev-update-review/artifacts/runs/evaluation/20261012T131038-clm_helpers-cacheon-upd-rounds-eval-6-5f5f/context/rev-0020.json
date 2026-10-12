@@ -1,0 +1,59 @@
+{
+ "number": 20,
+ "parent": 19,
+ "source": "runtime",
+ "step": 13,
+ "sha256": "7d29c63cfcf5166db2199016ea9f9d20ff29d164be097db6bc9cedc734d95517",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11,17,19,32,42,62. Slow query WARNs = noise."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board round-02/board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; :4 follow-up OPEN CAPACITY_REVIEW. changes round-02/changes.md:4 CHG-120 APPLIED pricing-svc feature.batch_size=0 (possible BAD_CONFIG_ROLLOUT); :5 CHG-121 payments no config. R2 logs: inventory-svc 429 fx-rates round-02/logs/inventory-svc.log:18,38,86; ledger-svc.log:6,71 429. No pricing-svc errors in R2."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board round-03/board.md:3 Thread B payments-svc CACHE_STAMPEDE ongoing (suspected). changes round-03/changes.md:3 CHG-124 APPLIED retry budget GETs=1. R3 logs: 429 fx-rates continues inventory-svc.log:13,74 ledger-svc.log:7,68; no payments-svc/pricing errors in R3 (stampede unconfirmed). Next: advance to R4."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board round-04/board.md:3 Thread A mitigated; :4 follow-up OPEN RUNBOOK_UPDATE. changes round-04/changes.md:3 CHG-128 retry GETs=1; :4 CHG-136 APPLIED mitigation thread A ledger-svc."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board round-05/board.md:3 follow-up OPEN VENDOR_TICKET."
+  },
+  {
+   "id": "s12.act",
+   "role": "assistant",
+   "body": "[step 12] execute\nthought: Record R5 and scan logs.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*.log')):\n    for i,l in enumerate(open(f),1):\n        if re.search(r'ERROR|429|FATAL|stampede|batch_size|miss',l): print(f.split('/')[-1],i,l.strip()[:140])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4')]\nc['entries'].append({'id':'n5','role':'note','body':'R5: board round-05/board.md:3 follow-up OPEN VENDOR_TICKET.'})\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s12.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s"
+  },
+  {
+   "id": "s12.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 12: revision 17 -> 18; entries 9 -> 5; body chars 2610 -> 1068; removed [s10.act, s10.obs, s10.rcpt, s11.act, s11.obs]; added [n5]; rewritten []"
+  },
+  {
+   "id": "s13.act",
+   "role": "assistant",
+   "body": "[step 13] advance\nthought: "
+  },
+  {
+   "id": "s13.obs",
+   "role": "observation",
+   "body": "Stage 6 of 10 released.\nRound 6 of 10 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (3 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/checkout-api.log (57 lines)\n  round-06/logs/inventory-svc.log (76 lines)\n  round-06/logs/ledger-svc.log (70 lines)\n  round-06/logs/payments-svc.log (88 lines)\n  round-06/logs/pricing-svc.log (59 lines)\n\nUPDATE (round-files/1; context revision 19 was current at this release). Incident-board and change-log lines released this round, verbatim:\nround-06/board.md:3: - Thread D opened: process memory growing until restarts alerts (MEMORY_LEAK) on ledger-svc. Status: ongoing.\nround-06/changes.md:3: - CHG-147 PROPOSED: move batch jobs to off-peak window (not applied)\nConsider whether this update affects your working context."
+  }
+ ]
+}

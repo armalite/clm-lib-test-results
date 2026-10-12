@@ -1,0 +1,4 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. r1 changes.md:3 CHG-109 APPLIED TLS ticket rotation hourly; r1 changes.md:4 CHG-113 APPLIED notify-worker build 8.20.0 sets db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT); r1 changes.md:5 CHG-114 inventory-svc 8.20.0 no config. Logs r1: only slow query WARNs (noise). R2: board empty; changes.md:3 CHG-114 PROPOSED HPA search tier (irrelevant). R2 logs: pricing-svc heap usage high WARNs rss_mb 2200-3660, gc_pause rising (round-02/logs/pricing-svc.log:6,7,55,66,83) - watch MEMORY_LEAK, no restarts yet. Next: advance to round 3.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))
+print('ok')

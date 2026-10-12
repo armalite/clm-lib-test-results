@@ -1,0 +1,26 @@
+--- rev-17
++++ rev-18
+@@ -4,22 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: board empty. round-01/changes.md: CHG-109 APPLIED TLS ticket rotation hourly; CHG-113 APPLIED notify-worker 8.20.0 sets db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT); CHG-114 APPLIED inventory-svc 8.20.0 no config. Logs r1: slow query WARN noise. R2: board empty; changes.md:3 CHG-114 PROPOSED raise HPA (not applied). R2 pricing-svc.log heap high WARN lines 6-83.\nR3: board.md:3 Thread A MEMORY_LEAK pricing-svc + auth-svc ongoing. board.md:4 Thread B inventory-svc suspected CERT_EXPIRED ongoing. changes.md:3 CHG-124 APPLIED retry budget GETs=1.\nR4: board.md:3 Follow-up OPEN ALERT_TUNING.\nR5: changes.md:3 CHG-135 APPLIED health log sampling 1% (noise only)."
+-  },
+-  {
+-   "id": "s11.act",
+-   "role": "assistant",
+-   "body": "[step 11] execute\nthought: Record R5 update, compact context, scan R5 logs.\ncode:\nimport json,glob\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*.log')):\n  L=open(f).read().splitlines()\n  hits=[(i+1,l) for i,l in enumerate(L) if 'ERROR' in l or 'restart' in l.lower() or 'cert' in l.lower() or 'OOM' in l or 'pool' in l.lower()]\n  print(f.split('/')[-1],len(hits))\n  for h in hits[:3]: print(' ',h[0],h[1][:140])\nprint(open('/task/fixtures/round-05/board.md').read())\nc=json.load(open('/task/workspace/context.json'))\nb=[e for e in c['entries'] if e['id']=='n1'][0]['body']\nb+='\\nR5: changes.md:3 CHG-135 APPLIED health log sampling 1% (noise only).'\nc['entries']=[{'id':'n1','role':'note','body':b}]\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s11.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.7s\n--- stdout ---\nauth-svc.log 0\ninventory-svc.log 7\n  6 2026-09-14T12:04:37Z WARN  inventory-svc db pool exhausted wait_ms=1337 in_use=12/12\n  17 2026-09-14T12:17:48Z WARN  inventory-svc db pool exhausted wait_ms=2515 in_use=10/10\n  37 2026-09-14T12:31:32Z WARN  inventory-svc db pool exhausted wait_ms=2299 in_use=10/10\nnotify-worker.log 0\npayments-svc.log 0\npricing-svc.log 0\n# Incident board: updates in round 05\n\n\n"
+-  },
+-  {
+-   "id": "s11.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 11: revision 15 -> 16; entries 6 -> 1; body chars 2261 -> 664; removed [s9.act, s9.obs, s9.rcpt, s10.act, s10.obs]; added []; rewritten [n1]"
++   "body": "R1: board empty. round-01/changes.md: CHG-109 APPLIED TLS ticket rotation hourly; CHG-113 APPLIED notify-worker 8.20.0 sets db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT); CHG-114 APPLIED inventory-svc 8.20.0 no config. Logs r1: slow query WARN noise. R2: board empty; changes.md:3 CHG-114 PROPOSED raise HPA (not applied). R2 pricing-svc.log heap high WARN lines 6-83.\nR3: board.md:3 Thread A MEMORY_LEAK pricing-svc + auth-svc ongoing. board.md:4 Thread B inventory-svc suspected CERT_EXPIRED ongoing. changes.md:3 CHG-124 APPLIED retry budget GETs=1.\nR4: board.md:3 Follow-up OPEN ALERT_TUNING.\nR5: changes.md:3 CHG-135 APPLIED health log sampling 1% (noise only). R5 logs: inventory-svc.log:6,17,37 WARN db pool exhausted (7 hits) -> DB_POOL_EXHAUSTED inventory? (board says CERT). Other svcs 0 errors."
+   }
+  ]
+ }

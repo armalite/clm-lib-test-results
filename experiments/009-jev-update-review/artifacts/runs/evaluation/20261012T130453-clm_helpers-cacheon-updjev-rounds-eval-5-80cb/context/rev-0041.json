@@ -1,0 +1,64 @@
+{
+ "number": 41,
+ "parent": 40,
+ "source": "runtime",
+ "step": 25,
+ "sha256": "ce1ef7631cab52ac21b007d6f1a73575ceeff75f23c57905e2e9454e3fd7d741",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: changes.md:3 CHG-110 TLS ticket hourly; :4 CHG-113 checkout-api build 7.35.8 sets db.pool_max=-4 (BAD_CONFIG suspect); :5 CHG-114 auth-svc no cfg. Logs: slow-query WARNs noise. search-api disk used_pct 91-97 (round-01/logs/search-api.log:4,12,38,48)."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 Thread A DISK_PRESSURE search-api+shipping-svc ongoing; board.md:4 follow-up OPEN CUSTOMER_COMMS; changes.md:3 CHG-117 dashboards (noise). R2 logs: search-api disk WARN used_pct 91-98 (round-02/logs/search-api.log:4-63), shipping-svc 91-98 (round-02/logs/shipping-svc.log:4-71). No other errors."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread B claims auth-svc MEMORY_LEAK, but logs show TLS certificate_expired peer=bank-api (round-03/logs/auth-svc.log:1,16,21,25,35,62) -> real cause CERT_EXPIRED; no mem evidence. checkout/ledger clean R3."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board.md:3 Thread A mitigated; :4 OPEN DATA_BACKFILL; :5 OPEN VENDOR_TICKET; changes.md:4 CHG-136 APPLIED mitigation search-api; :3 CHG-131 PROPOSED (ignore). R4 logs: auth-svc cert_expired continues (round-04/logs/auth-svc.log:3-55); others clean."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board.md:3 OPEN CAPACITY_REVIEW. R5 logs: auth-svc cert_expired continues (round-05/logs/auth-svc.log:1-75); search/shipping disk clean now; others clean."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board.md:3 Thread D DB_POOL_EXHAUSTED checkout-api ongoing (likely really BAD_CONFIG_ROLLOUT via CHG-113 pool_max=-4, round-01/changes.md:4); changes.md:3 CHG-147 dashboards noise. R6 logs: checkout-api WARN db pool exhausted (round-06/logs/checkout-api.log:8-76, in_use varies 10-20); auth-svc cert_expired continues (round-06/logs/auth-svc.log:2-81). R6 done; next: advance."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board.md:3 Thread A (DISK search+shipping) RESOLVED; :4 Thread B cause revised to CERT_EXPIRED (auth-svc); :5 OPEN ALERT_TUNING. R7 logs: auth-svc cert_expired continues (round-07/logs/auth-svc.log:12-79); checkout-api db pool exhausted in_use 16/16 (round-07/logs/checkout-api.log:2-66); others clean. R7 done; next: advance."
+  },
+  {
+   "id": "n8",
+   "role": "note",
+   "body": "R8: board.md:3 claims Thread D false alarm (synthetic monitor). R8 logs: checkout-api clean (no pool errors) - maybe it stopped; R6/R7 logs did show real exhaustion + CHG-113 pool_max=-4; keep watching. auth-svc cert_expired continues (round-08/logs/auth-svc.log:6-85); others clean. changes.md:3 CHG-156 PROPOSED (ignore). R8 done; next: advance."
+  },
+  {
+   "id": "s25.act",
+   "role": "assistant",
+   "body": "[step 25] execute\nthought: Scan R9 logs for errors/warns, compact context.\ncode:\nimport json,glob,re\nfor f in sorted(glob.glob('/task/fixtures/round-09/logs/*.log')):\n  hits=[(i,l.strip()) for i,l in enumerate(open(f),1) if re.search(r'WARN|ERROR|expired|exhaust|disk',l) and 'slow' not in l]\n  print(f.split('/')[-1],len(hits),[h[0] for h in hits][:40])\n  for h in hits[:2]: print(' ',h[0],h[1][:200])\nprint(open('/task/fixtures/round-09/board.md').read())\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[x for x in c['entries'] if x['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s25.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nauth-svc.log 11 [6, 18, 22, 25, 53, 54, 56, 59, 61, 65, 71]\n  6 {\"ts\":\"2026-09-14T16:05:32Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\n  18 {\"ts\":\"2026-09-14T16:12:34Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\ncheckout-api.log 0 []\nledger-svc.log 0 []\nsearch-api.log 0 []\nshipping-svc.log 0 []\n# Incident board: updates in round 09\n\n\n"
+  },
+  {
+   "id": "s25.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 25: revision 39 -> 40; entries 13 -> 8; body chars 3611 -> 2252; removed [s23.act, s23.obs, s23.rcpt, s24.act, s24.obs]; added []; rewritten []"
+  }
+ ]
+}

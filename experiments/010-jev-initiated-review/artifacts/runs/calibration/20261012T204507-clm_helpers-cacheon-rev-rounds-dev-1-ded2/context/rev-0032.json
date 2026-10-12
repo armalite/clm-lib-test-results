@@ -1,0 +1,64 @@
+{
+ "number": 32,
+ "parent": 31,
+ "source": "runtime",
+ "step": 21,
+ "sha256": "b77f879c267f2370622a5427ff15074602b200af39bbaa6ec4f27cb360a6adbb",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty; CHG-108 PROPOSED (HPA search, not applied). Logs only background slow query WARNs."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board: follow-ups OPEN ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET (board.md:3-5). changes: CHG-120 APPLIED notify-worker build 8.56.0 sets http.max_inflight=0 (round-02/changes.md:4) -> suspect BAD_CONFIG_ROLLOUT, but no notify errors yet; CHG-121 payments no config. auth-svc db pool exhausted WARNs (round-02/logs/auth-svc.log:1,3,15,22,23,25,44,65,69) -> candidate DB_POOL_EXHAUSTED auth-svc, no board thread yet. Next: advance to R3."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board Thread A DB_POOL_EXHAUSTED auth-svc, impact search-api, ongoing (round-03/board.md:3). CHG-125 dashboards irrelevant. auth pool WARNs round-03/logs/auth-svc.log:7,12,13; search-api pool WARN round-03/logs/search-api.log:1,14. No notify errors yet. Next: advance to R4."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board Thread B payments-svc CACHE_STAMPEDE ongoing (round-04/board.md:3) BUT logs show 429 upstream=fx-rates errors payments-svc (round-04/logs/payments-svc.log:1,3,7,25,31,45,48,51; 12x) and checkout-api (round-04/logs/checkout-api.log:9,19,50,53,59,62) -> real cause likely UPSTREAM_RATE_LIMIT. CHG-133 TLS ticket rotation irrelevant. Thread A continues: auth pool WARNs round-04/logs/auth-svc.log:7,9,19,26; search-api round-04/logs/search-api.log:4,11,13,14. Still no notify errors. Next: advance to R5."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: Thread A mitigated after CHG-143 APPLIED auth-svc mitigation (round-05/board.md:3; round-05/changes.md:4). Thread B now also checkout-api, cause CACHE_STAMPEDE per board (round-05/board.md:4) but logs still 429 fx-rates: checkout round-05/logs/checkout-api.log:21,23,30; payments round-05/logs/payments-svc.log:13. Follow-up OPEN CAPACITY_REVIEW (round-05/board.md:5). CHG-138 TLS irrelevant. Next: advance R6."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board: CLOSED ALERT_TUNING; OPEN CUSTOMER_COMMS (round-06/board.md:3-4). CHG-147 retry budget irrelevant. payments 429 fx-rates round-06/logs/payments-svc.log:3,10,11. No notify errors. Next: advance R7."
+  },
+  {
+   "id": "s20.act",
+   "role": "assistant",
+   "body": "[step 20] execute\nthought: Record R6 note, drop step entries, check 429 lines in checkout R6.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4','n5')]\nc['entries'].append({'id':'n6','role':'note','body':'R6: board: CLOSED ALERT_TUNING; OPEN CUSTOMER_COMMS (round-06/board.md:3-4). CHG-147 retry budget irrelevant. payments 429 fx-rates round-06/logs/payments-svc.log:3,10,11. No notify errors. Next: advance R7.'})\njson.dump(c,open('/task/workspace/context.json','w'))\nb='/task/fixtures/round-06/logs/'\nfor n in ['checkout-api','auth-svc','search-api','notify-worker']:\n  L=open(b+n+'.log').readlines()\n  print(n,[i for i,l in enumerate(L,1) if re.search(r'429|ERROR|pool|inflight',l)][:10])"
+  },
+  {
+   "id": "s20.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.0s\n--- stdout ---\ncheckout-api [19, 30, 56, 73, 76, 77]\nauth-svc []\nsearch-api []\nnotify-worker []\n"
+  },
+  {
+   "id": "s20.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 20: revision 29 -> 30; entries 8 -> 6; body chars 4504 -> 1951; removed [s19.act, s19.obs, s19.rcpt]; added [n6]; rewritten []"
+  },
+  {
+   "id": "s21.act",
+   "role": "assistant",
+   "body": "[step 21] advance\nthought: "
+  },
+  {
+   "id": "s21.obs",
+   "role": "observation",
+   "body": "Stage 7 of 10 released.\nRound 7 of 10 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (2 lines)\n  round-07/logs/auth-svc.log (79 lines)\n  round-07/logs/checkout-api.log (70 lines)\n  round-07/logs/notify-worker.log (63 lines)\n  round-07/logs/payments-svc.log (83 lines)\n  round-07/logs/search-api.log (65 lines)"
+  }
+ ]
+}

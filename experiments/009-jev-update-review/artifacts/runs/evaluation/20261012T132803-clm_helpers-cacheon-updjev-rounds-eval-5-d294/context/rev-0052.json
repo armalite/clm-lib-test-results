@@ -1,0 +1,29 @@
+{
+ "number": 52,
+ "parent": 51,
+ "source": "runtime",
+ "step": 32,
+ "sha256": "d97ceb74235b4469edbf3f6556dd09deed4f31d0de98cf306bed2f131094dba2",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: changes.md:3 CHG-110 APPLIED TLS ticket rotation; :4 CHG-113 APPLIED checkout-api db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT, unconfirmed); :5 CHG-114 auth-svc no config. slow-query WARNs = noise. search-api disk 91-97% (round-01/logs/search-api.log:4,12,38,48).\nR2: board.md:3 Thread A DISK_PRESSURE search-api + shipping-svc ongoing; board.md:4 follow-up OPEN CUSTOMER_COMMS. changes.md:3 CHG-117 dashboards (irrelevant).\nR3: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing (suspected; verify vs CHG-114).\nR3 logs: auth-svc ERRORs are tls certificate_expired peer=bank-api (round-03/logs/auth-svc.log:1,16,21,62) -> likely CERT_EXPIRED not MEMORY_LEAK (CHG-110 TLS rotation suspect); no mem logs. disk: search-api 91-98% (round-03/logs/search-api.log:16,77), shipping-svc 91-98% (round-03/logs/shipping-svc.log:15,49). No checkout-api errors yet.\nR4: board.md:3 Thread A mitigated (after changes.md:4 CHG-136 APPLIED search-api mitigation); board.md:4 OPEN DATA_BACKFILL; :5 OPEN VENDOR_TICKET. CHG-131 PROPOSED (ignore).\nR4 logs: auth-svc cert_expired bank-api continues (round-04/logs/auth-svc.log:3,55); others clean.\nR5: board.md:3 OPEN CAPACITY_REVIEW.\nR5 logs: auth-svc cert_expired bank-api continues (round-05/logs/auth-svc.log:1,75); others clean.\nR6: board.md:3 Thread D DB_POOL_EXHAUSTED checkout-api ongoing (likely from CHG-113 pool_max=-4 -> BAD_CONFIG_ROLLOUT?). changes.md:3 CHG-147 dashboards irrelevant.\nR6 logs: checkout-api db pool exhausted WARNs in_use 16/16,12/12,10/10 (round-06/logs/checkout-api.log:8,25,27,34) pool shrinking; auth-svc cert_expired continues (round-06/logs/auth-svc.log:2,31).\nR7: board.md:3 Thread A RESOLVED; :4 Thread B revised CERT_EXPIRED auth-svc (status ongoing); :5 OPEN ALERT_TUNING.\nR7 logs: checkout-api pool exhausted continues (round-07/logs/checkout-api.log:2,66); auth-svc tls fail bank-api (round-07/logs/auth-svc.log:12,79).\nR8: board.md:3 Thread D closed as false alarm (synthetic monitor), BUT R6-7 logs showed real pool exhaustion; verify with logs. changes.md:3 CHG-156 PROPOSED (ignore).\nR8 logs: checkout-api no WARN/ERROR (format same; only slow-query noise); auth-svc cert_expired continues (round-08/logs/auth-svc.log:6,32).\nR9: no board/changes lines.\nR9 logs: auth-svc cert_expired continues (round-09/logs/auth-svc.log:6,22); others clean.\nR10: board.md:3 Thread C checkout-api pod request failures, cause unknown, ongoing. changes.md:3 CHG-173 PROPOSED ignore.\nR10 logs: checkout-api ERROR config validation failed db.pool_max=-4 build 7.35.8 (round-10/logs/checkout-api.log:9,11,16,18) -> Thread C = BAD_CONFIG_ROLLOUT from CHG-113 (round-01/changes.md:4). ledger-svc also tls cert_expired bank-api (round-10/logs/ledger-svc.log:7,15,23) -> add ledger-svc to CERT_EXPIRED. auth-svc cert continues (round-10/logs/auth-svc.log:1,4). search/shipping clean.\nR11: board.md:3 Thread B adds ledger-svc; :4 Thread B MITIGATED; :5 Thread C ongoing; :6 CLOSED CUSTOMER_COMMS. CHG-179 PROPOSED ignore.\nOpen followups: DATA_BACKFILL,VENDOR_TICKET,CAPACITY_REVIEW,ALERT_TUNING.\nR11 logs: auth-svc tls fail bank-api (round-11/logs/auth-svc.log:11,21); ledger-svc (round-11/logs/ledger-svc.log:7,32); checkout-api config validation failed continues (round-11/logs/checkout-api.log:3,17,64); search/shipping clean.\nR12: changes.md:3 CHG-185 dashboards irrelevant; board.md 2 lines (header)."
+  },
+  {
+   "id": "s32.act",
+   "role": "assistant",
+   "body": "[step 32] execute\nthought: Compact context and check R12 logs/board.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']=c['entries'][0]['body'].replace('\\nNEXT: advance R12.','\\nR12: changes.md:3 CHG-185 dashboards irrelevant; board.md 2 lines (header).')\njson.dump(c,open('/task/workspace/context.json','w'))\nprint(open('/task/fixtures/round-12/board.md').read())\nfor s in ['auth-svc','checkout-api','ledger-svc','search-api','shipping-svc']:\n  L=open(f'/task/fixtures/round-12/logs/{s}.log').read().splitlines()\n  h=[(i+1,l[:110]) for i,l in enumerate(L) if re.search('ERROR|WARN|exhaust|disk|cert|config',l) and 'slow' not in l]\n  print(s,len(h),h[:3])"
+  },
+  {
+   "id": "s32.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 12\n\n\nauth-svc 2 [(8, '{\"ts\":\"2026-09-14T19:08:24Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"'), (13, '{\"ts\":\"2026-09-14T19:13:03Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"')]\ncheckout-api 13 [(1, '{\"ts\":\"2026-09-14T19:01:33Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"db.p'), (2, '{\"ts\":\"2026-09-14T19:02:06Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"db.p'), (14, '{\"ts\":\"2026-09-14T19:13:02Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"db.p')]\nledger-svc 2 [(10, '{\"ts\":\"2026-09-14T19:16:34Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\"'), (19, '{\"ts\":\"2026-09-14T19:24:23Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\"')]\nsearch-api 0 []\nshipping-svc 0 []\n"
+  },
+  {
+   "id": "s32.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 32: revision 50 -> 51; entries 6 -> 1; body chars 5193 -> 3355; removed [s30.act, s30.obs, s30.rcpt, s31.act, s31.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

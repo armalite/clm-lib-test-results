@@ -1,0 +1,4 @@
+import json,subprocess
+n='R1: CHG-113 APPLIED checkout-api 7.35.8 sets db.pool_max=-4 (round-01/changes.md:4, suspect BAD_CONFIG_ROLLOUT, no checkout errors in R1); CHG-110,114 benign. Slow query WARNs = noise. search-api /var/data 91-97% (round-01/logs/search-api.log:4,12,38,48).\nR2: Thread A DISK_PRESSURE search-api + shipping-svc, ongoing (round-02/board.md:3). Follow-up OPEN CUSTOMER_COMMS (round-02/board.md:4). CHG-117 benign.'
+json.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))
+print(subprocess.run('grep -n -iE "error|pool|disk" /task/fixtures/round-02/logs/*.log | grep -v "slow query" | head -30',shell=True,capture_output=True,text=True).stdout)

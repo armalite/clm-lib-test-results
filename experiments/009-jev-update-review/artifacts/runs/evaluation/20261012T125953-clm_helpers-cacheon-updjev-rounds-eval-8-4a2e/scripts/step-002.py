@@ -1,0 +1,6 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. changes.md:3 CHG-109 APPLIED TLS ticket rotation hourly; changes.md:4 CHG-113 APPLIED notify-worker build 8.20.0 sets db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT); changes.md:5 CHG-114 inventory-svc 8.20.0 no config. Logs r1: only slow query WARNs (noise) in auth,inventory,notify-worker,payments,pricing.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))
+L=open('/task/fixtures/round-01/logs/notify-worker.log').read().splitlines()
+for i,l in enumerate(L,1):
+  if 'slow query' not in l and 'INFO' not in l:print(i,l[:150])

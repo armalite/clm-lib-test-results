@@ -1,0 +1,24 @@
+--- rev-15
++++ rev-16
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: changes.md:3 CHG-113 APPLIED ledger-svc build 7.35.5 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT, no errors yet); slow query WARNs noise. R2: board.md:3 OPEN POSTMORTEM_DRAFT; shipping 429 tax-provider logs lines 7,22,35. R3: board.md:3 Thread A UPSTREAM_RATE_LIMIT shipping-svc+search-api ongoing; board:4 OPEN DATA_BACKFILL; :5 OPEN CAPACITY_REVIEW; changes:3 CHG-124 TLS ticket rotation (watch CERT). R3 logs: search-api.log 429 tax-provider lines 2,10,23..76; shipping-svc.log 429 lines 5,13,...63; ledger no pool errors yet. R4: board:3 Thread B CACHE_STAMPEDE checkout-api ongoing; changes:3 CHG-128 log sampling (noise)."
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Check round 4 logs for checkout errors and ledger pool errors; compact context.\ncode:\nimport json,re\nb='/task/fixtures/round-04/logs/'\nfor s in ['checkout-api','ledger-svc']:\n    L=open(b+s+'.log').read().splitlines()\n    h=[i+1 for i,l in enumerate(L) if re.search('ERROR|pool|cache|miss',l,re.I)]\n    print(s,h[:30])\n    for i in h[:3]: print(i,L[i-1][:200])\nn=json.load(open('/task/workspace/context.json'))['entries'][0]['body']\nn+=' R4: board:3 Thread B CACHE_STAMPEDE checkout-api ongoing; changes:3 CHG-128 log sampling (noise).'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\ncheckout-api []\nledger-svc []\n"
++  },
++  {
++   "id": "s10.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 10: revision 14 -> 15; entries 6 -> 1; body chars 2695 -> 634; removed [s8.act, s8.obs, s8.rcpt, s9.act, s9.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

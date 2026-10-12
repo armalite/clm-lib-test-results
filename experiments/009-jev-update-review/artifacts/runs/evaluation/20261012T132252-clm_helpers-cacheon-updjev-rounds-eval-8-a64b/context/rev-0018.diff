@@ -1,0 +1,24 @@
+--- rev-17
++++ rev-18
+@@ -20,6 +20,21 @@
+    "id": "n5",
+    "role": "note",
+    "body": "R5: CHG-135 APPLIED log sampling health (round-05/changes.md:3) irrelevant."
++  },
++  {
++   "id": "s12.act",
++   "role": "assistant",
++   "body": "[step 12] execute\nthought: Scan round 5 logs for errors/warns briefly and compact context.\ncode:\nimport json,glob,re\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*.log')):\n  hits=[(i,l.strip()) for i,l in enumerate(open(f),1) if re.search(r'ERROR|WARN|error|fail|exhaust|429|OOM|memory',l)]\n  print(f.split('/')[-1],len(hits))\n  for i,l in hits[:4]: print(' ',i,l[:150])\nprint(open('/task/fixtures/round-05/board.md').read())\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n3','n4')]\nc['entries'].append({'id':'n5','role':'note','body':'R5: CHG-135 APPLIED log sampling health (round-05/changes.md:3) irrelevant.'})\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s12.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nauth-svc.log 21\n  3 2026-09-14T12:01:54Z WARN  auth-svc slow query ms=219 table=items\n  6 2026-09-14T12:03:32Z WARN  auth-svc heap usage high rss_mb=3123 gc_pause_ms=1035\n  10 2026-09-14T12:10:01Z WARN  auth-svc heap usage high rss_mb=2096 gc_pause_ms=796\n  13 2026-09-14T12:15:57Z WARN  auth-svc heap usage high rss_mb=1906 gc_pause_ms=1351\ninventory-svc.log 21\n  4 2026-09-14T12:04:18Z WARN  inventory-svc slow query ms=306 table=items\n  5 2026-09-14T12:04:28Z WARN  inventory-svc slow query ms=270 table=items\n  6 2026-09-14T12:04:37Z WARN  inventory-svc db pool exhausted wait_ms=1337 in_use=12/12\n  12 2026-09-14T12:10:33Z WARN  inventory-svc slow query ms=336 table=orders\nnotify-worker.log 9\n  5 2026-09-14T12:06:14Z WARN  notify-worker slow query ms=362 table=items\n  10 2026-09-14T12:10:21Z WARN  notify-worker slow query ms=342 table=items\n  20 2026-09-14T12:25:16Z WARN  notify-worker slow query ms=278 table=events\n  24 2026-09-14T12:27:47Z WARN  notify-worker slow query ms=439 table=events\npayments-svc.log 11\n  2 2026-09-14T12:00:41Z WARN  payments-svc slow query ms=265 table=items\n  4 2026-09-14T12:01:33Z WARN  payments-svc slow query ms=358 table=items\n  6 2026-09-14T12:03:11Z WARN  payments-svc slow query ms=315 table=items\n  12 2026-09-14T12:13:06Z WARN  payments-svc slow query ms=416 table=events\npricing-svc.log 23\n  3 2026-09-14T12:03:08Z WARN  pricing-svc heap usage high rss_mb=3023 gc_pause_ms=1130\n  4 2026-09-14T12:03:51Z WARN  pricing-svc slow query ms=411 table=orders\n  7 2026-09-14T12:08:02Z WARN  pricing-svc heap usage high rss_mb=1885 gc_pause_ms=438\n  8 2026-09-14T12:10:35Z WARN  pricing-svc slow query ms=320 table=events\n# Incident board: updates in round 05\n\n\n"
++  },
++  {
++   "id": "s12.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 12: revision 16 -> 17; entries 8 -> 4; body chars 2467 -> 792; removed [s10.act, s10.obs, s10.rcpt, s11.act, s11.obs]; added [n5]; rewritten []"
+   }
+  ]
+ }

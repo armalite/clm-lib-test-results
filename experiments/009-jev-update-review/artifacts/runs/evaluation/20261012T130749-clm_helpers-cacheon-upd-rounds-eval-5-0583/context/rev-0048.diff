@@ -1,0 +1,26 @@
+--- rev-47
++++ rev-48
+@@ -4,22 +4,7 @@
+   {
+    "id": "sum1",
+    "role": "summary",
+-   "body": "CHG-113 APPLIED checkout-api db.pool_max=-4 (round-01/changes.md:4). Thread A DISK_PRESSURE search-api+shipping-svc (round-02/board.md:3), mitigated via CHG-136 (round-04/changes.md:4, round-04/board.md:3), resolved (round-07/board.md:3). Thread B auth-svc opened MEMORY_LEAK (round-03/board.md:3) revised CERT_EXPIRED (round-07/board.md:4), ongoing; logs certificate_expired peer=bank-api through R9 (round-09/logs/auth-svc.log:6,18,22,25,53). Thread D DB_POOL checkout-api (round-06/board.md:3) closed false alarm (round-08/board.md:3); watch CHG-113. OPEN follow-ups: CUSTOMER_COMMS (round-02/board.md:4), DATA_BACKFILL, VENDOR_TICKET (round-04/board.md:4,5), CAPACITY_REVIEW (round-05/board.md:3), ALERT_TUNING (round-07/board.md:5). R9 logs checked; R9 board empty. R10: Thread C opened checkout-api request failures cause unknown, ongoing (round-10/board.md:3); CHG-173 PROPOSED only (round-10/changes.md:3)."
+-  },
+-  {
+-   "id": "s29.act",
+-   "role": "assistant",
+-   "body": "[step 29] execute\nthought: Investigate Thread C in checkout-api logs; compress context.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\ns=c['entries'][0]['body'].replace('R9 board not yet reviewed in notes. Next: advance to R10.','R9 board empty. R10: Thread C opened checkout-api request failures cause unknown, ongoing (round-10/board.md:3); CHG-173 PROPOSED only (round-10/changes.md:3).')\nc['entries']=[{'id':'sum1','role':'summary','body':s}]\njson.dump(c,open('/task/workspace/context.json','w'))\nfrom collections import Counter\nL=open('/task/fixtures/round-10/logs/checkout-api.log').read().splitlines()\nk=Counter()\nfor i,l in enumerate(L,1):\n  if re.search('ERROR|WARN|error|fail',l):\n    m=re.sub(r'[0-9:.TZ-]{8,}','',l)[:90];k[m[:60]]+=1\n    if k[m[:60]]<=2: print(i,l[:200])"
+-  },
+-  {
+-   "id": "s29.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n9 {\"ts\":\"2026-09-14T17:08:50Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"db.pool_max\",\"value\":\"-4\",\"build\":\"7.35.8\"}\n11 {\"ts\":\"2026-09-14T17:09:25Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"db.pool_max\",\"value\":\"-4\",\"build\":\"7.35.8\"}\n22 {\"ts\":\"2026-09-14T17:15:26Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"slow query\",\"ms\":303,\"table\":\"items\"}\n33 {\"ts\":\"2026-09-14T17:20:34Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"slow query\",\"ms\":304,\"table\":\"events\"}\n"
+-  },
+-  {
+-   "id": "s29.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 29: revision 45 -> 46; entries 6 -> 1; body chars 3244 -> 914; removed [s27.act, s27.obs, s27.rcpt, s28.act, s28.obs]; added []; rewritten [sum1]"
++   "body": "CHG-113 APPLIED checkout-api db.pool_max=-4 (round-01/changes.md:4). Thread A DISK_PRESSURE search-api+shipping-svc (round-02/board.md:3), mitigated via CHG-136 (round-04/changes.md:4, round-04/board.md:3), resolved (round-07/board.md:3). Thread B auth-svc opened MEMORY_LEAK (round-03/board.md:3) revised CERT_EXPIRED (round-07/board.md:4), ongoing; logs certificate_expired peer=bank-api through R9 (round-09/logs/auth-svc.log:6,18,22,25,53). Thread D DB_POOL checkout-api (round-06/board.md:3) closed false alarm (round-08/board.md:3); watch CHG-113. OPEN follow-ups: CUSTOMER_COMMS (round-02/board.md:4), DATA_BACKFILL, VENDOR_TICKET (round-04/board.md:4,5), CAPACITY_REVIEW (round-05/board.md:3), ALERT_TUNING (round-07/board.md:5). R9 logs checked; R9 board empty. R10: Thread C opened checkout-api request failures cause unknown, ongoing (round-10/board.md:3); CHG-173 PROPOSED only (round-10/changes.md:3). R10 checkout-api logs: config validation failed key=db.pool_max value=-4 (round-10/logs/checkout-api.log:9,11) => Thread C likely BAD_CONFIG_ROLLOUT via CHG-113. Next: advance to R11."
+   }
+  ]
+ }

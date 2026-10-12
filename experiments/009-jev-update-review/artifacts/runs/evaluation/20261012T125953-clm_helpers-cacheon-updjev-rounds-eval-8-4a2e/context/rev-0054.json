@@ -1,0 +1,29 @@
+{
+ "number": 54,
+ "parent": 53,
+ "source": "runtime",
+ "step": 32,
+ "sha256": "08778132a641a975dd3099f1e339f5ad6f4eca278c367ff0534110b1073a6e28",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: CHG-109 APPLIED TLS ticket rotation (r1 changes.md:3); CHG-113 APPLIED notify-worker 8.20.0 db.pool_max=-4 (r1 changes.md:4, suspect BAD_CONFIG_ROLLOUT); CHG-114 inventory no config (r1 changes.md:5). R2: pricing-svc heap WARNs rss 2200-3660 (round-02/logs/pricing-svc.log:6,7,55,66,83). R3: board.md:3 Thread A MEMORY_LEAK pricing-svc+auth-svc ongoing; board.md:4 Thread B inventory-svc suspected CERT_EXPIRED ongoing; changes.md:3 CHG-124 retry budget=1 (minor). R3 logs: inventory-svc db pool exhausted WARNs (round-03/logs/inventory-svc.log:9,12,16,29,34,46,60,66,72,82), so the evidence points to DB_POOL_EXHAUSTED rather than cert. No cert errors in r3. auth-svc shows no OOM/restart in r3 (uptime 42965 at log:59), so its inclusion in Thread A is doubtful. notify-worker shows nothing in r3. R4: board.md:3 Follow-up OPEN ALERT_TUNING. R4 logs: auth-svc heap WARNs rss 2204-3791 (round-04/logs/auth-svc.log:6,14,16,22,31,49,53,54) so auth-svc does belong in MEMORY_LEAK; pricing-svc heap WARNs continue (round-04/logs/pricing-svc.log:1,5,6,9); inventory-svc db pool exhausted (round-04/logs/inventory-svc.log:19,25,29,36,37,57,80); notify-worker and payments-svc show only slow queries. R5: changes.md:3 CHG-135 log sampling (minor). R5 logs: same pattern (auth/pricing heap WARNs, inventory pool exhausted round-05/logs/inventory-svc.log:6,17); board r5 empty. R6: board.md:3 Thread A mitigated; board.md:4 Thread D DNS_RESOLUTION notify-worker ongoing; changes.md:4 CHG-150 APPLIED mitigation pricing-svc (only pricing; auth?); CHG-147 minor. R6 logs: notify-worker dns lookup ERRORs (round-06/logs/notify-worker.log:7,34,37,44,50,56,61) supports Thread D DNS_RESOLUTION; inventory pool exhausted continues (round-06/logs/inventory-svc.log:7,9,15,19,21,26,47,62); no heap WARNs seen in r6 for auth/pricing. R7: board empty, no changes; inventory pool exhausted (round-07/logs/inventory-svc.log:1,9,19,22,25); notify-worker dns ERRORs (round-07/logs/notify-worker.log:7,18,31,34); no heap WARNs auth/pricing. R8: board.md:3 Thread A resolved; board.md:4 Thread B revised DB_POOL_EXHAUSTED (supersedes cert); board.md:5 Thread D false alarm (drop DNS). R8 logs: inventory pool exhausted (round-08/logs/inventory-svc.log:2,4,9,13); others only slow queries. R9: board.md:3 Follow-up OPEN RUNBOOK_UPDATE. R9 logs: inventory pool exhausted (round-09/logs/inventory-svc.log:11,24,36,49); payments-svc NEW db pool exhausted (round-09/logs/payments-svc.log:3,5,13,17,32,72) -> likely add payments-svc to Thread B; notify/auth/pricing clean. R10: board.md:3 Thread B adds payments-svc; board.md:4 Thread C notify-worker failures cause unknown ongoing; board.md:5 OPEN DATA_BACKFILL; board.md:6 OPEN POSTMORTEM_DRAFT; CHG-173 minor. R10 logs: notify-worker ERROR config validation failed key db.* (round-10/logs/notify-worker.log:2,6,12,15,19,21,22,26,28,37,50) -> Thread C likely BAD_CONFIG_ROLLOUT via CHG-113 (round-01/changes.md:4). R11: board.md:3 Thread B mitigated; board.md:4 Thread C pods restarting; changes.md:3 CHG-182 minor."
+  },
+  {
+   "id": "s32.act",
+   "role": "assistant",
+   "body": "[step 32] execute\nthought: Check r11 logs for non-slow-query lines, prune context.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\njson.dump(c,open('/task/workspace/context.json','w'))\nfor s in ['notify-worker','inventory-svc','payments-svc']:\n    L=open(f'/task/fixtures/round-11/logs/{s}.log').read().splitlines()\n    h=[i+1 for i,l in enumerate(L) if re.search('ERROR|exhaust|config|restart|OOM',l) and 'slow query' not in l]\n    print(s,h[:15])\n    if h: print(L[h[0]-1][:200])"
+  },
+  {
+   "id": "s32.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nnotify-worker [11, 17, 20, 27, 35, 42, 55, 69, 74, 82]\n{\"ts\":\"2026-09-14T18:06:27Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"db.pool_max\",\"value\":\"-4\",\"build\":\"8.20.0\"}\ninventory-svc [8, 58]\n{\"ts\":\"2026-09-14T18:06:50Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":1054,\"in_use\":\"20/20\"}\npayments-svc [23, 60]\n{\"ts\":\"2026-09-14T18:17:50Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2457,\"in_use\":\"20/20\"}\n"
+  },
+  {
+   "id": "s32.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 32: revision 52 -> 53; entries 4 -> 1; body chars 4854 -> 3040; removed [s31.act, s31.obs, s31.rcpt]; added []; rewritten []"
+  }
+ ]
+}

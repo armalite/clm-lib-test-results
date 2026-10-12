@@ -1,0 +1,24 @@
+--- rev-38
++++ rev-39
+@@ -30,6 +30,21 @@
+    "id": "n8",
+    "role": "note",
+    "body": "R8 board: A MEMORY_LEAK resolved (round-08/board.md:3); B revised DB_POOL_EXHAUSTED inventory-svc (round-08/board.md:4); D false alarm closed (round-08/board.md:5). CHG-113 notify-worker pool_max=-4 still unseen in errors."
++  },
++  {
++   "id": "s23.act",
++   "role": "assistant",
++   "body": "[step 23] execute\nthought: Prune s22 entries and summarize spill concisely.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if not e['id'].startswith('s22')]\njson.dump(c,open('/task/workspace/context.json','w'))\nt=open('/task/workspace/spill/s22.obs.txt').read()\nfrom collections import Counter\nk=Counter()\nfor l in t.splitlines():\n    p=l.split(' ',2)\n    if len(p)==3: k[(p[0],re.sub(r'\\d+','N',p[2])[40:90])]+=1\nfor x,n in k.most_common(15): print(n,x)\nfor l in t.splitlines():\n    if 'notify' in l or 'pool_max' in l: print(l[:100]); break"
++  },
++  {
++   "id": "s23.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n12 ('inventory-svc.log', '\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":N,\"table')\n11 ('inventory-svc.log', '\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_')\n7 ('notify-worker.log', '\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":N,\"table')\n6 ('auth-svc.log', '\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":N,\"table\":\"or')\n5 ('auth-svc.log', '\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":N,\"table\":\"ev')\n5 ('auth-svc.log', '\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":N,\"table\":\"it')\n1 ('---', '')\n1 ('notify-worker.log', '\":\"notify-work')\n1 ('[stdout', '')\nnotify-worker.log 6 {\"ts\":\"2026-09-14T15:09:45Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow qu\n"
++  },
++  {
++   "id": "s23.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 23: revision 37 -> 38; entries 9 -> 6; body chars 2908 -> 1574; removed [s22.act, s22.obs, s22.rcpt]; added []; rewritten []"
+   }
+  ]
+ }

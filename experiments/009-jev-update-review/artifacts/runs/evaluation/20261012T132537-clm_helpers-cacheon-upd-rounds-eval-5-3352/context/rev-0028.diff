@@ -1,0 +1,24 @@
+--- rev-27
++++ rev-28
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: changes.md:3 CHG-110 APPLIED TLS rotation; :4 CHG-113 APPLIED checkout-api db.pool_max=-4 (BAD_CONFIG cand); search-api disk 91-97% (round-01/logs/search-api.log:4,12,38,48). Slow-query WARN = noise.\nR2: board.md:3 Thread A DISK_PRESSURE search-api+shipping-svc ongoing; :4 OPEN CUSTOMER_COMMS. changes:3 CHG-117 dashboards (irrelevant).\nR3: board.md:3 Thread B MEMORY_LEAK auth-svc ongoing. But R3 logs: auth-svc tls handshake certificate_expired peer=bank-api (round-03/logs/auth-svc.log:1,16,21,62) -> likely CERT_EXPIRED (CHG-110 TLS rotation link?). Disk still high search-api (log:16-77, 98%) & shipping-svc (log:15,49 98%).\nR4: board.md:3 Thread A mitigated; :4 OPEN DATA_BACKFILL; :5 OPEN VENDOR_TICKET. changes:4 CHG-136 APPLIED mitigation A search-api; :3 CHG-131 PROPOSED (ignore).\nR4 logs: auth-svc cert_expired continues (round-04/logs/auth-svc.log:3,55); others quiet.\nR5: board.md:3 OPEN CAPACITY_REVIEW.\nR5 logs: auth cert_expired continues (round-05/logs/auth-svc.log:1,75); others quiet.\nR6: board.md:3 Thread D DB_POOL_EXHAUSTED checkout-api ongoing (likely root BAD_CONFIG CHG-113 pool_max=-4). changes:3 CHG-147 irrelevant.\nR6 logs: checkout-api db pool exhausted (round-06/logs/checkout-api.log:8,25,27,72,76); auth cert_expired continues (round-06/logs/auth-svc.log:2,81).\nR7: board.md:3 Thread A resolved; :4 Thread B revised CERT_EXPIRED auth-svc; :5 OPEN ALERT_TUNING.\nR7 logs: auth cert_expired (round-07/logs/auth-svc.log:12); checkout pool exhausted 16/16 (round-07/logs/checkout-api.log:2,8).\nR8: board.md:3 Thread D closed false alarm (but logs show real pool exhaustion?). changes:3 CHG-156 PROPOSED ignore."
++  },
++  {
++   "id": "s18.act",
++   "role": "assistant",
++   "body": "[step 18] execute\nthought: Record R8; note Thread D closed as false alarm but checkout logs still show pool exhausted — keep as BAD_CONFIG candidate; check R8 logs.\ncode:\nimport json,re,glob\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='n1'][0]\nn['body']+='\\nR7 logs: auth cert_expired (round-07/logs/auth-svc.log:12); checkout pool exhausted 16/16 (round-07/logs/checkout-api.log:2,8).\\nR8: board.md:3 Thread D closed false alarm (but logs show real pool exhaustion?). changes:3 CHG-156 PROPOSED ignore.'\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))\nfor f in sorted(glob.glob('/task/fixtures/round-08/logs/*.log')):\n  L=[(i,l) for i,l in enumerate(open(f),1) if re.search('ERROR|FATAL|expired|exhaust|disk',l,re.I)]\n  print(f.split('/')[-1],len(L),[i for i,_ in L][:8])\n  for i,l in L[:1]: print(' ',l.strip()[:160])"
++  },
++  {
++   "id": "s18.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nauth-svc.log 9 [6, 9, 29, 32, 58, 63, 67, 83]\n  {\"ts\":\"2026-09-14T15:03:35Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\ncheckout-api.log 0 []\nledger-svc.log 0 []\nsearch-api.log 0 []\nshipping-svc.log 0 []\n"
++  },
++  {
++   "id": "s18.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 18: revision 26 -> 27; entries 6 -> 1; body chars 3507 -> 1643; removed [s16.act, s16.obs, s16.rcpt, s17.act, s17.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

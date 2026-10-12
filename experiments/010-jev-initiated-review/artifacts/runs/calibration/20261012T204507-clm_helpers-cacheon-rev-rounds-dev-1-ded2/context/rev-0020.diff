@@ -1,0 +1,24 @@
+--- rev-19
++++ rev-20
+@@ -15,6 +15,21 @@
+    "id": "n3",
+    "role": "note",
+    "body": "R3: board Thread A DB_POOL_EXHAUSTED auth-svc, impact search-api, ongoing (round-03/board.md:3). CHG-125 dashboards irrelevant. auth pool WARNs round-03/logs/auth-svc.log:7,12,13; search-api pool WARN round-03/logs/search-api.log:1,14. No notify errors yet. Next: advance to R4."
++  },
++  {
++   "id": "s13.act",
++   "role": "assistant",
++   "body": "[step 13] execute\nthought: Trim context and read spilled observation compactly.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3')]\njson.dump(c,open('/task/workspace/context.json','w'))\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-04/'+f),1):print(f,i,l.rstrip()[:200])\nimport glob,re,collections\nfor p in sorted(glob.glob('/task/fixtures/round-04/logs/*')):\n  d=collections.defaultdict(list)\n  for i,l in enumerate(open(p),1):\n    if re.search(r'ERROR|WARN|FATAL',l,re.I):\n      k=re.sub(r'[0-9]','',l.split(' ',1)[-1])[:70];d[k].append(i)\n  for k,v in d.items():print(p.split('/')[-1],v[:8],len(v),k)"
++  },
++  {
++   "id": "s13.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 04\nboard.md 2 \nboard.md 3 - Thread B opened: errors in payments-svc. Suspected cause: cache miss storm after mass expiry (CACHE_STAMPEDE). Status: ongoing.\nchanges.md 1 # Change log: round 04\nchanges.md 2 \nchanges.md 3 - CHG-133 APPLIED: TLS session ticket rotation set to hourly\nauth-svc.log [4, 44, 74] 3 WARN  auth-svc slow query ms= table=orders\n\nauth-svc.log [7, 9, 19, 26, 29, 39, 46, 61] 12 WARN  auth-svc db pool exhausted wait_ms= in_use=/\n\nauth-svc.log [13, 17, 47, 54, 56, 63] 6 WARN  auth-svc slow query ms= table=items\n\nauth-svc.log [14, 22, 27, 40, 49] 5 WARN  auth-svc slow query ms= table=events\n\ncheckout-api.log [9, 19, 50, 53, 59, 62] 6 ERROR checkout-api upstream returned  upstream=fx-rates retry_after_s=\ncheckout-api.log [21, 29, 61, 66, 68, 73, 77] 7 WARN  checkout-api slow query ms= table=events\n\ncheckout-api.log [24] 1 WARN  checkout-api slow query ms= table=orders\n\ncheckout-api.log [40, 45] 2 WARN  checkout-api slow query ms= table=items\n\nnotify-worker.log [3, 9, 34, 50] 4 WARN  notify-worker slow query ms= table=orders\n\nnotify-worker.log [6, 12, 24, 43, 54, 55] 6 WARN  notify-worker slow query ms= table=events\n\nnotify-worker.log [23, 45, 48] 3 WARN  notify-worker slow query ms= table=items\n\npayments-svc.log [1, 3, 7, 25, 31, 45, 48, 51] 12 ERROR payments-svc upstream returned  upstream=fx-rates retry_after_s=\npayments-svc.log [9, 17, 23, 24, 37, 70] 6 WARN  payments-svc slow query ms= table=orders\n\npayments-svc.log [19, 39, 43, 44, 62, 75] 6 WARN  payments-svc slow query ms= table=items\n\npayments-svc.log [53, 60, 69] 3 WARN  payments-svc slow query ms= table=events\n\nsearch-api.log [2, 6, 12, 16, 53, 85] 6 WARN  search-api slow query ms= table=events\n\nsearch-api.log [4, 11, 13, 14, 20, 30, 31, 37] 12 WARN  search-api db pool exhausted wait_ms= in_use=/\n\nsearch-api.log [10, 22, 36, 74, 81, 82, 84, 91] 8 WARN  search-api slow query ms= table=items\n\nsearch-api.log [44, 55, 75, 78] 4 WARN  search-api slow query ms= table=orders\n\n"
++  },
++  {
++   "id": "s13.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 13: revision 18 -> 19; entries 10 -> 3; body chars 2516 -> 819; removed [s10.act, s10.obs, s10.rcpt, s11.act, s11.obs, s12.act, s12.obs]; added []; rewritten []"
+   }
+  ]
+ }

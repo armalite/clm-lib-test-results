@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Round1: board empty. changes.md:3 CHG-113 APPLIED ledger-svc build 7.35.5 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT); line4 CHG-114 checkout-api no config. Logs r1: only background WARN slow query in all 5 services (checkout,ledger,payments,search,shipping), no errors. Next: advance.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

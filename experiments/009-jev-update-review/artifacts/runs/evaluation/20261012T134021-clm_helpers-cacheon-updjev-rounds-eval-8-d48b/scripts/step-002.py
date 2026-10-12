@@ -1,0 +1,4 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. changes.md: CHG-109 APPLIED TLS ticket rotation hourly (round-01/changes.md:3); CHG-113 APPLIED notify-worker build 8.20.0 sets db.pool_max=-4 (round-01/changes.md:4) -> suspect BAD_CONFIG_ROLLOUT; CHG-114 APPLIED inventory-svc 8.20.0 no config (line 5). Logs r1: only routine slow query WARNs in all 5 services (notify-worker,pricing-svc,auth-svc,payments-svc,inventory-svc). Next: advance.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))
+print(open('/task/fixtures/round-01/changes.md').read().splitlines()[:6])

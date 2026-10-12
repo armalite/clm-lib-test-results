@@ -1,0 +1,4 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. changes.md: CHG-110 APPLIED TLS ticket rotation hourly (line?); CHG-113 APPLIED build 7.35.8 checkout-api sets db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT); CHG-114 APPLIED auth-svc no config. Logs: only slow query WARNs (noise) in all svcs; search-api disk usage high /var/data 91-97% (round-01/logs/search-api.log:4,12,38,48) possible DISK_PRESSURE. No ERRORs seen.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))
+for i,l in enumerate(open('/task/fixtures/round-01/changes.md'),1):print(i,l.strip())

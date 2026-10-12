@@ -1,0 +1,29 @@
+{
+ "number": 16,
+ "parent": 15,
+ "source": "runtime",
+ "step": 10,
+ "sha256": "486f452335430bc85dbf1934ab3cb8b4192f3a86cccdfa79ea76739d98a2396f",
+ "entries": [
+  {
+   "id": "notes",
+   "role": "note",
+   "body": "R1: CHG-113 APPLIED round-01/changes.md:3 ledger-svc build 7.35.5 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT). CHG-114 checkout-api no config (r1 changes.md:4). Svcs: checkout-api, ledger-svc, payments-svc, search-api, shipping-svc. R2: board.md:3 followup OPEN POSTMORTEM_DRAFT. R2 shipping 429 round-02/logs/shipping-svc.log:7,22,35-41,60. R3: board.md:3 Thread A UPSTREAM_RATE_LIMIT (tax-provider) shipping-svc+search-api ongoing; board.md:4 OPEN DATA_BACKFILL; board.md:5 OPEN CAPACITY_REVIEW; CHG-124 TLS ticket rotation (r3 changes.md:3, likely irrelevant). R3 logs: search-api.log:2-76 429s (e.g. 58-76), shipping-svc.log:5-63 429s (e.g. 45-63); ledger no pool errors r3. R4: board.md:3 Thread B CACHE_STAMPEDE checkout-api ongoing; CHG-128 log sampling (irrelevant)."
+  },
+  {
+   "id": "s10.act",
+   "role": "assistant",
+   "body": "[step 10] execute\nthought: Check R4 checkout and ledger logs for errors, compact context.\ncode:\nimport json,re\nfor s in ['checkout-api','ledger-svc']:\n  L=open(f'/task/fixtures/round-04/logs/{s}.log').read().splitlines()\n  h=[(i+1,l[:110]) for i,l in enumerate(L) if re.search(r'ERROR|WARN|pool|cache|miss|timeout',l,re.I)]\n  print(s,len(h))\n  for x in h[:8]: print(x)\nn=json.load(open('/task/workspace/context.json'))['entries'][0]['body'].replace(' Next: advance to R4.','')\nn+=' R4: board.md:3 Thread B CACHE_STAMPEDE checkout-api ongoing; CHG-128 log sampling (irrelevant).'\njson.dump({'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':n}]},open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s10.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\ncheckout-api 22\n(1, '2026-09-14T11:00:43Z WARN  checkout-api slow query ms=402 table=events')\n(7, '2026-09-14T11:03:59Z WARN  checkout-api disk usage high path=/var/data used_pct=97')\n(12, '2026-09-14T11:08:25Z WARN  checkout-api slow query ms=447 table=events')\n(13, '2026-09-14T11:08:41Z WARN  checkout-api slow query ms=328 table=items')\n(17, '2026-09-14T11:13:17Z WARN  checkout-api disk usage high path=/var/data used_pct=93')\n(19, '2026-09-14T11:13:38Z WARN  checkout-api disk usage high path=/var/data used_pct=98')\n(27, '2026-09-14T11:22:22Z WARN  checkout-api slow query ms=448 table=items')\n(28, '2026-09-14T11:23:11Z WARN  checkout-api disk usage high path=/var/data used_pct=93')\nledger-svc 22\n(4, '2026-09-14T11:01:15Z WARN  ledger-svc slow query ms=335 table=events')\n(8, '2026-09-14T11:03:46Z WARN  ledger-svc slow query ms=404 table=orders')\n(10, '2026-09-14T11:04:49Z WARN  ledger-svc slow query ms=382 table=events')\n(11, '2026-09-14T11:05:16Z WARN  ledger-svc slow query ms=419 table=orders')\n(15, '2026-09-14T11:07:52Z WARN  ledger-svc slow query ms=273 table=orders')\n(18, '2026-09-14T11:09:38Z WARN  ledger-svc slow query ms=355 table=orders')\n(31, '2026-09-14T11:22:04Z WARN  ledger-svc slow query ms=325 table=items')\n(35, '2026-09-14T11:28:16Z WARN  ledger-svc slow query ms=327 table=items')\n"
+  },
+  {
+   "id": "s10.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 10: revision 14 -> 15; entries 6 -> 1; body chars 3057 -> 778; removed [s8.act, s8.obs, s8.rcpt, s9.act, s9.obs]; added []; rewritten [notes]"
+  }
+ ]
+}

@@ -1,0 +1,29 @@
+{
+ "number": 30,
+ "parent": 29,
+ "source": "runtime",
+ "step": 19,
+ "sha256": "eb3c9b234ce1d7bb35f31d467010f064c24dcec27192a5c2117c6253a7166de7",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: CHG-113 APPLIED checkout-api 7.35.8 sets db.pool_max=-4 (round-01/changes.md:4, suspect BAD_CONFIG_ROLLOUT, no checkout errors in R1); CHG-110,114 benign. Slow query WARNs = noise. search-api /var/data 91-97% (round-01/logs/search-api.log:4,12,38,48).\nR2: Thread A DISK_PRESSURE search-api + shipping-svc, ongoing (round-02/board.md:3). Follow-up OPEN CUSTOMER_COMMS (round-02/board.md:4). CHG-117 benign. R2 disk logs: round-02/logs/search-api.log:4-5,63 ; round-02/logs/shipping-svc.log:4,36. No checkout errors R2.\nR3: Thread B MEMORY_LEAK auth-svc ongoing (round-03/board.md:3).\nR3 logs: auth-svc shows tls certificate_expired peer=bank-api (round-03/logs/auth-svc.log:1,16,21,25,35,62), no memory evidence -> real cause likely CERT_EXPIRED, board says MEMORY_LEAK. No checkout errors R3.\nR4: Thread A mitigated (round-04/board.md:3) via CHG-136 APPLIED search-api (round-04/changes.md:4). OPEN DATA_BACKFILL (board:4), VENDOR_TICKET (board:5). CHG-131 PROPOSED ignore.\nR4 logs: auth cert_expired continues (round-04/logs/auth-svc.log:3,5,7). No checkout errors R4.\nR5: OPEN CAPACITY_REVIEW (round-05/board.md:3).\nR6: Thread D DB_POOL_EXHAUSTED checkout-api ongoing (round-06/board.md:3); likely from CHG-113 (round-01/changes.md:4). CHG-147 benign.\nR6 logs: checkout db pool exhausted (round-06/logs/checkout-api.log:8,25,27,34,42); auth errors continue (round-06/logs/auth-svc.log:2,31-37). Search/shipping disk quiet R6.\nR7: Thread A RESOLVED (round-07/board.md:3). Thread B cause revised CERT_EXPIRED auth-svc (round-07/board.md:4). OPEN ALERT_TUNING (board:5).\nR7 logs: checkout db pool exhausted (round-07/logs/checkout-api.log:2,8,33,38,47); auth tls handshake failed peer=bank-api (round-07/logs/auth-svc.log:12,21,24,29). NEXT: advance to R8."
+  },
+  {
+   "id": "s19.act",
+   "role": "assistant",
+   "body": "[step 19] execute\nthought: Compact context: add R7 log facts to note, drop step entries.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='n1'][0]['body']\nn+=\"\\nR7 logs: checkout db pool exhausted (round-07/logs/checkout-api.log:2,8,33,38,47); auth tls handshake failed peer=bank-api (round-07/logs/auth-svc.log:12,21,24,29). NEXT: advance to R8.\"\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))\nprint('ok')"
+  },
+  {
+   "id": "s19.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s19.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 19: revision 28 -> 29; entries 4 -> 1; body chars 5031 -> 1759; removed [s18.act, s18.obs, s18.rcpt]; added []; rewritten [n1]"
+  }
+ ]
+}

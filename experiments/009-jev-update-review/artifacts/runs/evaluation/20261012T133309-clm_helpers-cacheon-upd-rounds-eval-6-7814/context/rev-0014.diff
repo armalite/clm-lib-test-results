@@ -1,0 +1,26 @@
+--- rev-13
++++ rev-14
+@@ -4,22 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "R1: no board. slow query WARNs = noise. ledger-svc 429 fx-rates round-01/logs/ledger-svc.log:11-62. R2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 CAPACITY_REVIEW open. changes.md:4 CHG-120 APPLIED pricing-svc feature.batch_size=0 (suspect BAD_CONFIG); CHG-121 payments no cfg. R2 logs: only 429 fx-rates errors in inventory-svc (round-02/logs/inventory-svc.log:18-86) and ledger-svc (round-02/logs/ledger-svc.log:6-71); pricing-svc no errors yet. R3: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing. changes.md:3 CHG-124 APPLIED retry budget GETs=1. R3 logs: inventory 429s round-03/logs/inventory-svc.log:13-74; ledger round-03/logs/ledger-svc.log:7-68; pricing/checkout no errors."
+-  },
+-  {
+-   "id": "s8.act",
+-   "role": "assistant",
+-   "body": "[step 8] execute\nthought: Payments-svc has no errors per my regex; check its log for cache-related lines, and compact context.\ncode:\nimport json,re\nL=open('/task/fixtures/round-03/logs/payments-svc.log').read().splitlines()\nprint(len(L))\nfor i,l in enumerate(L[:5]): print(i+1,l[:160])\nfor i,l in enumerate(L):\n    if re.search(r'WARN|cache|hit|latency',l,re.I): print(i+1,l[:160])\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='notes'][0]\nn['body']+=' R3 logs: inventory 429s round-03/logs/inventory-svc.log:13-74; ledger round-03/logs/ledger-svc.log:7-68; pricing/checkout no errors.'\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s8.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n85\n1 2026-09-14T10:00:43Z WARN  payments-svc slow query ms=209 table=orders\n2 2026-09-14T10:01:45Z INFO  payments-svc request ok route=/v1/orders status=200 ms=57\n3 2026-09-14T10:01:52Z INFO  payments-svc request ok route=/v1/orders status=200 ms=37\n4 2026-09-14T10:01:55Z INFO  payments-svc health ok probe=readiness\n5 2026-09-14T10:02:40Z INFO  payments-svc gc cycle pause_ms=13\n1 2026-09-14T10:00:43Z WARN  payments-svc slow query ms=209 table=orders\n7 2026-09-14T10:06:35Z WARN  payments-svc slow query ms=443 table=orders\n9 2026-09-14T10:08:08Z WARN  payments-svc slow query ms=406 table=orders\n10 2026-09-14T10:08:16Z WARN  payments-svc slow query ms=222 table=orders\n12 2026-09-14T10:10:25Z WARN  payments-svc disk usage high path=/var/data used_pct=95\n18 2026-09-14T10:14:27Z WARN  payments-svc slow query ms=373 table=orders\n20 2026-09-14T10:15:47Z WARN  payments-svc disk usage high path=/var/data used_pct=91\n22 2026-09-14T10:16:50Z WARN  payments-svc disk usage high path=/var/data used_pct=93\n23 2026-09-14T10:16:52Z WARN  payments-svc slow query ms=232 table=items\n26 2026-09-14T10:18:34Z WARN  payments-svc slow query ms=401 table=orders\n31 2026-09-14T10:20:24Z WARN  payments-svc slow query ms=402 table=items\n38 2026-09-14T10:26:22Z WARN  payments-svc slow query ms=352 table=events\n46 2026-09-14T10:30:37Z WARN  payments-svc disk usage high path=/var/data used_pct=91\n54 2026-09-14T10:34:13Z WARN  payments-svc disk usage high path=/var/data used_pct=96\n56 2026-09-14T10:34:46Z WARN  payments-svc slow query ms=334 table=orders\n57 2026-09-14T10:36:57Z WARN  payments-svc slow query ms=407 table=orders\n67 2026-09-14T10:46:47Z WARN  payments-svc slow query ms=287 table=items\n69 2026-09-14T10:49:02Z WARN  payments-svc slow query ms=376 table=events\n72 2026-09-14T10:52:54Z WARN  payments-svc slow query ms=359 table=orders\n80 2026-09-14T10:57:53Z WARN  payments-svc disk usage high path=/var/data used_pct=97\n"
+-  },
+-  {
+-   "id": "s8.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 8: revision 11 -> 12; entries 4 -> 1; body chars 2397 -> 733; removed [s7.act, s7.obs, s7.rcpt]; added []; rewritten [notes]"
++   "body": "R1: no board. slow query WARNs = noise. ledger-svc 429 fx-rates round-01/logs/ledger-svc.log:11-62. R2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 CAPACITY_REVIEW open. changes.md:4 CHG-120 APPLIED pricing-svc feature.batch_size=0 (suspect BAD_CONFIG); CHG-121 payments no cfg. R2 logs: only 429 fx-rates errors in inventory-svc (round-02/logs/inventory-svc.log:18-86) and ledger-svc (round-02/logs/ledger-svc.log:6-71); pricing-svc no errors yet. R3: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing. changes.md:3 CHG-124 APPLIED retry budget GETs=1. R3 logs: inventory 429s round-03/logs/inventory-svc.log:13-74; ledger round-03/logs/ledger-svc.log:7-68; pricing/checkout no errors. R3 payments-svc: no cache errors; disk usage high /var/data 91-97% round-03/logs/payments-svc.log:12-80 (board B says CACHE_STAMPEDE, logs suggest DISK_PRESSURE). Next: advance to R4."
+   }
+  ]
+ }

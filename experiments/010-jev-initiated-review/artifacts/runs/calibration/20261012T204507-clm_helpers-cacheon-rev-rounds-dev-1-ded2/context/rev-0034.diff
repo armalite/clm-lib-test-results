@@ -1,0 +1,24 @@
+--- rev-33
++++ rev-34
+@@ -30,6 +30,21 @@
+    "id": "n6",
+    "role": "note",
+    "body": "R6: board: CLOSED ALERT_TUNING; OPEN CUSTOMER_COMMS (round-06/board.md:3-4). CHG-147 retry budget irrelevant. payments 429 fx-rates round-06/logs/payments-svc.log:3,10,11. No notify errors. Next: advance R7."
++  },
++  {
++   "id": "s22.act",
++   "role": "assistant",
++   "body": "[step 22] execute\nthought: Inspect R7 board and key log lines; prune step entries.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))\nb='/task/fixtures/round-07/'\nprint(open(b+'board.md').read())\nfor n in ['payments-svc','checkout-api','auth-svc','search-api','notify-worker']:\n  L=open(b+'logs/'+n+'.log').readlines()\n  h=[i for i,l in enumerate(L,1) if re.search(r'429|ERROR|pool|inflight|refused',l)]\n  print(n,h[:12])\n  if h: print(L[h[0]-1][:200])"
++  },
++  {
++   "id": "s22.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n# Incident board: updates in round 07\n\n\npayments-svc [1, 7, 13, 23, 28, 33, 36, 71, 75, 82]\n2026-09-14T14:00:27Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=21\n\ncheckout-api [11, 19, 25, 26, 29, 33, 39, 49, 56, 58, 62, 66]\n2026-09-14T14:16:04Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=46\n\nauth-svc []\nsearch-api [63]\n2026-09-14T14:59:03Z INFO  search-api heartbeat uptime_s=54429\n\nnotify-worker []\n"
++  },
++  {
++   "id": "s22.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 22: revision 32 -> 33; entries 11 -> 6; body chars 3395 -> 1951; removed [s20.act, s20.obs, s20.rcpt, s21.act, s21.obs]; added []; rewritten []"
+   }
+  ]
+ }

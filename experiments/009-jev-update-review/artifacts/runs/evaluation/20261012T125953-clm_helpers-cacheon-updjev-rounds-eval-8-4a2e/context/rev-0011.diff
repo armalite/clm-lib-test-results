@@ -1,0 +1,24 @@
+--- rev-10
++++ rev-11
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: CHG-109 APPLIED TLS ticket rotation (r1 changes.md:3); CHG-113 APPLIED notify-worker 8.20.0 db.pool_max=-4 (r1 changes.md:4, suspect BAD_CONFIG_ROLLOUT); CHG-114 inventory no config (r1 changes.md:5). R2: pricing-svc heap WARNs rss 2200-3660 (round-02/logs/pricing-svc.log:6,7,55,66,83). R3: board.md:3 Thread A MEMORY_LEAK pricing-svc+auth-svc ongoing; board.md:4 Thread B inventory-svc suspected CERT_EXPIRED ongoing; changes.md:3 CHG-124 retry budget=1 (minor)."
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: Check r3 logs for pricing restarts, inventory cert errors, notify-worker pool, auth.\ncode:\nimport json,glob,re\nfor f in sorted(glob.glob('/task/fixtures/round-03/logs/*.log')):\n  for i,l in enumerate(open(f),1):\n    if re.search(r'ERROR|restart|OOM|cert|x509|pool|429|dns',l,re.I): print(f.split('/')[-1],i,l.strip()[:150])\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: CHG-109 APPLIED TLS ticket rotation (r1 changes.md:3); CHG-113 APPLIED notify-worker 8.20.0 db.pool_max=-4 (r1 changes.md:4, suspect BAD_CONFIG_ROLLOUT); CHG-114 inventory no config (r1 changes.md:5). R2: pricing-svc heap WARNs rss 2200-3660 (round-02/logs/pricing-svc.log:6,7,55,66,83). R3: board.md:3 Thread A MEMORY_LEAK pricing-svc+auth-svc ongoing; board.md:4 Thread B inventory-svc suspected CERT_EXPIRED ongoing; changes.md:3 CHG-124 retry budget=1 (minor).'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nauth-svc.log 36 2026-09-14T10:25:06Z WARN  auth-svc slow query ms=429 table=events\nauth-svc.log 59 2026-09-14T10:38:43Z INFO  auth-svc heartbeat uptime_s=42965\ninventory-svc.log 9 2026-09-14T10:07:21Z WARN  inventory-svc db pool exhausted wait_ms=861 in_use=16/16\ninventory-svc.log 12 2026-09-14T10:12:02Z WARN  inventory-svc db pool exhausted wait_ms=2806 in_use=12/12\ninventory-svc.log 16 2026-09-14T10:16:28Z WARN  inventory-svc db pool exhausted wait_ms=964 in_use=20/20\ninventory-svc.log 29 2026-09-14T10:29:35Z WARN  inventory-svc db pool exhausted wait_ms=2010 in_use=16/16\ninventory-svc.log 34 2026-09-14T10:31:05Z WARN  inventory-svc db pool exhausted wait_ms=2594 in_use=10/10\ninventory-svc.log 46 2026-09-14T10:35:58Z WARN  inventory-svc db pool exhausted wait_ms=2253 in_use=10/10\ninventory-svc.log 60 2026-09-14T10:45:04Z WARN  inventory-svc db pool exhausted wait_ms=2210 in_use=20/20\ninventory-svc.log 66 2026-09-14T10:49:59Z WARN  inventory-svc db pool exhausted wait_ms=1427 in_use=10/10\ninventory-svc.log 72 2026-09-14T10:52:43Z WARN  inventory-svc db pool exhausted wait_ms=1885 in_use=20/20\ninventory-svc.log 82 2026-09-14T10:59:16Z WARN  inventory-svc db pool exhausted wait_ms=2600 in_use=16/16\n"
++  },
++  {
++   "id": "s7.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 7: revision 9 -> 10; entries 6 -> 1; body chars 2904 -> 468; removed [s5.act, s5.obs, s5.rcpt, s6.act, s6.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

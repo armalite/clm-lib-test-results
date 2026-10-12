@@ -1,0 +1,24 @@
+--- rev-12
++++ rev-13
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: board empty; logs (shipping,checkout,payments,ledger,search) only background WARN slow query ms~200-450 (noise). No non-slow-query WARN/ERROR. changes: round-01/changes.md:3 CHG-113 APPLIED ledger-svc build 7.35.5 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT); :4 CHG-114 APPLIED checkout-api 7.35.5 no config. R2: board.md:3 follow-up OPEN POSTMORTEM_DRAFT; changes.md:3 CHG-119 dashboards (irrelevant). R2 logs: shipping-svc 429 upstream=tax-provider at round-02/logs/shipping-svc.log:7,22,35,38,41,60 (UPSTREAM_RATE_LIMIT candidate). R3: board.md:3 Thread A UPSTREAM_RATE_LIMIT shipping-svc+search-api ongoing; :4 OPEN DATA_BACKFILL; :5 OPEN CAPACITY_REVIEW; changes.md:3 CHG-124 TLS ticket rotation (irrelevant?)."
++  },
++  {
++   "id": "s8.act",
++   "role": "assistant",
++   "body": "[step 8] execute\nthought: Record R3 board, scan R3 logs for non-slow-query warnings.\ncode:\nimport json,glob,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']=c['entries'][0]['body'].replace(' R2 done; next: advance to R3.','')+' R3: board.md:3 Thread A UPSTREAM_RATE_LIMIT shipping-svc+search-api ongoing; :4 OPEN DATA_BACKFILL; :5 OPEN CAPACITY_REVIEW; changes.md:3 CHG-124 TLS ticket rotation (irrelevant?).'\njson.dump(c,open('/task/workspace/context.json','w'))\nfor f in sorted(glob.glob('/task/fixtures/round-03/logs/*')):\n  n=0\n  for i,l in enumerate(open(f),1):\n    if re.search('WARN|ERROR|error',l) and 'slow query' not in l:\n      n+=1\n      if n<=4: print(f.split('/')[-1],i,l.strip()[:150])\n  print(f.split('/')[-1],'count',n)"
++  },
++  {
++   "id": "s8.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\ncheckout-api.log count 0\nledger-svc.log count 0\npayments-svc.log count 0\nsearch-api.log 2 2026-09-14T10:00:32Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=29\nsearch-api.log 10 2026-09-14T10:08:33Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=28\nsearch-api.log 23 2026-09-14T10:22:08Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=11\nsearch-api.log 30 2026-09-14T10:27:29Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=22\nsearch-api.log count 12\nshipping-svc.log 5 2026-09-14T10:06:49Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=17\nshipping-svc.log 13 2026-09-14T10:14:53Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=55\nshipping-svc.log 17 2026-09-14T10:20:34Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=46\nshipping-svc.log 32 2026-09-14T10:33:39Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=18\nshipping-svc.log count 12\n"
++  },
++  {
++   "id": "s8.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 8: revision 11 -> 12; entries 6 -> 1; body chars 2319 -> 723; removed [s6.act, s6.obs, s6.rcpt, s7.act, s7.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

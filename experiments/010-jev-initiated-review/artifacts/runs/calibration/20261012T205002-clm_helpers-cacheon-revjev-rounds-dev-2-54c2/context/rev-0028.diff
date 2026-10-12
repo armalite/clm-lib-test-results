@@ -1,0 +1,45 @@
+--- rev-27
++++ rev-28
+@@ -32,39 +32,9 @@
+    "body": "R6: board.md:3 OPEN RUNBOOK_UPDATE. changes.md:3 CHG-144 log sampling (noise). Logs now JSON format. CERT errs round-06/logs/auth-svc.log:4-79, shipping-svc.log:1-64. No errors checkout/inventory/search. Next: advance."
+   },
+   {
+-   "id": "s18.act",
+-   "role": "assistant",
+-   "body": "[step 18] execute\nthought: Compact R6 into note and drop step entries.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nkeep=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4','n5')]\nkeep.append({'id':'n6','role':'note','body':'R6: board.md:3 OPEN RUNBOOK_UPDATE. changes.md:3 CHG-144 log sampling (noise). Logs now JSON format. CERT errs round-06/logs/auth-svc.log:4-79, shipping-svc.log:1-64. No errors checkout/inventory/search. Next: advance.'})\nc['entries']=keep\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+-  },
+-  {
+-   "id": "s18.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s18.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 18: revision 23 -> 24; entries 12 -> 6; body chars 4912 -> 1786; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs, s17.act, s17.obs]; added [n6]; rewritten []"
+-  },
+-  {
+-   "id": "s19.act",
+-   "role": "assistant",
+-   "body": "[step 19] advance\nthought: "
+-  },
+-  {
+-   "id": "s19.obs",
+-   "role": "observation",
+-   "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/logs/auth-svc.log (66 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (59 lines)\n  round-07/logs/search-api.log (69 lines)\n  round-07/logs/shipping-svc.log (67 lines)"
+-  },
+-  {
+-   "id": "s20.act",
+-   "role": "assistant",
+-   "body": "[step 20] execute\nthought: Inspect R7 board and error lines.\ncode:\nimport json,re\nb='/task/fixtures/round-07/'\nfor i,l in enumerate(open(b+'board.md'),1):print('B',i,l.rstrip())\nfor s in ['auth-svc','checkout-api','inventory-svc','search-api','shipping-svc']:\n  L=open(b+'logs/'+s+'.log').read().splitlines()\n  hits=[i for i,l in enumerate(L,1) if re.search(r'ERROR|error|fail|expired|SERVFAIL|429|inflight',l)]\n  print(s,len(hits),hits[:3],hits[-1:] if hits else '')\n  if hits:print(' ',L[hits[0]-1][:220])"
+-  },
+-  {
+-   "id": "s20.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nB 1 # Incident board: updates in round 07\nB 2 \nB 3 - Thread B root cause revised: an expired TLS certificate on a dependency (CERT_EXPIRED); this supersedes the earlier suspicion of DB_POOL_EXHAUSTED.\nB 4 - Thread D opened: an upstream provider rejecting requests with 429 alerts (UPSTREAM_RATE_LIMIT) on search-api. Status: ongoing.\nauth-svc 10 [1, 16, 24] [64]\n  {\"ts\":\"2026-09-14T14:00:33Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\ncheckout-api 0 [] \ninventory-svc 0 [] \nsearch-api 9 [4, 5, 20] [69]\n  {\"ts\":\"2026-09-14T14:04:44Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":16}\nshipping-svc 13 [6, 10, 11] [66]\n  {\"ts\":\"2026-09-14T14:04:04Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"slow query\",\"ms\":429,\"table\":\"orders\"}\n"
++   "id": "n7",
++   "role": "note",
++   "body": "R7: board.md:3 Thread B cause revised CERT_EXPIRED. board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing (tax-provider 429; see lines printed in s21). CERT errs round-07/logs/auth-svc.log:1-64. No errs checkout/inventory. Note shipping 429 hits may be slow-query ms noise."
+   }
+  ]
+ }

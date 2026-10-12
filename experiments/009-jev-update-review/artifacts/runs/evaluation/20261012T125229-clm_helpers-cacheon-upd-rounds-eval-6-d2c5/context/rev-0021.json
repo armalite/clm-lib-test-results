@@ -1,0 +1,29 @@
+{
+ "number": 21,
+ "parent": 20,
+ "source": "runtime",
+ "step": 13,
+ "sha256": "02fedca832288c6bb4d1c53549f66e216f502c44319a49d9571f0a13e68a0fe2",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. slow query WARNs = noise. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11,17,19,32,42,62.\nR2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc batch_size=0 (BAD_CONFIG candidate); :5 CHG-121 payments no config. R2 logs: inventory-svc 429 fx-rates round-02/logs/inventory-svc.log:18,38,46,49; ledger round-02/logs/ledger-svc.log:6,9,12,18; pricing/payments/checkout no errors.\nR3: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing; changes.md:3 CHG-124 APPLIED retry budget GETs=1. R3 logs: 429 fx-rates continue inventory round-03/logs/inventory-svc.log:13,74; ledger round-03/logs/ledger-svc.log:7,68; no payments cache/miss errors seen (Thread B unconfirmed by logs).\nR4: board.md:3 Thread A mitigated; board.md:4 follow-up OPEN RUNBOOK_UPDATE; changes.md:3 CHG-128 APPLIED retry GETs=1; changes.md:4 CHG-136 APPLIED mitigation thread A ledger-svc.\nR4 logs: payments-svc DISK_PRESSURE /var/data used_pct 91-98 round-04/logs/payments-svc.log:4,11-16,29,36,64-65,73 (Thread B cache stampede likely wrong cause; real=disk). No other errors R4.\nR5: board.md:3 follow-up OPEN VENDOR_TICKET."
+  },
+  {
+   "id": "s13.act",
+   "role": "assistant",
+   "body": "[step 13] execute\nthought: Scan R5 logs for errors and update note.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*.log')):\n    for i,l in enumerate(open(f),1):\n        if re.search(r'ERROR|429|disk|used_pct|cache|miss|WARN',l,re.I) and 'slow query' not in l:\n            print(f.split('/')[-1],i,l.strip()[:110])\nc=json.load(open('/task/workspace/context.json'))\ne=[x for x in c['entries'] if x['id']=='n1']\ne[0]['body']+='\\nR5: board.md:3 follow-up OPEN VENDOR_TICKET.'\nc['entries']=e\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s13.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\npayments-svc.log 1 2026-09-14T12:00:57Z WARN  payments-svc disk usage high path=/var/data used_pct=91\npayments-svc.log 5 2026-09-14T12:02:54Z WARN  payments-svc disk usage high path=/var/data used_pct=94\npayments-svc.log 22 2026-09-14T12:15:02Z WARN  payments-svc disk usage high path=/var/data used_pct=92\npayments-svc.log 30 2026-09-14T12:24:08Z WARN  payments-svc disk usage high path=/var/data used_pct=98\npayments-svc.log 39 2026-09-14T12:35:24Z WARN  payments-svc disk usage high path=/var/data used_pct=95\npayments-svc.log 43 2026-09-14T12:38:23Z WARN  payments-svc disk usage high path=/var/data used_pct=94\npayments-svc.log 59 2026-09-14T12:48:29Z WARN  payments-svc disk usage high path=/var/data used_pct=96\npayments-svc.log 67 2026-09-14T12:54:18Z WARN  payments-svc disk usage high path=/var/data used_pct=91\npayments-svc.log 73 2026-09-14T12:59:03Z WARN  payments-svc disk usage high path=/var/data used_pct=98\n"
+  },
+  {
+   "id": "s13.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 13: revision 19 -> 20; entries 6 -> 1; body chars 2559 -> 1236; removed [s11.act, s11.obs, s11.rcpt, s12.act, s12.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

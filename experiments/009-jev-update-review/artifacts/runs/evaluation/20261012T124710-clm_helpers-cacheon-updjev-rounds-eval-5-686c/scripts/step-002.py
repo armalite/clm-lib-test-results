@@ -1,0 +1,4 @@
+import json
+n='R1 notes: board empty. changes.md: CHG-110 APPLIED TLS ticket rotation hourly; CHG-113 APPLIED checkout-api build 7.35.8 sets db.pool_max=-4 (round-01/changes.md ~line 5, suspect BAD_CONFIG_ROLLOUT); CHG-114 APPLIED auth-svc no config. Logs: slow query WARNs everywhere (noise). search-api disk usage high /var/data 91-97% (round-01/logs/search-api.log:4,12,38,48) -> possible DISK_PRESSURE. No ERRORs seen in checkout yet.'
+json.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))
+import subprocess;print(subprocess.run(['grep','-n','CHG','/task/fixtures/round-01/changes.md'],capture_output=True,text=True).stdout)

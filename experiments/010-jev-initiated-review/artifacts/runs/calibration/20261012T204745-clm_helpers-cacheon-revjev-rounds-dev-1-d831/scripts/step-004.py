@@ -1,0 +1,1 @@
+import sys;sys.path.insert(0,'/task/workspace');from scan import scan;scan(2)

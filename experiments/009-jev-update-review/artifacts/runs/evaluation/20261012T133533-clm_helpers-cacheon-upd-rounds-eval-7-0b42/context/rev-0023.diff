@@ -1,0 +1,36 @@
+--- rev-22
++++ rev-23
+@@ -4,32 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "R1: CHG-113 APPLIED ledger-svc 7.35.5 db.pool_max=0 (round-01/changes.md:3) -> likely BAD_CONFIG_ROLLOUT later. R2: OPEN POSTMORTEM_DRAFT (round-02/board.md:3). R3: Thread A UPSTREAM_RATE_LIMIT tax-provider 429 shipping-svc+search-api ongoing (round-03/board.md:3; logs round-03/logs/search-api.log:2, shipping-svc.log:5; r4 search-api.log:1, shipping-svc.log:7); OPEN DATA_BACKFILL (r3 board.md:4), CAPACITY_REVIEW (r3 board.md:5); CHG-124 TLS noise. R4: Thread B checkout-api board says CACHE_STAMPEDE (round-04/board.md:3) BUT logs show DISK_PRESSURE /var/data 97-98% (round-04/logs/checkout-api.log:7,19) - watch for board correction; CHG-128 log sampling noise. R5: CHG-137 PROPOSED HPA search (not applied, noise)."
+-  },
+-  {
+-   "id": "s13.act",
+-   "role": "assistant",
+-   "body": "[step 13] execute\nthought: Trim context and read spill concisely.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='notes']\nc['entries'][0]['body']+=' R5: CHG-137 PROPOSED HPA search (not applied, noise).'\njson.dump(c,open('/task/workspace/context.json','w'))\nprint(open('/task/fixtures/round-05/board.md').read())\nb='/task/fixtures/round-05/logs/'\nfor s in ['checkout-api','ledger-svc','payments-svc','search-api','shipping-svc']:\n  n=0\n  for i,l in enumerate(open(b+s+'.log'),1):\n    if re.search(r'ERROR|disk|429|pool|cache',l,re.I) and n<3: print(s,i,l.strip()[:110]);n+=1\n"
+-  },
+-  {
+-   "id": "s13.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n# Incident board: updates in round 05\n\n\ncheckout-api 1 2026-09-14T12:00:28Z WARN  checkout-api disk usage high path=/var/data used_pct=95\ncheckout-api 7 2026-09-14T12:03:42Z WARN  checkout-api disk usage high path=/var/data used_pct=97\ncheckout-api 22 2026-09-14T12:14:55Z WARN  checkout-api disk usage high path=/var/data used_pct=92\nledger-svc 18 2026-09-14T12:11:12Z WARN  ledger-svc slow query ms=429 table=events\nsearch-api 18 2026-09-14T12:08:47Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=34\nsearch-api 25 2026-09-14T12:16:01Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=43\nsearch-api 36 2026-09-14T12:26:25Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=19\nshipping-svc 26 2026-09-14T12:17:06Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=26\nshipping-svc 32 2026-09-14T12:21:11Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=13\nshipping-svc 33 2026-09-14T12:21:54Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=20\n"
+-  },
+-  {
+-   "id": "s13.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 13: revision 19 -> 20; entries 8 -> 1; body chars 2996 -> 720; removed [s10.act, s10.obs, s10.rcpt, s11.act, s11.obs, s12.act, s12.obs]; added []; rewritten [notes]"
+-  },
+-  {
+-   "id": "s14.act",
+-   "role": "assistant",
+-   "body": "[step 14] advance\nthought: "
+-  },
+-  {
+-   "id": "s14.obs",
+-   "role": "observation",
+-   "body": "Stage 6 of 11 released.\nRound 6 of 11 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (3 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/checkout-api.log (76 lines)\n  round-06/logs/ledger-svc.log (78 lines)\n  round-06/logs/payments-svc.log (79 lines)\n  round-06/logs/search-api.log (60 lines)\n  round-06/logs/shipping-svc.log (65 lines)\n\nUPDATE (round-files/1; context revision 21 was current at this release). Incident-board and change-log lines released this round, verbatim:\nround-06/board.md:3: - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nround-06/changes.md:3: - CHG-150 APPLIED: mitigation for thread A deployed to shipping-svc\nConsider whether this update affects your working context."
++   "body": "R1: CHG-113 APPLIED ledger-svc 7.35.5 db.pool_max=0 (round-01/changes.md:3) -> likely BAD_CONFIG_ROLLOUT later. R2: OPEN POSTMORTEM_DRAFT (round-02/board.md:3). R3: Thread A UPSTREAM_RATE_LIMIT tax-provider 429 shipping-svc+search-api ongoing (round-03/board.md:3; logs round-03/logs/search-api.log:2, shipping-svc.log:5; r4 search-api.log:1, shipping-svc.log:7); OPEN DATA_BACKFILL (r3 board.md:4), CAPACITY_REVIEW (r3 board.md:5); CHG-124 TLS noise. R4: Thread B checkout-api board says CACHE_STAMPEDE (round-04/board.md:3) BUT logs show DISK_PRESSURE /var/data 97-98% (round-04/logs/checkout-api.log:7,19) - watch for board correction; CHG-128 log sampling noise. R5: CHG-137 PROPOSED HPA search (not applied, noise). R6: Thread A mitigated (round-06/board.md:3); CHG-150 APPLIED mitigation shipping-svc (round-06/changes.md:3)."
+   }
+  ]
+ }

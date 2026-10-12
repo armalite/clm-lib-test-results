@@ -1,0 +1,29 @@
+{
+ "number": 11,
+ "parent": 10,
+ "source": "runtime",
+ "step": 7,
+ "sha256": "2bd5470ae3f89c557a80ab725eb6e6d346251000cef03187ceb5a6b4a9bdb687",
+ "entries": [
+  {
+   "id": "notes",
+   "role": "note",
+   "body": "R1: CHG-113 APPLIED round-01/changes.md:3 ledger-svc build 7.35.5 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT). CHG-114 checkout-api no config (r1 changes.md:4). Svcs: checkout-api, ledger-svc, payments-svc, search-api, shipping-svc. R2: board.md:3 followup OPEN POSTMORTEM_DRAFT. R2 shipping 429 round-02/logs/shipping-svc.log:7,22,35-41,60. R3: board.md:3 Thread A UPSTREAM_RATE_LIMIT shipping-svc+search-api ongoing; board.md:4 OPEN DATA_BACKFILL; board.md:5 OPEN CAPACITY_REVIEW; CHG-124 TLS ticket rotation (r3 changes.md:3, likely irrelevant)."
+  },
+  {
+   "id": "s7.act",
+   "role": "assistant",
+   "body": "[step 7] execute\nthought: Update notes with R3 board, check R3 logs briefly for search-api 429s and ledger pool errors.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-03/logs/*.log')):\n    for i,l in enumerate(open(f),1):\n        if re.search(r'429|pool|ERROR|error|exhaust',l): print(f.split('/')[-1],i,l.strip()[:110])\nn='R1: CHG-113 APPLIED round-01/changes.md:3 ledger-svc build 7.35.5 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT). CHG-114 checkout-api no config (r1 changes.md:4). Svcs: checkout-api, ledger-svc, payments-svc, search-api, shipping-svc. R2: board.md:3 followup OPEN POSTMORTEM_DRAFT. R2 shipping 429 round-02/logs/shipping-svc.log:7,22,35-41,60. R3: board.md:3 Thread A UPSTREAM_RATE_LIMIT shipping-svc+search-api ongoing; board.md:4 OPEN DATA_BACKFILL; board.md:5 OPEN CAPACITY_REVIEW; CHG-124 TLS ticket rotation (r3 changes.md:3, likely irrelevant).'\njson.dump({'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':n}]},open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s7.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nledger-svc.log 72 2026-09-14T10:53:08Z WARN  ledger-svc slow query ms=429 table=items\nsearch-api.log 2 2026-09-14T10:00:32Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=29\nsearch-api.log 10 2026-09-14T10:08:33Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=28\nsearch-api.log 23 2026-09-14T10:22:08Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=11\nsearch-api.log 30 2026-09-14T10:27:29Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=22\nsearch-api.log 32 2026-09-14T10:30:47Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=48\nsearch-api.log 33 2026-09-14T10:30:49Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=8\nsearch-api.log 41 2026-09-14T10:36:58Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=48\nsearch-api.log 49 2026-09-14T10:41:18Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=18\nsearch-api.log 58 2026-09-14T10:50:09Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=42\nsearch-api.log 60 2026-09-14T10:51:01Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=58\nsearch-api.log 68 2026-09-14T10:54:24Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=33\nsearch-api.log 76 2026-09-14T10:57:19Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=42\nshipping-svc.log 5 2026-09-14T10:06:49Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=17\nshipping-svc.log 13 2026-09-14T10:14:53Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=55\nshipping-svc.log 17 2026-09-14T10:20:34Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=46\nshipping-svc.log 32 2026-09-14T10:33:39Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=18\nshipping-svc.log 33 2026-09-14T10:33:45Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=32\nshipping-svc.log 35 2026-09-14T10:37:52Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=26\nshipping-svc.log 45 2026-09-14T10:46:22Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=39\nshipping-svc.log 49 2026-09-14T10:48:29Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=6\nshipping-svc.log 50 2026-09-14T10:48:55Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=25\nshipping-svc.log 53 2026-09-14T10:49:43Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=34\nshipping-svc.log 62 2026-09-14T10:56:06Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=23\nshipping-svc.log 63 2026-09-14T10:56:11Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=30\n"
+  },
+  {
+   "id": "s7.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 7: revision 9 -> 10; entries 6 -> 1; body chars 2757 -> 552; removed [s5.act, s5.obs, s5.rcpt, s6.act, s6.obs]; added []; rewritten [notes]"
+  }
+ ]
+}

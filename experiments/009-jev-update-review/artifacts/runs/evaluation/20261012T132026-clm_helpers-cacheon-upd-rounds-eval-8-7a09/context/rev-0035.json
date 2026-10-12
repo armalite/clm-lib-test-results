@@ -1,0 +1,29 @@
+{
+ "number": 35,
+ "parent": 34,
+ "source": "runtime",
+ "step": 22,
+ "sha256": "deb9a78600a398380457040cdd83a892bd1cfee74e636860ff9194d306d570d3",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. round-01/changes.md: CHG-109 APPLIED TLS ticket rotation hourly; CHG-113 APPLIED notify-worker 8.20.0 sets db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT); CHG-114 APPLIED inventory-svc 8.20.0 no config. Logs r1: slow query WARN noise. R2: board empty; changes.md:3 CHG-114 PROPOSED raise HPA (not applied). R2 pricing-svc.log heap high WARN lines 6-83.\nR3: board.md:3 Thread A MEMORY_LEAK pricing-svc + auth-svc ongoing. board.md:4 Thread B inventory-svc suspected CERT_EXPIRED ongoing. changes.md:3 CHG-124 APPLIED retry budget GETs=1.\nR4: board.md:3 Follow-up OPEN ALERT_TUNING.\nR5: changes.md:3 CHG-135 APPLIED health log sampling 1% (noise only). R5 logs: inventory-svc.log:6,17,37 WARN db pool exhausted (7 hits) -> DB_POOL_EXHAUSTED inventory? (board says CERT). Other svcs 0 errors.\nR6: board.md:3 Thread A mitigated; board.md:4 Thread D DNS_RESOLUTION notify-worker ongoing. changes.md:4 CHG-150 APPLIED mitigation A pricing-svc; changes.md:3 CHG-147 noise.\nR6 logs: inventory-svc.log:7 db pool exhausted 12/12 (continues); notify-worker.log:7 dns lookup failed geo.internal SERVFAIL (supports Thread D).\nR7 logs: inventory-svc.log:1 db pool exhausted 9 hits (continues); notify-worker.log:7 dns SERVFAIL geo.internal 6 hits. others slow query noise.\nR8: board.md:3 Thread A resolved; board.md:4 Thread B revised DB_POOL_EXHAUSTED (supersedes CERT); board.md:5 Thread D false alarm (closed). No changes.md.\nR8 logs: inventory-svc.log:2,9 db pool exhausted 11 hits.\nR9: board.md:3 Follow-up OPEN RUNBOOK_UPDATE."
+  },
+  {
+   "id": "s22.act",
+   "role": "assistant",
+   "body": "[step 22] execute\nthought: Record R9 board, compact, scan R9 logs.\ncode:\nimport json,glob,re\nc=json.load(open('/task/workspace/context.json'))\nfor e in c['entries']:\n    if e['id']=='n1': e['body']+='\\nR8 logs: inventory-svc.log:2,9 db pool exhausted 11 hits.\\nR9: board.md:3 Follow-up OPEN RUNBOOK_UPDATE.'\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\njson.dump(c,open('/task/workspace/context.json','w'))\nfor p in sorted(glob.glob('/task/fixtures/round-09/logs/*.log')):\n    hits=[(i,l.strip()) for i,l in enumerate(open(p),1) if re.search(r'ERROR|exhaust|dns|429|cert|disk|backlog|OOM|restart',l,re.I)]\n    print(p.split('/')[-1],len(hits))\n    for h in hits[:2]:print(' ',h[0],h[1][:150])"
+  },
+  {
+   "id": "s22.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nauth-svc.log 0\ninventory-svc.log 7\n  11 {\"ts\":\"2026-09-14T16:13:38Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":1268,\"in_use\":\"12/12\"}\n  24 {\"ts\":\"2026-09-14T16:25:20Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":1005,\"in_use\":\"10/10\"}\nnotify-worker.log 0\npayments-svc.log 6\n  3 {\"ts\":\"2026-09-14T16:03:19Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":883,\"in_use\":\"16/16\"}\n  5 {\"ts\":\"2026-09-14T16:04:31Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2065,\"in_use\":\"20/20\"}\npricing-svc.log 0\n"
+  },
+  {
+   "id": "s22.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 22: revision 33 -> 34; entries 6 -> 1; body chars 3435 -> 1532; removed [s20.act, s20.obs, s20.rcpt, s21.act, s21.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

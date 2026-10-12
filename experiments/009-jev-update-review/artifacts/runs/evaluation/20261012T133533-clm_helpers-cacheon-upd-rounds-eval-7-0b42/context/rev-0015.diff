@@ -1,0 +1,26 @@
+--- rev-14
++++ rev-15
+@@ -4,22 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "R1: CHG-113 APPLIED ledger-svc 7.35.5 db.pool_max=0 (round-01/changes.md:3) -> likely BAD_CONFIG_ROLLOUT later. R2: OPEN POSTMORTEM_DRAFT (round-02/board.md:3). R3: Thread A UPSTREAM_RATE_LIMIT tax-provider 429 shipping-svc+search-api ongoing (round-03/board.md:3; logs round-03/logs/search-api.log:2, shipping-svc.log:5); OPEN DATA_BACKFILL (r3 board.md:4), CAPACITY_REVIEW (r3 board.md:5); CHG-124 TLS noise. R4: Thread B checkout-api CACHE_STAMPEDE ongoing (round-04/board.md:3); CHG-128 log sampling noise."
+-  },
+-  {
+-   "id": "s9.act",
+-   "role": "assistant",
+-   "body": "[step 9] execute\nthought: Check R4 logs for checkout-api errors and update notes compactly.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-04/logs/*.log')):\n  n=0\n  for i,l in enumerate(open(f),1):\n    if re.search(r'ERROR|pool|cert|DNS|OOM|disk|cache',l,re.I) and n<3:\n      print(f.split('/')[-1],i,l.strip()[:140]);n+=1\nnb='R1: CHG-113 APPLIED ledger-svc 7.35.5 db.pool_max=0 (round-01/changes.md:3) -> likely BAD_CONFIG_ROLLOUT later. R2: OPEN POSTMORTEM_DRAFT (round-02/board.md:3). R3: Thread A UPSTREAM_RATE_LIMIT tax-provider 429 shipping-svc+search-api ongoing (round-03/board.md:3; logs round-03/logs/search-api.log:2, shipping-svc.log:5); OPEN DATA_BACKFILL (r3 board.md:4), CAPACITY_REVIEW (r3 board.md:5); CHG-124 TLS noise. R4: Thread B checkout-api CACHE_STAMPEDE ongoing (round-04/board.md:3); CHG-128 log sampling noise.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':nb}]},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s9.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\ncheckout-api.log 7 2026-09-14T11:03:59Z WARN  checkout-api disk usage high path=/var/data used_pct=97\ncheckout-api.log 17 2026-09-14T11:13:17Z WARN  checkout-api disk usage high path=/var/data used_pct=93\ncheckout-api.log 19 2026-09-14T11:13:38Z WARN  checkout-api disk usage high path=/var/data used_pct=98\nsearch-api.log 1 2026-09-14T11:00:02Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=36\nsearch-api.log 14 2026-09-14T11:11:10Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=50\nsearch-api.log 32 2026-09-14T11:28:06Z ERROR search-api upstream returned 429 upstream=tax-provider retry_after_s=5\nshipping-svc.log 7 2026-09-14T11:08:32Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=21\nshipping-svc.log 18 2026-09-14T11:14:52Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=49\nshipping-svc.log 27 2026-09-14T11:19:31Z ERROR shipping-svc upstream returned 429 upstream=tax-provider retry_after_s=13\n"
+-  },
+-  {
+-   "id": "s9.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 9: revision 12 -> 13; entries 6 -> 1; body chars 3446 -> 510; removed [s7.act, s7.obs, s7.rcpt, s8.act, s8.obs]; added []; rewritten [notes]"
++   "body": "R1: CHG-113 APPLIED ledger-svc 7.35.5 db.pool_max=0 (round-01/changes.md:3) -> likely BAD_CONFIG_ROLLOUT later. R2: OPEN POSTMORTEM_DRAFT (round-02/board.md:3). R3: Thread A UPSTREAM_RATE_LIMIT tax-provider 429 shipping-svc+search-api ongoing (round-03/board.md:3; logs round-03/logs/search-api.log:2, shipping-svc.log:5; r4 search-api.log:1, shipping-svc.log:7); OPEN DATA_BACKFILL (r3 board.md:4), CAPACITY_REVIEW (r3 board.md:5); CHG-124 TLS noise. R4: Thread B checkout-api board says CACHE_STAMPEDE (round-04/board.md:3) BUT logs show DISK_PRESSURE /var/data 97-98% (round-04/logs/checkout-api.log:7,19) - watch for board correction; CHG-128 log sampling noise."
+   }
+  ]
+ }

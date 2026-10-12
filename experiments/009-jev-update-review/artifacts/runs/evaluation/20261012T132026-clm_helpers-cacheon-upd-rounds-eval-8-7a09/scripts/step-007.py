@@ -1,0 +1,8 @@
+import json,glob
+for f in sorted(glob.glob('/task/fixtures/round-03/logs/*.log')):
+  L=open(f).read().splitlines()
+  hits=[(i+1,l) for i,l in enumerate(L) if 'ERROR' in l or 'restart' in l.lower() or 'cert' in l.lower() or 'OOM' in l]
+  print(f.split('/')[-1],len(hits))
+  for h in hits[:4]: print(' ',h[0],h[1][:150])
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. round-01/changes.md: CHG-109 APPLIED TLS ticket rotation hourly; CHG-113 APPLIED notify-worker 8.20.0 sets db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT); CHG-114 APPLIED inventory-svc 8.20.0 no config. Logs r1: slow query WARN noise. R2: board empty; changes.md:3 CHG-114 PROPOSED raise HPA (not applied). R2 pricing-svc.log heap high WARN lines 6-83.\nR3: board.md:3 Thread A MEMORY_LEAK pricing-svc + auth-svc ongoing. board.md:4 Thread B inventory-svc suspected CERT_EXPIRED ongoing. changes.md:3 CHG-124 APPLIED retry budget GETs=1.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

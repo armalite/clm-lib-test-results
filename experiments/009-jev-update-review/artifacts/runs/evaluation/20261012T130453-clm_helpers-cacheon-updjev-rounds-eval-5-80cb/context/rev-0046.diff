@@ -1,0 +1,24 @@
+--- rev-45
++++ rev-46
+@@ -45,6 +45,21 @@
+    "id": "n9",
+    "role": "note",
+    "body": "R9: board empty; no changes; auth-svc cert_expired continues (round-09/logs/auth-svc.log:6-71); others clean."
++  },
++  {
++   "id": "s28.act",
++   "role": "assistant",
++   "body": "[step 28] execute\nthought: Inspect R10 checkout-api logs for failure cause; compact context.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[x for x in c['entries'] if x['id'].startswith('n')]\nfor x in c['entries']:\n  if x['id']=='n9': x['body']='R9: board empty; no changes; auth-svc cert_expired continues (round-09/logs/auth-svc.log:6-71); others clean.'\njson.dump(c,open('/task/workspace/context.json','w'))\nfor s in ['checkout-api','auth-svc','ledger-svc','search-api','shipping-svc']:\n  L=open(f'/task/fixtures/round-10/logs/{s}.log').read().splitlines()\n  h=[(i+1,l) for i,l in enumerate(L) if re.search('ERROR|WARN|error|fail',l) and 'slow' not in l]\n  print(s,len(h),[i for i,_ in h][:40])\n  for i,l in h[:3]: print(i,l[:200])"
++  },
++  {
++   "id": "s28.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\ncheckout-api 10 [9, 11, 16, 18, 44, 58, 66, 69, 73, 87]\n9 {\"ts\":\"2026-09-14T17:08:50Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"db.pool_max\",\"value\":\"-4\",\"build\":\"7.35.8\"}\n11 {\"ts\":\"2026-09-14T17:09:25Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"db.pool_max\",\"value\":\"-4\",\"build\":\"7.35.8\"}\n16 {\"ts\":\"2026-09-14T17:12:09Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"db.pool_max\",\"value\":\"-4\",\"build\":\"7.35.8\"}\nauth-svc 10 [1, 4, 7, 9, 32, 45, 47, 52, 74, 84]\n1 {\"ts\":\"2026-09-14T17:00:26Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\n4 {\"ts\":\"2026-09-14T17:04:42Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\n7 {\"ts\":\"2026-09-14T17:06:21Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nledger-svc 12 [7, 15, 23, 24, 30, 40, 43, 44, 52, 59, 60, 67]\n7 {\"ts\":\"2026-09-14T17:04:42Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\n15 {\"ts\":\"2026-09-14T17:13:34Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\n23 {\"ts\":\"2026-09-14T17:18:02Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nsearch-api 0 []\nshipping-svc 0 []\n"
++  },
++  {
++   "id": "s28.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 28: revision 44 -> 45; entries 14 -> 9; body chars 4419 -> 2361; removed [s26.act, s26.obs, s26.rcpt, s27.act, s27.obs]; added []; rewritten [n9]"
+   }
+  ]
+ }

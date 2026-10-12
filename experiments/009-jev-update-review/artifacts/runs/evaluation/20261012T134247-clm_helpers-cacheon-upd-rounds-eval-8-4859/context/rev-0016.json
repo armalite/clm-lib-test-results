@@ -1,0 +1,29 @@
+{
+ "number": 16,
+ "parent": 15,
+ "source": "runtime",
+ "step": 10,
+ "sha256": "3094b4b76ecf611510b97ca847cb2ceed2408ca720ad40a9e92f52beaaede7cc",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. changes.md:3 CHG-109 APPLIED TLS ticket rotation hourly; :4 CHG-113 APPLIED notify-worker build 8.20.0 sets db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT); :5 CHG-114 inventory-svc 8.20.0 no config. Logs: only routine slow query WARNs in all 5 services (notify-worker,pricing-svc,auth-svc,payments-svc,inventory-svc). R2: changes.md:3 CHG-114 PROPOSED HPA search tier (not applied; note R1 CHG-114 id reused). R2 board empty. pricing-svc.log heap usage high WARNs lines 6,7,10,22,36,55,62,66,83 rss_mb 2216-3660, gc_pause rising to 1302 (suspect MEMORY_LEAK, no restarts yet). R3 board:3 Thread A MEMORY_LEAK pricing-svc (+auth-svc) ongoing; board:4 Thread B inventory-svc suspected CERT_EXPIRED ongoing. changes:3 CHG-124 APPLIED retry budget GETs=1. R3 logs: auth-svc heap high lines 5,16,24,25,51,58,62,75 (no restarts); inventory-svc db pool exhausted lines 9,12,16,29,34,46,60,66,72,82 (no cert errors seen -> Thread B may actually be DB_POOL_EXHAUSTED; note CHG-113 pool_max=-4 was notify-worker not inventory); pricing heap high 11,40,41,43,50,55,60. R4 board:3 follow-up OPEN ALERT_TUNING."
+  },
+  {
+   "id": "s10.act",
+   "role": "assistant",
+   "body": "[step 10] execute\nthought: Scan R4 logs for key signals and compact context.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-04/logs/*.log')):\n    s=f.split('/')[-1]\n    hits={}\n    for i,l in enumerate(open(f),1):\n        if 'slow query' in l: continue\n        if re.search(r'WARN|ERROR|FATAL|restart|OOM',l,re.I):\n            k=re.sub(r'[0-9]+','#',l)[:90]\n            hits.setdefault(k,[]).append(i)\n    for k,v in hits.items(): print(s,v[:12],k.strip())\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']+=' R4 board:3 follow-up OPEN ALERT_TUNING.'\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s10.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nauth-svc.log [6, 14, 16, 22, 31, 49, 53, 54] #-#-#T#:#:#Z WARN  auth-svc heap usage high rss_mb=# gc_pause_ms=#\ninventory-svc.log [19, 25, 29, 36, 37, 57, 80] #-#-#T#:#:#Z WARN  inventory-svc db pool exhausted wait_ms=# in_use=#/#\npricing-svc.log [1, 5, 6, 9, 11, 18, 32, 43, 50, 59, 70] #-#-#T#:#:#Z WARN  pricing-svc heap usage high rss_mb=# gc_pause_ms=#\n"
+  },
+  {
+   "id": "s10.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 10: revision 14 -> 15; entries 6 -> 1; body chars 2541 -> 1111; removed [s8.act, s8.obs, s8.rcpt, s9.act, s9.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

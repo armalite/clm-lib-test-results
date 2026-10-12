@@ -1,0 +1,4 @@
+import json
+n='R1: changes.md:3 CHG-107 APPLIED retry budget idempotent GETs=1. Slow query WARNs = noise. DNS_RESOLUTION host=rates.internal SERVFAIL round-01/logs/inventory-svc.log:7,20,50-90.\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspicious BAD_CONFIG; no search-api errors yet). changes.md:4 CHG-121 auth-svc no config. checkout-api.log:8-59 dns errs; inventory-svc.log:8-74 dns errs.\nR3: board.md:3 Thread B auth-svc suspected DB_POOL_EXHAUSTED ongoing, BUT logs show CERT_EXPIRED peer=sso.example.net auth-svc.log:6,9,15,21 (10 errs). changes.md:3 CHG-126 PROPOSED (ignore). DNS errs continue checkout-api.log:33-45, inventory-svc.log:3-28. search/shipping clean.'
+c={'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':n}]}
+json.dump(c,open('/task/workspace/context.json','w'))

@@ -1,0 +1,24 @@
+--- rev-22
++++ rev-23
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: round-01/changes.md:3 CHG-110 APPLIED TLS ticket rotation; :4 CHG-113 APPLIED checkout-api db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT); search-api /var/data 91-97% (round-01/logs/search-api.log:4,12,38,48). R2: round-02/board.md:3 Thread A DISK_PRESSURE search-api+shipping-svc ongoing; :4 follow-up OPEN CUSTOMER_COMMS. CHG-117 dashboards (irrelevant). R2 logs: disk 91-98% search-api.log:4-63, shipping-svc.log:4-71; no other errors. Next: advance to R3. R3: round-03/board.md:3 Thread B MEMORY_LEAK auth-svc ongoing. R3 logs: auth-svc tls certificate_expired peer=bank-api round-03/logs/auth-svc.log:1,16,21 (contradicts board MEMORY_LEAK? check mem lines later); disk still 96-98% search-api.log:16,77, shipping-svc.log:80. Next: advance R4. R4: board.md:3 Thread A mitigated (CHG-136 APPLIED to search-api changes.md:4); :4 OPEN DATA_BACKFILL; :5 OPEN VENDOR_TICKET; CHG-131 PROPOSED ignore. R4 logs: auth-svc certificate_expired peer=bank-api round-04/logs/auth-svc.log:3,5,7,20,40,42,55; slow query WARNs everywhere = noise. Next: advance R5. R5: board.md:3 OPEN CAPACITY_REVIEW."
++  },
++  {
++   "id": "s14.act",
++   "role": "assistant",
++   "body": "[step 14] execute\nthought: Check R5 logs for errors briefly and update note.\ncode:\nimport json,glob,re\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*.log')):\n    for i,l in enumerate(open(f),1):\n        if re.search(r'ERROR|certificate|disk|pool|memory|429|dns',l,re.I) and 'slow query' not in l:\n            print(f.split('/')[-1],i,l.strip()[:150])\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='n1'][0]\nn['body']+=' R5: board.md:3 OPEN CAPACITY_REVIEW.'\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s14.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nauth-svc.log 1 {\"ts\":\"2026-09-14T12:01:20Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 3 {\"ts\":\"2026-09-14T12:02:48Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 13 {\"ts\":\"2026-09-14T12:14:15Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 18 {\"ts\":\"2026-09-14T12:17:07Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 39 {\"ts\":\"2026-09-14T12:29:36Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 53 {\"ts\":\"2026-09-14T12:41:37Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 57 {\"ts\":\"2026-09-14T12:43:45Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 59 {\"ts\":\"2026-09-14T12:45:24Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 61 {\"ts\":\"2026-09-14T12:46:26Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 67 {\"ts\":\"2026-09-14T12:49:13Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\nauth-svc.log 75 {\"ts\":\"2026-09-14T12:58:08Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"bank-api\",\"reason\":\"certificate_expired\"}\ncheckout-api.log 69 {\"ts\":\"2026-09-14T12:56:41Z\",\"level\":\"INFO\",\"svc\":\"checkout-api\",\"msg\":\"heartbeat\",\"uptime_s\":64291}\n"
++  },
++  {
++   "id": "s14.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 14: revision 21 -> 22; entries 6 -> 1; body chars 2405 -> 1090; removed [s12.act, s12.obs, s12.rcpt, s13.act, s13.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

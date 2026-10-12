@@ -1,67 +1,123 @@
-# Roadmap: where can a fast decision model assist model-controlled CLM?
+# Roadmap: can Jev improve a CLM agent, and where in the workflow is its assistance useful?
 
-_Written on 2026-10-13. A planning document, not a result. Each strategy gets its own experiment, protocol and evidence. Experiment 008 is separate evidence and is not one of these strategies (see below)._
+_First written on 2026-10-13 and revised on 2026-10-13 (session 5). A planning document, not a result. Each experiment has its own protocol and evidence. The dated notes at the end are kept as written._
 
-## Purpose
+## The question
 
-These experiments ask where a fast decision model (TypeSafe Jev) can **usefully assist** a CLM agent that manages its own working context with code. "Usefully" covers four things:
-- correctness;
-- cost (both providers);
-- latency;
-- failures and overhead.
+**Can a fast decision model (TypeSafe Jev) improve a CLM agent, and where in the workflow is its assistance useful?**
 
-**Assumptions we do not make:**
-- **No assumed benefit:** a working integration is not evidence that it helps, and a negative or null result is a valid finding.
-- **Not a first:** the combination of Jev and CLM-style state management is not new. fast-jev-compaction filters tool history with Jev by fixed rules, and the Muninn post combined Jev flags with model-written state updates. See [008's protocol](008-jev-context-review/protocol.md#related-work-and-how-this-differs).
+"Useful" covers correctness, cost (both providers), latency, failures and overhead. The programme studies two kinds of assistance:
+- **Model-controlled assistance:** Jev advises and **Claude decides** every working-context edit. These are experiments 008–011 and 013.
+- **Complementary runtime policies:** a declared runtime rule uses Jev's scores to decide what **initially enters** Claude's context, while Claude still controls all later working-context edits. This is experiment 012.
 
-**Invariants in every strategy:**
-- **Claude decides every edit.** The main model alone decides whether and how to edit its context, in both arms.
-- **Jev only advises.** Advice is never a deletion command, and a low relevance score is never permission to forget.
-- **Opt-in only.** Every addition is an explicit, versioned opt-in. Historical configurations, prompts, generators, scorers and evidence keep their behaviour.
-- **The sandbox stays isolated:** no network, no credentials.
+These are different interventions. Results from one say nothing directly about the other.
 
-## The three strategies
+**Ground rules for every experiment:**
+- **Each experiment compares one strategy with its own matched control** (CLM with the same mechanism but without Jev's advice). That establishes whether the strategy helps *its* control.
+- **Comparing strategies directly** requires shared workloads and compatible settings: the same instances, model, effort, prompts, caching, limits and budget. Numbers from different experiments are **not** compared directly.
+- **A useful result need not favour Jev.** Null and negative results are findings.
+- **Not a first:** these experiments do not establish that combining Jev and CLM is novel. fast-jev-compaction filters tool history with Jev by fixed rules, and the Muninn post combined Jev flags with model-written state updates. See [008's protocol](008-jev-context-review/protocol.md#related-work-and-how-this-differs).
+- **Invariants:**
+  - every addition is opt-in and versioned;
+  - historical configurations, prompts, generators, scorers and evidence keep their behaviour;
+  - Jev calls are host-side only, and the sandbox has no network or credentials;
+  - Jev never sees future evidence, hidden answers or deleted history.
 
-| | Strategy 1: update-triggered review | Strategy 2: Claude-initiated review | Strategy 3: proposed-edit check |
+## Programme overview
+
+| | Kind | Where Jev acts | Status |
 | --- | --- | --- | --- |
-| **Experiment** | [009](009-jev-update-review/protocol.md) | [010](010-jev-initiated-review/protocol.md) | [011](011-jev-edit-check/protocol.md) |
-| **Status** | **Implemented** (2026-10-13); diagnostic and pilot only | **Planned**: not implemented, no paid runs authorised | **Planned**: not implemented, no paid runs authorised |
-| **Question** | When meaningful evidence arrives, does Jev's affected-entry advice help Claude review its existing context? | When Claude itself decides a review is needed, does Jev's advice improve that review? | Before Claude applies a context edit, does a Jev check for narrow risks help Claude catch mistakes? |
-| **Jev judgment** | Per current entry: does this update require reconsidering a current assertion or planned action in it? (`jev-review/1`) | The same per-entry judgment, for the update Claude names | **New, untested:** for example, does the proposed revision lose a still-current fact from a removed entry, or carry forward an assertion an update has superseded? |
-| **Trigger** | Runtime: each round release with board or change-log lines | Claude chooses when to start a review | Each proposed edit that removes or rewrites entries |
-| **Control (CLM only)** | Claude sees the same update and the same instruction to consider its context | Claude has the same review action and performs the review itself | Claude has the same check opportunity without Jev |
-| **Who edits** | Claude | Claude | Claude (apply, revise or withdraw) |
-| **Main overhead** | One Jev round trip per update, plus advice text in context; no extra Claude turn | One extra Claude turn per review in both arms, plus Jev | One extra Claude turn per checked edit in both arms, plus Jev |
-| **Diagnostic needed first** | Fresh `round-files/1` payload cases (done for 009) | Whether Claude-chosen update texts resemble the cases Jev was checked on | A new labelled set for the new judgment; the 008/009 question must not be assumed to work |
+| [008](008-jev-context-review/README.md) | model-controlled | an optional Jev tool Claude may call | Complete: the tool was never used (evidence about optional-tool availability) |
+| [009](009-jev-update-review/README.md) | model-controlled | automatically at every incoming update, before Claude's next turn | Complete: no cost, time or established correctness benefit in 24 evaluation runs |
+| [010](010-jev-initiated-review/README.md) | model-controlled | when **Claude** starts a context review | Stopped at its calibration gate: Claude started **no** reviews in 4 runs, so the question was not tested |
+| [011](011-jev-edit-check/protocol.md) | model-controlled | on a proposed context rewrite, before acceptance | Planned (design open) |
+| W2 workload | a workload, not a strategy | changing requirements that interact | Planned (not implemented) |
+| 012 | runtime policy beside CLM | automatic screening of incoming tool results | Planned: the first proposed screening experiment |
+| 013 | model-controlled | Claude-directed screening of tool results | Planned |
 
-## How they differ from experiment 008
+### 010: Claude-initiated context review
 
-In [008](008-jev-context-review/README.md), Jev was an **independently optional action**: the control had no review mechanism at all, and the assisted arm could call Jev whenever it liked.
-- **Diagnostic:** Jev answered the narrow question well on 24 labelled cases.
-- **Pilot:** in its four-run pilot the agent **never called it**.
-- **What it remains:** evidence about optional-tool availability only. Its prompts and results are not changed, strengthened or relabelled.
+- **Question:** when Claude itself decides that its working context needs review, does Jev's advice, given automatically as part of that review and before Claude chooses its edits, improve agent performance?
+- **Hypothesis:** advice at Claude-chosen review points targets real reconsideration moments better than reviewing every update (009), with less overhead.
+- **Control and assisted conditions:** both have the same neutral `begin_review` action and the same instructions. The assisted condition's review also includes Jev's per-entry probabilities.
+- **What it is not:** this is not 008. In 008 Claude had to choose to call Jev; here Claude chooses to review, and Jev is part of every review in the assisted condition.
+- **Workload:** the incident-rounds family. There is a meaningful opportunity to help when an update supersedes or partly changes something already in Claude's notes.
+- **Outcomes:** strict success and scored categories, cost, time and calls, review frequency, edits after reviews, and advice volume and residence in context.
+- **Confounds:**
+  - review frequency can differ between arms;
+  - Claude writes the review's "new information" text itself;
+  - the review protocol itself changes CLM behaviour, so the control is "CLM with the review protocol", not 009's or older controls.
+- **Readiness gate:** calibration must show reviews initiated while work remains, in both arms, with real Jev calls in the assisted arm. **Status: gate failed (2026-10-13).** There were 0 reviews in 4 calibration runs, and no evaluation was run.
 
-The strategies here instead give **both arms the same review structure** and vary only whether Jev's advice is part of it. That separates "is review happening?" from "does the advice help?".
+### 011: Proposed-edit checking
+
+- **Question:** does a Jev check of a proposed context rewrite help Claude catch losses or incorrect changes before the rewrite is accepted?
+- **Hypothesis:** the observed failures (008/009) are omissions, so a check for lost still-current information targets them.
+- **Control and assisted conditions:** both get the same check opportunity on proposed rewrites (apply, revise or withdraw). The assisted condition adds Jev's answers to narrow questions about the change.
+- **Preservation of obligations** (an unchanged requirement silently dropped) belongs here.
+- **Still to design:** the intervention and correction workflow.
+- **Workload:** incident rounds first; the changing-requirements workload (W2) later, under shared settings.
+- **Opportunity to help:** a rewrite that drops or alters still-current facts.
+- **Outcomes:** omissions and stale facts, edits revised or withdrawn, and the extra turns and cost of the check.
+- **Confounds:**
+  - the check opportunity is itself an intervention;
+  - false alarms can cause churn.
+- **Readiness gate:** a fresh labelled component diagnostic for the new judgment must show useful separation first. **Status: planned.**
+
+### W2: Changing-requirements workload (a workload extension, not a new strategy)
+
+- **Example:** an app switches from CSV to JSON export. The format-specific requirements change, while permissions, filtering and other obligations stay valid.
+- **Purpose:**
+  - test missed updates (a format rule not changed);
+  - test unnecessary changes to unaffected requirements (permissions or filtering altered or dropped);
+  - test downstream task correctness when several distinct requirements interact.
+- **How it would be used:** it could exercise 010 (Claude reviews when a requirement changes) and 011 (checks of proposed rewrites for lost obligations) **under shared settings**. It is also the natural workload for a later common-workload comparison of strategies.
+- **Relation to existing generators:** experiments 004 and 005 have coding generators with changing rules. W2 would need a generator where interacting obligations persist across a format switch.
+- **Readiness gate:** a versioned generator and scorer with separate categories for "missed change" and "unnecessary change", validated offline. **Status: planned, not implemented.**
+
+### 012: Automatic screening of incoming tool results (runtime policy beside CLM)
+
+- **Question:** can a declared runtime policy that uses Jev to screen tool results before they enter Claude's context reduce cost and latency without losing needed evidence?
+- **Design:** Jev scores passages or chunks of a tool result, and a fixed, declared policy (for example a threshold plus always-keep rules) selects what initially enters the context.
+  - **Nothing is lost:** the full original result stays accessible on disk, and Claude can re-read it.
+  - **Claude still controls** all later working-context edits.
+- **Control and assisted conditions:** the control is CLM with the full results entering as today. The assisted condition is the same CLM with the screening layer.
+- **Workload:** tasks with large tool outputs, such as the incident-rounds logs (23–41k characters per round). There is an opportunity to help where most of a result is noise.
+- **Outcomes:**
+  - cost, latency and correctness;
+  - **missed evidence**: needed lines screened out;
+  - **recovery work**: re-reads of the originals, and extra calls.
+- **Confounds:**
+  - the policy's threshold is a design choice, so it is fixed before evaluation;
+  - screening also changes context pressure.
+- **Readiness gate:** an offline replay of existing traces showing what the policy would drop, against the scorer's evidence lines, before any agent run. **Status: planned, the first proposed screening experiment.**
+
+### 013: Claude-directed screening of incoming tool results
+
+- **Question:** when Claude chooses the screening question, does Jev-assisted passage screening help Claude find and keep the right evidence?
+- **Design:** Claude receives a reference to the result file rather than its full text, writes a screening question, and gets Jev's per-passage scores. It then decides what to inspect and retain.
+- **Control and assisted conditions:** the control is CLM with the **same file access and browsing tools** (for example grep, head and line ranges). It must not be forced to read entire results. The assisted condition is the same plus the Jev screening call.
+- **Opportunity to help:** results where the relevant passages are hard to find by simple search.
+- **Outcomes:** correctness, missed evidence, cost, time, calls, and screening questions used.
+- **Confounds:**
+  - the quality of Claude's question;
+  - tool-use differences;
+  - the extra turns per screening.
+- **Readiness gate:** 012's findings, plus a passage-level diagnostic for the question type. **Status: planned**, distinct from 012.
 
 ## Order and gating
 
-1. **Strategy 1 (009):** implemented first, because:
-   - it needs no new Jev judgment;
-   - it adds no Claude turn;
-   - its trigger is mechanical and identical across arms.
+1. **009** (done): update-triggered review gave no benefit on this task.
+2. **010** (done): Claude-initiated review stopped at its calibration gate. Claude never started a review.
+3. **011's component diagnostic** next, then possibly 011 itself. W2 is developed when 010 or 011 needs a workload with interacting obligations.
+4. **012** then **013**, the screening experiments, each behind its own readiness gate.
+5. **A common-workload comparison**, only if separate results justify it: the same instances and settings for CLM alone and each promising strategy. Without it, no ranking of strategies is claimed.
 
-   Its pilot decides whether a 24-run evaluation is worth authorising.
-2. **Strategy 2 or 3 next:** chosen after 009's pilot. Neither is implemented, and nothing is authorised for them. Strategy 3 needs its own diagnostic before any agent runs.
-3. **A common-workload comparison, only if the initial findings justify it:**
-   - **Design:** the same instances, runtime, model and budget for CLM alone and for each strategy that showed something worth comparing.
-   - **Why it is needed:** improvements measured on different tasks or settings cannot establish a winning strategy, so no cross-experiment ranking will be claimed without it.
-
-## What is out of scope
+## Out of scope
 
 - An enormous benchmark.
-- Automatic deletion or filtering policies.
-- Jev-written state.
-- Multi-agent infrastructure.
+- Jev-written state, and multi-agent infrastructure.
+- **Automatic deletion of working-context entries.** 012's screening policy is limited to what *enters* the context initially; it never removes what Claude has kept.
 - Changes to old experiments or their exports.
 
 ## Note after 009's pilot (2026-10-13)
@@ -72,3 +128,34 @@ The strategies here instead give **both arms the same review structure** and var
 - **Strategy 3 matches what the agent actually does.** It rewrites a large note each round, and the omissions seen in 007's evaluation (a dropped early change record, missing citations) are exactly the "lost a still-current fact" risk that strategy 3 targets.
 - **It can start cheaply.** A labelled component diagnostic of the new judgment needs only TypeSafe calls, and no agent run is needed until it shows useful separation.
 - **Strategy 2 depends on Claude choosing to start reviews.** 008 found that an optional Jev action was never used. Giving both arms a review action would change that, but the most likely first finding, whether reviews happen at all, is cheaper to learn later.
+
+## Note after 009's evaluation (2026-10-13)
+
+**Strategy 1's frozen 24-run evaluation** (4 fresh instances × 3 repetitions) **did not reproduce the pilot's savings.**
+- **Cost and time:** with Jev advice, mean cost was USD 0.415 vs 0.375 and mean elapsed time 158 s vs 149 s. The assisted arm was cheaper in 4 of 12 matched blocks.
+- **Correctness:** strict success was 10/12 vs 8/12, which is not conclusive.
+- **Failure types:** every failure in both arms was an **omission** (missing evidence references, once a whole incident) or an invalid citation. **None was a stale fact**, which is the error affected-entry advice targets. See [009](009-jev-update-review/README.md).
+
+**The recommendation above stands, with one adjustment: strategy 3's component diagnostic (011) next, still before strategy 2.**
+- **Why strategy 3:** the observed failures are the "lost a still-current fact" kind that strategy 3 targets.
+- **Overhead:** strategy 3 adds a Claude turn per checked edit, and runs made about 18 edits, so its design must keep overhead in view. Checking only edits that remove or rewrite notes would help. 009 showed that small per-run additions cost money: about 11% here.
+- **Strategy 2** also adds Claude turns, and its value depends on Claude choosing to review.
+- **Neither is implemented or authorised.**
+
+**Comparing strategies:** each experiment uses its own controls. A ranking needs the [common-workload comparison](#order-and-gating): the same instances, runtime, model, prompts, caching, budget and metrics for CLM alone and each strategy. Numbers from 009, 010 and 011 are not to be compared directly with one another.
+
+## Note after 010's calibration (2026-10-13)
+
+**010's calibration:** Claude never used the shared `begin_review` step, in either condition, in 4 runs. It integrated updates by direct context edits instead. Following the protocol, no evaluation was run and the instructions were not strengthened. See [010](010-jev-initiated-review/README.md).
+
+**Across the Jev experiments so far:**
+- **008:** an optional Jev tool went unused.
+- **009:** automatic review gave no benefit.
+- **010:** an optional review step went unused.
+
+On this workload, optional steps that cost Claude a turn are not adopted, and the observed failures are omissions and miscitations rather than stale facts.
+
+**Recommendation (the decision is the maintainer's):** 011's component diagnostic next, as before.
+- **Why:** 010's exploratory check found one omission that was never recorded and one that was miscited at answer time. Neither was a loss during an edit, so 011 should also confirm that edit-time losses occur at all on this workload, before agent runs.
+- **A workload with interacting obligations (W2)** may be needed to create that opportunity.
+- **Revising 010:** any revised 010 design, for example making review the route for note rewrites, would be a new, labelled protocol version, and is close to 011.

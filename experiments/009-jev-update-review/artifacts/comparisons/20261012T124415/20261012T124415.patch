@@ -1,0 +1,44 @@
+diff --git a/configs/exp009.toml b/configs/exp009.toml
+index b7ee532..c956f61 100644
+--- a/configs/exp009.toml
++++ b/configs/exp009.toml
+@@ -6,7 +6,9 @@
+ #   "clm_helpers+upd:on" (control: update payload + review instruction) and
+ #   "clm_helpers+upd-jev:on" (assisted: the same, plus Jev advice on the current entries);
+ # - the optional experiment-008 review action stays off ([jev] enabled = false);
+-# - the ledger ceiling authorised for this experiment (spend at start USD 48.408962 + USD 10).
++# - the ledger ceiling authorised for this experiment: pilot phase spend USD 48.408962 + USD 10
++#   (58.408962); evaluation phase (2026-10-13) spend USD 50.210028 + USD 20 = 70.210028, which
++#   replaces the unused pilot allowance. The ceiling is not a behavioural setting.
+ # Both arms use mode clm_helpers (direct editing; reusable helpers allowed, never required).
+ # Use only this config for experiment-009 live commands.
+ runs_dir = "runs"
+@@ -48,7 +50,7 @@ target_ratio = 0.50          # token-tail/1: desired request size after compacti
+ summary_min_chars = 600
+ 
+ [budget]
+-ceiling_usd = 58.408962            # total live-validation ceiling; ledger keeps the lowest ever set
++ceiling_usd = 70.210028            # total live-validation ceiling; ledger keeps the lowest ever set
+ min_run_reserve_usd = 2.00    # compare: do not start a run with less remaining
+ ledger = "runs/ledger.json"
+ prices = "configs/prices.toml"
+diff --git a/src/clm_lib/tasks.py b/src/clm_lib/tasks.py
+index 447ed58..c386d39 100644
+--- a/src/clm_lib/tasks.py
++++ b/src/clm_lib/tasks.py
+@@ -91,12 +91,13 @@ INSTANCES: dict[str, InstanceSpec] = {
+         for split, n, seed0 in (("dev", 2, base + 100), ("eval", 6, base + 200))
+         for i in range(1, n + 1)
+     },
+-    # Experiment 007: multi-service incident over 10-12 evidence rounds (rounds.py).
++    # Experiment 007: multi-service incident over 10-12 evidence rounds (rounds.py). rounds-eval-1..4
++    # were 007's evaluation; rounds-eval-5..8 (seeds 7205-7208) are experiment 009's evaluation.
+     **{
+         f"rounds-{split}-{i}": InstanceSpec(
+             f"rounds-{split}-{i}", seed0 + i, "incident_rounds", f"rounds-{split}"
+         )
+-        for split, n, seed0 in (("dev", 2, 7100), ("eval", 4, 7200))
++        for split, n, seed0 in (("dev", 2, 7100), ("eval", 8, 7200))
+         for i in range(1, n + 1)
+     },
+     # Experiment 009: separate instances for diagnostic case text and the integration smoke run

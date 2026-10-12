@@ -1,0 +1,54 @@
+{
+ "number": 36,
+ "parent": 35,
+ "source": "runtime",
+ "step": 22,
+ "sha256": "bd92a5896221413d160b0f3ab6e487be321db883eddf0b7d84d2bec25c780b18",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: CHG-109 APPLIED TLS ticket rotation (round-01/changes.md:3); CHG-113 APPLIED notify-worker db.pool_max=-4 (round-01/changes.md:4) suspect BAD_CONFIG_ROLLOUT, no errors seen yet; CHG-114 APPLIED inventory-svc 8.20.0 (round-01/changes.md:5). R2 nothing (CHG-114 PROPOSED dup id irrelevant)."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3 board: A MEMORY_LEAK pricing-svc+auth-svc ongoing (round-03/board.md:3); B suspected CERT_EXPIRED inventory-svc ongoing (round-03/board.md:4). CHG-124 APPLIED retry budget=1 (round-03/changes.md:3). [HIST: B cause revised R8]"
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4 board: Follow-up OPEN ALERT_TUNING (round-04/board.md:3). R4 logs: inventory-svc db pool exhausted WARNs (round-04/logs/inventory-svc.log:19-37,57,80) -> possible DB_POOL_EXHAUSTED inventory-svc (vs board CERT suspicion)."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: CHG-135 APPLIED log sampling health (round-05/changes.md:3) irrelevant. R5 logs: auth/pricing heap high WARNs (round-05/logs/auth-svc.log:6, round-05/logs/pricing-svc.log:3); inventory pool exhausted (round-05/logs/inventory-svc.log:6). R5 board empty."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6 board: A mitigated (round-06/board.md:3) via CHG-150 APPLIED pricing-svc (round-06/changes.md:4); D DNS (later false alarm R8) (round-06/board.md:4) - check vs CHG-113 pool config. CHG-147 irrelevant. R6 logs: notify-worker dns lookup failed ERROR (round-06/logs/notify-worker.log:7); inventory pool exhausted (round-06/logs/inventory-svc.log:7,9). "
+  },
+  {
+   "id": "n8",
+   "role": "note",
+   "body": "R8 board: A MEMORY_LEAK resolved (round-08/board.md:3); B revised DB_POOL_EXHAUSTED inventory-svc (round-08/board.md:4); D false alarm closed (round-08/board.md:5). CHG-113 notify-worker pool_max=-4 still unseen in errors."
+  },
+  {
+   "id": "s22.act",
+   "role": "assistant",
+   "body": "[step 22] execute\nthought: Record R8 board updates, check R8 logs briefly, prune old step entries.\ncode:\nimport json,re,glob\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if not e['id'].startswith(('s20','s21'))]\nfor e in c['entries']:\n    if e['id']=='n3': e['body']+=' [HIST: B cause revised R8]'\n    if e['id']=='n6': e['body']=e['body'].replace('Next: advance to R7.','').replace('D DNS_RESOLUTION notify-worker ongoing','D DNS (later false alarm R8)')\nc['entries'].append({'id':'n8','role':'note','body':'R8 board: A MEMORY_LEAK resolved (round-08/board.md:3); B revised DB_POOL_EXHAUSTED inventory-svc (round-08/board.md:4); D false alarm closed (round-08/board.md:5). CHG-113 notify-worker pool_max=-4 still unseen in errors.'})\njson.dump(c,open('/task/workspace/context.json','w'))\nfor f in sorted(glob.glob('/task/fixtures/round-08/logs/*.log')):\n    for i,l in enumerate(open(f),1):\n        if re.search('ERROR|WARN|error|warn',l): print(f.split('/')[-1],i,l.strip()[:110])"
+  },
+  {
+   "id": "s22.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nauth-svc.log 4 {\"ts\":\"2026-09-14T15:03:03Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":249,\"table\":\"events\"}\nauth-svc.log 10 {\"ts\":\"2026-09-14T15:07:26Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":341,\"table\":\"items\"}\nauth-svc.log 13 {\"ts\":\"2026-09-14T15:09:46Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":399,\"table\":\"orders\"}\nauth-svc.log 16 {\"ts\":\"2026-09-14T15:12:43Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":302,\"table\":\"items\"}\nauth-svc.log 19 {\"ts\":\"2026-09-14T15:17:09Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":315,\"table\":\"events\"}\nauth-svc.log 20 {\"ts\":\"2026-09-14T15:17:31Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":255,\"table\":\"items\"}\nauth-svc.log 22 {\"ts\":\"2026-09-14T15:19:46Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":245,\"table\":\"events\"}\nauth-svc.log 26 {\"ts\":\"2026-09-14T15:25:49Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":390,\"table\":\"events\"}\nauth-svc.log 31 {\"ts\":\"2026-09-14T15:28:47Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":446,\"table\":\"orders\"}\nauth-svc.log 33 {\"ts\":\"2026-09-14T15:31:31Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":322,\"table\":\"events\"}\nauth-svc.log 44 {\"ts\":\"2026-09-14T15:38:40Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":258,\"table\":\"items\"}\nauth-svc.log 45 {\"ts\":\"2026-09-14T15:38:55Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":309,\"table\":\"orders\"}\nauth-svc.log 46 {\"ts\":\"2026-09-14T15:41:55Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":270,\"table\":\"orders\"}\nauth-svc.log 48 {\"ts\":\"2026-09-14T15:42:07Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":329,\"table\":\"orders\"}\nauth-svc.log 56 {\"ts\":\"2026-09-14T15:49:17Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":222,\"table\":\"items\"}\nauth-svc.log 67 {\"ts\":\"2026-09-14T15:58:16Z\",\"level\":\"WARN\",\"svc\":\"auth-svc\",\"msg\":\"slow query\",\"ms\":291,\"table\":\"orders\"}\ninventory-svc.log 2 {\"ts\":\"2026-09-14T15:02:44Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2682,\"in\ninventory-svc.log 4 {\"ts\":\"2026-09-14T15:04:34Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":392,\"table\":\"events\"\ninventory-svc.log 9 {\"ts\":\"2026-09-14T15:08:04Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":1297,\"in\ninventory-svc.log 13 {\"ts\":\"2026-09-14T15:10:11Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":1320,\"in\ninventory-svc.log 14 {\"ts\":\"2026-09-14T15:11:00Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":294,\"table\":\"events\"\ninventory-svc.log 18 {\"ts\":\"2026-09-14T15:13:19Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":1001,\"in\ninventory-svc.log 21 {\"ts\":\"2026-09-14T15:13:53Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":243,\"table\":\"events\"\ninventory-svc.log 26 {\"ts\":\"2026-09-14T15:18:34Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2192,\"in\ninventory-svc.log 28 {\"ts\":\"2026-09-14T15:22:08Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2900,\"in\ninventory-svc.log 34 {\"ts\":\"2026-09-14T15:26:04Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":416,\"table\":\"orders\"\ninventory-svc.log 35 {\"ts\":\"2026-09-14T15:27:27Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":426,\"table\":\"items\"}\ninventory-svc.log 39 {\"ts\":\"2026-09-14T15:29:52Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":448,\"table\":\"items\"}\ninventory-svc.log 40 {\"ts\":\"2026-09-14T15:31:20Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":218,\"table\":\"events\"\ninventory-svc.log 42 {\"ts\":\"2026-09-14T15:33:46Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":434,\"table\":\"events\"\ninventory-svc.log 43 {\"ts\":\"2026-09-14T15:33:53Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":397,\"table\":\"events\"\ninventory-svc.log 44 {\"ts\":\"2026-09-14T15:34:17Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2574,\"in\ninventory-svc.log 50 {\"ts\":\"2026-09-14T15:38:54Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2935,\"in\ninventory-svc.log 53 {\"ts\":\"2026-09-14T15:43:33Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2609,\"in\ninventory-svc.log 54 {\"ts\":\"2026-09-14T15:45:39Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2192,\"in\ninventory-svc.log 56 {\"ts\":\"2026-09-14T15:46:42Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":397,\"table\":\"orders\"\ninventory-svc.log 57 {\"ts\":\"2026-09-14T15:47:16Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":1914,\"in\ninventory-svc.log 61 {\"ts\":\"2026-09-14T15:54:31Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":397,\"table\":\"events\"\ninventory-svc.log 63 {\"ts\":\"2026-09-14T15:55:55Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":347,\"table\":\"events\"\nnotify-worker.log 6 {\"ts\":\"2026-09-14T15:09:45Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":407,\"table\":\"events\"\nnotify-worker.log 8 {\"ts\":\"2026-09-14T15:11:00Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":225,\"table\":\"events\"\nnotify-worker.log 15 {\"ts\":\"2026-09-14T15:16:34Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":223,\"table\":\"orders\"\nnotify-worker.log 26 {\"ts\":\"2026-09-14T15:21:03Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":387,\"table\":\"items\"}\nnotify-worker.log 30 {\"ts\":\"2026-09-14T15:23:08Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":385,\"table\":\"items\"}\nnotify-worker.log 35 {\"ts\":\"2026-09-14T15:26:58Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":304,\"table\":\"orders\"\nnotify-worker.log 39 {\"ts\":\"2026-09-14T15:31:41Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"slow query\",\"ms\":342,\"table\":\"orders\"\nnotify-worker.log 56 {\"ts\":\"2026-09-14T15:49:59Z\",\"level\":\"WARN\",\"svc\":\"notify-work\n[stdout truncated: 10197 bytes produced, first 6000 chars shown]"
+  },
+  {
+   "id": "s22.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 22: revision 34 -> 35; entries 10 -> 6; body chars 3176 -> 1574; removed [s20.act, s20.obs, s20.rcpt, s21.act, s21.obs]; added [n8]; rewritten [n3, n6]"
+  }
+ ]
+}

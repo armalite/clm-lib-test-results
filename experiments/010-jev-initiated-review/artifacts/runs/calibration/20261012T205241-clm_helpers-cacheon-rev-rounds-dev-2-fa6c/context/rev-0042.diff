@@ -1,0 +1,46 @@
+--- rev-41
++++ rev-42
+@@ -4,42 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "R1: changes.md:3 CHG-107 APPLIED retry budget idempotent GETs=1. Slow query WARNs = noise. DNS_RESOLUTION host=rates.internal SERVFAIL round-01/logs/inventory-svc.log:7,20,50-90.\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspicious BAD_CONFIG; no search-api errors yet). changes.md:4 CHG-121 auth-svc no config. checkout-api.log:8-59 dns errs; inventory-svc.log:8-74 dns errs.\nR3: board.md:3 Thread B auth-svc suspected DB_POOL_EXHAUSTED ongoing, BUT logs show CERT_EXPIRED peer=sso.example.net auth-svc.log:6,9,15,21 (10 errs). changes.md:3 CHG-126 PROPOSED (ignore). DNS errs continue checkout-api.log:33-45, inventory-svc.log:3-28. search/shipping clean.\nR4: board empty, no changes.md. CERT_EXPIRED sso.example.net now ALSO shipping-svc round-04/logs/shipping-svc.log:3-20,27-44,58-66; auth-svc.log:6-16,39-59,63-77. DNS continues checkout-api.log:1-21,38-71; inventory-svc.log:32-52,56-75. search clean.\nR5: board.md:3 Thread A mitigated; board.md:4 Thread B +shipping-svc; board.md:5 OPEN VENDOR_TICKET; board.md:6 OPEN ALERT_TUNING. changes.md:3 CHG-143 APPLIED mitigation thread A inventory-svc. checkout/inventory/search 0 errs. CERT errs auth-svc.log:2-64, shipping-svc.log:9-65.\nR6: board.md:3 OPEN RUNBOOK_UPDATE. changes.md:3 CHG-144 APPLIED log sampling (noise). checkout/inventory/search 0 errs. CERT errs auth-svc.log:4-79 (10), shipping-svc.log:1-64 (6).\nR7: board.md:3 Thread B cause revised CERT_EXPIRED (supersedes DB_POOL). board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing; search-api.log:4-66 429 upstream=tax-provider (8 errs). CERT errs auth-svc.log:1-64, shipping-svc.log:10-66. checkout/inventory 0 errs. Note CHG-120 search-api max_inflight=-1 may relate.\nR8: board.md:3 Thread A RESOLVED; board.md:4 Thread B MITIGATED; board.md:5 Thread C search-api pod failures cause unknown ongoing; board.md:6 OPEN DATA_BACKFILL; board.md:7 CLOSED VENDOR_TICKET. search-api.log 429 tax-provider lines 1-72 (15). CERT errs few: auth-svc.log:8,61 shipping-svc.log:50,60. checkout/inventory 0. search-api config validation failed (9) lines [2, 5, 10, 26, 42, 44, 59, 68, 72] -> likely BAD_CONFIG_ROLLOUT CHG-120 (round-02/changes.md:3).\nR9: board.md:3 Thread C pods restarting still. changes.md:3 CHG-166 retry budget (noise). search-api.log 429 tax-provider 11 errs lines 1-67; config validation failed http.max_inflight 11 errs lines 2-76. CERT errs auth-svc.log:22,55 shipping-svc.log:28,56."
+-  },
+-  {
+-   "id": "s28.act",
+-   "role": "assistant",
+-   "body": "[step 28] execute\nthought: Save R9 into notes, drop step entries.\ncode:\nimport json\np='/task/workspace/context.json'\nc=json.load(open(p))\nfor e in c['entries']:\n  if e['id']=='notes':e['body']+='\\nR9: board.md:3 Thread C pods restarting still. changes.md:3 CHG-166 retry budget (noise). search-api.log 429 tax-provider 11 errs lines 1-67; config validation failed http.max_inflight 11 errs lines 2-76. CERT errs auth-svc.log:22,55 shipping-svc.log:28,56.'\nc['entries']=[e for e in c['entries'] if e['id']=='notes']\njson.dump(c,open(p,'w'))"
+-  },
+-  {
+-   "id": "s28.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s"
+-  },
+-  {
+-   "id": "s28.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 28: revision 37 -> 38; entries 4 -> 1; body chars 3790 -> 2512; removed [s27.act, s27.obs, s27.rcpt]; added []; rewritten [notes]"
+-  },
+-  {
+-   "id": "s29.act",
+-   "role": "assistant",
+-   "body": "[step 29] advance\nthought: "
+-  },
+-  {
+-   "id": "s29.obs",
+-   "role": "observation",
+-   "body": "Stage 10 of 11 released.\nRound 10 of 11 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (4 lines)\n  round-10/changes.md (3 lines)\n  round-10/logs/auth-svc.log (72 lines)\n  round-10/logs/checkout-api.log (75 lines)\n  round-10/logs/inventory-svc.log (75 lines)\n  round-10/logs/search-api.log (82 lines)\n  round-10/logs/shipping-svc.log (75 lines)"
+-  },
+-  {
+-   "id": "s30.act",
+-   "role": "assistant",
+-   "body": "[step 30] execute\nthought: Inspect round 10 board, changes and error lines.\ncode:\nimport re,glob\nb='/task/fixtures/round-10/'\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\nfor f in sorted(glob.glob(b+'logs/*.log')):\n  L=[(i+1,l) for i,l in enumerate(open(f)) if re.search(r'ERROR|error|fail|429',l)]\n  print(f.split('/')[-1],len(L),[i for i,_ in L][:20])\n  for i,l in L[:2]:print(' ',i,l.strip()[:200])"
+-  },
+-  {
+-   "id": "s30.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=3.0s\n--- stdout ---\n# Incident board: updates in round 10\n\n- Thread D closed: false alarm (synthetic monitor misconfigured); not an incident.\n- Follow-up CLOSED DATA_BACKFILL.\n\n# Change log: round 10\n\n- CHG-175 APPLIED: log sampling for /v1/health reduced to 1%\n\nauth-svc.log 2 [10, 17]\n  10 {\"ts\":\"2026-09-14T17:06:15Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n  17 {\"ts\":\"2026-09-14T17:19:49Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\ncheckout-api.log 0 []\ninventory-svc.log 0 []\nsearch-api.log 9 [1, 4, 7, 8, 20, 30, 50, 54, 60]\n  1 {\"ts\":\"2026-09-14T17:01:11Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.59.8\"}\n  4 {\"ts\":\"2026-09-14T17:02:29Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.59.8\"}\nshipping-svc.log 2 [3, 60]\n  3 {\"ts\":\"2026-09-14T17:01:30Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n  60 {\"ts\":\"2026-09-14T17:44:02Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\n"
++   "body": "R1: changes.md:3 CHG-107 APPLIED retry budget idempotent GETs=1. Slow query WARNs = noise. DNS_RESOLUTION host=rates.internal SERVFAIL round-01/logs/inventory-svc.log:7,20,50-90.\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspicious BAD_CONFIG; no search-api errors yet). changes.md:4 CHG-121 auth-svc no config. checkout-api.log:8-59 dns errs; inventory-svc.log:8-74 dns errs.\nR3: board.md:3 Thread B auth-svc suspected DB_POOL_EXHAUSTED ongoing, BUT logs show CERT_EXPIRED peer=sso.example.net auth-svc.log:6,9,15,21 (10 errs). changes.md:3 CHG-126 PROPOSED (ignore). DNS errs continue checkout-api.log:33-45, inventory-svc.log:3-28. search/shipping clean.\nR4: board empty, no changes.md. CERT_EXPIRED sso.example.net now ALSO shipping-svc round-04/logs/shipping-svc.log:3-20,27-44,58-66; auth-svc.log:6-16,39-59,63-77. DNS continues checkout-api.log:1-21,38-71; inventory-svc.log:32-52,56-75. search clean.\nR5: board.md:3 Thread A mitigated; board.md:4 Thread B +shipping-svc; board.md:5 OPEN VENDOR_TICKET; board.md:6 OPEN ALERT_TUNING. changes.md:3 CHG-143 APPLIED mitigation thread A inventory-svc. checkout/inventory/search 0 errs. CERT errs auth-svc.log:2-64, shipping-svc.log:9-65.\nR6: board.md:3 OPEN RUNBOOK_UPDATE. changes.md:3 CHG-144 APPLIED log sampling (noise). checkout/inventory/search 0 errs. CERT errs auth-svc.log:4-79 (10), shipping-svc.log:1-64 (6).\nR7: board.md:3 Thread B cause revised CERT_EXPIRED (supersedes DB_POOL). board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing; search-api.log:4-66 429 upstream=tax-provider (8 errs). CERT errs auth-svc.log:1-64, shipping-svc.log:10-66. checkout/inventory 0 errs. Note CHG-120 search-api max_inflight=-1 may relate.\nR8: board.md:3 Thread A RESOLVED; board.md:4 Thread B MITIGATED; board.md:5 Thread C search-api pod failures cause unknown ongoing; board.md:6 OPEN DATA_BACKFILL; board.md:7 CLOSED VENDOR_TICKET. search-api.log 429 tax-provider lines 1-72 (15). CERT errs few: auth-svc.log:8,61 shipping-svc.log:50,60. checkout/inventory 0. search-api config validation failed (9) lines [2, 5, 10, 26, 42, 44, 59, 68, 72] -> likely BAD_CONFIG_ROLLOUT CHG-120 (round-02/changes.md:3).\nR9: board.md:3 Thread C pods restarting still. changes.md:3 CHG-166 retry budget (noise). search-api.log 429 tax-provider 11 errs lines 1-67; config validation failed http.max_inflight 11 errs lines 2-76. CERT errs auth-svc.log:22,55 shipping-svc.log:28,56.\nR10: board.md:3 Thread D FALSE ALARM (not incident; 429s ignore); board.md:4 CLOSED DATA_BACKFILL. changes.md:3 CHG-175 noise. search-api config validation failed max_inflight=-1 9 errs lines 1-60. CERT errs auth-svc.log:10,17 shipping-svc.log:3,60. checkout/inventory 0.\nOPEN so far: ALERT_TUNING, RUNBOOK_UPDATE."
+   }
+  ]
+ }

@@ -1,0 +1,29 @@
+{
+ "number": 31,
+ "parent": 30,
+ "source": "runtime",
+ "step": 19,
+ "sha256": "d0d680626299206cebe5bf8dd9f30ff9b19006216a414374c4800e440f7eebed",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. slow query WARNs = noise. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11,17,19,32,42,62.\nR2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc batch_size=0 (BAD_CONFIG candidate); :5 CHG-121 payments no config. R2 logs: inventory-svc 429 fx-rates round-02/logs/inventory-svc.log:18,38,46,49; ledger round-02/logs/ledger-svc.log:6,9,12,18; pricing/payments/checkout no errors.\nR3: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing; changes.md:3 CHG-124 APPLIED retry budget GETs=1. R3 logs: 429 fx-rates continue inventory round-03/logs/inventory-svc.log:13,74; ledger round-03/logs/ledger-svc.log:7,68; no payments cache/miss errors seen (Thread B unconfirmed by logs).\nR4: board.md:3 Thread A mitigated; board.md:4 follow-up OPEN RUNBOOK_UPDATE; changes.md:3 CHG-128 APPLIED retry GETs=1; changes.md:4 CHG-136 APPLIED mitigation thread A ledger-svc.\nR4 logs: payments-svc DISK_PRESSURE /var/data used_pct 91-98 round-04/logs/payments-svc.log:4,11-16,29,36,64-65,73 (Thread B cache stampede likely wrong cause; real=disk). No other errors R4.\nR5: board.md:3 follow-up OPEN VENDOR_TICKET.\nR5 logs: payments-svc disk used_pct 91-98 continues round-05/logs/payments-svc.log:1,5,22,30,39,43,59,67,73; no 429s R5 (ledger/inventory quiet).\nR6: board.md:3 Thread D MEMORY_LEAK ledger-svc ongoing; changes.md:3 CHG-147 PROPOSED (ignore).\nR6 logs: ledger-svc heap rss_mb high round-06/logs/ledger-svc.log:2,6,14,35,45,52 (memory leak confirmed); payments disk used_pct continues round-06/logs/payments-svc.log:3,16,30,36,83.\nR7: board.md:3 Thread A resolved; :4 OPEN DATA_BACKFILL; :5 OPEN POSTMORTEM_DRAFT."
+  },
+  {
+   "id": "s19.act",
+   "role": "assistant",
+   "body": "[step 19] execute\nthought: Record R7 board, scan R7 logs for errors.\ncode:\nimport json,re,glob\nc=json.load(open('/task/workspace/context.json'))\ne=[x for x in c['entries'] if x['id']=='n1']\ne[0]['body']+='\\nR7: board.md:3 Thread A resolved; :4 OPEN DATA_BACKFILL; :5 OPEN POSTMORTEM_DRAFT.'\nc['entries']=e\njson.dump(c,open('/task/workspace/context.json','w'))\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n  for i,l in enumerate(open(f),1):\n    if re.search(r'ERROR|WARN|429|used_pct|rss|heap|cert|dns|lag|pool',l,re.I) and 'slow query' not in l:\n      print(f.split('/')[-1],i,l.strip()[:130])"
+  },
+  {
+   "id": "s19.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nledger-svc.log 7 2026-09-14T14:07:00Z WARN  ledger-svc heap usage high rss_mb=3004 gc_pause_ms=1110\nledger-svc.log 10 2026-09-14T14:09:30Z WARN  ledger-svc heap usage high rss_mb=3831 gc_pause_ms=877\nledger-svc.log 16 2026-09-14T14:14:07Z WARN  ledger-svc heap usage high rss_mb=2481 gc_pause_ms=483\nledger-svc.log 23 2026-09-14T14:16:52Z WARN  ledger-svc heap usage high rss_mb=2821 gc_pause_ms=1189\nledger-svc.log 25 2026-09-14T14:17:22Z WARN  ledger-svc heap usage high rss_mb=2761 gc_pause_ms=464\nledger-svc.log 26 2026-09-14T14:17:33Z WARN  ledger-svc heap usage high rss_mb=3053 gc_pause_ms=643\nledger-svc.log 40 2026-09-14T14:29:53Z WARN  ledger-svc heap usage high rss_mb=3054 gc_pause_ms=333\nledger-svc.log 45 2026-09-14T14:33:52Z WARN  ledger-svc heap usage high rss_mb=2529 gc_pause_ms=839\nledger-svc.log 60 2026-09-14T14:47:14Z WARN  ledger-svc heap usage high rss_mb=3518 gc_pause_ms=1197\npayments-svc.log 3 2026-09-14T14:02:24Z WARN  payments-svc disk usage high path=/var/data used_pct=97\npayments-svc.log 8 2026-09-14T14:06:55Z WARN  payments-svc disk usage high path=/var/data used_pct=91\npayments-svc.log 10 2026-09-14T14:09:11Z WARN  payments-svc disk usage high path=/var/data used_pct=93\npayments-svc.log 34 2026-09-14T14:33:02Z WARN  payments-svc disk usage high path=/var/data used_pct=96\npayments-svc.log 35 2026-09-14T14:33:11Z WARN  payments-svc disk usage high path=/var/data used_pct=92\npayments-svc.log 39 2026-09-14T14:38:22Z WARN  payments-svc disk usage high path=/var/data used_pct=97\npayments-svc.log 53 2026-09-14T14:52:04Z WARN  payments-svc disk usage high path=/var/data used_pct=98\npayments-svc.log 54 2026-09-14T14:52:14Z WARN  payments-svc disk usage high path=/var/data used_pct=91\npayments-svc.log 59 2026-09-14T14:54:37Z WARN  payments-svc disk usage high path=/var/data used_pct=93\npayments-svc.log 62 2026-09-14T14:55:31Z WARN  payments-svc disk usage high path=/var/data used_pct=95\n"
+  },
+  {
+   "id": "s19.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 19: revision 29 -> 30; entries 6 -> 1; body chars 3177 -> 1747; removed [s17.act, s17.obs, s17.rcpt, s18.act, s18.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

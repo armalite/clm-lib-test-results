@@ -1,0 +1,24 @@
+--- rev-47
++++ rev-48
+@@ -50,6 +50,21 @@
+    "id": "n10",
+    "role": "note",
+    "body": "R10: board.md:3 Thread D closed false alarm (not incident); :4 CLOSED DATA_BACKFILL. changes CHG-175 noise. search-api config errs round-10/logs/search-api.log:1-60 (1,4,7,8,20,30,50,54,60; mix 429/config). CERT errs round-10/logs/auth-svc.log:10,17 shipping-svc.log:3,60. No errs checkout/inventory. Open followups: ALERT_TUNING, RUNBOOK_UPDATE. Next: advance."
++  },
++  {
++   "id": "s33.act",
++   "role": "assistant",
++   "body": "[step 33] execute\nthought: Inspect round 11 board and error lines; trim context.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[x for x in c['entries'] if x['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))\nb='/task/fixtures/round-11/'\nprint(open(b+'board.md').read())\nfor s in ['auth-svc','shipping-svc','search-api','checkout-api','inventory-svc']:\n  L=open(b+'logs/'+s+'.log').read().splitlines()\n  hits=[(i+1,l[:110]) for i,l in enumerate(L) if re.search(r'ERROR|certificate|429|max_inflight|SERVFAIL',l)]\n  print(s,len(hits),[h[0] for h in hits]);\n  for h in hits[:2]:print(h)"
++  },
++  {
++   "id": "s33.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 11\n\n\nauth-svc 2 [4, 37]\n(4, '{\"ts\":\"2026-09-14T18:02:31Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example')\n(37, '{\"ts\":\"2026-09-14T18:30:41Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example')\nshipping-svc 2 [4, 43]\n(4, '{\"ts\":\"2026-09-14T18:03:20Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.exa')\n(43, '{\"ts\":\"2026-09-14T18:30:20Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.exa')\nsearch-api 11 [4, 5, 7, 13, 18, 24, 43, 44, 50, 55, 61]\n(4, '{\"ts\":\"2026-09-14T18:01:46Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.m')\n(5, '{\"ts\":\"2026-09-14T18:02:29Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.m')\ncheckout-api 0 []\ninventory-svc 0 []\n"
++  },
++  {
++   "id": "s33.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 33: revision 46 -> 47; entries 15 -> 10; body chars 4443 -> 3187; removed [s31.act, s31.obs, s31.rcpt, s32.act, s32.obs]; added []; rewritten []"
+   }
+  ]
+ }

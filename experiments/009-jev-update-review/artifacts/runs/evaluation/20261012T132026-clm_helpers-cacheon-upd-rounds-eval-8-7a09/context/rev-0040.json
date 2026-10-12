@@ -1,0 +1,29 @@
+{
+ "number": 40,
+ "parent": 39,
+ "source": "runtime",
+ "step": 25,
+ "sha256": "a4ea5dce5401c20bd9d02559384e995504c4e3224e0a5c6acff1565ffd0b9d4a",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. round-01/changes.md: CHG-109 APPLIED TLS ticket rotation hourly; CHG-113 APPLIED notify-worker 8.20.0 sets db.pool_max=-4 (suspect BAD_CONFIG_ROLLOUT); CHG-114 APPLIED inventory-svc 8.20.0 no config. Logs r1: slow query WARN noise. R2: board empty; changes.md:3 CHG-114 PROPOSED raise HPA (not applied). R2 pricing-svc.log heap high WARN lines 6-83.\nR3: board.md:3 Thread A MEMORY_LEAK pricing-svc + auth-svc ongoing. board.md:4 Thread B inventory-svc suspected CERT_EXPIRED ongoing. changes.md:3 CHG-124 APPLIED retry budget GETs=1.\nR4: board.md:3 Follow-up OPEN ALERT_TUNING.\nR5: changes.md:3 CHG-135 APPLIED health log sampling 1% (noise only). R5 logs: inventory-svc.log:6,17,37 WARN db pool exhausted (7 hits) -> DB_POOL_EXHAUSTED inventory? (board says CERT). Other svcs 0 errors.\nR6: board.md:3 Thread A mitigated; board.md:4 Thread D DNS_RESOLUTION notify-worker ongoing. changes.md:4 CHG-150 APPLIED mitigation A pricing-svc; changes.md:3 CHG-147 noise.\nR6 logs: inventory-svc.log:7 db pool exhausted 12/12 (continues); notify-worker.log:7 dns lookup failed geo.internal SERVFAIL (supports Thread D).\nR7 logs: inventory-svc.log:1 db pool exhausted 9 hits (continues); notify-worker.log:7 dns SERVFAIL geo.internal 6 hits. others slow query noise.\nR8: board.md:3 Thread A resolved; board.md:4 Thread B revised DB_POOL_EXHAUSTED (supersedes CERT); board.md:5 Thread D false alarm (closed). No changes.md.\nR8 logs: inventory-svc.log:2,9 db pool exhausted 11 hits.\nR9: board.md:3 Follow-up OPEN RUNBOOK_UPDATE.\nR9 logs: inventory-svc.log:11,24 db pool exhausted 7 hits; payments-svc.log:3,5 db pool exhausted 6 hits (NEW svc affected?).\nR10: board.md:3 Thread B adds payments-svc; board.md:4 Thread C notify-worker request failures cause unknown ongoing; board.md:5 OPEN DATA_BACKFILL; board.md:6 OPEN POSTMORTEM_DRAFT; changes.md:3 CHG-173 noise."
+  },
+  {
+   "id": "s25.act",
+   "role": "assistant",
+   "body": "[step 25] execute\nthought: Record R10 board, check notify-worker logs for Thread C cause.\ncode:\nimport json,re\nfor s in ['notify-worker','payments-svc','inventory-svc']:\n  L=open(f'/task/fixtures/round-10/logs/{s}.log').read().splitlines()\n  h=[(i+1,l[:150]) for i,l in enumerate(L) if re.search('ERROR|FAIL|exhaust|invalid|pool',l,re.I)]\n  print(s,len(h));[print(x) for x in h[:4]]\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']+='\\nR10: board.md:3 Thread B adds payments-svc; board.md:4 Thread C notify-worker request failures cause unknown ongoing; board.md:5 OPEN DATA_BACKFILL; board.md:6 OPEN POSTMORTEM_DRAFT; changes.md:3 CHG-173 noise.'\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s25.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nnotify-worker 13\n(2, '{\"ts\":\"2026-09-14T17:00:33Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"db.pool_max\",\"value\":\"-4\",\"build\":\"8.20.0\"}')\n(6, '{\"ts\":\"2026-09-14T17:04:46Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"db.pool_max\",\"value\":\"-4\",\"build\":\"8.20.0\"}')\n(12, '{\"ts\":\"2026-09-14T17:13:53Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"db.pool_max\",\"value\":\"-4\",\"build\":\"8.20.0\"}')\n(15, '{\"ts\":\"2026-09-14T17:18:01Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"db.pool_max\",\"value\":\"-4\",\"build\":\"8.20.0\"}')\npayments-svc 13\n(1, '{\"ts\":\"2026-09-14T17:00:16Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":877,\"in_use\":\"12/12\"}')\n(4, '{\"ts\":\"2026-09-14T17:03:52Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2562,\"in_use\":\"12/12\"}')\n(38, '{\"ts\":\"2026-09-14T17:21:46Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":1551,\"in_use\":\"10/10\"}')\n(44, '{\"ts\":\"2026-09-14T17:29:53Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":1362,\"in_use\":\"16/16\"}')\ninventory-svc 12\n(4, '{\"ts\":\"2026-09-14T17:02:52Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2049,\"in_use\":\"16/16\"}')\n(6, '{\"ts\":\"2026-09-14T17:03:56Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2448,\"in_use\":\"12/12\"}')\n(9, '{\"ts\":\"2026-09-14T17:05:36Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":2163,\"in_use\":\"10/10\"}')\n(10, '{\"ts\":\"2026-09-14T17:05:50Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"db pool exhausted\",\"wait_ms\":1352,\"in_use\":\"10/10\"}')\n"
+  },
+  {
+   "id": "s25.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 25: revision 38 -> 39; entries 6 -> 1; body chars 3465 -> 1869; removed [s23.act, s23.obs, s23.rcpt, s24.act, s24.obs]; added []; rewritten [n1]"
+  }
+ ]
+}

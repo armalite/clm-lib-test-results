@@ -1,0 +1,24 @@
+--- rev-27
++++ rev-28
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: changes.md:3 CHG-113 APPLIED ledger-svc build 7.35.5 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT, no errors yet); slow query WARNs noise. R2: board.md:3 OPEN POSTMORTEM_DRAFT; shipping 429 tax-provider logs lines 7,22,35. R3: board.md:3 Thread A UPSTREAM_RATE_LIMIT shipping-svc+search-api ongoing; board:4 OPEN DATA_BACKFILL; :5 OPEN CAPACITY_REVIEW; changes:3 CHG-124 TLS ticket rotation (watch CERT). R3 logs: search-api.log 429 tax-provider lines 2,10,23..76; shipping-svc.log 429 lines 5,13,...63; ledger no pool errors yet. R4: board:3 Thread B CACHE_STAMPEDE checkout-api ongoing; changes:3 CHG-128 log sampling (noise). R4 logs: no checkout/ledger errors (format still plain text). R5: changes:3 CHG-137 PROPOSED HPA search (not applied, ignore). R6: board:3 Thread A now MITIGATED; changes:3 CHG-150 APPLIED mitigation thread A shipping-svc. R7: changes:3 CHG-154 PROPOSED HPA (ignore)."
++  },
++  {
++   "id": "s18.act",
++   "role": "assistant",
++   "body": "[step 18] execute\nthought: Note R7 (proposed change, ignore), compact, scan R7 logs.\ncode:\nimport json,re\nb='/task/fixtures/round-07/'\nfor s in ['checkout-api','ledger-svc','payments-svc','search-api','shipping-svc']:\n    L=open(b+'logs/'+s+'.log').read().splitlines()\n    h=[(i+1,l[:90]) for i,l in enumerate(L) if re.search('ERROR|429|pool|cache|miss|cert|dns|disk|oom|lag',l,re.I) and 'slow query' not in l and 'heartbeat' not in l]\n    print(s,len(h),h[:3])\nprint(open(b+'board.md').read())\nn=json.load(open('/task/workspace/context.json'))['entries'][0]['body']\nn+=' R7: changes:3 CHG-154 PROPOSED HPA (ignore).'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s18.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\ncheckout-api 11 [(13, '{\"ts\":\"2026-09-14T14:12:50Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"disk usage high\",\"'), (17, '{\"ts\":\"2026-09-14T14:15:29Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"disk usage high\",\"'), (19, '{\"ts\":\"2026-09-14T14:17:49Z\",\"level\":\"WARN\",\"svc\":\"checkout-api\",\"msg\":\"disk usage high\",\"')]\nledger-svc 0 []\npayments-svc 12 [(3, '{\"ts\":\"2026-09-14T14:02:40Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"disk usage high\",\"'), (4, '{\"ts\":\"2026-09-14T14:03:06Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"disk usage high\",\"'), (9, '{\"ts\":\"2026-09-14T14:10:09Z\",\"level\":\"WARN\",\"svc\":\"payments-svc\",\"msg\":\"disk usage high\",\"')]\nsearch-api 0 []\nshipping-svc 0 []\n# Incident board: updates in round 07\n\n\n"
++  },
++  {
++   "id": "s18.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 18: revision 26 -> 27; entries 6 -> 1; body chars 3001 -> 902; removed [s16.act, s16.obs, s16.rcpt, s17.act, s17.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

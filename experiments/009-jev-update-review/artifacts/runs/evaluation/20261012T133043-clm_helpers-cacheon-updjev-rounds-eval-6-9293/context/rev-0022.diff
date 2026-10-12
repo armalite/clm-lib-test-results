@@ -1,0 +1,24 @@
+--- rev-21
++++ rev-22
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: no board/changes. Slow-query WARN=noise. ledger-svc 429 upstream=fx-rates round-01/logs/ledger-svc.log:11,17,19,32,42,62.\nR2: board.md:3 Thread A UPSTREAM_RATE_LIMIT ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN CAPACITY_REVIEW. changes.md:4 CHG-120 APPLIED pricing-svc batch_size=0 (BAD_CONFIG_ROLLOUT candidate); CHG-121 payments no config. R2 logs: inventory 429 fx-rates round-02/logs/inventory-svc.log:18-38,46-63; ledger round-02/logs/ledger-svc.log:6-23,42-56. No pricing errors seen in R2 logs. R2 pricing-svc logs: only slow-query WARN noise. R3: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing; changes.md:3 CHG-124 APPLIED retry budget=1. R3 logs plain format (ts LEVEL svc msg). R3 logs: payments-svc disk usage high /var/data 91-97% round-03/logs/payments-svc.log:12,20,22,46,54,80 (no cache errors seen -> board B CACHE_STAMPEDE may be wrong, real=DISK_PRESSURE?). inventory 429 round-03/logs/inventory-svc.log:13-28,65,74; ledger 429 round-03/logs/ledger-svc.log:7-43. pricing/checkout clean R3. R4: board.md:3 Thread A mitigated; board.md:4 OPEN RUNBOOK_UPDATE; changes.md:4 CHG-136 APPLIED mitigation A on ledger-svc; CHG-128 retry budget=1."
++  },
++  {
++   "id": "s14.act",
++   "role": "assistant",
++   "body": "[step 14] execute\nthought: Record R4 update, compact, check R4 logs briefly.\ncode:\nimport json,re,glob\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'][0]['body']=c['entries'][0]['body'].replace(' Next: advance to R4.','')+' R4: board.md:3 Thread A mitigated; board.md:4 OPEN RUNBOOK_UPDATE; changes.md:4 CHG-136 APPLIED mitigation A on ledger-svc; CHG-128 retry budget=1.'\njson.dump(c,open('/task/workspace/context.json','w'))\nfor f in sorted(glob.glob('/task/fixtures/round-04/logs/*.log')):\n  L=open(f).read().splitlines();h=[i+1 for i,l in enumerate(L) if re.search(r'ERROR|429|disk|cache|pool|cert|dns|memory|lag|batch',l,re.I)]\n  print(f.split('/')[-1],len(h),h[:15]);\n  if h:print(' ',L[h[0]-1][:150])"
++  },
++  {
++   "id": "s14.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\ncheckout-api.log 0 []\ninventory-svc.log 0 []\nledger-svc.log 0 []\npayments-svc.log 11 [4, 11, 12, 13, 15, 16, 29, 36, 64, 65, 73]\n  2026-09-14T11:04:09Z WARN  payments-svc disk usage high path=/var/data used_pct=94\npricing-svc.log 0 []\n"
++  },
++  {
++   "id": "s14.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 14: revision 20 -> 21; entries 6 -> 1; body chars 3220 -> 1184; removed [s12.act, s12.obs, s12.rcpt, s13.act, s13.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

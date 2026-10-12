@@ -1,0 +1,36 @@
+--- rev-15
++++ rev-16
+@@ -4,32 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: board empty. CHG-109 APPLIED TLS ticket rotation hourly (round-01/changes.md:3); CHG-113 APPLIED notify-worker 8.20.0 db.pool_max=-4 (round-01/changes.md:4) suspect BAD_CONFIG_ROLLOUT, no board thread yet; CHG-114 APPLIED inventory-svc 8.20.0 (round-01/changes.md:5). R2: round-02/changes.md:3 CHG-114 id reused, PROPOSED HPA (not applied). R2 logs quiet. R3: Thread A MEMORY_LEAK pricing-svc+auth-svc ongoing (round-03/board.md:3); Thread B suspected CERT_EXPIRED inventory-svc ongoing (round-03/board.md:4, suspected only); CHG-124 APPLIED retry budget GET=1 (round-03/changes.md:3). R3 logs: inventory-svc db pool exhausted repeatedly (round-03/logs/inventory-svc.log:9-82) -> board B cert suspicion may be wrong; real cause maybe DB_POOL_EXHAUSTED. R4: ALERT_TUNING follow-up OPEN (round-04/board.md:3)."
+-  },
+-  {
+-   "id": "s9.act",
+-   "role": "assistant",
+-   "body": "[step 9] execute\nthought: Note R4 follow-up, check R4 logs for errors briefly, compact context.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-04/logs/*.log')):\n    L=open(f).read().splitlines()\n    hits=[(i+1,l) for i,l in enumerate(L) if re.search(r'ERROR|WARN|exhaust|cert|OOM|memory|429|config',l,re.I)]\n    print(f.split('/')[-1],len(hits))\n    for h in hits[:3]: print(' ',h[0],h[1][:150])\nc=json.load(open('/task/workspace/context.json'))\nn1=c['entries'][0]['body'].replace(' Next: advance to R4.','')+' R4: ALERT_TUNING follow-up OPEN (round-04/board.md:3).'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n1}]},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s9.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nauth-svc.log 20\n  2 2026-09-14T11:00:40Z WARN  auth-svc slow query ms=369 table=events\n  4 2026-09-14T11:02:18Z WARN  auth-svc slow query ms=378 table=orders\n  6 2026-09-14T11:04:44Z WARN  auth-svc heap usage high rss_mb=2836 gc_pause_ms=562\ninventory-svc.log 20\n  2 2026-09-14T11:01:38Z WARN  inventory-svc slow query ms=205 table=orders\n  17 2026-09-14T11:12:02Z WARN  inventory-svc slow query ms=405 table=items\n  18 2026-09-14T11:12:12Z WARN  inventory-svc slow query ms=308 table=orders\nnotify-worker.log 9\n  6 2026-09-14T11:05:43Z WARN  notify-worker slow query ms=357 table=items\n  14 2026-09-14T11:09:42Z WARN  notify-worker slow query ms=435 table=items\n  23 2026-09-14T11:19:06Z WARN  notify-worker slow query ms=305 table=orders\npayments-svc.log 12\n  5 2026-09-14T11:05:15Z WARN  payments-svc slow query ms=348 table=items\n  7 2026-09-14T11:06:55Z WARN  payments-svc slow query ms=412 table=orders\n  16 2026-09-14T11:15:21Z WARN  payments-svc slow query ms=323 table=events\npricing-svc.log 29\n  1 2026-09-14T11:01:21Z WARN  pricing-svc heap usage high rss_mb=3768 gc_pause_ms=1009\n  5 2026-09-14T11:04:52Z WARN  pricing-svc heap usage high rss_mb=2429 gc_pause_ms=1110\n  6 2026-09-14T11:04:56Z WARN  pricing-svc heap usage high rss_mb=2735 gc_pause_ms=1159\n"
+-  },
+-  {
+-   "id": "s9.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 9: revision 12 -> 13; entries 6 -> 1; body chars 2494 -> 811; removed [s7.act, s7.obs, s7.rcpt, s8.act, s8.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s10.act",
+-   "role": "assistant",
+-   "body": "[step 10] advance\nthought: "
+-  },
+-  {
+-   "id": "s10.obs",
+-   "role": "observation",
+-   "body": "Stage 5 of 12 released.\nRound 5 of 12 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (2 lines)\n  round-05/changes.md (3 lines)\n  round-05/logs/auth-svc.log (69 lines)\n  round-05/logs/inventory-svc.log (68 lines)\n  round-05/logs/notify-worker.log (61 lines)\n  round-05/logs/payments-svc.log (58 lines)\n  round-05/logs/pricing-svc.log (70 lines)\n\nUPDATE (round-files/1; context revision 14 was current at this release). Incident-board and change-log lines released this round, verbatim:\nround-05/changes.md:3: - CHG-135 APPLIED: log sampling for /v1/health reduced to 1%\nConsider whether this update affects your working context.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 14; update: the board and change-log lines above). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.15\n  s9.act: 0.16\n  s9.obs: 0.12\n  s9.rcpt: 0.13\nCoverage: 4 of 4 entries answered."
++   "body": "R1: board empty. CHG-109 APPLIED TLS ticket rotation hourly (round-01/changes.md:3); CHG-113 APPLIED notify-worker 8.20.0 db.pool_max=-4 (round-01/changes.md:4) suspect BAD_CONFIG_ROLLOUT, no board thread yet; CHG-114 APPLIED inventory-svc 8.20.0 (round-01/changes.md:5). R2: round-02/changes.md:3 CHG-114 id reused, PROPOSED HPA (not applied). R2 logs quiet. R3: Thread A MEMORY_LEAK pricing-svc+auth-svc ongoing (round-03/board.md:3); Thread B suspected CERT_EXPIRED inventory-svc ongoing (round-03/board.md:4, suspected only); CHG-124 APPLIED retry budget GET=1 (round-03/changes.md:3). R3 logs: inventory-svc db pool exhausted repeatedly (round-03/logs/inventory-svc.log:9-82) -> board B cert suspicion may be wrong; real cause maybe DB_POOL_EXHAUSTED. R4: ALERT_TUNING follow-up OPEN (round-04/board.md:3). R5: CHG-135 APPLIED log sampling health 1% (round-05/changes.md:3), irrelevant."
+   }
+  ]
+ }
