@@ -1,0 +1,3 @@
+import json
+ctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty; changes CHG-107 APPLIED retry budget GETs=1. services: shipping-svc checkout-api auth-svc inventory-svc search-api. log fmt: ts LEVEL svc msg k=v. slow query WARNs are noise. R1 finding: inventory-svc DNS SERVFAIL host=rates.internal round-01/logs/inventory-svc.log:7-90 (lines 7,20,50,54,57,62,65,85-90). Next: advance.'}]}
+json.dump(ctx,open('/task/workspace/context.json','w'))

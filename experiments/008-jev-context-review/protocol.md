@@ -302,3 +302,31 @@ The deleted text itself is not echoed back into the agent's context.
 - record the change here.
 
 The component diagnostic does not use the agent loop, so it is unaffected.
+
+## Boundary fix (2026-10-12, before any paid experiment-008 call)
+
+The design check above was resolved before the diagnostic and pilot. The note above is kept unchanged.
+
+**The rule now:** a `review_context` request is accepted only against the **current** context revision, which is the number the runtime status shows the model at that step.
+- A request naming an older revision is rejected with "revision N is no longer current; reviews use only the current context revision (M)". A revision that never existed is rejected as "does not exist".
+- `entry_ids` and `update_entry_id` resolve only from the current revision. An entry the agent has deleted therefore cannot be reviewed or used as the update, by naming an older revision or by its id.
+- All validation happens before any ledger reservation or Jev request, so a rejected request costs nothing and leaves no `jev/` trace.
+
+**Regression coverage** (`tests/test_jev.py`):
+- `test_deleted_entries_never_reach_jev`: after the agent deletes an entry, four requests are rejected with no Jev call, no `jev` ledger entry and no deleted text in the observation. They are the deleted entry as a candidate or as the update, each against the old revision and against the current one.
+- `test_current_revision_review_uses_the_revision_shown_to_the_model`: the revisions shown to the model are 0, 1, 3 and 4, and a review naming 3 is accepted. It sends the exact text of the current entries, and the advice reports revision 3.
+- Against the earlier validation, both old-revision cases fail, with the deleted text sent as an entry or as the update. This confirms that the tests detect the defect.
+
+**Unchanged:** the prompt text (it already asked for the revision from `<runtime_status>`), the prompt version, the question, the case file and every historical configuration.
+
+## Live session record (2026-10-12 UTC)
+
+Run in the order the protocol fixed, after the boundary fix. No case, label, threshold or question wording was changed after seeing any answer.
+
+1. **Development-split diagnostic (API smoke check):** `20261012T105929-dev`. The request shape was accepted, `model` reported `jev-1.13.0`, and usage was reported and settled in the ledger (kind `jev-diagnostic`). It cost USD 0.000083.
+2. **Frozen diagnostic:** `20261012T105948-frozen`, 9 requests and no errors. At 0.5: 10/10 affected flagged, 1/12 unaffected flagged (`f-04`, 0.56); ambiguous 0.83 and 0.57. It cost USD 0.000302. This revealed no substantial question-design problem, so the pilot went ahead.
+3. **Pilot:** comparison `20261012T110017`, 4 runs, all strict successes.
+   - **Condition B made 0 reviews in both runs.** Per this protocol, that is reported as the outcome; the prompt was not strengthened and no run was replaced.
+   - No forced-use smoke run was made.
+
+**Spend:** USD 1.41506 (Anthropic 1.414675, TypeSafe 0.000385) of the USD 10. The ledger is at USD 48.408962 of USD 56.993902, unchanged. The larger evaluation was not run and is not authorised. Findings are in `README.md`.

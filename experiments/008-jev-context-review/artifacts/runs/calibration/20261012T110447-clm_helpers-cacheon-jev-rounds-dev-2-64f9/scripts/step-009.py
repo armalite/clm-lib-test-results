@@ -1,0 +1,3 @@
+import h
+h.setctx([{'id':'n1','role':'note','body':'R1: changes.md:3 CHG-107 APPLIED retry budget GETs=1. inventory-svc DNS SERVFAIL host=rates.internal (round-01/logs/inventory-svc.log:7,20,50-90). slow query WARNs = noise. helper: import h; print(h.scan(r)); h.setctx(entries) (overwrites whole ctx)\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (watch BAD_CONFIG). checkout-api.log:8,59 SERVFAIL; inventory-svc.log:8,74.\nR3: board.md:3 Thread B auth-svc suspected DB_POOL but logs show CERT_EXPIRED peer=sso.example.net (auth-svc.log:6,9,72). DNS continues checkout:33,74 inventory:3,50. CHG-126 PROPOSED (ignore).'}])
+print('ok')

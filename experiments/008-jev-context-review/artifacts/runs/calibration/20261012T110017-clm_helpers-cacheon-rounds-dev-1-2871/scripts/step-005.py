@@ -1,0 +1,3 @@
+import sys;sys.path.insert(0,'/task/workspace')
+import h
+h.setctx([{'id':'n1','role':'note','body':'helper: import h; h.scan(n) prints non-routine lines of round n; h.setctx(entries). R1: CHG-108 PROPOSED (HPA search). R2: board.md:3-5 followups OPEN ALERT_TUNING,RUNBOOK_UPDATE,VENDOR_TICKET; changes.md:4 CHG-120 APPLIED notify-worker http.max_inflight=0 (likely BAD_CONFIG later); auth-svc db pool exhausted logs/auth-svc.log:1-25,44,65,69 (DB_POOL). Next: advance to R3 then scan(3).'}])

@@ -1,0 +1,24 @@
+--- rev-2
++++ rev-3
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "helper: import h; h.scan(n) prints non-routine lines of round n; h.setctx(entries). R1: changes CHG-108 PROPOSED (HPA search). board empty."
++  },
++  {
++   "id": "s2.act",
++   "role": "assistant",
++   "body": "[step 2] execute\nthought: Write helper to scan non-routine lines, and compact context.\ncode:\nimport os,json,re\nopen('/task/workspace/h.py','w').write('''\nimport os,re,json\nR=re.compile(r\"heartbeat|health ok|gc cycle|request ok|slow query\")\ndef scan(n):\n  b='/task/fixtures/round-%02d/'%n\n  for r,d,f in sorted(os.walk(b)):\n    for x in sorted(f):\n      p=os.path.join(r,x);rel=os.path.relpath(p,'/task/fixtures')\n      for i,l in enumerate(open(p).read().splitlines(),1):\n        if l.strip() and not R.search(l) and not l.startswith('# '):print(rel+':'+str(i),l[:150])\ndef setctx(entries):\n  json.dump({'format':'clm-context/v1','entries':entries},open('/task/workspace/context.json','w'))\n''')\nimport sys;sys.path.insert(0,'/task/workspace')\nimport h\nh.setctx([{'id':'n1','role':'note','body':'helper: import h; h.scan(n) prints non-routine lines of round n; h.setctx(entries). R1: changes CHG-108 PROPOSED (HPA search). board empty.'}])\nh.scan(1)"
++  },
++  {
++   "id": "s2.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nround-01/changes.md:3 - CHG-108 PROPOSED: raise HPA max replicas for search tier (not applied)\n"
++  },
++  {
++   "id": "s2.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 6019 -> 139; removed [s1.act, s1.obs]; added [n1]; rewritten []"
+   }
+  ]
+ }

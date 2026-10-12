@@ -1,0 +1,4 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty; CHG-108 PROPOSED (HPA search, not applied) round-01/changes.md:3. Logs only background slow-query WARNs (noise). No incidents yet. Helper: python3 /task/workspace/scan.py NN prints board/changes + non-slow-query WARN/ERROR lines.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))
+open('/task/workspace/scan.py','w').write('''import os,sys\nb='/task/fixtures/round-%s'%sys.argv[1]\nfor r,d,f in os.walk(b):\n  for x in sorted(f):\n    p=os.path.join(r,x);print('==',p[len(b)+1:])\n    for i,l in enumerate(open(p).read().splitlines(),1):\n      if p.endswith('.md'):\n        if l.strip(): print(i,l[:200])\n      elif 'slow query' not in l and any(k in l.lower() for k in ('error','warn','fatal','crit')): print(i,l[:170])\n''')

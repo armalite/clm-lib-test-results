@@ -1,0 +1,49 @@
+--- rev-5
++++ rev-6
+@@ -4,42 +4,12 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: board empty; CHG-108 PROPOSED (HPA search, not applied) round-01/changes.md:3. Logs only background slow-query WARNs (noise). No incidents yet. Helper: python3 /task/workspace/scan.py NN prints board/changes + non-slow-query WARN/ERROR lines."
++   "body": "R1: board empty; CHG-108 PROPOSED (HPA search) round-01/changes.md:3. Helper: python3 /task/workspace/scan.py NN prints board/changes + non-slow-query WARN/ERROR lines."
+   },
+   {
+-   "id": "s2.act",
+-   "role": "assistant",
+-   "body": "[step 2] execute\nthought: Compress context, write helper, then advance.\ncode:\nimport json\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty; CHG-108 PROPOSED (HPA search, not applied) round-01/changes.md:3. Logs only background slow-query WARNs (noise). No incidents yet. Helper: python3 /task/workspace/scan.py NN prints board/changes + non-slow-query WARN/ERROR lines.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))\nopen('/task/workspace/scan.py','w').write('''import os,sys\\nb='/task/fixtures/round-%s'%sys.argv[1]\\nfor r,d,f in os.walk(b):\\n  for x in sorted(f):\\n    p=os.path.join(r,x);print('==',p[len(b)+1:])\\n    for i,l in enumerate(open(p).read().splitlines(),1):\\n      if p.endswith('.md'):\\n        if l.strip(): print(i,l[:200])\\n      elif 'slow query' not in l and any(k in l.lower() for k in ('error','warn','fatal','crit')): print(i,l[:170])\\n''')"
+-  },
+-  {
+-   "id": "s2.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s"
+-  },
+-  {
+-   "id": "s2.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 5260 -> 246; removed [s1.act, s1.obs]; added [n1]; rewritten []"
+-  },
+-  {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] advance\nthought: "
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 10 released.\nRound 2 of 10 released. New files are under /task/fixtures/round-02/.\n\nNew files:\n  round-02/board.md (5 lines)\n  round-02/changes.md (5 lines)\n  round-02/logs/auth-svc.log (79 lines)\n  round-02/logs/checkout-api.log (66 lines)\n  round-02/logs/notify-worker.log (60 lines)\n  round-02/logs/payments-svc.log (61 lines)\n  round-02/logs/search-api.log (70 lines)"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] execute\nthought: \ncode:\nimport subprocess;print(subprocess.run(['python3','/task/workspace/scan.py','02'],capture_output=True,text=True).stdout[:5000])"
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n== board.md\n1 # Incident board: updates in round 02\n3 - Follow-up OPEN ALERT_TUNING: tuning of noisy or late alerts.\n4 - Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\n5 - Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\n== changes.md\n1 # Change log: round 02\n3 - CHG-116 APPLIED: log sampling for /v1/health reduced to 1%\n4 - CHG-120 APPLIED: build 8.56.0 rolled out to notify-worker; sets `http.max_inflight=0`\n5 - CHG-121 APPLIED: build 8.56.0 rolled out to payments-svc; no config changes\n== logs/auth-svc.log\n1 2026-09-14T09:00:55Z WARN  auth-svc db pool exhausted wait_ms=1710 in_use=10/10\n3 2026-09-14T09:02:39Z WARN  auth-svc db pool exhausted wait_ms=1553 in_use=10/10\n15 2026-09-14T09:09:17Z WARN  auth-svc db pool exhausted wait_ms=1729 in_use=10/10\n22 2026-09-14T09:12:48Z WARN  auth-svc db pool exhausted wait_ms=1431 in_use=12/12\n23 2026-09-14T09:13:25Z WARN  auth-svc db pool exhausted wait_ms=1107 in_use=20/20\n25 2026-09-14T09:14:51Z WARN  auth-svc db pool exhausted wait_ms=2228 in_use=10/10\n44 2026-09-14T09:31:35Z WARN  auth-svc db pool exhausted wait_ms=1167 in_use=12/12\n65 2026-09-14T09:49:27Z WARN  auth-svc db pool exhausted wait_ms=2877 in_use=16/16\n69 2026-09-14T09:50:45Z WARN  auth-svc db pool exhausted wait_ms=807 in_use=20/20\n== logs/checkout-api.log\n== logs/notify-worker.log\n== logs/payments-svc.log\n== logs/search-api.log\n\n"
++   "id": "n2",
++   "role": "note",
++   "body": "R2: board opens follow-ups ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET (round-02/board.md:3-5). CHG-120 APPLIED notify-worker sets http.max_inflight=0 (round-02/changes.md:4) suspect BAD_CONFIG. CHG-121 payments no config. auth-svc db pool exhausted WARNs round-02/logs/auth-svc.log:1-69 (lines 1,3,15,22,23,25,44,65,69) -> DB_POOL_EXHAUSTED candidate, not on board yet."
+   }
+  ]
+ }

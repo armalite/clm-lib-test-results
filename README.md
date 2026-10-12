@@ -104,7 +104,7 @@ Both experiments compared two context-management approaches. The model was the s
 
 | Experiment | Question | Status |
 | --- | --- | --- |
-| [008](experiments/008-jev-context-review/README.md) | Can a fast decision model (TypeSafe Jev) help an agent manage its own context? Optional, model-invoked advice on which context entries an update affects | Designed and implemented; a frozen labelled diagnostic set exists. Not run: no TypeSafe API key was available. No results yet |
+| [008](experiments/008-jev-context-review/README.md) | Can a fast decision model (TypeSafe Jev) help an agent manage its own context? Optional, model-invoked advice on which context entries an update affects | Diagnostic: Jev flagged 10/10 affected and 1/12 unaffected labelled entries. Pilot (4 runs): all succeeded; the agent never used the optional review action. No evidence of an effect; larger evaluation not run |
 
 ## Navigating the raw evidence
 
