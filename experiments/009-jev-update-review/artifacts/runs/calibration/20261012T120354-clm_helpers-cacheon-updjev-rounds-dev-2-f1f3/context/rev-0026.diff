@@ -1,0 +1,53 @@
+--- rev-25
++++ rev-26
+@@ -14,7 +14,7 @@
+   {
+    "id": "n3",
+    "role": "note",
+-   "body": "R3: board.md:3 Thread B says auth-svc DB_POOL_EXHAUSTED ongoing, BUT logs show CERT_EXPIRED: round-03/logs/auth-svc.log:6,9,15,21,25,26,33,48,64,72 tls handshake peer=sso.example.net certificate_expired; no pool errors. changes.md:3 CHG-126 PROPOSED (ignore). search-api R2/R3 no errors (CHG-120 maybe no effect yet)."
++   "body": "R3: board.md:3 Thread B says auth-svc DB_POOL_EXHAUSTED ongoing, (R7 board revised to CERT_EXPIRED, round-07/board.md:3) logs: CERT_EXPIRED: round-03/logs/auth-svc.log:6,9,15,21,25,26,33,48,64,72 tls handshake peer=sso.example.net certificate_expired; no pool errors. changes.md:3 CHG-126 PROPOSED (ignore). search-api R2/R3 no errors (CHG-120 maybe no effect yet)."
+   },
+   {
+    "id": "n4",
+@@ -24,7 +24,7 @@
+   {
+    "id": "n5",
+    "role": "note",
+-   "body": "R5: board.md:3 Thread A (DNS) mitigated; changes.md:3 CHG-143 APPLIED inventory-svc mitigation. board.md:4 Thread B adds shipping-svc (board cause still DB_POOL, logs say CERT_EXPIRED). Follow-ups OPEN: VENDOR_TICKET board.md:5, ALERT_TUNING board.md:6."
++   "body": "R5: board.md:3 Thread A (DNS) mitigated; changes.md:3 CHG-143 APPLIED inventory-svc mitigation. board.md:4 Thread B adds shipping-svc (cause now CERT_EXPIRED per round-07/board.md:3). Follow-ups OPEN: VENDOR_TICKET board.md:5, ALERT_TUNING board.md:6."
+   },
+   {
+    "id": "n6",
+@@ -32,29 +32,9 @@
+    "body": "R6: board.md:3 RUNBOOK_UPDATE OPEN. changes.md:3 CHG-144 log sampling (noise)."
+   },
+   {
+-   "id": "s15.act",
+-   "role": "assistant",
+-   "body": "[step 15] execute\nthought: Scan R6 logs and compact context.\ncode:\nimport json,re,os\nb='/task/fixtures/round-06/logs/'\nfor f in sorted(os.listdir(b)):\n  L=open(b+f).read().splitlines()\n  hits=[i+1 for i,l in enumerate(L) if re.search(r'ERROR|SERVFAIL|certificate|429|pool|max_inflight|OOM|disk|lag',l,re.I)]\n  print(f,len(hits),hits[:12])\n  if hits:print(' ',L[hits[0]-1][:120])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\nc['entries'].append({'id':'n6','role':'note','body':'R6: board.md:3 RUNBOOK_UPDATE OPEN. changes.md:3 CHG-144 log sampling (noise).'})\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s15.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nauth-svc.log 10 [4, 10, 14, 19, 20, 30, 50, 60, 76, 79]\n  {\"ts\":\"2026-09-14T13:02:17Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"rea\ncheckout-api.log 0 []\ninventory-svc.log 0 []\nsearch-api.log 0 []\nshipping-svc.log 6 [1, 18, 21, 22, 36, 64]\n  {\"ts\":\"2026-09-14T13:00:12Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\n"
+-  },
+-  {
+-   "id": "s15.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 15: revision 22 -> 23; entries 10 -> 6; body chars 4350 -> 1397; removed [s13.act, s13.obs, s13.rcpt, s14.act, s14.obs]; added [n6]; rewritten []"
+-  },
+-  {
+-   "id": "s16.act",
+-   "role": "assistant",
+-   "body": "[step 16] advance\nthought: "
+-  },
+-  {
+-   "id": "s16.obs",
+-   "role": "observation",
+-   "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/logs/auth-svc.log (66 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (59 lines)\n  round-07/logs/search-api.log (69 lines)\n  round-07/logs/shipping-svc.log (67 lines)\n\nUPDATE (round-files/1; context revision 24 was current at this release). Incident-board and change-log lines released this round, verbatim:\nround-07/board.md:3: - Thread B root cause revised: an expired TLS certificate on a dependency (CERT_EXPIRED); this supersedes the earlier suspicion of DB_POOL_EXHAUSTED.\nround-07/board.md:4: - Thread D opened: an upstream provider rejecting requests with 429 alerts (UPSTREAM_RATE_LIMIT) on search-api. Status: ongoing.\nConsider whether this update affects your working context.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 24; update: the board and change-log lines above). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.13\n  n2: 0.14\n  n3: 0.75\n  n4: 0.68\n  n5: 0.95\n  n6: 0.21\n  s15.act: 0.53\n  s15.obs: 0.42\n  s15.rcpt: 0.25\nCoverage: 9 of 9 entries answered."
++   "id": "n7",
++   "role": "note",
++   "body": "R7: board.md:3 Thread B cause=CERT_EXPIRED. board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing (verify vs CHG-120 max_inflight=-1 BAD_CONFIG). R7 auth/shipping cert errors continue."
+   }
+  ]
+ }

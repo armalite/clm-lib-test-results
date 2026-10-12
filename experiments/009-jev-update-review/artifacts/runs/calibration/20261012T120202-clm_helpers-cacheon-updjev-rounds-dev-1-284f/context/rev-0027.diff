@@ -1,0 +1,36 @@
+--- rev-26
++++ rev-27
+@@ -4,32 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: board empty; CHG-108 PROPOSED. R2: follow-ups OPEN ALERT_TUNING(round-02/board.md:3), RUNBOOK_UPDATE(:4), VENDOR_TICKET(:5). CHG-120 APPLIED notify-worker 8.56.0 http.max_inflight=0 (round-02/changes.md:4) -> suspect BAD_CONFIG_ROLLOUT but no notify-worker errors in R3. auth-svc pool WARNs round-02/logs/auth-svc.log:1-25. R3: Thread A DB_POOL_EXHAUSTED auth-svc+search-api ongoing (round-03/board.md:3); search-api pool exhausted round-03/logs/search-api.log:1-53. CHG-125 dashboards irrelevant. R4: Thread B CACHE_STAMPEDE payments-svc ongoing (round-04/board.md:3). CHG-133 APPLIED TLS ticket rotation hourly (round-04/changes.md:3) - watch for CERT issues. R4 logs: payments-svc ERROR 429 upstream=fx-rates (round-04/logs/payments-svc.log:1-51) -> likely UPSTREAM_RATE_LIMIT not cache; notify-worker no errors R4. R5: Thread A mitigated (round-05/board.md:3) via CHG-143 auth-svc (round-05/changes.md:4); Thread B +checkout-api (round-05/board.md:4); OPEN CAPACITY_REVIEW (round-05/board.md:5); CHG-138 APPLIED TLS hourly (round-05/changes.md:3). R6: CLOSED ALERT_TUNING (round-06/board.md:3); OPEN CUSTOMER_COMMS (round-06/board.md:4); CHG-147 retry budget irrelevant. R6 logs: 429 fx-rates payments-svc round-06/logs/payments-svc.log:3, checkout-api round-06/logs/checkout-api.log:19. R7: board/changes nothing new."
+-  },
+-  {
+-   "id": "s16.act",
+-   "role": "assistant",
+-   "body": "[step 16] execute\nthought: Check R7 logs briefly and compress context.\ncode:\nimport json,re\nfor s in ['payments-svc','checkout-api','auth-svc','search-api','notify-worker']:\n    L=open(f'/task/fixtures/round-07/logs/{s}.log').read().splitlines()\n    e=[(i+1,l[:100]) for i,l in enumerate(L) if re.search('ERROR|WARN|error|warn',l)]\n    print(s,len(e),e[:2])\nd=json.load(open('/task/workspace/context.json'))\nb=[e for e in d['entries'] if e['id']=='n1'][0]['body']\nb+=' R6 logs: 429 fx-rates payments-svc round-06/logs/payments-svc.log:3, checkout-api round-06/logs/checkout-api.log:19. R7: board/changes nothing new.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':b}]},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s16.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\npayments-svc 23 [(1, '2026-09-14T14:00:27Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=21'), (3, '2026-09-14T14:00:51Z WARN  payments-svc slow query ms=226 table=items')]\ncheckout-api 16 [(9, '2026-09-14T14:13:34Z WARN  checkout-api slow query ms=317 table=events'), (11, '2026-09-14T14:16:04Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=46')]\nauth-svc 21 [(4, '2026-09-14T14:03:25Z WARN  auth-svc slow query ms=245 table=items'), (5, '2026-09-14T14:04:08Z WARN  auth-svc slow query ms=438 table=events')]\nsearch-api 11 [(1, '2026-09-14T14:02:05Z WARN  search-api slow query ms=399 table=events'), (3, '2026-09-14T14:04:55Z WARN  search-api slow query ms=394 table=items')]\nnotify-worker 15 [(2, '2026-09-14T14:02:59Z WARN  notify-worker slow query ms=268 table=items'), (7, '2026-09-14T14:06:11Z WARN  notify-worker slow query ms=200 table=orders')]\n"
+-  },
+-  {
+-   "id": "s16.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 16: revision 23 -> 24; entries 6 -> 1; body chars 3129 -> 1326; removed [s14.act, s14.obs, s14.rcpt, s15.act, s15.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s17.act",
+-   "role": "assistant",
+-   "body": "[step 17] advance\nthought: "
+-  },
+-  {
+-   "id": "s17.obs",
+-   "role": "observation",
+-   "body": "Stage 8 of 10 released.\nRound 8 of 10 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (5 lines)\n  round-08/changes.md (3 lines)\n  round-08/logs/auth-svc.log (71 lines)\n  round-08/logs/checkout-api.log (65 lines)\n  round-08/logs/notify-worker.log (79 lines)\n  round-08/logs/payments-svc.log (87 lines)\n  round-08/logs/search-api.log (62 lines)\n\nUPDATE (round-files/1; context revision 25 was current at this release). Incident-board and change-log lines released this round, verbatim:\nround-08/board.md:3: - Thread A status: resolved (no recurrence for two hours).\nround-08/board.md:4: - Thread B root cause revised: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT); this supersedes the earlier suspicion of CACHE_STAMPEDE.\nround-08/board.md:5: - Thread C opened: request failures on some notify-worker pods; cause not yet identified. Status: ongoing.\nround-08/changes.md:3: - CHG-159 PROPOSED: move batch jobs to off-peak window (not applied)\nConsider whether this update affects your working context.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 25; update: the board and change-log lines above). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.62\n  s16.act: 0.66\n  s16.obs: 0.46\n  s16.rcpt: 0.33\nCoverage: 4 of 4 entries answered."
++   "body": "R1: board empty; CHG-108 PROPOSED. R2: follow-ups OPEN ALERT_TUNING(round-02/board.md:3), RUNBOOK_UPDATE(:4), VENDOR_TICKET(:5). CHG-120 APPLIED notify-worker 8.56.0 http.max_inflight=0 (round-02/changes.md:4) -> suspect BAD_CONFIG_ROLLOUT but no notify-worker errors in R3. auth-svc pool WARNs round-02/logs/auth-svc.log:1-25. R3: Thread A DB_POOL_EXHAUSTED auth-svc+search-api ongoing (round-03/board.md:3); search-api pool exhausted round-03/logs/search-api.log:1-53. CHG-125 dashboards irrelevant. R4: Thread B CACHE_STAMPEDE payments-svc ongoing (round-04/board.md:3). CHG-133 APPLIED TLS ticket rotation hourly (round-04/changes.md:3) - watch for CERT issues. R4 logs: payments-svc ERROR 429 upstream=fx-rates (round-04/logs/payments-svc.log:1-51) -> likely UPSTREAM_RATE_LIMIT not cache; notify-worker no errors R4. R5: Thread A mitigated (round-05/board.md:3) via CHG-143 auth-svc (round-05/changes.md:4); Thread B +checkout-api (round-05/board.md:4); OPEN CAPACITY_REVIEW (round-05/board.md:5); CHG-138 APPLIED TLS hourly (round-05/changes.md:3). R6: CLOSED ALERT_TUNING (round-06/board.md:3); OPEN CUSTOMER_COMMS (round-06/board.md:4); CHG-147 retry budget irrelevant. R6 logs: 429 fx-rates payments-svc round-06/logs/payments-svc.log:3, checkout-api round-06/logs/checkout-api.log:19. R7: board/changes nothing new. R7 logs: 429 fx-rates persists payments/checkout. R8: Thread A RESOLVED (round-08/board.md:3); Thread B cause revised UPSTREAM_RATE_LIMIT (round-08/board.md:4); Thread C notify-worker ongoing cause unknown (round-08/board.md:5); CHG-159 PROPOSED irrelevant."
+   }
+  ]
+ }

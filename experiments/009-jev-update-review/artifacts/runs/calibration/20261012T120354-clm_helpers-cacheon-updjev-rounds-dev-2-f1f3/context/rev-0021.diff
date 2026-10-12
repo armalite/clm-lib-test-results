@@ -1,0 +1,24 @@
+--- rev-20
++++ rev-21
+@@ -25,6 +25,21 @@
+    "id": "n5",
+    "role": "note",
+    "body": "R5: board.md:3 Thread A (DNS) mitigated; changes.md:3 CHG-143 APPLIED inventory-svc mitigation. board.md:4 Thread B adds shipping-svc (board cause still DB_POOL, logs say CERT_EXPIRED). Follow-ups OPEN: VENDOR_TICKET board.md:5, ALERT_TUNING board.md:6."
++  },
++  {
++   "id": "s13.act",
++   "role": "assistant",
++   "body": "[step 13] execute\nthought: Check R5 logs for key errors and compact context.\ncode:\nimport json,re\nb='/task/fixtures/round-05/logs/'\nimport os\nfor f in sorted(os.listdir(b)):\n  L=open(b+f).read().splitlines()\n  hits=[(i+1,l[:110]) for i,l in enumerate(L) if re.search(r'ERROR|SERVFAIL|certificate|429|pool|max_inflight|OOM|disk',l,re.I)]\n  print(f,len(hits),[h[0] for h in hits][:15]);\n  for h in hits[:2]:print(' ',h)\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4')]\nc['entries'][3]['body']=c['entries'][3]['body'].replace(' Next: advance to R5.','')\nc['entries'].append({'id':'n5','role':'note','body':'R5: board.md:3 Thread A (DNS) mitigated; changes.md:3 CHG-143 APPLIED inventory-svc mitigation. board.md:4 Thread B adds shipping-svc (board cause still DB_POOL, logs say CERT_EXPIRED). Follow-ups OPEN: VENDOR_TICKET board.md:5, ALERT_TUNING board.md:6.'})\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s13.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nauth-svc.log 11 [2, 8, 14, 22, 28, 30, 45, 51, 57, 59, 64]\n  (2, '2026-09-14T12:00:44Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\n  (8, '2026-09-14T12:01:46Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\ncheckout-api.log 0 []\ninventory-svc.log 0 []\nsearch-api.log 0 []\nshipping-svc.log 11 [9, 11, 34, 36, 39, 52, 54, 55, 60, 63, 65]\n  (9, '2026-09-14T12:08:01Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\n  (11, '2026-09-14T12:08:38Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\n"
++  },
++  {
++   "id": "s13.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 13: revision 19 -> 20; entries 9 -> 5; body chars 3420 -> 1319; removed [s11.act, s11.obs, s11.rcpt, s12.act, s12.obs]; added [n5]; rewritten [n4]"
+   }
+  ]
+ }

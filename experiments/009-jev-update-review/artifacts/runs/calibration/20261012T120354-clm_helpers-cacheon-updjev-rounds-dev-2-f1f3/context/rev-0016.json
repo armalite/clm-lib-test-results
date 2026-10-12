@@ -1,0 +1,39 @@
+{
+ "number": 16,
+ "parent": 15,
+ "source": "runtime",
+ "step": 10,
+ "sha256": "2c7827b244115e77cd68bd0f075f117b9a5ab1ae02db8ae7c209ec32f853238c",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: CHG-107 APPLIED (round-01/changes.md:3) retry budget GETs=1. slow query WARNs = noise. inventory-svc DNS SERVFAIL rates.internal round-01/logs/inventory-svc.log:7,20,50,85-90."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG_ROLLOUT). changes.md:4 CHG-121 auth-svc no config. R2 checkout-api SERVFAIL rates.internal logs/checkout-api.log:8,24,29,38,46,59."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread B says auth-svc DB_POOL_EXHAUSTED ongoing, BUT logs show CERT_EXPIRED: round-03/logs/auth-svc.log:6,9,15,21,25,26,33,48,64,72 tls handshake peer=sso.example.net certificate_expired; no pool errors. changes.md:3 CHG-126 PROPOSED (ignore). search-api R2/R3 no errors (CHG-120 maybe no effect yet)."
+  },
+  {
+   "id": "s10.act",
+   "role": "assistant",
+   "body": "[step 10] execute\nthought: Scan round 4 logs for errors and compact context.\ncode:\nimport json,re,glob\nfor f in sorted(glob.glob('/task/fixtures/round-04/logs/*.log')):\n  hits=[]\n  for i,l in enumerate(open(f),1):\n    if re.search(r'ERROR|FATAL|SERVFAIL|certificate|pool|429|OOM|disk|lag|invalid',l,re.I) and 'slow query' not in l: hits.append((i,l.strip()[:110]))\n  print(f.split('/')[-1],len(hits))\n  for h in hits[:4]: print(' ',h)\nprint(open('/task/fixtures/round-04/board.md').read())\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3')]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s10.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nauth-svc.log 9\n  (6, '2026-09-14T11:04:19Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\n  (8, '2026-09-14T11:04:44Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\n  (16, '2026-09-14T11:12:57Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\n  (39, '2026-09-14T11:29:03Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\ncheckout-api.log 12\n  (1, '2026-09-14T11:00:28Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL')\n  (8, '2026-09-14T11:06:39Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL')\n  (11, '2026-09-14T11:08:20Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL')\n  (13, '2026-09-14T11:08:57Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL')\ninventory-svc.log 11\n  (32, '2026-09-14T11:29:13Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL')\n  (36, '2026-09-14T11:30:00Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL')\n  (38, '2026-09-14T11:30:42Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL')\n  (43, '2026-09-14T11:35:09Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL')\nsearch-api.log 1\n  (38, '2026-09-14T11:35:59Z INFO  search-api heartbeat uptime_s=37429')\nshipping-svc.log 9\n  (3, '2026-09-14T11:04:31Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\n  (20, '2026-09-14T11:16:07Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\n  (27, '2026-09-14T11:19:13Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\n  (34, '2026-09-14T11:22:21Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired')\n# Incident board: updates in round 04\n\n\n"
+  },
+  {
+   "id": "s10.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 10: revision 14 -> 15; entries 8 -> 3; body chars 2192 -> 782; removed [s8.act, s8.obs, s8.rcpt, s9.act, s9.obs]; added []; rewritten []"
+  }
+ ]
+}

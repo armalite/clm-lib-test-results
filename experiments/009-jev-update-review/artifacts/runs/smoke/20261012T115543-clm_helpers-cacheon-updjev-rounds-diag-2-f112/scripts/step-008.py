@@ -1,0 +1,3 @@
+import json
+b='R1: CHG-113 APPLIED round-01/changes.md:3 notify-worker build 7.58.1 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT). pricing-svc CERT_EXPIRED peer=bank-api round-01/logs/pricing-svc.log:8,10,13,22. R2 board: Thread A CERT_EXPIRED pricing-svc+search-api ongoing round-02/board.md:3; Thread D DNS_RESOLUTION pricing-svc ongoing (unverified) board.md:4; VENDOR_TICKET open board.md:5. CHG-118 PROPOSED ignore. Slow query WARNs = noise. R2 logs: cert errs pricing-svc.log:1,7,16; search-api.log:12,15,32; DNS SERVFAIL host=rates.internal pricing-svc.log:3,24,44 (real intermittent). R2 done; next: advance.'
+json.dump({'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':b}]},open('/task/workspace/context.json','w'))

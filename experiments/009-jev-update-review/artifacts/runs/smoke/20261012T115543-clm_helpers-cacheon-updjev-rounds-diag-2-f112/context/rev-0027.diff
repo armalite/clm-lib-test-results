@@ -1,0 +1,24 @@
+--- rev-26
++++ rev-27
+@@ -5,6 +5,21 @@
+    "id": "notes",
+    "role": "note",
+    "body": "R1: CHG-113 APPLIED round-01/changes.md:3 notify-worker build 7.58.1 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT). pricing-svc CERT_EXPIRED peer=bank-api round-01/logs/pricing-svc.log:8,10,13,22. R2 board: Thread A CERT_EXPIRED pricing-svc+search-api ongoing round-02/board.md:3; Thread D DNS_RESOLUTION pricing-svc ongoing (unverified) board.md:4; VENDOR_TICKET open board.md:5. CHG-118 PROPOSED ignore. Slow query WARNs = noise. R2 logs: cert errs pricing-svc.log:1,7,16; search-api.log:12,15,32; DNS SERVFAIL host=rates.internal pricing-svc.log:3,24,44 (real intermittent). R3 board: Thread B CACHE_STAMPEDE inventory-svc ongoing round-03/board.md:3. CHG-126 PROPOSED ignore. R3 logs: pricing DNS+cert continue (pricing-svc.log:3,13), search-api cert (search-api.log:9). R3 inventory-svc logs: NO cache misses; disk usage high /var/data 91-97% (inventory-svc.log:7,8,29,80) -> likely DISK_PRESSURE not CACHE_STAMPEDE. R4: board Thread A (CERT) mitigated round-04/board.md:3; CHG-136 APPLIED mitigation pricing-svc changes.md:4; CHG-128 PROPOSED ignore. R4 logs: search-api no cert errs (mitigated); pricing DNS SERVFAIL continues round-04/logs/pricing-svc.log:24,26,33,36; inventory disk 91-96% inventory-svc.log:5,18,25; ledger-svc disk 93-98% round-04/logs/ledger-svc.log:7,13,30 (DISK_PRESSURE spreading); notify-worker quiet. R5 board: Thread B adds ledger-svc round-05/board.md:3; Thread D DNS closed false alarm board.md:4 (but logs showed SERVFAIL - recheck); CAPACITY_REVIEW open board.md:5. R5 changes.md:3 CHG-136 PROPOSED (different text than R4 CHG-136 APPLIED; recheck)."
++  },
++  {
++   "id": "s17.act",
++   "role": "assistant",
++   "body": "[step 17] execute\nthought: Update notes with R5 board, check R5 logs briefly.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nb=c['entries'][0]['body'].replace(' Next: advance to R5.','')\nb+=' R5 board: Thread B adds ledger-svc round-05/board.md:3; Thread D DNS closed false alarm board.md:4 (but logs showed SERVFAIL - recheck); CAPACITY_REVIEW open board.md:5. R5 changes.md:3 CHG-136 PROPOSED (different text than R4 CHG-136 APPLIED; recheck).'\nfor s in ['pricing-svc','inventory-svc','ledger-svc','notify-worker','search-api']:\n  L=open(f'/task/fixtures/round-05/logs/{s}.log').read().splitlines()\n  h=[f'{i+1}' for i,l in enumerate(L) if re.search(r'SERVFAIL|cert|disk|pool|miss|ERROR',l,re.I)]\n  print(s,len(h),h[:8],L[int(h[0])-1][:150] if h else '')\nc['entries']=[{'id':'notes','role':'note','body':b}]\njson.dump(c,open('/task/workspace/context.json','w'))\nprint(open('/task/fixtures/round-04/changes.md').read())"
++  },
++  {
++   "id": "s17.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\npricing-svc 0 [] \ninventory-svc 11 ['2', '8', '21', '23', '27', '31', '44', '50'] 2026-09-14T12:02:24Z WARN  inventory-svc disk usage high path=/var/data used_pct=92\nledger-svc 12 ['2', '9', '17', '19', '28', '36', '39', '59'] 2026-09-14T12:01:27Z WARN  ledger-svc disk usage high path=/var/data used_pct=96\nnotify-worker 0 [] \nsearch-api 0 [] \n# Change log: round 04\n\n- CHG-128 PROPOSED: raise HPA max replicas for search tier (not applied)\n- CHG-136 APPLIED: mitigation for thread A deployed to pricing-svc\n\n"
++  },
++  {
++   "id": "s17.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 17: revision 25 -> 26; entries 6 -> 1; body chars 3566 -> 1589; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs]; added []; rewritten [notes]"
+   }
+  ]
+ }

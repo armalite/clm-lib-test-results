@@ -1,0 +1,24 @@
+--- rev-5
++++ rev-6
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: inventory-svc DNS SERVFAIL rates.internal round-01/logs/inventory-svc.log:7; CHG-107 APPLIED retry budget=1 (round-01/changes.md:3). slow query WARN = noise.\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG); changes.md:4 CHG-121 auth-svc no config."
++  },
++  {
++   "id": "s4.act",
++   "role": "assistant",
++   "body": "[step 4] execute\nthought: Check round 2 logs for errors, esp. search-api after bad config; compact context.\ncode:\nimport os,json\nb='/task/fixtures/round-02/'\nfor f in sorted(os.listdir(b+'logs')):\n  L=open(b+'logs/'+f).read().splitlines()\n  e=[(i+1,l) for i,l in enumerate(L) if ('ERROR' in l or 'WARN' in l or 'error' in l) and 'slow query' not in l]\n  print(f,len(e));[print(i,l[:150]) for i,l in e[:4]]\nn='R1: inventory-svc DNS SERVFAIL rates.internal round-01/logs/inventory-svc.log:7; CHG-107 APPLIED retry budget=1 (round-01/changes.md:3). slow query WARN = noise.\\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG); changes.md:4 CHG-121 auth-svc no config.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s4.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nauth-svc.log 0\ncheckout-api.log 6\n8 2026-09-14T09:07:31Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\n24 2026-09-14T09:17:52Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\n29 2026-09-14T09:19:49Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\n38 2026-09-14T09:29:53Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 11\n8 2026-09-14T09:05:23Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\n12 2026-09-14T09:08:19Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\n14 2026-09-14T09:08:24Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\n19 2026-09-14T09:13:18Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\nsearch-api.log 0\nshipping-svc.log 0\n"
++  },
++  {
++   "id": "s4.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 6 -> 1; body chars 2551 -> 360; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

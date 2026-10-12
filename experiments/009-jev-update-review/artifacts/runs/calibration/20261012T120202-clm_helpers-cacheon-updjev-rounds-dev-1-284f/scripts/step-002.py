@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. CHG-108 PROPOSED (not applied) raise HPA search tier. Logs: only background slow-query WARNs (200-450ms) across notify-worker, checkout-api, auth-svc, payments-svc, search-api; no incident. Scan method: grep ERROR/WARN per log, print with line nums.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

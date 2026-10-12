@@ -1,0 +1,24 @@
+--- rev-46
++++ rev-47
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: board empty; CHG-108 PROPOSED (ignore). slow-query WARNs = noise. R2: board.md:3-5 follow-ups OPEN ALERT_TUNING,RUNBOOK_UPDATE,VENDOR_TICKET. changes.md:4 CHG-120 APPLIED notify-worker sets http.max_inflight=0 (suspect BAD_CONFIG); CHG-121 payments no cfg. R2 auth-svc.log:1-69 db pool exhausted. R3: board.md:3 Thread A DB_POOL_EXHAUSTED auth-svc+search-api ongoing; changes.md:3 CHG-125 dashboards (noise). R3 logs: auth-svc.log:7, search-api.log:1 pool exhausted. R4: board.md:3 Thread B CACHE_STAMPEDE payments-svc ongoing; changes.md:3 CHG-133 TLS ticket rotation APPLIED. R4 logs: auth-svc.log:7 & search-api.log:4 pool exhausted; checkout-api.log:9 & payments-svc.log:1 429 upstream=fx-rates (UPSTREAM_RATE_LIMIT? board says CACHE_STAMPEDE for payments - check later). R4 scanned; next: advance. R5: board.md:3 Thread A mitigated; board.md:4 Thread B +checkout-api; board.md:5 OPEN CAPACITY_REVIEW; changes.md:4 CHG-143 APPLIED thread A mitigation auth-svc; CHG-138 TLS noise. R5 logs: checkout-api.log:21, payments-svc.log:13 429 fx-rates. R6: board.md:3 CLOSED ALERT_TUNING; board.md:4 OPEN CUSTOMER_COMMS; changes.md:3 CHG-147 retry budget (noise?). R6 logs: checkout-api.log:19, payments-svc.log:3 429 fx-rates. R6 scanned; next: advance. R7: no board/changes lines. R7 logs: checkout-api.log:11, payments-svc.log:1 429 fx-rates. R7 scanned; next: advance. R8: board.md:3 Thread A resolved; board.md:4 Thread B cause revised UPSTREAM_RATE_LIMIT; board.md:5 Thread C notify-worker ongoing cause unknown (likely CHG-120 max_inflight=0); CHG-159 PROPOSED ignore. R8 logs: notify-worker.log:5,45 config validation failed http.max_inflight=0 (BAD_CONFIG_ROLLOUT, cite round-02/changes.md:4). R8 scanned; next: advance. R9: board.md:3 Thread B mitigated; board.md:4 Thread C still restarting; CHG-164 retry budget (noise). R9 logs: notify-worker.log:3,5 errors; checkout-api.log:34,55; payments-svc.log:34,42 (429 hits, mitigated). R9 scanned; next: advance."
++  },
++  {
++   "id": "s29.act",
++   "role": "assistant",
++   "body": "[step 29] execute\nthought: Note R9 log hits, compact, then advance next.\ncode:\nimport json\nd=json.load(open('/task/workspace/context.json'))\nn=[e for e in d['entries'] if e['id']=='n1'][0]\nn['body']+=' R9 logs: notify-worker.log:3,5 errors; checkout-api.log:34,55; payments-svc.log:34,42 (429 hits, mitigated). R9 scanned; next: advance.'\nd['entries']=[n]\njson.dump(d,open('/task/workspace/context.json','w'))\nimport re\nfor f in ['checkout-api','payments-svc','notify-worker']:\n  L=open(f'/task/fixtures/round-09/logs/{f}.log').read().splitlines()\n  print(f,len(L),L[-1][:160])"
++  },
++  {
++   "id": "s29.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\ncheckout-api 76 {\"ts\":\"2026-09-14T16:57:59Z\",\"level\":\"INFO\",\"svc\":\"checkout-api\",\"msg\":\"heartbeat\",\"uptime_s\":40355}\npayments-svc 73 {\"ts\":\"2026-09-14T16:59:28Z\",\"level\":\"INFO\",\"svc\":\"payments-svc\",\"msg\":\"request ok\",\"route\":\"/v1/health\",\"status\":200,\"ms\":7}\nnotify-worker 69 {\"ts\":\"2026-09-14T16:59:51Z\",\"level\":\"INFO\",\"svc\":\"notify-worker\",\"msg\":\"gc cycle\",\"pause_ms\":6}\n"
++  },
++  {
++   "id": "s29.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 29: revision 45 -> 46; entries 4 -> 1; body chars 2776 -> 1967; removed [s28.act, s28.obs, s28.rcpt]; added []; rewritten [n1]"
+   }
+  ]
+ }

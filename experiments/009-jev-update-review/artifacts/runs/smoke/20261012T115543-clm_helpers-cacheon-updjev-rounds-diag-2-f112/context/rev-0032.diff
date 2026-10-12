@@ -1,0 +1,24 @@
+--- rev-31
++++ rev-32
+@@ -5,6 +5,21 @@
+    "id": "notes",
+    "role": "note",
+    "body": "R1: CHG-113 APPLIED round-01/changes.md:3 notify-worker build 7.58.1 sets db.pool_max=0 (suspect BAD_CONFIG_ROLLOUT). pricing-svc CERT_EXPIRED peer=bank-api round-01/logs/pricing-svc.log:8,10,13,22. R2 board: Thread A CERT_EXPIRED pricing-svc+search-api ongoing round-02/board.md:3; Thread D DNS_RESOLUTION pricing-svc ongoing (unverified) board.md:4; VENDOR_TICKET open board.md:5. CHG-118 PROPOSED ignore. Slow query WARNs = noise. R2 logs: cert errs pricing-svc.log:1,7,16; search-api.log:12,15,32; DNS SERVFAIL host=rates.internal pricing-svc.log:3,24,44 (real intermittent). R3 board: Thread B CACHE_STAMPEDE inventory-svc ongoing round-03/board.md:3. CHG-126 PROPOSED ignore. R3 logs: pricing DNS+cert continue (pricing-svc.log:3,13), search-api cert (search-api.log:9). R3 inventory-svc logs: NO cache misses; disk usage high /var/data 91-97% (inventory-svc.log:7,8,29,80) -> likely DISK_PRESSURE not CACHE_STAMPEDE. R4: board Thread A (CERT) mitigated round-04/board.md:3; CHG-136 APPLIED mitigation pricing-svc changes.md:4; CHG-128 PROPOSED ignore. R4 logs: search-api no cert errs (mitigated); pricing DNS SERVFAIL continues round-04/logs/pricing-svc.log:24,26,33,36; inventory disk 91-96% inventory-svc.log:5,18,25; ledger-svc disk 93-98% round-04/logs/ledger-svc.log:7,13,30 (DISK_PRESSURE spreading); notify-worker quiet. R5 board: Thread B adds ledger-svc round-05/board.md:3; Thread D DNS closed false alarm board.md:4 (but logs showed SERVFAIL - recheck); CAPACITY_REVIEW open board.md:5. R5 changes.md:3 CHG-136 PROPOSED (different text than R4 CHG-136 APPLIED; recheck). R5 logs: pricing-svc no DNS/cert errs; inventory disk round-05/logs/inventory-svc.log:2,8,21; ledger disk round-05/logs/ledger-svc.log:2,9,17; notify/search quiet. R6 board: ALERT_TUNING open round-06/board.md:3; POSTMORTEM_DRAFT open board.md:4."
++  },
++  {
++   "id": "s20.act",
++   "role": "assistant",
++   "body": "[step 20] execute\nthought: Scan R6 logs for key signals; compact context.\ncode:\nimport json,re\nfor s in ['inventory-svc','ledger-svc','notify-worker','pricing-svc','search-api']:\n  L=open(f'/task/fixtures/round-06/logs/{s}.log').read().splitlines()\n  h=[(i+1,l[:110]) for i,l in enumerate(L) if re.search(r'ERROR|disk|cert|SERVFAIL|pool|429|miss|OOM|lag',l,re.I) and 'slow' not in l.lower()]\n  print(s,len(h));[print(i,l) for i,l in h[:4]]\nc=json.load(open('/task/workspace/context.json'))\nn=c['entries'][0];n['body']+=' R6 board: ALERT_TUNING open round-06/board.md:3; POSTMORTEM_DRAFT open board.md:4.'\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s20.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\ninventory-svc 8\n13 {\"ts\":\"2026-09-14T13:17:39Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"\n18 {\"ts\":\"2026-09-14T13:22:12Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"\n24 {\"ts\":\"2026-09-14T13:23:54Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"\n42 {\"ts\":\"2026-09-14T13:37:26Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"\nledger-svc 7\n7 {\"ts\":\"2026-09-14T13:06:20Z\",\"level\":\"WARN\",\"svc\":\"ledger-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"use\n16 {\"ts\":\"2026-09-14T13:13:19Z\",\"level\":\"WARN\",\"svc\":\"ledger-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"use\n21 {\"ts\":\"2026-09-14T13:16:15Z\",\"level\":\"WARN\",\"svc\":\"ledger-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"use\n39 {\"ts\":\"2026-09-14T13:34:56Z\",\"level\":\"WARN\",\"svc\":\"ledger-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"use\nnotify-worker 0\npricing-svc 0\nsearch-api 0\n"
++  },
++  {
++   "id": "s20.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 20: revision 30 -> 31; entries 6 -> 1; body chars 3672 -> 1836; removed [s18.act, s18.obs, s18.rcpt, s19.act, s19.obs]; added []; rewritten [notes]"
+   }
+  ]
+ }

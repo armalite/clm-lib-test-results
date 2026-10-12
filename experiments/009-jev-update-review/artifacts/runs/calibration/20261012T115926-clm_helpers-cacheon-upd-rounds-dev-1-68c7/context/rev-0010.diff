@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -20,6 +20,16 @@
+    "id": "s6.rcpt",
+    "role": "receipt",
+    "body": "context.json edit accepted at step 6: revision 7 -> 8; entries 4 -> 1; body chars 2230 -> 403; removed [s5.act, s5.obs, s5.rcpt]; added []; rewritten [n1]"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: The previous scan printed nothing; check notify-worker log format directly.\ncode:\nimport glob\nfor f in sorted(glob.glob('/task/fixtures/round-02/logs/*.log')):\n    L=open(f).read().splitlines()\n    print(f.split('/')[-1],len(L))\n    for i,l in enumerate(L[:3],1): print(' ',i,l[:160])\nimport collections\nfor f in sorted(glob.glob('/task/fixtures/round-02/logs/*.log')):\n    c=collections.Counter()\n    for l in open(f):\n        for w in ('error','warn','fail','429','timeout','refused','inflight'):\n            if w in l.lower(): c[w]+=1\n    print(f.split('/')[-1],dict(c))"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nauth-svc.log 79\n  1 2026-09-14T09:00:55Z WARN  auth-svc db pool exhausted wait_ms=1710 in_use=10/10\n  2 2026-09-14T09:02:06Z INFO  auth-svc heartbeat uptime_s=9403\n  3 2026-09-14T09:02:39Z WARN  auth-svc db pool exhausted wait_ms=1553 in_use=10/10\ncheckout-api.log 66\n  1 2026-09-14T09:00:20Z INFO  checkout-api gc cycle pause_ms=32\n  2 2026-09-14T09:00:38Z INFO  checkout-api gc cycle pause_ms=29\n  3 2026-09-14T09:00:44Z WARN  checkout-api slow query ms=359 table=orders\nnotify-worker.log 60\n  1 2026-09-14T09:01:00Z INFO  notify-worker heartbeat uptime_s=4056\n  2 2026-09-14T09:02:22Z INFO  notify-worker heartbeat uptime_s=81523\n  3 2026-09-14T09:02:30Z INFO  notify-worker health ok probe=readiness\npayments-svc.log 61\n  1 2026-09-14T09:01:29Z INFO  payments-svc heartbeat uptime_s=6230\n  2 2026-09-14T09:02:00Z INFO  payments-svc gc cycle pause_ms=5\n  3 2026-09-14T09:04:15Z INFO  payments-svc request ok route=/v1/orders status=200 ms=26\nsearch-api.log 70\n  1 2026-09-14T09:00:10Z WARN  search-api slow query ms=287 table=orders\n  2 2026-09-14T09:00:49Z INFO  search-api heartbeat uptime_s=27469\n  3 2026-09-14T09:00:54Z INFO  search-api gc cycle pause_ms=15\nauth-svc.log {'warn': 25}\ncheckout-api.log {'warn': 12}\nnotify-worker.log {'warn': 12}\npayments-svc.log {'warn': 11, '429': 1}\nsearch-api.log {'warn': 15}\n"
+   }
+  ]
+ }

@@ -102,9 +102,14 @@ Both experiments compared two context-management approaches. The model was the s
 
 ## Planned experiments
 
+Experiments 009–011 follow the [Jev-assistance roadmap](experiments/jev-assistance-roadmap.md), which compares three ways a fast decision model could assist model-controlled CLM.
+
 | Experiment | Question | Status |
 | --- | --- | --- |
 | [008](experiments/008-jev-context-review/README.md) | Can a fast decision model (TypeSafe Jev) help an agent manage its own context? Optional, model-invoked advice on which context entries an update affects | Diagnostic: Jev flagged 10/10 affected and 1/12 unaffected labelled entries. Pilot (4 runs): all succeeded; the agent never used the optional review action. No evidence of an effect; larger evaluation not run |
+| [009](experiments/009-jev-update-review/README.md) | Strategy 1 of the [Jev-assistance roadmap](experiments/jev-assistance-roadmap.md): update-triggered Jev review. Both arms see the same round update and review instruction; only the assisted arm also gets Jev's per-entry advice | Diagnostic: 12/13 affected and 1/9 unaffected flagged. Pilot (4 runs): all succeeded; the assisted arm was cheaper and faster on means, but from two pairs with pacing differences, so no effect is shown |
+| [010](experiments/010-jev-initiated-review/README.md) | Strategy 2: Claude decides when to review its context; Jev assists each review it starts | **Planned only.** Not implemented, no paid runs authorised |
+| [011](experiments/011-jev-edit-check/README.md) | Strategy 3: Jev checks a proposed context edit for narrow risks before Claude applies, revises or withdraws it | **Planned only.** Not implemented; needs its own diagnostic first; no paid runs authorised |
 
 ## Navigating the raw evidence
 

@@ -1,0 +1,24 @@
+--- rev-20
++++ rev-21
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: inventory-svc DNS SERVFAIL rates.internal round-01/logs/inventory-svc.log:7; CHG-107 APPLIED retry budget=1 (round-01/changes.md:3). slow query WARN = noise.\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing; checkout DNS err round-02/logs/checkout-api.log:8. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG, no errors yet R2); CHG-121 auth-svc no config.\nR3: board.md:3 Thread B auth-svc DB_POOL_EXHAUSTED ongoing BUT logs show CERT_EXPIRED peer=sso.example.net round-03/logs/auth-svc.log:6,9,15 (no pool errors). DNS continues round-03/logs/checkout-api.log:33, inventory-svc.log:3. changes.md:3 CHG-126 PROPOSED (ignore). search-api still no errors.\nR4: board empty, no changes. CERT_EXPIRED now also shipping-svc round-04/logs/shipping-svc.log:3,20; auth round-04/logs/auth-svc.log:6. DNS continues round-04/logs/checkout-api.log:1, inventory-svc.log:32. search-api no errors.\nR5: board.md:3 Thread A mitigated (CHG-143 APPLIED changes.md:3 inventory-svc); board.md:4 Thread B +shipping-svc; follow-ups OPEN VENDOR_TICKET board.md:5, ALERT_TUNING board.md:6.\nR5 logs: cert errs auth-svc round-05/logs/auth-svc.log:2, shipping round-05/logs/shipping-svc.log:9; no DNS errs.\nR6: board.md:3 OPEN RUNBOOK_UPDATE; changes.md:3 CHG-144 log sampling (noise)."
++  },
++  {
++   "id": "s14.act",
++   "role": "assistant",
++   "body": "[step 14] execute\nthought: Check R6 logs and compact context.\ncode:\nimport json,re\nfor s in ['auth-svc','checkout-api','inventory-svc','search-api','shipping-svc']:\n  L=open(f'/task/fixtures/round-06/logs/{s}.log').read().splitlines()\n  h=[(i+1,l[:120]) for i,l in enumerate(L) if re.search('ERROR|FATAL|SERVFAIL|expired|exhaust|inflight|429',l,re.I)]\n  print(s,len(h));[print(' ',x) for x in h[:2]]\nc=json.load(open('/task/workspace/context.json'))\nn=c['entries'][0]\nn['body']+='\\nR5 logs: cert errs auth-svc round-05/logs/auth-svc.log:2, shipping round-05/logs/shipping-svc.log:9; no DNS errs.\\nR6: board.md:3 OPEN RUNBOOK_UPDATE; changes.md:3 CHG-144 log sampling (noise).'\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s14.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nauth-svc 10\n  (4, '{\"ts\":\"2026-09-14T13:02:17Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"rea')\n  (10, '{\"ts\":\"2026-09-14T13:09:13Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"rea')\ncheckout-api 0\ninventory-svc 0\nsearch-api 0\nshipping-svc 6\n  (1, '{\"ts\":\"2026-09-14T13:00:12Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",')\n  (18, '{\"ts\":\"2026-09-14T13:15:51Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",')\n"
++  },
++  {
++   "id": "s14.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 14: revision 19 -> 20; entries 6 -> 1; body chars 3623 -> 1316; removed [s12.act, s12.obs, s12.rcpt, s13.act, s13.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

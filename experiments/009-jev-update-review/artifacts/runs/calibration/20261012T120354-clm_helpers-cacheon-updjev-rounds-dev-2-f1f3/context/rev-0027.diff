@@ -1,0 +1,24 @@
+--- rev-26
++++ rev-27
+@@ -35,6 +35,21 @@
+    "id": "n7",
+    "role": "note",
+    "body": "R7: board.md:3 Thread B cause=CERT_EXPIRED. board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing (verify vs CHG-120 max_inflight=-1 BAD_CONFIG). R7 auth/shipping cert errors continue."
++  },
++  {
++   "id": "s17.act",
++   "role": "assistant",
++   "body": "[step 17] execute\nthought: Check R7 search-api logs for 429 vs config, compact context.\ncode:\nimport json,re\nL=open('/task/fixtures/round-07/logs/search-api.log').read().splitlines()\nh=[i+1 for i,l in enumerate(L) if re.search(r'ERROR|429|max_inflight|WARN',l)]\nprint(len(h),h[:15])\nfor i in h[:3]:print(L[i-1][:200])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\nfor e in c['entries']:\n  if e['id']=='n3':e['body']=e['body'].replace('BUT logs show','(R7 board revised to CERT_EXPIRED, round-07/board.md:3) logs:')\n  if e['id']=='n5':e['body']=e['body'].replace('(board cause still DB_POOL, logs say CERT_EXPIRED)','(cause now CERT_EXPIRED per round-07/board.md:3)')\nc['entries'].append({'id':'n7','role':'note','body':'R7: board.md:3 Thread B cause=CERT_EXPIRED. board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing (verify vs CHG-120 max_inflight=-1 BAD_CONFIG). R7 auth/shipping cert errors continue.'})\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s17.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n27 [1, 2, 3, 4, 5, 8, 11, 12, 18, 19, 20, 21, 22, 25, 27]\n{\"ts\":\"2026-09-14T14:00:18Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":444,\"table\":\"orders\"}\n{\"ts\":\"2026-09-14T14:03:51Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":238,\"table\":\"orders\"}\n{\"ts\":\"2026-09-14T14:04:41Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":262,\"table\":\"events\"}\n"
++  },
++  {
++   "id": "s17.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 17: revision 25 -> 26; entries 11 -> 7; body chars 4018 -> 1632; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs]; added [n7]; rewritten [n3, n5]"
+   }
+  ]
+ }

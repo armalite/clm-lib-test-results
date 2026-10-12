@@ -1,0 +1,24 @@
+--- rev-23
++++ rev-24
+@@ -30,6 +30,21 @@
+    "id": "n6",
+    "role": "note",
+    "body": "R6: board.md:3 RUNBOOK_UPDATE OPEN. changes.md:3 CHG-144 log sampling (noise)."
++  },
++  {
++   "id": "s15.act",
++   "role": "assistant",
++   "body": "[step 15] execute\nthought: Scan R6 logs and compact context.\ncode:\nimport json,re,os\nb='/task/fixtures/round-06/logs/'\nfor f in sorted(os.listdir(b)):\n  L=open(b+f).read().splitlines()\n  hits=[i+1 for i,l in enumerate(L) if re.search(r'ERROR|SERVFAIL|certificate|429|pool|max_inflight|OOM|disk|lag',l,re.I)]\n  print(f,len(hits),hits[:12])\n  if hits:print(' ',L[hits[0]-1][:120])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\nc['entries'].append({'id':'n6','role':'note','body':'R6: board.md:3 RUNBOOK_UPDATE OPEN. changes.md:3 CHG-144 log sampling (noise).'})\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s15.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nauth-svc.log 10 [4, 10, 14, 19, 20, 30, 50, 60, 76, 79]\n  {\"ts\":\"2026-09-14T13:02:17Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"rea\ncheckout-api.log 0 []\ninventory-svc.log 0 []\nsearch-api.log 0 []\nshipping-svc.log 6 [1, 18, 21, 22, 36, 64]\n  {\"ts\":\"2026-09-14T13:00:12Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\n"
++  },
++  {
++   "id": "s15.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 15: revision 22 -> 23; entries 10 -> 6; body chars 4350 -> 1397; removed [s13.act, s13.obs, s13.rcpt, s14.act, s14.obs]; added [n6]; rewritten []"
+   }
+  ]
+ }

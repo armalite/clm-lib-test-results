@@ -1,0 +1,64 @@
+{
+ "number": 35,
+ "parent": 34,
+ "source": "runtime",
+ "step": 22,
+ "sha256": "b796438521c960f3829e55234186f6b7c36af8a0256a3db70807228886240086",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: CHG-107 APPLIED (round-01/changes.md:3) retry budget GETs=1. slow query WARNs = noise. inventory-svc DNS SERVFAIL rates.internal round-01/logs/inventory-svc.log:7,20,50,85-90."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG_ROLLOUT). changes.md:4 CHG-121 auth-svc no config. R2 checkout-api SERVFAIL rates.internal logs/checkout-api.log:8,24,29,38,46,59."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread B says auth-svc DB_POOL_EXHAUSTED ongoing, (R7 board revised to CERT_EXPIRED, round-07/board.md:3) logs: CERT_EXPIRED: round-03/logs/auth-svc.log:6,9,15,21,25,26,33,48,64,72 tls handshake peer=sso.example.net certificate_expired; no pool errors. changes.md:3 CHG-126 PROPOSED (ignore). search-api R2/R3 no errors (CHG-120 maybe no effect yet)."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board empty. CERT_EXPIRED sso.example.net now auth-svc (round-04/logs/auth-svc.log:6,8,16,39) AND shipping-svc (round-04/logs/shipping-svc.log:3,20,27,34). DNS continues checkout-api round-04/logs/checkout-api.log:1,8,11,13; inventory-svc :32,36,38,43. search-api still no errors."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board.md:3 Thread A (DNS) mitigated; changes.md:3 CHG-143 APPLIED inventory-svc mitigation. board.md:4 Thread B adds shipping-svc (cause now CERT_EXPIRED per round-07/board.md:3). Follow-ups OPEN: VENDOR_TICKET board.md:5, ALERT_TUNING board.md:6."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board.md:3 RUNBOOK_UPDATE OPEN. changes.md:3 CHG-144 log sampling (noise)."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board.md:3 Thread B cause=CERT_EXPIRED. board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing. Logs confirm 429 tax-provider round-07/logs/search-api.log:4,5,20,22,25,47,64,66 (no max_inflight errors; CHG-120 seems no effect). R7 auth/shipping cert errors continue. Next: advance to R8."
+  },
+  {
+   "id": "n8",
+   "role": "note",
+   "body": "R8: board.md:3 Thread A (DNS) RESOLVED. board.md:4 Thread B (CERT) MITIGATED. board.md:5 Thread C search-api pod failures, cause unknown, ongoing. board.md:6 DATA_BACKFILL OPEN. board.md:7 VENDOR_TICKET CLOSED. R8 logs: search-api config validation failed http.max_inflight=-1 (CHG-120 -> BAD_CONFIG_ROLLOUT, Thread C) round-08/logs/search-api.log:2,5,10,26,42,44,59,68,72; 429 tax-provider continues :1,12,14,20,25,66. Next: advance to R9."
+  },
+  {
+   "id": "s22.act",
+   "role": "assistant",
+   "body": "[step 22] execute\nthought: Compact context: add R8 log finding to n8, drop s21 entries.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\nfor e in c['entries']:\n  if e['id']=='n8': e['body']+=' R8 logs: search-api config validation failed http.max_inflight=-1 (CHG-120 -> BAD_CONFIG_ROLLOUT, Thread C) round-08/logs/search-api.log:2,5,10,26,42,44,59,68,72; 429 tax-provider continues :1,12,14,20,25,66. Next: advance to R9.'\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+  },
+  {
+   "id": "s22.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s22.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 22: revision 33 -> 34; entries 11 -> 8; body chars 5183 -> 2178; removed [s21.act, s21.obs, s21.rcpt]; added []; rewritten [n8]"
+  }
+ ]
+}

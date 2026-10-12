@@ -1,0 +1,39 @@
+{
+ "number": 13,
+ "parent": 12,
+ "source": "runtime",
+ "step": 8,
+ "sha256": "0ad01fe838fcf1ba247fcb547af47a9d366a61d1842d754b0eedf98dc4466ec5",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: CHG-107 APPLIED (round-01/changes.md:3) retry budget GETs=1. slow query WARNs = noise. inventory-svc DNS SERVFAIL rates.internal round-01/logs/inventory-svc.log:7,20,50,85-90."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG_ROLLOUT). changes.md:4 CHG-121 auth-svc no config. R2 checkout-api SERVFAIL rates.internal logs/checkout-api.log:8,24,29,38,46,59."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread B says auth-svc DB_POOL_EXHAUSTED ongoing, BUT logs show CERT_EXPIRED: round-03/logs/auth-svc.log:6,9,15,21,25,26,33,48,64,72 tls handshake peer=sso.example.net certificate_expired; no pool errors. changes.md:3 CHG-126 PROPOSED (ignore). search-api R2/R3 no errors (CHG-120 maybe no effect yet)."
+  },
+  {
+   "id": "s8.act",
+   "role": "assistant",
+   "body": "[step 8] execute\nthought: Record R3 finding (auth-svc errors are CERT_EXPIRED, not DB pool) and trim the step-7 entries.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3')]\nfor e in c['entries']:\n  if e['id']=='n3': e['body']='R3: board.md:3 Thread B says auth-svc DB_POOL_EXHAUSTED ongoing, BUT logs show CERT_EXPIRED: round-03/logs/auth-svc.log:6,9,15,21,25,26,33,48,64,72 tls handshake peer=sso.example.net certificate_expired; no pool errors. changes.md:3 CHG-126 PROPOSED (ignore). search-api R2/R3 no errors (CHG-120 maybe no effect yet).'\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+  },
+  {
+   "id": "s8.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s8.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 8: revision 11 -> 12; entries 6 -> 3; body chars 3664 -> 782; removed [s7.act, s7.obs, s7.rcpt]; added []; rewritten [n3]"
+  }
+ ]
+}

@@ -1,0 +1,49 @@
+{
+ "number": 45,
+ "parent": 44,
+ "source": "runtime",
+ "step": 29,
+ "sha256": "6fc127a263c7d20be89ffc8b5e39144e9d296043f18900edf0b669a5d2d7cad1",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: inventory-svc DNS SERVFAIL rates.internal round-01/logs/inventory-svc.log:7; CHG-107 APPLIED retry budget=1 (round-01/changes.md:3). slow query WARN = noise.\nR2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing; checkout DNS err round-02/logs/checkout-api.log:8. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG, no errors yet R2); CHG-121 auth-svc no config.\nR3: board.md:3 Thread B auth-svc DB_POOL_EXHAUSTED ongoing BUT logs show CERT_EXPIRED peer=sso.example.net round-03/logs/auth-svc.log:6,9,15 (no pool errors). DNS continues round-03/logs/checkout-api.log:33, inventory-svc.log:3. changes.md:3 CHG-126 PROPOSED (ignore). search-api still no errors.\nR4: board empty, no changes. CERT_EXPIRED now also shipping-svc round-04/logs/shipping-svc.log:3,20; auth round-04/logs/auth-svc.log:6. DNS continues round-04/logs/checkout-api.log:1, inventory-svc.log:32. search-api no errors.\nR5: board.md:3 Thread A mitigated (CHG-143 APPLIED changes.md:3 inventory-svc); board.md:4 Thread B +shipping-svc; follow-ups OPEN VENDOR_TICKET board.md:5, ALERT_TUNING board.md:6.\nR5 logs: cert errs auth-svc round-05/logs/auth-svc.log:2, shipping round-05/logs/shipping-svc.log:9; no DNS errs.\nR6: board.md:3 OPEN RUNBOOK_UPDATE; changes.md:3 CHG-144 log sampling (noise).\nR6 logs: cert errs auth round-06/logs/auth-svc.log:4,10; shipping round-06/logs/shipping-svc.log:1,18; no DNS, search-api no errs.\nR7: board.md:3 Thread B cause revised CERT_EXPIRED; board.md:4 Thread D UPSTREAM_RATE_LIMIT search-api ongoing (verify vs CHG-120 BAD_CONFIG).\nR7 logs: search-api 429 upstream=tax-provider round-07/logs/search-api.log:4,5,20,22 (real UPSTREAM_RATE_LIMIT); cert errs auth round-07/logs/auth-svc.log:1,16; shipping round-07/logs/shipping-svc.log:10,23; no DNS.\nR8: board.md:3 Thread A resolved; :4 Thread B mitigated; :5 Thread C search-api failures cause unknown ongoing; :6 OPEN DATA_BACKFILL; :7 CLOSED VENDOR_TICKET.\nR8 logs: search-api BOTH 429 tax-provider (round-08/logs/search-api.log:1,12,14,20,25,66) AND config validation failed http.max_inflight=-1 (round-08/logs/search-api.log:2,5,10,26,42) => Thread C = BAD_CONFIG_ROLLOUT via CHG-120 (round-02/changes.md:3), separate from Thread D. Cert errs auth round-08/logs/auth-svc.log:8,61; shipping round-08/logs/shipping-svc.log:50,60. NEXT: advance to R9.\nR9: board.md:3 Thread C pods restarting; changes.md:3 CHG-166 retry budget (noise?).\nR9 logs: cert auth round-09/logs/auth-svc.log:22,55; shipping round-09/logs/shipping-svc.log:28,56; search-api 429 :1,5 + config :2; no DNS.\nR10: board.md:3 Thread D closed FALSE ALARM (but 429s seen in logs? verify); :4 CLOSED DATA_BACKFILL; CHG-175 noise.\nR10 logs: search-api 429 lines []; config err lines [1, 4, 7, 8, 20, 30, 50, 54, 60]; cert auth round-10/logs/auth-svc.log:10,17; shipping round-10/logs/shipping-svc.log:3,60; no DNS. NEXT: advance to R11."
+  },
+  {
+   "id": "s27.act",
+   "role": "assistant",
+   "body": "[step 27] execute\nthought: Compact context; check search-api R10 429s count.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nn=[e for e in c['entries'] if e['id']=='n1'][0]\nL=open('/task/fixtures/round-10/logs/search-api.log').read().splitlines()\nh=[i for i,l in enumerate(L,1) if '429' in l]\ncf=[i for i,l in enumerate(L,1) if 'config validation' in l]\nn['body']+=f'\\nR10 logs: search-api 429 lines {h}; config err lines {cf}; cert auth round-10/logs/auth-svc.log:10,17; shipping round-10/logs/shipping-svc.log:3,60; no DNS. NEXT: advance to R11.'\nc['entries']=[n]\njson.dump(c,open('/task/workspace/context.json','w'))\nprint(h,cf)"
+  },
+  {
+   "id": "s27.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n[] [1, 4, 7, 8, 20, 30, 50, 54, 60]\n"
+  },
+  {
+   "id": "s27.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 27: revision 41 -> 42; entries 4 -> 1; body chars 4966 -> 2909; removed [s26.act, s26.obs, s26.rcpt]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s28.act",
+   "role": "assistant",
+   "body": "[step 28] advance\nthought: "
+  },
+  {
+   "id": "s28.obs",
+   "role": "observation",
+   "body": "Stage 11 of 11 released.\nRound 11 of 11 released. New files are under /task/fixtures/round-11/.\n\nNew files:\n  round-11/board.md (2 lines)\n  round-11/logs/auth-svc.log (61 lines)\n  round-11/logs/checkout-api.log (68 lines)\n  round-11/logs/inventory-svc.log (73 lines)\n  round-11/logs/search-api.log (69 lines)\n  round-11/logs/shipping-svc.log (75 lines)\n\nUPDATE (round-files/1; context revision 43 was current at this release). No incident-board or change-log lines were released this round."
+  },
+  {
+   "id": "s29.act",
+   "role": "assistant",
+   "body": "[step 29] execute\nthought: Check R11 logs for cert, 429, config, DNS.\ncode:\nimport re\nfor s in ['auth-svc','shipping-svc','search-api','checkout-api','inventory-svc']:\n  L=open(f'/task/fixtures/round-11/logs/{s}.log').read().splitlines()\n  for k in ['cert','429','config validation','SERVFAIL','DNS']:\n    h=[i for i,l in enumerate(L,1) if k.lower() in l.lower()]\n    if h: print(s,k,h[:6])\nprint(open('/task/fixtures/round-11/board.md').read())"
+  },
+  {
+   "id": "s29.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.3s\n--- stdout ---\nauth-svc cert [4, 37]\nshipping-svc cert [4, 43]\nsearch-api 429 [61]\nsearch-api config validation [4, 5, 7, 13, 18, 24]\n# Incident board: updates in round 11\n\n\n"
+  }
+ ]
+}
