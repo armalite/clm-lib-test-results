@@ -272,7 +272,7 @@ Coverage: k of n entries answered.
 
 ## Session record (2026-10-12)
 
-**No paid call was made.** `TYPESAFE_API_KEY` is set neither in the host environment nor in the configured private credential file (`~/.config/clm-lib/api.env`), and no other file was searched.
+**No paid call was made.** `TYPESAFE_API_KEY` was available neither in the host environment nor in the maintainer's configured private credential file, and no other file was searched.
 
 **Completed:**
 - this protocol;
@@ -285,3 +285,20 @@ Coverage: k of n entries answered.
 - any smoke test.
 
 **The pilot was not run with only arm A,** because a comparison without B would not answer the question.
+
+## Design check before paid runs (2026-10-12)
+
+**The finding:** the review validation does **not** yet enforce the intended active-context boundary. It accepts **any revision that exists** in the host's revision history, not only the current one. So a review can name an older revision and an entry the agent has since deleted. An offline check with a fake advisor confirmed that:
+- the deleted entry's text is then sent to Jev, either as a reviewed entry or as the update via `update_entry_id`;
+- the agent receives a probability about it.
+
+The deleted text itself is not echoed back into the agent's context.
+
+**Why it matters:** this does not match the intent that Jev receives only information the agent can currently see.
+
+**Before any diagnostic-into-pilot or pilot run:**
+- restrict reviewed entries and `update_entry_id` to the agent's current context, for example by accepting only the current revision;
+- add a regression test;
+- record the change here.
+
+The component diagnostic does not use the agent loop, so it is unaffected.

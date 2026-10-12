@@ -42,9 +42,11 @@ The first capability tested is *"Which existing context entries need review beca
 
 ## How to run it
 
-1. Add `TYPESAFE_API_KEY=<your key>` to `~/.config/clm-lib/api.env` (already `chmod 600`).
-2. In the same shell as each live command, run `set +x; source ~/.config/clm-lib/api.env`.
+1. Make `TYPESAFE_API_KEY` available to the process that runs the commands. It must be **exported** into that environment; a plain assignment in a file that is sourced is not passed to child processes.
+2. Never place the key in the repository, configs, prompts or artifacts.
 3. **Diagnostic**, in clm-lib: `uv run clm-lib --config configs/exp008.toml jev-diagnostic --cases experiments/008-jev-context-review/diagnostic-cases-v1.json --split frozen --max-usd 1`. This costs well under one cent at USD 0.042 per million input tokens.
 4. **Pilot:** `uv run clm-lib --config configs/exp008.toml compare --tasks rounds-dev-1,rounds-dev-2 --reps 1 --conditions clm_helpers:on,clm_helpers+jev:on --max-usd 9`. The estimate is about USD 1.5–2.5, based on experiment 007's direct-editing runs at about USD 0.39 each.
 
-The ledger ceiling is set to USD 56.994: this session's USD 10 authorisation, unspent. A new session needs its own authorisation, under the repository rule that authorisations do not carry over.
+**Before the pilot:** fix the review-revision boundary described at the end of `protocol.md` (reviews must be limited to the agent's current context).
+
+**Budget:** the ledger ceiling is USD 56.994, which is USD 10 authorised for this diagnostic and pilot work and still unspent. The 24-run evaluation is not authorised.
