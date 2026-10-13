@@ -1,0 +1,1 @@
+print(open('/task/workspace/regtool.py').read());print(open('/task/workspace/exporter/core.py').read())

@@ -1,0 +1,24 @@
+--- rev-17
++++ rev-18
+@@ -10,6 +10,21 @@
+    "id": "s5.sum",
+    "role": "summary",
+    "body": "All 5 stages done in exporter/core.py."
++  },
++  {
++   "id": "s13.act",
++   "role": "assistant",
++   "body": "[step 13] execute\nthought: Apply S5 code changes, call helper correctly, update register.\ncode:\nimport sys,subprocess,inspect;sys.path.insert(0,'/task/workspace')\nimport reghelper as H\np='/task/workspace/exporter/core.py';s=open(p).read()\ns=s.replace(\"params.get('purpose') == 'audit')\",\"params.get('purpose') in ('audit', 'regulator'))\")\ns=s.replace(\"return json.dumps({'exported_by': user.get('name'), 'records':\",\"d = {} if user.get('role') == 'admin' else {'exported_by': user.get('name')}\\n    return json.dumps({**d, 'records':\")\nopen(p,'w').write(s)\nc=H.load()\nreg=[e for e in c['entries'] if e['id']=='register'][0]['body'].split('\\n')\ntry:\n  a=H.affected({str(i):l for i,l in enumerate(reg)},{'S5.1':'confidential also exportable when admin and purpose==regulator','S5.2':'exported_by omitted for admin exports'});print(H.decide(a,0.5))\nexcept Exception as e: print('jev err',e)\nreg[1]='CURRENT [S2.2, S3.1, S5.2] Every non-admin export includes top-level exported_by = user[name]; admin exports omit exported_by.'\nreg[3]='CURRENT [S1.3, S5.1] Confidential records never exported, except role admin and params purpose==audit or purpose==regulator; other rules still apply.'\nreg.append('HISTORY [S2.2] exported_by originally required for all roles incl admin; S5.2 removed it for admin.')\nreg.append('HISTORY [S1.3] Confidential exception originally only purpose audit; S5.1 added regulator.')\nc['entries']=[{'id':'s5.sum','role':'summary','body':'All 5 stages done in exporter/core.py.'}]\nH.set_register(c,reg);H.save(c)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-600:])"
++  },
++  {
++   "id": "s13.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.1s\n--- stdout ---\n{'3': ['S5.1'], '1': ['S5.2']}\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n\n"
++  },
++  {
++   "id": "s13.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 13: revision 16 -> 17; entries 9 -> 2; body chars 6022 -> 1651; removed [s4.sum, s10.act, s10.obs, s10.rcpt, s11.act, s11.obs, s12.act, s12.obs]; added [s5.sum]; rewritten [register]"
+   }
+  ]
+ }

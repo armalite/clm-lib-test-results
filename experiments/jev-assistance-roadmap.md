@@ -34,7 +34,7 @@ These are different interventions. Results from one say nothing directly about t
 | W2 workload | a workload, not a strategy | changing requirements that interact | **Implemented** (`export-gen/1`, 2 development instances); used by the 011 development pilot |
 | [012](012-jev-result-screening/README.md) | runtime policy beside CLM | automatic screening of incoming (search) results | **v1** (local files): component gate passed; pilot never exercised screening. **v2** (document service): screening exercised in 12/12 searches; 4/4 correct; no needed passage omitted; Claude fetched most omitted passages back, so B cost +10%. No evaluation |
 | 013 | model-controlled | Claude-directed screening of tool results | **Not recommended**: see the [programme review](jev-programme-review.md#does-013-add-a-distinct-question). Not implemented |
-| [014](014-jev-helper-primitives/README.md) | model-authored code (Jev as a primitive) | inside Claude's own context-management code, mid-execution | **Prompted live demonstration done** (one instructed run, not adoption): Claude's helper called real Jev at 4 updates and its threshold selected which notes to mark; 35/35, USD 0.184, no extra model calls. No benefit measured; comparison proposed only |
+| [014](014-jev-helper-primitives/README.md) | model-authored code (Jev as a primitive) | inside Claude's own context-management code, mid-execution | **Prompted live demonstration done** (one instructed run, not adoption): Claude's helper called real Jev at 4 updates and its threshold selected which notes to mark; 35/35, USD 0.184, no extra model calls. No benefit measured. **Comparison phase pilot done** ([protocol](014-jev-helper-primitives/protocol-comparison.md)): W3 register workload; all runs correct; B's helpers called Jev (37 calls) but no register change depended on the answers (replay); B +19–32% cost. Mechanism not exercised; evaluation not run |
 
 ### 010: Claude-initiated context review
 
@@ -304,3 +304,18 @@ See [010](010-jev-initiated-review/README.md).
 - **What happened:** Claude wrote a reusable helper that called real Jev inside 4 executions, and the helper's `p > 0.5` rule decided which notes received a review marker.
 - **The result:** the edits were accepted and reached the next requests, with 35/35 hidden checks, 14 model calls and USD 0.184.
 - **What it shows:** the capability works. Jev's influence was small, and the use was instructed. A benefit comparison is proposed in the 014 README, but has no protocol and is not authorised.
+
+**Update (2026-10-14):** a comparison phase is drafted in [014's protocol-comparison.md](014-jev-helper-primitives/protocol-comparison.md). It is not frozen and not authorised.
+- **What the demonstration showed on inspection:** only the review markers depended on Jev.
+- **The proposed workload:** W3 extends W2's tooling with uncited change notices and a register objective, scored at every release, shared by both conditions.
+- **The comparison:** A (ordinary CLM) against B (configured Jev-assisted procedure).
+- **Attribution:** an offline replay attributes edits to Jev, and marker-only use is reported as such.
+- **Rules:** a development pilot with mechanism gates, then 8 fresh instances × 2 repetitions, with stopping and analysis rules stated in advance.
+- **Recorded runs:** ordinary CLM spent 7–76% of its output tokens on maintenance prose, depending on its own strategy, and showed no stale-fact errors. The expected effect is therefore small.
+
+**Update (2026-10-14, later):** the W3 comparison phase was implemented and its protocol frozen. One B smoke and the four-run development pilot were run once each, for USD 1.65 of an authorised USD 3.
+- **Correctness:** all five runs were code-correct, with no register harm.
+- **The mechanism:** in every B run, Claude's helper called Jev, but the edits came from Claude's own scripts. An offline replay with the answers withheld reproduced every context, so nothing depended on Jev's answers.
+- **Cost:** B cost 19–32% more than A.
+- **Decision:** following the frozen rules, B's instruction was not strengthened, and no evaluation was run.
+- **The pattern again:** this repeats the programme's earlier finding. Given Jev's judgments, Claude treats them as advice to read, and still makes the decision itself.

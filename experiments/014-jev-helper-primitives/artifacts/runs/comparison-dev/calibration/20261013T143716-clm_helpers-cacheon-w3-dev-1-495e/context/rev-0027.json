@@ -1,0 +1,19 @@
+{
+ "number": 27,
+ "parent": 26,
+ "source": "model_edit",
+ "step": 20,
+ "sha256": "339a40fd81796f2f01d9be2be45cc5b2a6e47a16f3a1711816ce709d585c59ad",
+ "entries": [
+  {
+   "id": "register",
+   "role": "note",
+   "body": "HISTORY [S1.1] Format was CSV (header id,title,owner,amount) - replaced by S3.1.\nCURRENT [S3.1, S1.1, S7.1] Output: json.dumps object with 'records': list of {id,title,owner,amount,project} (exactly these keys; project added by S7.1) ascending id; empty list if none.\nCURRENT [S2.4, S3.1, S6.1] JSON output includes top-level 'exported_by'=user['name'] for non-admin roles; admin exports omit it (S6.1).\nHISTORY [S2.4, S3.1] exported_by formerly required for all roles incl. admin - changed by S6.1.\nHISTORY [S1.2] viewer used to raise PermissionError - replaced by S5.2.\nCURRENT [S5.2, S1.2] viewer: no error; exports only records with owner==user['name'] in any project; all other rules apply.\nCURRENT [S1.3, S3.2] admin: all projects; other (non-viewer) roles: records with project in user['projects'] OR owner==user['name']; skip others silently.\nCURRENT [S1.4, S4.1] only status 'active' unless params.get('include_archived') is True AND role is 'admin' (then archived too); non-admins never get archived.\nHISTORY [S1.4] include_archived formerly honoured for any role - restricted by S4.1.\nCURRENT [S1.5, S5.1] confidential True never exported, except role admin and purpose 'audit' or 'litigation'; other rules still apply.\nCURRENT [S2.6, S5.1] Since litigation exports confidential: admin+purpose litigation output includes top-level 'confidential_count' (implemented).\nHISTORY [S1.6] Decision: CSV chosen because finance imports into spreadsheets.\nCURRENT [API] export_records(records,user,params)->str; don't modify input; ignore unknown params; fields exactly as given.\nCURRENT [S2.1] params 'since' YYYY-MM-DD: only records with created >= since.\nHISTORY [S2.2, S4.2] region 'ch' formerly exported only if 'ch' in user['regions'] (case-insensitive) - withdrawn by S7.2.\nCURRENT [S7.2] No residency restriction: records of every region exported under ordinary rules.\nCURRENT [S2.3, S6.2] max_records int>=1: first N by ascending id after all other rules; values above 25 treated as 25.\nHISTORY [S2.4] Obligation: if format changed from CSV, include top-level 'exported_by' (triggered by S3.1; admin exception by S6.1).\nCURRENT [S2.5, S4.3] title stripped of leading/trailing whitespace and every internal whitespace run replaced by single space.\nCURRENT [S2.6] Obligation: if confidential records ever exported for purpose other than 'audit', export must include top-level 'confidential_count' (number of confidential records in it).\nHISTORY [S3.3] Note: archived storage moves to cheaper tier; no export change.\nHISTORY [S5.3] Decision: JSON move made for new reporting API.\nHISTORY [S6.3] Note: web UI shows 50 records/page; no export change.\nHISTORY [S7.3] Note: stage 7 does not change confidential-record rules."
+  },
+  {
+   "id": "status",
+   "role": "note",
+   "body": "Stages 1-7 implemented in exporter/core.py."
+  }
+ ]
+}

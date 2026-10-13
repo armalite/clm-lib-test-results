@@ -1,0 +1,52 @@
+--- rev-28
++++ rev-29
+@@ -4,47 +4,12 @@
+   {
+    "id": "register",
+    "role": "summary",
+-   "body": "CURRENT [S1.1, S3.1] Format: JSON text (json.dumps) object; key \"records\" = list of {id(int),title,owner,amount(str as given)} ascending id; no records -> empty list. Plus \"exported_by\" per S2.4.\nHISTORY [S1.1] Was CSV (csv.writer, header id,title,owner,amount), replaced by S3.1.\nCURRENT [S1.2, S4.2] Scope: role admin exports any project; others only records with project in user projects OR owner==user['name'] (others silently omitted).\nHISTORY [S1.2] Previously project membership only.\nCURRENT [S1.3, S5.1] Status: only active; archived also included only if params include_archived is True AND role admin (other roles never archived).\nHISTORY [S1.3] Previously include_archived honoured for any role.\nCURRENT [S1.4, S3.2] Date filter: params since YYYY-MM-DD -> only records whose date >= since; date = 'updated' if present else 'created'.\nHISTORY [S1.4] Previously used 'created' only.\nCURRENT [S1.5] Titles stripped of leading/trailing whitespace.\nHISTORY [S1.6] Decision record: date filter introduced for monthly reconciliation runs.\nAPI: export_records(records,user,params)->str; don't mutate input; ignore unknown params; records fields id,title,owner,project,status,amount(str kept),confidential,created,region,[updated].\nCURRENT [S5.2] role viewer: no error; exports only records with owner==user['name'] in any project; all other rules apply.\nHISTORY [S2.1] Viewer used to raise PermissionError; replaced by S5.2.\nCURRENT [S2.2, S4.1] confidential True never exported, except role admin AND params purpose in ('audit','legal'); other rules still apply.\nHISTORY [S2.2] Previously audit only.\nCURRENT [S2.3, S5.3] params max_records int>=1: only first N (ascending id) after all other rules; N above 25 treated as 25.\nCURRENT [S2.4] Obligation: if format changes from CSV, every export in new format includes top-level \"exported_by\"=user['name'].\nCURRENT [S2.5] Obligation: if confidential records ever exported for purpose other than audit, export includes top-level \"confidential_count\".\nHISTORY [S2.6, S6.1] Region 'eu' restriction (needed 'eu' in user regions) withdrawn by S6.1; all regions exported under ordinary rules.\nCURRENT [S2.4] now active: every JSON export has top-level exported_by=user name.\nHISTORY [S3.3] Note: web UI shows owner display names; exports keep stored owner value.\nHISTORY [S4.3] Decision record: move to JSON made for new reporting API.\nHISTORY [S6.2] Note: web UI shows 50 records/page; exports unchanged."
++   "body": "CURRENT [S1.1, S3.1, S7.1] Format: JSON text (json.dumps) object; key \"records\" = list of {id(int),title,owner,project,amount(str as given)} ascending id; no records -> empty list. Plus \"exported_by\" per S2.4.\nHISTORY [S1.1] Was CSV (csv.writer, header id,title,owner,amount), replaced by S3.1.\nCURRENT [S1.2, S4.2] Scope: role admin exports any project; others only records with project in user projects OR owner==user['name'] (others silently omitted).\nHISTORY [S1.2] Previously project membership only.\nCURRENT [S1.3, S5.1] Status: only active; archived also included only if params include_archived is True AND role admin (other roles never archived).\nHISTORY [S1.3] Previously include_archived honoured for any role.\nCURRENT [S1.4, S3.2] Date filter: params since YYYY-MM-DD -> only records whose date >= since; date = 'updated' if present else 'created'.\nHISTORY [S1.4] Previously used 'created' only.\nCURRENT [S1.5] Titles stripped of leading/trailing whitespace.\nHISTORY [S1.6] Decision record: date filter introduced for monthly reconciliation runs.\nAPI: export_records(records,user,params)->str; don't mutate input; ignore unknown params; records fields id,title,owner,project,status,amount(str kept),confidential,created,region,[updated].\nCURRENT [S5.2] role viewer: no error; exports only records with owner==user['name'] in any project; all other rules apply.\nHISTORY [S2.1] Viewer used to raise PermissionError; replaced by S5.2.\nCURRENT [S2.2, S4.1] confidential True never exported, except role admin AND params purpose in ('audit','legal'); other rules still apply.\nHISTORY [S2.2] Previously audit only.\nCURRENT [S2.3, S5.3] params max_records int>=1: only first N (ascending id) after all other rules; N above 25 treated as 25.\nCURRENT [S2.4] Obligation: if format changes from CSV, every export in new format includes top-level \"exported_by\"=user['name'].\nCURRENT [S2.5, S4.1] Active (legal purpose allowed): every export includes top-level confidential_count = number of confidential records exported. Obligation: if confidential records ever exported for purpose other than audit, export includes top-level \"confidential_count\".\nHISTORY [S2.6, S6.1] Region 'eu' restriction (needed 'eu' in user regions) withdrawn by S6.1; all regions exported under ordinary rules.\nCURRENT [S2.4, S7.2] exported_by=user name in every JSON export EXCEPT role admin, whose exports omit it.\nHISTORY [S2.4] Previously exported_by in every export including admin.\nHISTORY [S3.3] Note: web UI shows owner display names; exports keep stored owner value.\nHISTORY [S4.3] Decision record: move to JSON made for new reporting API.\nHISTORY [S6.2] Note: web UI shows 50 records/page; exports unchanged.\nHISTORY [S7.3] Decision record: residency restriction lifted after regional data agreement signed."
+   },
+   {
+    "id": "note1",
+    "role": "note",
+-   "body": "Stages 1-6 implemented in core.py (eu filter removed, tests pass). Helper regtool.py (load,save,set_entry,affected). Next: advance to stage 7."
+-  },
+-  {
+-   "id": "s18.act",
+-   "role": "assistant",
+-   "body": "[step 18] execute\nthought: S6 done; clean context and update note.\ncode:\nimport sys\nsys.path.insert(0,'/task/workspace')\nimport regtool\nc=regtool.load()\nregtool.set_entry(c,'note1','Stages 1-6 implemented in core.py (eu filter removed, tests pass). Helper regtool.py (load,save,set_entry,affected). Next: advance to stage 7.','note')\nc['entries']=[e for e in c['entries'] if e['id'] in('register','note1')]\nregtool.save(c)\nprint('ok')"
+-  },
+-  {
+-   "id": "s18.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=2.4s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s18.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 18: revision 24 -> 25; entries 7 -> 2; body chars 5181 -> 2595; removed [s16.act, s16.obs, s16.rcpt, s17.act, s17.obs]; added []; rewritten [note1]"
+-  },
+-  {
+-   "id": "s19.act",
+-   "role": "assistant",
+-   "body": "[step 19] advance\nthought: "
+-  },
+-  {
+-   "id": "s19.obs",
+-   "role": "observation",
+-   "body": "Stage 7 of 7 released.\n# Stage 7 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S7.1] Each exported JSON record now also has the key \"project\" (the record's project).\n- [S7.2] The \"exported_by\" field is no longer required when user['role'] is 'admin'; admin exports omit it.\n\n## Notes\n\n- [S7.3] Decision record: the residency restriction was lifted after the regional data agreement was signed.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-7/REQUIREMENTS.md (14 lines)"
+-  },
+-  {
+-   "id": "s20.act",
+-   "role": "assistant",
+-   "body": "[step 20] execute\nthought: Inspect core.py and regtool, then implement S7.\ncode:\nimport subprocess\nprint(open('/task/workspace/exporter/core.py').read()[:3500])\nprint(subprocess.run(['grep','-n','def ','/task/workspace/regtool.py'],capture_output=True,text=True).stdout)"
+-  },
+-  {
+-   "id": "s20.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nimport csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    out = []\n    for r in records:\n        if role == 'viewer':\n            if r.get('owner') != user.get('name'):\n                continue\n        elif role != 'admin' and r.get('project') not in user.get('projects', []) and r.get('owner') != user.get('name'):\n            continue\n        st = r.get('status')\n        if not (st == 'active' or (st == 'archived' and params.get('include_archived') is True and role == 'admin')):\n            continue\n        since = params.get('since')\n        if since is not None and (r.get('updated') or r.get('created', '')) < since:\n            continue\n        if r.get('confidential') is True and not (role == 'admin' and params.get('purpose') in ('audit', 'legal')):\n            continue\n        out.append(r)\n    out.sort(key=lambda r: r['id'])\n    mx = params.get('max_records')\n    if isinstance(mx, int) and not isinstance(mx, bool) and mx >= 1:\n        out = out[:min(mx, 25)]\n    import json\n    return json.dumps({'exported_by': user.get('name'), 'records': [{'id': int(r['id']), 'title': r['title'].strip(), 'owner': r['owner'], 'amount': r['amount']} for r in out]})\n\n3:def load(): return json.load(open(P))\n4:def save(c): json.dump(c,open(P,'w'))\n5:def affected(new_items, register):\n12:def set_entry(c,eid,body,role='summary'):\n\n"
++   "body": "All 7 stages implemented; ready for final."
+   }
+  ]
+ }

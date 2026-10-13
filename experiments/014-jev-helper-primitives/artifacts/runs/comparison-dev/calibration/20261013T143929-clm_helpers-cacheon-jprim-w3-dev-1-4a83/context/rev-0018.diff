@@ -1,0 +1,24 @@
+--- rev-17
++++ rev-18
+@@ -120,6 +120,21 @@
+    "id": "reg.S5.3",
+    "role": "summary",
+    "body": "HISTORY [S5.3] Decision: move to JSON made for new reporting API."
++  },
++  {
++   "id": "s13.act",
++   "role": "assistant",
++   "body": "[step 13] execute\nthought: Implement S5.1/S5.2 and S2.6 trigger, update register.\ncode:\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"    if role == 'viewer':\\n        raise PermissionError('viewer')\\n\",\"\")\ns=s.replace(\"        if role != 'admin' and r['project']\",\"        if role == 'viewer':\\n            if r.get('owner') != user.get('name'):\\n                continue\\n        elif role != 'admin' and r['project']\")\ns=s.replace(\"params.get('purpose') == 'audit')\",\"params.get('purpose') in ('audit', 'litigation'))\")\ns=s.replace(\"    import json\\n    return json.dumps({'exported_by': user.get('name'), 'records': [\",\"    import json\\n    res = {'exported_by': user.get('name')}\\n    cc = sum(1 for r in out if r['confidential'] is True)\\n    if cc and params.get('purpose') != 'audit':\\n        res['confidential_count'] = cc\\n    res['records'] = [\")\ns=s.replace(\"for r in out]})\",\"for r in out]\\n    return json.dumps(res)\")\nopen(p,'w').write(s)\nimport sys;sys.path.insert(0,'/task/workspace')\nimport regmgr\nc=regmgr.load()\nc['entries']=[e for e in c['entries'] if e['id'] not in('s10.act','s10.obs','s10.rcpt','s11.act','s12.act','s12.obs','s8.obs')]\nfor e in c['entries']:\n    if e['id']=='note.ctx': e['body']='Stage5 done: core.py implements all through S5.3. Helper regmgr.apply(c,new_items,amendments). Next: advance.'\nregmgr.apply(c,[\n('reg.S5.1','CURRENT [S5.1] confidential also exported when role admin and purpose==litigation (triggers S2.6 confidential_count).'),\n('reg.S5.2','CURRENT [S5.2] viewers no longer error: export only records they own (owner==user name), any project; all other rules apply.'),\n('reg.S5.3','HISTORY [S5.3] Decision: move to JSON made for new reporting API.')],{\n'reg.S1.2':'HISTORY [S1.2] viewer -> PermissionError; replaced by S5.2.',\n'reg.S1.5':'CURRENT [S1.5, S5.1] confidential True never exported except role admin and purpose in (audit, litigation); other rules still apply.',\n'reg.S2.6':'CURRENT [S2.6, S5.1] Obligation (now triggered by litigation): if confidential records exported for purpose other than audit, top-level confidential_count = number of confidential records in export.'})\nimport subprocess\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-800:])"
++  },
++  {
++   "id": "s13.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.0s\n--- stdout ---\nJEV FLAG reg.S5.2 -> reg.api 0.56\nJEV FLAG reg.S5.2 -> reg.S1.3 0.89\nJEV FLAG reg.S5.2 -> reg.S3.2 0.73\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n\n"
++  },
++  {
++   "id": "s13.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 13: revision 16 -> 17; entries 28 -> 24; body chars 8790 -> 3891; removed [s8.obs, s10.act, s10.obs, s10.rcpt, s11.act, s12.act, s12.obs]; added [reg.S5.1, reg.S5.2, reg.S5.3]; rewritten [note.ctx, reg.S1.2, reg.S1.5, reg.S2.6]"
+   }
+  ]
+ }

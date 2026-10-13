@@ -1,0 +1,19 @@
+--- rev-0
++++ rev-1
+@@ -1,4 +1,15 @@
+ {
+  "format": "clm-context/v1",
+- "entries": []
++ "entries": [
++  {
++   "id": "s1.act",
++   "role": "assistant",
++   "body": "[step 1] execute\nthought: \ncode:\nimport os\nfor r,d,f in os.walk('/task/fixtures'):print(r,f)\nfor r,d,f in os.walk('/task/workspace'):print(r,f)\nprint(open('/task/fixtures/stage-1/REQUIREMENTS.md').read())"
++  },
++  {
++   "id": "s1.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n/task/fixtures []\n/task/fixtures/stage-1 ['REQUIREMENTS.md']\n/task/fixtures/current-tests ['test_stage.py']\n/task/workspace ['context.json']\n/task/workspace/exporter ['core.py', '__init__.py']\n/task/workspace/helpers []\n# Stage 1 of 7: initial requirements\n\n## Package and API\n\nImplement `exporter.export_records(records, user, params) -> str` in the package\n/task/workspace/exporter/ (a starting skeleton is provided). Standard library only.\n\n- `records`: a list of dicts with the keys \"id\" (int, unique in the list), \"title\" (str),\n  \"owner\" (str), \"project\" (str), \"status\" (\"active\" or \"archived\"), \"amount\" (a decimal string\n  such as \"12.50\"; keep it exactly as given), \"confidential\" (bool), \"created\" (a date string\n  \"YYYY-MM-DD\") and \"region\" (str). A record may also have \"updated\" (a date string). Do not\n  modify the input.\n- `user`: a dict with \"name\" (str), \"role\" (str), \"projects\" (list of str) and \"regions\" (list\n  of str).\n- `params`: a dict of export options; it may be empty. Rules introduce the options; ignore keys\n  that no rule in force mentions.\n- Base behaviour, unless a rule says otherwise: every record is exported, in ascending id\n  order, with field values exactly as given, in the format that the format rule specifies.\n\n## Requirements\n\n- [S1.1] Format: return CSV text. The first row is the header id,title,owner,amount; then one row per exported record, in ascending id order, with those four fields. Produce it with Python's csv.writer (default dialect) and lineterminator='\\n'. With no exported records, return the header row alone (ending in '\\n').\n- [S1.2] Scope: a user whose role is 'admin' may export records of any project. Any other role exports only records whose 'project' is in user['projects']; other records are left out without an error.\n- [S1.3] Status: only records with status 'active' are exported, unless params.get('include_archived') is True; then records with status 'archived' are exported too.\n- [S1.4] Date filter: params may contain 'since', a date string 'YYYY-MM-DD'. When it is present, only records whose 'created' date is on or after that date are exported.\n- [S1.5] Titles: export each record's title with leading and trailing whitespace removed.\n\n## Notes\n\n- [S1.6] Decision record: the date filter was introduced for the monthly reconciliation runs.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\n"
++  }
++ ]
+ }

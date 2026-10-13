@@ -1,0 +1,2 @@
+print(open('/task/workspace/exporter/core.py').read());print(open('/task/workspace/exporter/__init__.py').read())
+import subprocess;print(subprocess.run(['grep','-n','def test\|params\|assert','/task/fixtures/current-tests/test_stage.py'],capture_output=True,text=True).stdout[:2500])

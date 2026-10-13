@@ -1,0 +1,19 @@
+--- rev-27
++++ rev-28
+@@ -35,6 +35,16 @@
+    "id": "s19.obs",
+    "role": "observation",
+    "body": "Stage 7 of 7 released.\n# Stage 7 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S7.1] Each exported JSON record now also has the key \"project\" (the record's project).\n- [S7.2] The \"exported_by\" field is no longer required when user['role'] is 'admin'; admin exports omit it.\n\n## Notes\n\n- [S7.3] Decision record: the residency restriction was lifted after the regional data agreement was signed.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-7/REQUIREMENTS.md (14 lines)"
++  },
++  {
++   "id": "s20.act",
++   "role": "assistant",
++   "body": "[step 20] execute\nthought: Inspect core.py and regtool, then implement S7.\ncode:\nimport subprocess\nprint(open('/task/workspace/exporter/core.py').read()[:3500])\nprint(subprocess.run(['grep','-n','def ','/task/workspace/regtool.py'],capture_output=True,text=True).stdout)"
++  },
++  {
++   "id": "s20.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nimport csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    out = []\n    for r in records:\n        if role == 'viewer':\n            if r.get('owner') != user.get('name'):\n                continue\n        elif role != 'admin' and r.get('project') not in user.get('projects', []) and r.get('owner') != user.get('name'):\n            continue\n        st = r.get('status')\n        if not (st == 'active' or (st == 'archived' and params.get('include_archived') is True and role == 'admin')):\n            continue\n        since = params.get('since')\n        if since is not None and (r.get('updated') or r.get('created', '')) < since:\n            continue\n        if r.get('confidential') is True and not (role == 'admin' and params.get('purpose') in ('audit', 'legal')):\n            continue\n        out.append(r)\n    out.sort(key=lambda r: r['id'])\n    mx = params.get('max_records')\n    if isinstance(mx, int) and not isinstance(mx, bool) and mx >= 1:\n        out = out[:min(mx, 25)]\n    import json\n    return json.dumps({'exported_by': user.get('name'), 'records': [{'id': int(r['id']), 'title': r['title'].strip(), 'owner': r['owner'], 'amount': r['amount']} for r in out]})\n\n3:def load(): return json.load(open(P))\n4:def save(c): json.dump(c,open(P,'w'))\n5:def affected(new_items, register):\n12:def set_entry(c,eid,body,role='summary'):\n\n"
+   }
+  ]
+ }

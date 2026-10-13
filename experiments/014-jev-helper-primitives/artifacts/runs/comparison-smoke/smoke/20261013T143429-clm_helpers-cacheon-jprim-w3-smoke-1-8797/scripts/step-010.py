@@ -1,0 +1,11 @@
+import sys,subprocess;sys.path.insert(0,'/task/workspace')
+p='/task/workspace/exporter/core.py';s=open(p).read()
+s=s.replace("params.get('include_archived') is True)","params.get('include_archived') is True and user.get('role') == 'admin')")
+s=s.replace("'title': str(r['title']).strip()","'title': ' '.join(str(r['title']).split())")
+open(p,'w').write(s)
+import reghelper as H
+c=H.load()
+c['entries']=[{'id':'s4.sum','role':'summary','body':'Stage1-4 done in exporter/core.py. reghelper.py: affected(reg,new) jev, decide(aff,thr), set_register, load/save.'}]
+H.set_register(c,['CURRENT [S1.1, S3.1] Output: JSON text (json.dumps) object; key records = list of objects ascending id, keys exactly id(int),title,owner,amount(str as given). (CSV replaced.)','CURRENT [S2.2, S3.1] Format changed from CSV, so every export includes top-level exported_by = user[name].','CURRENT [S1.2, S3.2] Scope: admin any project; others only records whose project in user[projects], others silently omitted; except roles other than admin/viewer may also export records with owner==user[name] even outside projects.','CURRENT [S1.3] Confidential records never exported, except role admin and params purpose==audit; other rules still apply.','CURRENT [S2.1, S4.1] Only status active exported; archived too only if params include_archived is True AND user role is admin; other roles never get archived.','CURRENT [S2.3, S4.2] Title stripped of leading/trailing whitespace and every internal whitespace run replaced by a single space.','HISTORY [S1.1] Was CSV csv.writer, lineterminator \\n, header id,title,owner,amount; replaced by S3.1.','HISTORY [S2.1] include_archived originally honoured for any role; restricted to admin by S4.1.','HISTORY [S1.4] Decision: CSV chosen for first release because finance imports into spreadsheets.','HISTORY [S3.3] Note: archived project storage moves to cheaper tier; no export change.','HISTORY [S4.3] Decision: move to JSON made for the new reporting API.'])
+H.save(c)
+r=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-600:])

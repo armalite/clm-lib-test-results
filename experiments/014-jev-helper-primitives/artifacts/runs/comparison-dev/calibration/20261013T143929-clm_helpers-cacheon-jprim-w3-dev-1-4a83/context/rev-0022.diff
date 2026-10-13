@@ -1,0 +1,94 @@
+--- rev-21
++++ rev-22
+@@ -4,7 +4,7 @@
+   {
+    "id": "note.ctx",
+    "role": "note",
+-   "body": "Stage5 done: core.py implements all through S5.3. Helper regmgr.apply(c,new_items,amendments). Next: advance."
++   "body": "Stage6 done: core.py implements all through S6.3. Helper regmgr.apply(c,new_items,amendments). Next: advance."
+   },
+   {
+    "id": "reg.api",
+@@ -54,12 +54,12 @@
+   {
+    "id": "reg.S2.3",
+    "role": "summary",
+-   "body": "CURRENT [S2.3] params max_records int>=1: only first N (ascending id) after all other rules."
++   "body": "CURRENT [S2.3, S6.2] params max_records int>=1: only first N (ascending id) after all other rules; N above 25 treated as 25."
+   },
+   {
+    "id": "reg.S2.4",
+    "role": "summary",
+-   "body": "CURRENT [S2.4, S3.1] Obligation now triggered (format changed to JSON): every export includes top-level field exported_by = user name."
++   "body": "CURRENT [S2.4, S3.1, S6.1] every non-admin export includes top-level exported_by = user name; admin exports omit it (S6.1)."
+   },
+   {
+    "id": "reg.S2.5",
+@@ -102,11 +102,6 @@
+    "body": "CURRENT [S4.3] titles: additionally collapse internal whitespace runs to single space."
+   },
+   {
+-   "id": "s11.obs",
+-   "role": "observation",
+-   "body": "Stage 5 of 7 released.\n# Stage 5 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S5.1] Confidential records may now also be exported when user['role'] is 'admin' and params.get('purpose') == 'litigation'.\n- [S5.2] Viewers no longer receive an error: a viewer now exports only the records they own (record 'owner' equal to user['name']), in any project; every other rule still applies to those records.\n\n## Notes\n\n- [S5.3] Decision record: the move to JSON was made for the new reporting API.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-5/REQUIREMENTS.md (14 lines)"
+-  },
+-  {
+    "id": "reg.S5.1",
+    "role": "summary",
+    "body": "CURRENT [S5.1] confidential also exported when role admin and purpose==litigation (triggers S2.6 confidential_count)."
+@@ -122,21 +117,6 @@
+    "body": "HISTORY [S5.3] Decision: move to JSON made for new reporting API."
+   },
+   {
+-   "id": "s13.act",
+-   "role": "assistant",
+-   "body": "[step 13] execute\nthought: Implement S5.1/S5.2 and S2.6 trigger, update register.\ncode:\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"    if role == 'viewer':\\n        raise PermissionError('viewer')\\n\",\"\")\ns=s.replace(\"        if role != 'admin' and r['project']\",\"        if role == 'viewer':\\n            if r.get('owner') != user.get('name'):\\n                continue\\n        elif role != 'admin' and r['project']\")\ns=s.replace(\"params.get('purpose') == 'audit')\",\"params.get('purpose') in ('audit', 'litigation'))\")\ns=s.replace(\"    import json\\n    return json.dumps({'exported_by': user.get('name'), 'records': [\",\"    import json\\n    res = {'exported_by': user.get('name')}\\n    cc = sum(1 for r in out if r['confidential'] is True)\\n    if cc and params.get('purpose') != 'audit':\\n        res['confidential_count'] = cc\\n    res['records'] = [\")\ns=s.replace(\"for r in out]})\",\"for r in out]\\n    return json.dumps(res)\")\nopen(p,'w').write(s)\nimport sys;sys.path.insert(0,'/task/workspace')\nimport regmgr\nc=regmgr.load()\nc['entries']=[e for e in c['entries'] if e['id'] not in('s10.act','s10.obs','s10.rcpt','s11.act','s12.act','s12.obs','s8.obs')]\nfor e in c['entries']:\n    if e['id']=='note.ctx': e['body']='Stage5 done: core.py implements all through S5.3. Helper regmgr.apply(c,new_items,amendments). Next: advance.'\nregmgr.apply(c,[\n('reg.S5.1','CURRENT [S5.1] confidential also exported when role admin and purpose==litigation (triggers S2.6 confidential_count).'),\n('reg.S5.2','CURRENT [S5.2] viewers no longer error: export only records they own (owner==user name), any project; all other rules apply.'),\n('reg.S5.3','HISTORY [S5.3] Decision: move to JSON made for new reporting API.')],{\n'reg.S1.2':'HISTORY [S1.2] viewer -> PermissionError; replaced by S5.2.',\n'reg.S1.5':'CURRENT [S1.5, S5.1] confidential True never exported except role admin and purpose in (audit, litigation); other rules still apply.',\n'reg.S2.6':'CURRENT [S2.6, S5.1] Obligation (now triggered by litigation): if confidential records exported for purpose other than audit, top-level confidential_count = number of confidential records in export.'})\nimport subprocess\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-800:])"
+-  },
+-  {
+-   "id": "s13.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=2.0s\n--- stdout ---\nJEV FLAG reg.S5.2 -> reg.api 0.56\nJEV FLAG reg.S5.2 -> reg.S1.3 0.89\nJEV FLAG reg.S5.2 -> reg.S3.2 0.73\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n\n"
+-  },
+-  {
+-   "id": "s13.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 13: revision 16 -> 17; entries 28 -> 24; body chars 8790 -> 3891; removed [s8.obs, s10.act, s10.obs, s10.rcpt, s11.act, s12.act, s12.obs]; added [reg.S5.1, reg.S5.2, reg.S5.3]; rewritten [note.ctx, reg.S1.2, reg.S1.5, reg.S2.6]"
+-  },
+-  {
+    "id": "s14.act",
+    "role": "assistant",
+    "body": "[step 14] advance\nthought: "
+@@ -147,24 +127,19 @@
+    "body": "Stage 6 of 7 released.\n# Stage 6 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S6.1] The \"exported_by\" field is no longer required when user['role'] is 'admin'; admin exports omit it.\n- [S6.2] A max_records value above 25 is treated as 25.\n\n## Notes\n\n- [S6.3] For information: the web interface now shows 50 records per page. This does not change exports.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-6/REQUIREMENTS.md (14 lines)"
+   },
+   {
+-   "id": "s15.act",
+-   "role": "assistant",
+-   "body": "[step 15] execute\nthought: Implement S6.1/S6.2 and update register.\ncode:\np='/task/workspace/exporter/core.py'\ns=open(p).read()\nimport re\nprint([l for l in s.splitlines() if 'max_records' in l or 'exported_by' in l])\ns=s.replace(\"    res = {'exported_by': user.get('name')}\",\"    res = {}\\n    if user.get('role') != 'admin':\\n        res['exported_by'] = user.get('name')\")\nopen(p,'w').write(s)\nprint('\\n'.join(l for l in s.splitlines() if 'max' in l))"
++   "id": "reg.S6.1",
++   "role": "summary",
++   "body": "CURRENT [S6.1] exported_by omitted when role admin; still required for other roles."
+   },
+   {
+-   "id": "s15.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n[\"    mr = params.get('max_records')\", \"    res = {'exported_by': user.get('name')}\"]\n    mr = params.get('max_records')\n"
++   "id": "reg.S6.2",
++   "role": "summary",
++   "body": "CURRENT [S6.2] max_records above 25 treated as 25."
+   },
+   {
+-   "id": "s16.act",
+-   "role": "assistant",
+-   "body": "[step 16] execute\nthought: Find max_records handling and apply the cap of 25, then update the register.\ncode:\np='/task/workspace/exporter/core.py'\ns=open(p).read()\nL=s.splitlines()\ni=[k for k,l in enumerate(L) if \"mr = params.get('max_records')\" in l][0]\nprint('\\n'.join(L[i:i+6]))"
+-  },
+-  {
+-   "id": "s16.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=0.8s\n--- stdout ---\n    mr = params.get('max_records')\n    if isinstance(mr, int) and not isinstance(mr, bool) and mr >= 1:\n        out = out[:mr]\n    import json\n    res = {}\n    if user.get('role') != 'admin':\n"
++   "id": "reg.S6.3",
++   "role": "summary",
++   "body": "HISTORY [S6.3] Note: web UI shows 50 records/page; no export change."
+   }
+  ]
+ }

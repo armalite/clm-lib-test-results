@@ -1,0 +1,19 @@
+--- rev-24
++++ rev-25
+@@ -165,6 +165,16 @@
+    "id": "s18.obs",
+    "role": "observation",
+    "body": "Stage 7 of 7 released.\n# Stage 7 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S7.1] Each exported JSON record now also has the key \"project\" (the record's project).\n- [S7.2] The residency restriction is withdrawn: records of every region are exported under the ordinary rules.\n\n## Notes\n\n- [S7.3] For information: the security team confirmed that this notice does not change the confidential-record rules.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-7/REQUIREMENTS.md (14 lines)"
++  },
++  {
++   "id": "s19.act",
++   "role": "assistant",
++   "body": "[step 19] execute\nthought: Implement S7.1, S7.2; look at core.py relevant lines first.\ncode:\nimport re\ns=open('/task/workspace/exporter/core.py').read()\nfor i,l in enumerate(s.split('\\n'),1):\n    if re.search(r\"region|'amount'|\\\"amount\\\"\",l): print(i,l)\nprint(open('/task/workspace/regmgr.py').read()[:1500])"
++  },
++  {
++   "id": "s19.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n20         if str(r.get('region') or '').lower() == 'ch' and 'ch' not in [str(x).lower() for x in (user.get('regions') or [])]:\n34         {'id': int(r['id']), 'title': ' '.join(r['title'].split()), 'owner': r['owner'], 'amount': r['amount']} for r in out]\nimport json, clm_jev\nP='/task/workspace/context.json'\ndef load(): return json.load(open(P))\ndef save(c): json.dump(c,open(P,'w'),indent=0)\ndef reg(c): return [e for e in c['entries'] if e['id'].startswith('reg.')]\ndef affected(new_text, c, thr=0.5):\n    items={e['id']:e['body'] for e in reg(c) if e['body'].startswith('CURRENT')}\n    if not items: return {}\n    r=clm_jev.judge('Does the NEW change item modify, replace, conflict with or withdraw any part of this requirement?',items,background='NEW: '+new_text)\n    a=r.get('answers') or {}\n    return {k:v for k,v in a.items() if v is not None and v>=thr}\ndef apply(c, new_items, amendments):\n    \"\"\"new_items: list of (regid, body). amendments: regid -> new CURRENT body or 'HISTORY ...' text.\n    Uses jev to flag affected items; prints flagged ones lacking an amendment.\"\"\"\n    for rid,body in new_items:\n        if body.startswith('CURRENT') and '[S' in body and rid not in amendments:\n            hits=affected(body,c)\n            for k,p in hits.items():\n                if k not in amendments: print('JEV FLAG',rid,'->',k,round(p,2))\n    ents={e['id']:e for e in c['entries']}\n    for k,b in amendments.items():\n        if k in ents: ents[k]['body']=b\n        else: c['entries'].append({'id':k,'role':'summary','body':b})\n    for rid,body in new_items:\n        if rid in ents: ents[rid]['body']=body\n        else: c['entries'].append({'id':rid,'role':'summary','body':body})\n    save(c)\n\n"
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-9
++++ rev-10
+@@ -35,6 +35,16 @@
+    "id": "s6.obs",
+    "role": "observation",
+    "body": "Stage 3 of 7 released.\n# Stage 3 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S3.1] Exports are now JSON text (json.dumps) of an object whose key \"records\" lists one object per exported record, in ascending id order, with exactly the keys \"id\" (int), \"title\", \"owner\" and \"amount\" (str, exactly as given). The hidden tests parse the JSON and compare values, not spacing or key order.\n- [S3.2] The date filter now uses a record's 'updated' date when the record has one, and its 'created' date otherwise.\n\n## Notes\n\n- [S3.3] For information: the web interface will show record owners by display name; exports keep the stored 'owner' value.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-3/REQUIREMENTS.md (14 lines)"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: Inspect regtool and core quickly.\ncode:\nprint(open('/task/workspace/regtool.py').read());print(open('/task/workspace/exporter/core.py').read())"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nimport json, clm_jev\nP='/task/workspace/context.json'\ndef load(): return json.load(open(P))\ndef save(c): json.dump(c,open(P,'w'))\ndef affected(new_items, register):\n    \"\"\"new_items: {id:text}; register: {regid:text}. returns {newid:{regid:prob}}\"\"\"\n    res={}\n    for nid,t in new_items.items():\n        r=clm_jev.judge('Does this change notice modify, replace or withdraw the given register requirement? Notice: '+t, register)\n        res[nid]=r.get('answers',{}) if r.get('status')=='ok' else {}\n    return res\ndef set_entry(c,eid,body,role='summary'):\n    c['entries']=[e for e in c['entries'] if e['id']!=eid]+[{'id':eid,'role':role,'body':body}]\n\nimport csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer')\n    out = []\n    for r in records:\n        if role != 'admin' and r.get('project') not in user.get('projects', []):\n            continue\n        st = r.get('status')\n        if not (st == 'active' or (st == 'archived' and params.get('include_archived') is True)):\n            continue\n        since = params.get('since')\n        if since is not None and r.get('created', '') < since:\n            continue\n        if r.get('confidential') is True and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        if r.get('region') == 'eu' and 'eu' not in (user.get('regions') or []):\n            continue\n        out.append(r)\n    out.sort(key=lambda r: r['id'])\n    mx = params.get('max_records')\n    if isinstance(mx, int) and not isinstance(mx, bool) and mx >= 1:\n        out = out[:mx]\n    buf = io.StringIO()\n    w = csv.writer(buf, lineterminator='\\n')\n    w.writerow(['id', 'title', 'owner', 'amount'])\n    for r in out:\n        w.writerow([r['id'], r['title'].strip(), r['owner'], r['amount']])\n    return buf.getvalue()\n\n"
+   }
+  ]
+ }

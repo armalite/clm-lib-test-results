@@ -1,0 +1,101 @@
+--- rev-16
++++ rev-17
+@@ -4,7 +4,7 @@
+   {
+    "id": "note.ctx",
+    "role": "note",
+-   "body": "Stage4 done: core.py implements all through S4.3. Helper /task/workspace/regmgr.py: apply(c,new_items,amendments) uses jev to flag affected reg.* items. Register entries id reg.*. Next: advance."
++   "body": "Stage5 done: core.py implements all through S5.3. Helper regmgr.apply(c,new_items,amendments). Next: advance."
+   },
+   {
+    "id": "reg.api",
+@@ -19,7 +19,7 @@
+   {
+    "id": "reg.S1.2",
+    "role": "summary",
+-   "body": "CURRENT [S1.2] role viewer -> raise PermissionError."
++   "body": "HISTORY [S1.2] viewer -> PermissionError; replaced by S5.2."
+   },
+   {
+    "id": "reg.S1.3",
+@@ -34,7 +34,7 @@
+   {
+    "id": "reg.S1.5",
+    "role": "summary",
+-   "body": "CURRENT [S1.5] confidential True never exported except role admin and params purpose==audit; other rules still apply."
++   "body": "CURRENT [S1.5, S5.1] confidential True never exported except role admin and purpose in (audit, litigation); other rules still apply."
+   },
+   {
+    "id": "reg.S1.6",
+@@ -69,7 +69,7 @@
+   {
+    "id": "reg.S2.6",
+    "role": "summary",
+-   "body": "CURRENT [S2.6] Obligation: if confidential records ever exported for purpose other than audit, export must include top-level field confidential_count = number of confidential records in it."
++   "body": "CURRENT [S2.6, S5.1] Obligation (now triggered by litigation): if confidential records exported for purpose other than audit, top-level confidential_count = number of confidential records in export."
+   },
+   {
+    "id": "reg.S3.1",
+@@ -87,11 +87,6 @@
+    "body": "HISTORY [S3.3] Note: archived project storage moves to cheaper tier; no export change."
+   },
+   {
+-   "id": "s8.obs",
+-   "role": "observation",
+-   "body": "Stage 4 of 7 released.\n# Stage 4 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S4.1] include_archived is now honoured only when user['role'] is 'admin'; for every other role, archived records are never exported.\n- [S4.2] Region values may now be written in upper or lower case, in records and in user['regions']; compare region values case-insensitively.\n- [S4.3] Titles: in addition, replace every run of whitespace inside a title with a single space.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (42 lines)\n  stage-4/REQUIREMENTS.md (11 lines)"
+-  },
+-  {
+    "id": "reg.S4.1",
+    "role": "summary",
+    "body": "CURRENT [S4.1] include_archived honoured only for role admin; other roles never get archived records."
+@@ -107,39 +102,24 @@
+    "body": "CURRENT [S4.3] titles: additionally collapse internal whitespace runs to single space."
+   },
+   {
+-   "id": "s10.act",
+-   "role": "assistant",
+-   "body": "[step 10] execute\nthought: Implement stage 4 edits, update register via helper, compact context.\ncode:\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"params.get('include_archived') is True)\",\"params.get('include_archived') is True and role == 'admin')\")\ns=s.replace(\"if r.get('region') == 'ch' and 'ch' not in (user.get('regions') or []):\",\"if str(r.get('region') or '').lower() == 'ch' and 'ch' not in [str(x).lower() for x in (user.get('regions') or [])]:\")\ns=s.replace(\"'title': r['title'].strip()\",\"'title': ' '.join(r['title'].split())\")\nopen(p,'w').write(s)\nimport sys;sys.path.insert(0,'/task/workspace')\nimport regmgr\nc=regmgr.load()\nc['entries']=[e for e in c['entries'] if e['id'] not in('s7.act','s7.obs','s7.rcpt','s8.act','s9.act','s9.obs')]\nfor e in c['entries']:\n    if e['id']=='note.ctx': e['body']='Stage4 done: core.py implements all through S4.3. Helper /task/workspace/regmgr.py: apply(c,new_items,amendments) uses jev to flag affected reg.* items. Register entries id reg.*. Next: advance.'\nregmgr.apply(c,[\n('reg.S4.1','CURRENT [S4.1] include_archived honoured only for role admin; other roles never get archived records.'),\n('reg.S4.2','CURRENT [S4.2] region values compared case-insensitively (records and user regions).'),\n('reg.S4.3','CURRENT [S4.3] titles: additionally collapse internal whitespace runs to single space.')],{\n'reg.S1.4':'CURRENT [S1.4, S4.1] only status active; archived also included only if params include_archived is True AND role admin (S4.1).',\n'reg.S2.2':'CURRENT [S2.2, S4.2] region ch (case-insensitive) exported only if ch in user regions (case-insensitive); applies to admins too.',\n'reg.S2.5':'CURRENT [S2.5, S4.3] title exported stripped of leading/trailing whitespace and internal whitespace runs collapsed to one space.',\n'reg.S3.1':'CURRENT [S3.1, S2.5, S4.3] Output is json.dumps of object with key records: list (ascending id) of objects with exactly keys id (int), title (normalized), owner, amount (str exact). Replaces CSV of S1.1.'})\nimport subprocess\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-800:])"
+-  },
+-  {
+-   "id": "s10.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=3.6s\n--- stdout ---\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.001s\n\nOK\n\n"
+-  },
+-  {
+-   "id": "s10.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 10: revision 12 -> 13; entries 24 -> 21; body chars 6568 -> 3602; removed [s7.act, s7.obs, s7.rcpt, s8.act, s9.act, s9.obs]; added [reg.S4.1, reg.S4.2, reg.S4.3]; rewritten [note.ctx, reg.S1.4, reg.S2.2, reg.S2.5, reg.S3.1]"
+-  },
+-  {
+-   "id": "s11.act",
+-   "role": "assistant",
+-   "body": "[step 11] advance\nthought: "
+-  },
+-  {
+    "id": "s11.obs",
+    "role": "observation",
+    "body": "Stage 5 of 7 released.\n# Stage 5 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S5.1] Confidential records may now also be exported when user['role'] is 'admin' and params.get('purpose') == 'litigation'.\n- [S5.2] Viewers no longer receive an error: a viewer now exports only the records they own (record 'owner' equal to user['name']), in any project; every other rule still applies to those records.\n\n## Notes\n\n- [S5.3] Decision record: the move to JSON was made for the new reporting API.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-5/REQUIREMENTS.md (14 lines)"
+   },
+   {
+-   "id": "s12.act",
+-   "role": "assistant",
+-   "body": "[step 12] execute\nthought: Look at core.py relevant parts for viewer and confidential.\ncode:\nprint(open('/task/workspace/exporter/core.py').read()[:3000])"
++   "id": "reg.S5.1",
++   "role": "summary",
++   "body": "CURRENT [S5.1] confidential also exported when role admin and purpose==litigation (triggers S2.6 confidential_count)."
+   },
+   {
+-   "id": "s12.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nimport csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer')\n    out = []\n    for r in sorted(records, key=lambda r: r['id']):\n        if role != 'admin' and r['project'] not in user.get('projects', []) and r.get('owner') != user.get('name'):\n            continue\n        st = r['status']\n        if not (st == 'active' or (st == 'archived' and params.get('include_archived') is True and role == 'admin')):\n            continue\n        if r['confidential'] is True and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        if params.get('since') is not None and str(r['created'])[:10] < params['since']:\n            continue\n        if str(r.get('region') or '').lower() == 'ch' and 'ch' not in [str(x).lower() for x in (user.get('regions') or [])]:\n            continue\n        out.append(r)\n    mr = params.get('max_records')\n    if isinstance(mr, int) and not isinstance(mr, bool) and mr >= 1:\n        out = out[:mr]\n    import json\n    return json.dumps({'exported_by': user.get('name'), 'records': [\n        {'id': int(r['id']), 'title': ' '.join(r['title'].split()), 'owner': r['owner'], 'amount': r['amount']} for r in out]})\n\n"
++   "id": "reg.S5.2",
++   "role": "summary",
++   "body": "CURRENT [S5.2] viewers no longer error: export only records they own (owner==user name), any project; all other rules apply."
++  },
++  {
++   "id": "reg.S5.3",
++   "role": "summary",
++   "body": "HISTORY [S5.3] Decision: move to JSON made for new reporting API."
+   }
+  ]
+ }

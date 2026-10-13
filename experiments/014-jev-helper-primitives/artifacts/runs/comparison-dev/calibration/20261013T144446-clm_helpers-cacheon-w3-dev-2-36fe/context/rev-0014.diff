@@ -1,0 +1,24 @@
+--- rev-13
++++ rev-14
+@@ -10,6 +10,21 @@
+    "id": "note1",
+    "role": "note",
+    "body": "Stages 1-4 implemented in exporter/core.py. Next: advance."
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Apply S4.1 (legal purpose -> confidential_count obligation S2.5 triggers), S4.2 owner scope; update register, compact.\ncode:\nimport json,subprocess,sys\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace('if role != \"admin\" and r.get(\"project\") not in user.get(\"projects\", []):','if role != \"admin\" and r.get(\"project\") not in user.get(\"projects\", []) and r.get(\"owner\") != user.get(\"name\"):')\ns=s.replace('params.get(\"purpose\") == \"audit\")','params.get(\"purpose\") in (\"audit\", \"legal\"))')\ns=s.replace('    return json.dumps({\"exported_by\": user.get(\"name\"), \"records\": recs})','''    res = {\"exported_by\": user.get(\"name\"), \"records\": recs}\n    if params.get(\"purpose\") != \"audit\" and any(r.get(\"confidential\") is True for r in out):\n        res[\"confidential_count\"] = sum(1 for r in out if r.get(\"confidential\") is True)\n    return json.dumps(res)''')\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nc=json.load(open('/task/workspace/context.json'))\nreg=c['entries'][0]['body']\nreg=reg.replace(\"CURRENT [S1.2] Scope: role admin exports any project; other roles only records whose project in user['projects'], others silently omitted.\",\"CURRENT [S1.2, S4.2] Scope: role admin exports any project; other (non-viewer) roles only records whose project in user['projects'] OR whose owner == user['name']; others silently omitted.\")\nreg=reg.replace(\"CURRENT [S2.2] confidential True never exported, except when role admin and params.get('purpose')=='audit';\",\"CURRENT [S2.2, S4.1] confidential True never exported, except when role admin and params.get('purpose') in ('audit','legal');\")\nreg=reg.replace(\"CURRENT [S2.5] Obligation:\",\"CURRENT [S2.5, S4.1] Obligation now triggered by 'legal' purpose (implemented: confidential_count added when purpose!='audit' and confidential in output). Orig:\")\nreg+=\"\\nHISTORY [S4.3] Decision record: move to JSON made for new reporting API.\"\nc['entries']=[{'id':'register','role':'summary','body':reg},{'id':'note1','role':'note','body':'Stages 1-4 implemented in exporter/core.py. Next: advance.'}]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.4s\n--- stdout ---\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n\n"
++  },
++  {
++   "id": "s10.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 10: revision 12 -> 13; entries 9 -> 2; body chars 6803 -> 2433; removed [s7.act, s7.obs, s7.rcpt, s8.act, s8.obs, s9.act, s9.obs]; added []; rewritten [register, note1]"
+   }
+  ]
+ }

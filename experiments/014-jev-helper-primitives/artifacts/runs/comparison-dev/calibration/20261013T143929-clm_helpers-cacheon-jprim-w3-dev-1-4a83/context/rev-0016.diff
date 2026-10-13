@@ -1,0 +1,19 @@
+--- rev-15
++++ rev-16
+@@ -130,6 +130,16 @@
+    "id": "s11.obs",
+    "role": "observation",
+    "body": "Stage 5 of 7 released.\n# Stage 5 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S5.1] Confidential records may now also be exported when user['role'] is 'admin' and params.get('purpose') == 'litigation'.\n- [S5.2] Viewers no longer receive an error: a viewer now exports only the records they own (record 'owner' equal to user['name']), in any project; every other rule still applies to those records.\n\n## Notes\n\n- [S5.3] Decision record: the move to JSON was made for the new reporting API.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-5/REQUIREMENTS.md (14 lines)"
++  },
++  {
++   "id": "s12.act",
++   "role": "assistant",
++   "body": "[step 12] execute\nthought: Look at core.py relevant parts for viewer and confidential.\ncode:\nprint(open('/task/workspace/exporter/core.py').read()[:3000])"
++  },
++  {
++   "id": "s12.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nimport csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer')\n    out = []\n    for r in sorted(records, key=lambda r: r['id']):\n        if role != 'admin' and r['project'] not in user.get('projects', []) and r.get('owner') != user.get('name'):\n            continue\n        st = r['status']\n        if not (st == 'active' or (st == 'archived' and params.get('include_archived') is True and role == 'admin')):\n            continue\n        if r['confidential'] is True and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        if params.get('since') is not None and str(r['created'])[:10] < params['since']:\n            continue\n        if str(r.get('region') or '').lower() == 'ch' and 'ch' not in [str(x).lower() for x in (user.get('regions') or [])]:\n            continue\n        out.append(r)\n    mr = params.get('max_records')\n    if isinstance(mr, int) and not isinstance(mr, bool) and mr >= 1:\n        out = out[:mr]\n    import json\n    return json.dumps({'exported_by': user.get('name'), 'records': [\n        {'id': int(r['id']), 'title': ' '.join(r['title'].split()), 'owner': r['owner'], 'amount': r['amount']} for r in out]})\n\n"
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-11
++++ rev-12
+@@ -35,6 +35,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "Stage 4 of 5 released.\n# Stage 4 of 5: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S4.1] include_archived is now honoured only when user['role'] is 'admin'; for every other role, archived records are never exported.\n- [S4.2] Titles: in addition, replace every run of whitespace inside a title with a single space.\n\n## Notes\n\n- [S4.3] Decision record: the move to JSON was made for the new reporting API.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-4/REQUIREMENTS.md (14 lines)"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Implement stage 4, use helper, update register, compact context.\ncode:\nimport sys,subprocess,re;sys.path.insert(0,'/task/workspace')\np='/task/workspace/exporter/core.py';s=open(p).read()\nprint([l for l in s.split('\\n') if 'archived' in l or 'strip' in l])\nimport importlib,reghelper as H\nreg={'S2.1':'only active unless include_archived','S2.3':'strip title','S1.2':'scope','S1.3':'confidential'}\nnew={'S4.1':'include_archived honoured only for admin','S4.2':'collapse internal whitespace runs in titles'}\nprint(H.decide(H.affected(reg,new),0.5))"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.9s\n--- stdout ---\n[\"        if not (st == 'active' or (st == 'archived' and params.get('include_archived') is True)):\", \"    return json.dumps({'exported_by': user.get('name'), 'records': [{'id': int(r['id']), 'title': str(r['title']).strip(), 'owner': r['owner'], 'amount': str(r['amount'])} for r in out]})\"]\n{'S2.1': ['S4.1'], 'S2.3': ['S4.2']}\n"
+   }
+  ]
+ }

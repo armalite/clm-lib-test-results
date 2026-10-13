@@ -1,0 +1,62 @@
+{
+ "status": "DEVELOPMENT MATERIAL: hand-written illustrative instance for the proposed 014 comparison workload (W3). Not generator output, not a frozen fixture, never shown to a model. Real instances would be generated per seed (rules, values, order and distractors vary) and the truth would stay evaluator-only.",
+ "scenario": "A records-export service (the W2 domain, extended). Stages 1-2 state the initial requirements; stages 3-7 are change notices written as decisions. A notice item does not say which earlier requirement it changes; a later item wins where it conflicts, and everything it does not change stays in force.",
+ "effects": {
+  "replaces": "the target is no longer in force (it stays true as history)",
+  "amends": "part of the target changes; the rest of it stays in force",
+  "activates": "the target (an earlier obligation) now applies, without being restated",
+  "none": "shares terminology with the target but does not change it (evaluator note only)",
+  "kinds": "rule, exception, obligation and change items are requirements; a withdrawal item only ends earlier requirements (it is kept as history); history items are decision records that stay true as history; information items change nothing"
+ },
+ "items": [
+  {"id": "S1.1", "stage": 1, "kind": "rule", "text": "Format: return CSV text. The first row is the header id,title,owner,amount; then one row per exported record in ascending id order. Use Python's csv.writer with lineterminator='\\n'. With no exported records, return the header row alone."},
+  {"id": "S1.2", "stage": 1, "kind": "rule", "text": "Viewers: if user['role'] is 'viewer', raise PermissionError; nothing is exported."},
+  {"id": "S1.3", "stage": 1, "kind": "rule", "text": "Scope: an 'admin' may export records of any project. Any other role exports only records whose 'project' is in user['projects']; other records are left out without an error."},
+  {"id": "S1.4", "stage": 1, "kind": "rule", "text": "Status: only records with status 'active' are exported, unless params.get('include_archived') is True; then records with status 'archived' are exported too."},
+  {"id": "S1.5", "stage": 1, "kind": "exception", "text": "Confidential records: a record whose 'confidential' is True is never exported, with one exception: it is exported when user['role'] is 'admin' and params.get('purpose') == 'audit'. Every other rule still applies to it."},
+  {"id": "S1.6", "stage": 1, "kind": "rule", "text": "Amounts: write each record's 'amount' exactly as given in the record (a string); never reformat or round it."},
+  {"id": "S1.7", "stage": 1, "kind": "history", "text": "Decision record: CSV was chosen for the first release because the finance team imports exports into spreadsheets."},
+
+  {"id": "S2.1", "stage": 2, "kind": "rule", "text": "Date filter: params may contain 'since', a date 'YYYY-MM-DD'. When present, only records whose 'created' date is on or after it are exported."},
+  {"id": "S2.2", "stage": 2, "kind": "rule", "text": "Residency: a record whose 'region' is 'eu' is exported only when 'eu' is in user['regions'] (this applies to admins too)."},
+  {"id": "S2.3", "stage": 2, "kind": "rule", "text": "Record limit: params may contain 'max_records', an int of at least 1. Export only the first max_records records, in ascending id order, that remain after every other rule."},
+  {"id": "S2.4", "stage": 2, "kind": "obligation", "text": "Compliance obligation (nothing to do while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must include a top-level field \"exported_by\" equal to user['name']. It stays in force unless withdrawn."},
+  {"id": "S2.5", "stage": 2, "kind": "rule", "text": "Titles: export each title with leading and trailing whitespace removed."},
+  {"id": "S2.6", "stage": 2, "kind": "obligation", "text": "Audit-trail obligation (nothing to do today): if confidential records are ever exported for a purpose other than 'audit', every such export must include a top-level field \"confidential_count\" giving the number of confidential records it contains."},
+
+  {"id": "S3.1", "stage": 3, "kind": "change", "text": "Exports are now JSON (json.dumps) of an object whose key \"records\" lists one object per exported record, in ascending id order, with exactly the keys id (int), title, owner and amount (str).",
+   "truth": [{"target": "S1.1", "effect": "replaces"}, {"target": "S2.4", "effect": "activates"}, {"target": "S1.6", "effect": "none"}, {"target": "S1.7", "effect": "none"}]},
+  {"id": "S3.2", "stage": 3, "kind": "change", "text": "Record owners whose role is not 'viewer' may now also export the records they own (record 'owner' equal to user['name']), even outside their projects.",
+   "truth": [{"target": "S1.3", "effect": "amends"}]},
+  {"id": "S3.3", "stage": 3, "kind": "information", "text": "Information: storage for archived projects moves to a cheaper tier next quarter. This does not change what exports contain.",
+   "truth": [{"target": "S1.4", "effect": "none"}]},
+
+  {"id": "S4.1", "stage": 4, "kind": "change", "text": "include_archived is now honoured only when user['role'] is 'admin'; for every other role, archived records are never exported.",
+   "truth": [{"target": "S1.4", "effect": "amends"}]},
+  {"id": "S4.2", "stage": 4, "kind": "change", "text": "Region values are now written in upper case ('EU'), in records and in user['regions']; compare region values case-insensitively.",
+   "truth": [{"target": "S2.2", "effect": "amends"}]},
+  {"id": "S4.3", "stage": 4, "kind": "change", "text": "Titles: besides trimming, replace every run of internal whitespace with a single space.",
+   "truth": [{"target": "S2.5", "effect": "amends"}]},
+
+  {"id": "S5.1", "stage": 5, "kind": "change", "text": "Confidential records may now also be exported when user['role'] is 'admin' and params.get('purpose') == 'legal'.",
+   "truth": [{"target": "S1.5", "effect": "amends"}, {"target": "S2.6", "effect": "activates"}]},
+  {"id": "S5.2", "stage": 5, "kind": "change", "text": "Viewers no longer receive an error: a viewer now exports only the records they own (an empty list when there are none).",
+   "truth": [{"target": "S1.2", "effect": "replaces"}, {"target": "S3.2", "effect": "none"}]},
+  {"id": "S5.3", "stage": 5, "kind": "history", "text": "Decision record: the move to JSON in stage 3 was made for the new reporting API.",
+   "truth": [{"target": "S1.7", "effect": "none"}, {"target": "S3.1", "effect": "none"}]},
+
+  {"id": "S6.1", "stage": 6, "kind": "change", "text": "The date filter now uses a record's 'updated' date when it has one, and its 'created' date otherwise.",
+   "truth": [{"target": "S2.1", "effect": "amends"}]},
+  {"id": "S6.2", "stage": 6, "kind": "change", "text": "The exported_by field is no longer required when user['role'] is 'admin'.",
+   "truth": [{"target": "S2.4", "effect": "amends"}]},
+  {"id": "S6.3", "stage": 6, "kind": "change", "text": "A max_records value above 100 is treated as 100.",
+   "truth": [{"target": "S2.3", "effect": "amends"}]},
+
+  {"id": "S7.1", "stage": 7, "kind": "change", "text": "Each exported JSON record also has the key project.",
+   "truth": [{"target": "S3.1", "effect": "amends"}]},
+  {"id": "S7.2", "stage": 7, "kind": "withdrawal", "text": "The residency restriction is withdrawn: records of every region are exported under the ordinary rules.",
+   "truth": [{"target": "S2.2", "effect": "replaces"}, {"target": "S4.2", "effect": "replaces"}]},
+  {"id": "S7.3", "stage": 7, "kind": "information", "text": "Reminder: confidential records are still never exported outside the audit and legal exceptions.",
+   "truth": [{"target": "S1.5", "effect": "none"}, {"target": "S5.1", "effect": "none"}]}
+ ]
+}

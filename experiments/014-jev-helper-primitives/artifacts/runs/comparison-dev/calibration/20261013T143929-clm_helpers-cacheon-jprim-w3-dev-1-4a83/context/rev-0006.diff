@@ -1,0 +1,24 @@
+--- rev-5
++++ rev-6
+@@ -70,6 +70,21 @@
+    "id": "reg.S2.6",
+    "role": "summary",
+    "body": "CURRENT [S2.6] Obligation: if confidential records ever exported for purpose other than audit, export must include top-level field confidential_count = number of confidential records in it."
++  },
++  {
++   "id": "s4.act",
++   "role": "assistant",
++   "body": "[step 4] execute\nthought: Implement stage 2, update register via helper, compact context.\ncode:\nimport re\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"        out.append(r)\",\"\"\"        if params.get('since') is not None and str(r['created'])[:10] < params['since']:\n            continue\n        if r.get('region') == 'ch' and 'ch' not in (user.get('regions') or []):\n            continue\n        out.append(r)\n    mr = params.get('max_records')\n    if isinstance(mr, int) and not isinstance(mr, bool) and mr >= 1:\n        out = out[:mr]\"\"\")\ns=s.replace(\"r['title'], r['owner']\",\"r['title'].strip(), r['owner']\")\nopen(p,'w').write(s)\nimport sys;sys.path.insert(0,'/task/workspace')\nimport regmgr\nc=regmgr.load()\nc['entries']=[e for e in c['entries'] if e['id'] not in('s2.act','s2.obs','s2.rcpt','s3.act','s3.obs')]\nfor e in c['entries']:\n    if e['id']=='note.ctx': e['body']='Stage2 done: core.py implements S1.1-S1.5,S2.1-S2.5 (since, ch residency, max_records, title strip). Helper /task/workspace/regmgr.py: apply(c,new_items,amendments) uses jev to flag affected reg.* items. Register entries id reg.*.'\nregmgr.apply(c,[\n('reg.S2.1','CURRENT [S2.1] params since YYYY-MM-DD: only records with created on/after that date.'),\n('reg.S2.2','CURRENT [S2.2] region ch exported only if ch in user regions; applies to admins too.'),\n('reg.S2.3','CURRENT [S2.3] params max_records int>=1: only first N (ascending id) after all other rules.'),\n('reg.S2.4','CURRENT [S2.4] Obligation: if format changes from CSV, every export in new format must include top-level field exported_by = user name. Until withdrawn/changed.'),\n('reg.S2.5','CURRENT [S2.5] title exported with leading/trailing whitespace stripped.'),\n('reg.S2.6','CURRENT [S2.6] Obligation: if confidential records ever exported for purpose other than audit, export must include top-level field confidential_count = number of confidential records in it.')],{})\nimport subprocess\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-800:])"
++  },
++  {
++   "id": "s4.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=4.5s\n--- stdout ---\nJEV FLAG reg.S2.1 -> reg.api 0.57\nJEV FLAG reg.S2.3 -> reg.api 0.76\nJEV FLAG reg.S2.6 -> reg.S1.5 0.6\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n\n"
++  },
++  {
++   "id": "s4.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 13 -> 14; body chars 6968 -> 1742; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added [reg.S2.1, reg.S2.2, reg.S2.3, reg.S2.4, reg.S2.5, reg.S2.6]; rewritten [note.ctx]"
+   }
+  ]
+ }

@@ -1,10 +1,12 @@
 ### [014 – Jev as a primitive inside Claude's own context helpers](experiments/014-jev-helper-primitives/README.md)
 
-- **Question:** can Claude's own context-management code call Jev during an execution and use the answer to edit its working context, with no extra Claude turn (`jev-primitive/1`)?
-- **Offline:** the mechanism was verified with a scripted fake Jev.
-- **Prompted live demonstration** (one run on `w2-dev-1`, **instructed use, not adoption**):
-  - **The helper:** Claude wrote and saved `ctxhelper.py`, which asks Jev whether each note is changed by a new stage and marks the notes scoring above 0.5 for review.
-  - **Use and reuse:** it ran at 4 stage updates, with 4 real Jev calls, all inside running executions. Claude improved it once.
-  - **The edits:** they followed the answers and were accepted, and each next request held exactly the accepted context plus the runtime's step entries.
-  - **The outcome:** 35/35 hidden checks, 14 model calls (none extra), USD 0.184 (TypeSafe USD 0.0002), 105 s.
-- **What it means:** the capability works end to end with real models. Jev's role was small, a review marker on one or two notes, and Claude wrote the substantive notes itself. **No benefit is claimed or measured.**
+- **Question:** can Claude's own context-management code call Jev during an execution and use the answers to edit its working context, with no extra Claude turn (`jev-primitive/1`)?
+- **Prompted live demonstration** (one instructed run on W2): the capability works end to end.
+  - Claude's helper called real Jev 4 times, and its threshold decided which notes received a review marker.
+  - The task scored 35/35, with 14 model calls and USD 0.184.
+  - Jev's influence was marker-only.
+- **Comparison phase** (new W3 register workload with uncited change notices, plus a register objective in both conditions; B smoke + development pilot, 2 instances × A/B, frozen protocol):
+  - **Correctness:** all runs code-correct, with no register harm.
+  - **The mechanism:** Jev was called 37 times across the B runs, but an offline replay found **no register change that depended on its answers** in any of the 15 Jev-using executions. The helpers printed Jev's flags, and Claude wrote the edits itself.
+  - **Cost:** B cost 19–32% more than A.
+- **What it means:** configured this way, Claude used Jev as a printed cross-check, not as an input to its own editing logic. So **no benefit was shown, and the mechanism was not exercised.** The evaluation was not run.

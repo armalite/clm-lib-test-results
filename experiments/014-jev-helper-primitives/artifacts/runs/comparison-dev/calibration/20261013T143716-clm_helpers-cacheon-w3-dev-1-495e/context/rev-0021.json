@@ -1,0 +1,54 @@
+{
+ "number": 21,
+ "parent": 20,
+ "source": "runtime",
+ "step": 15,
+ "sha256": "cd7bb2be5046d7f14754e5ced34212e180257e1fd79b0d3aa40e7d1c558b247a",
+ "entries": [
+  {
+   "id": "register",
+   "role": "note",
+   "body": "HISTORY [S1.1] Format was CSV (header id,title,owner,amount) - replaced by S3.1.\nCURRENT [S3.1, S1.1] Output: json.dumps object with 'records': list of {id,title,owner,amount} (exactly these keys) ascending id; empty list if none.\nCURRENT [S2.4, S3.1] Since format is now JSON: top-level 'exported_by'=user['name'] (implemented).\nHISTORY [S1.2] viewer used to raise PermissionError - replaced by S5.2.\nCURRENT [S5.2, S1.2] viewer: no error; exports only records with owner==user['name'] in any project; all other rules apply.\nCURRENT [S1.3, S3.2] admin: all projects; other (non-viewer) roles: records with project in user['projects'] OR owner==user['name']; skip others silently.\nCURRENT [S1.4, S4.1] only status 'active' unless params.get('include_archived') is True AND role is 'admin' (then archived too); non-admins never get archived.\nHISTORY [S1.4] include_archived formerly honoured for any role - restricted by S4.1.\nCURRENT [S1.5, S5.1] confidential True never exported, except role admin and purpose 'audit' or 'litigation'; other rules still apply.\nCURRENT [S2.6, S5.1] Since litigation exports confidential: admin+purpose litigation output includes top-level 'confidential_count' (implemented).\nHISTORY [S1.6] Decision: CSV chosen because finance imports into spreadsheets.\nCURRENT [API] export_records(records,user,params)->str; don't modify input; ignore unknown params; fields exactly as given.\nCURRENT [S2.1] params 'since' YYYY-MM-DD: only records with created >= since.\nCURRENT [S2.2, S4.2] region 'ch' exported only if 'ch' in user['regions'], admins too; region compare case-insensitive (records and user regions).\nCURRENT [S2.3] max_records int>=1: first N by ascending id after all other rules.\nCURRENT [S2.4] Obligation: if format ever changes from CSV, new format must include top-level 'exported_by'=user['name'].\nCURRENT [S2.5, S4.3] title stripped of leading/trailing whitespace and every internal whitespace run replaced by single space.\nCURRENT [S2.6] Obligation: if confidential records ever exported for purpose other than 'audit', export must include top-level 'confidential_count' (number of confidential records in it).\nHISTORY [S3.3] Note: archived storage moves to cheaper tier; no export change.\nHISTORY [S5.3] Decision: JSON move made for new reporting API."
+  },
+  {
+   "id": "status",
+   "role": "note",
+   "body": "Stages 1-5 implemented in exporter/core.py."
+  },
+  {
+   "id": "s13.act",
+   "role": "assistant",
+   "body": "[step 13] execute\nthought: Implement stage 5 (litigation + confidential_count obligation, viewer own-records), update register, compact.\ncode:\nimport subprocess,sys,json\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"    if role == 'viewer':\\n        raise PermissionError('viewer may not export')\\n\",\"\")\ns=s.replace(\"        if role != 'admin' and r.get('project')\",\"        if role == 'viewer':\\n            if r.get('owner') != user.get('name'):\\n                continue\\n        elif role != 'admin' and r.get('project')\")\ns=s.replace(\"params.get('purpose') == 'audit')\",\"params.get('purpose') in ('audit', 'litigation'))\")\ns=s.replace(\"    return json.dumps({'exported_by': user.get('name'), 'records': recs})\",\"    res = {'exported_by': user.get('name'), 'records': recs}\\n    if role == 'admin' and params.get('purpose') == 'litigation':\\n        res['confidential_count'] = sum(1 for r in out if r.get('confidential') is True)\\n    return json.dumps(res)\")\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])\ncp='/task/workspace/context.json'\nc=json.load(open(cp))\nfor e in c['entries']:\n    if e['id']=='register':\n        b=e['body']\n        b=b.replace(\"CURRENT [S1.2] role 'viewer' -> raise PermissionError.\",\"HISTORY [S1.2] viewer used to raise PermissionError - replaced by S5.2.\\nCURRENT [S5.2, S1.2] viewer: no error; exports only records with owner==user['name'] in any project; all other rules apply.\")\n        b=b.replace(\"CURRENT [S1.5] confidential True never exported, except role admin and params.get('purpose')=='audit'; other rules still apply.\",\"CURRENT [S1.5, S5.1] confidential True never exported, except role admin and purpose 'audit' or 'litigation'; other rules still apply.\\nCURRENT [S2.6, S5.1] Since litigation exports confidential: admin+purpose litigation output includes top-level 'confidential_count' (implemented).\")\n        b+=\"\\nHISTORY [S5.3] Decision: JSON move made for new reporting API.\"\n        e['body']=b\n    if e['id']=='status': e['body']='Stages 1-5 implemented in exporter/core.py.'\nc['entries']=[e for e in c['entries'] if e['id'] in('register','status')]\njson.dump(c,open(cp,'w'))"
+  },
+  {
+   "id": "s13.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s13.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 13: revision 17 -> 18; entries 9 -> 2; body chars 7006 -> 2339; removed [s10.act, s10.obs, s10.rcpt, s11.act, s11.obs, s12.act, s12.obs]; added []; rewritten [register, status]"
+  },
+  {
+   "id": "s14.act",
+   "role": "assistant",
+   "body": "[step 14] advance\nthought: "
+  },
+  {
+   "id": "s14.obs",
+   "role": "observation",
+   "body": "Stage 6 of 7 released.\n# Stage 6 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S6.1] The \"exported_by\" field is no longer required when user['role'] is 'admin'; admin exports omit it.\n- [S6.2] A max_records value above 25 is treated as 25.\n\n## Notes\n\n- [S6.3] For information: the web interface now shows 50 records per page. This does not change exports.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-6/REQUIREMENTS.md (14 lines)"
+  },
+  {
+   "id": "s15.act",
+   "role": "assistant",
+   "body": "[step 15] execute\nthought: Implement S6.1, S6.2; update register.\ncode:\nimport subprocess,sys,json\np='/task/workspace/exporter/core.py'\ns=open(p).read()\nimport re\nfor i,l in enumerate(s.split('\\n')):\n    if 'max_records' in l or 'exported_by' in l or 'res' in l: print(i,l)\n"
+  },
+  {
+   "id": "s15.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n25     mx = params.get('max_records')\n32     res = {'exported_by': user.get('name'), 'records': recs}\n34         res['confidential_count'] = sum(1 for r in out if r.get('confidential') is True)\n35     return json.dumps(res)\n"
+  }
+ ]
+}

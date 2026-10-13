@@ -1,0 +1,44 @@
+{
+ "number": 6,
+ "parent": 5,
+ "source": "runtime",
+ "step": 4,
+ "sha256": "f8df8647260e5bc951e5f98e86f37a67cecd5df622ee471e995f9426c44108d9",
+ "entries": [
+  {
+   "id": "register",
+   "role": "note",
+   "body": "CURRENT [S1.1] Format: CSV via csv.writer default dialect, lineterminator='\\n'; header id,title,owner,amount; rows ascending id; no records -> header only.\nCURRENT [S1.2] role 'viewer' -> raise PermissionError.\nCURRENT [S1.3] admin: all projects; other roles only records with project in user['projects'] (silently skip others).\nCURRENT [S1.4] only status 'active' unless params.get('include_archived') is True (then archived too).\nCURRENT [S1.5] confidential True never exported, except role admin and params.get('purpose')=='audit'; other rules still apply.\nHISTORY [S1.6] Decision: CSV chosen because finance imports into spreadsheets.\nCURRENT [API] export_records(records,user,params)->str; don't modify input; ignore unknown params; fields exactly as given."
+  },
+  {
+   "id": "status",
+   "role": "note",
+   "body": "Stage 1 implemented in exporter/core.py (single function export_records). Tests run via unittest discover."
+  },
+  {
+   "id": "s3.act",
+   "role": "assistant",
+   "body": "[step 3] execute\nthought: Compact context then advance next step.\ncode:\nimport json\np='/task/workspace/context.json'\nc=json.load(open(p))\nc['entries']=[e for e in c['entries'] if e['id'] in('register','status')]\njson.dump(c,open(p,'w'))\nprint('ok')"
+  },
+  {
+   "id": "s3.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s3.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 3: revision 3 -> 4; entries 5 -> 2; body chars 3486 -> 868; removed [s2.act, s2.obs, s2.rcpt]; added []; rewritten []"
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] advance\nthought: "
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "Stage 2 of 7 released.\n# Stage 2 of 7: further initial requirements\n\n## Requirements\n\n- [S2.1] Date filter: params may contain 'since', a date string 'YYYY-MM-DD'. When it is present, only records whose 'created' date is on or after that date are exported.\n- [S2.2] Residency: a record whose 'region' is 'ch' is exported only when 'ch' is in user['regions']; this applies to admins too.\n- [S2.3] Record limit: params may contain 'max_records', an int of at least 1. Export only the first max_records records, in ascending id order, that remain after every other rule.\n- [S2.4] Compliance obligation (nothing to do while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must include a top-level field \"exported_by\" equal to user['name']. It stays in force unless a later stage withdraws or changes it.\n- [S2.5] Titles: export each record's title with leading and trailing whitespace removed.\n- [S2.6] Audit-trail obligation (nothing to do today): if confidential records are ever exported for a purpose other than 'audit', every such export must include a top-level field \"confidential_count\" giving the number of confidential records it contains.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (42 lines)\n  stage-2/REQUIREMENTS.md (12 lines)"
+  }
+ ]
+}

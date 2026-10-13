@@ -1,0 +1,24 @@
+--- rev-15
++++ rev-16
+@@ -10,6 +10,21 @@
+    "id": "note1",
+    "role": "note",
+    "body": "Stages 1-4 implemented in exporter/core.py. Helper regtool.py (load,save,affected,set_entry). Next: advance."
++  },
++  {
++   "id": "s11.act",
++   "role": "assistant",
++   "body": "[step 11] execute\nthought: Apply stage 4 code changes, update register via helper, prune context.\ncode:\nimport sys,subprocess\nsys.path.insert(0,'/task/workspace')\nimport regtool\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"if role != 'admin' and r.get('project') not in user.get('projects', []):\",\"if role != 'admin' and r.get('project') not in user.get('projects', []) and r.get('owner') != user.get('name'):\")\ns=s.replace(\"params.get('purpose') == 'audit')\",\"params.get('purpose') in ('audit', 'legal'))\")\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-800:])\nc=regtool.load()\nreg=[e for e in c['entries'] if e['id']=='register'][0]['body']\nlines=reg.split('\\n')\nitems={str(k):l for k,l in enumerate(lines) if l.startswith('CURRENT')}\nnew={'S4.1':'Confidential records may also be exported when role admin and purpose legal.','S4.2':'Non-admin non-viewer users may also export records they own (owner==user name) even outside their projects.'}\naff=regtool.affected(new,items);print({n:{k:v for k,v in d.items() if (v or 0)>0.5} for n,d in aff.items()})\nout=[]\nfor l in lines:\n    if l.startswith('CURRENT [S1.2]'):\n        out.append(\"CURRENT [S1.2, S4.2] Scope: role admin exports any project; others only records with project in user projects OR owner==user['name'] (others silently omitted).\\nHISTORY [S1.2] Previously project membership only.\")\n    elif l.startswith('CURRENT [S2.2]'):\n        out.append(\"CURRENT [S2.2, S4.1] confidential True never exported, except role admin AND params purpose in ('audit','legal'); other rules still apply.\\nHISTORY [S2.2] Previously audit only.\")\n    else: out.append(l)\nout.append('HISTORY [S4.3] Decision record: move to JSON made for new reporting API.')\nregtool.set_entry(c,'register','\\n'.join(out))\nregtool.set_entry(c,'note1','Stages 1-4 implemented in exporter/core.py. Helper regtool.py (load,save,affected,set_entry). Next: advance.','note')\nc['entries']=[e for e in c['entries'] if e['id'] in('register','note1')]\nregtool.save(c)"
++  },
++  {
++   "id": "s11.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.0s\n--- stdout ---\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n\n{'S4.1': {'10': 0.89}, 'S4.2': {'2': 0.91}}\n"
++  },
++  {
++   "id": "s11.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 11: revision 14 -> 15; entries 9 -> 2; body chars 12233 -> 2159; removed [s8.act, s8.obs, s8.rcpt, s9.act, s9.obs, s10.act, s10.obs]; added []; rewritten [register, note1]"
+   }
+  ]
+ }

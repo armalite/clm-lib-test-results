@@ -1,0 +1,24 @@
+--- rev-3
++++ rev-4
+@@ -10,21 +10,6 @@
+    "id": "status",
+    "role": "note",
+    "body": "Stage 1 implemented in exporter/core.py (single function export_records). Tests run via unittest discover."
+-  },
+-  {
+-   "id": "s2.act",
+-   "role": "assistant",
+-   "body": "[step 2] execute\nthought: Implement stage 1, write register, compact context.\ncode:\nimport json,subprocess,sys\nsrc='''import csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer may not export')\n    out = []\n    for r in records:\n        if role != 'admin' and r.get('project') not in user.get('projects', []):\n            continue\n        st = r.get('status')\n        if not (st == 'active' or (st == 'archived' and params.get('include_archived') is True)):\n            continue\n        if r.get('confidential') is True and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        out.append(r)\n    out.sort(key=lambda r: r['id'])\n    buf = io.StringIO()\n    w = csv.writer(buf, lineterminator='\\\\n')\n    w.writerow(['id', 'title', 'owner', 'amount'])\n    for r in out:\n        w.writerow([r['id'], r['title'], r['owner'], r['amount']])\n    return buf.getvalue()\n'''\nopen('/task/workspace/exporter/core.py','w').write(src)\np=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(p.stderr[-1500:])\nreg='''CURRENT [S1.1] Format: CSV via csv.writer default dialect, lineterminator='\\\\n'; header id,title,owner,amount; rows ascending id; no records -> header only.\nCURRENT [S1.2] role 'viewer' -> raise PermissionError.\nCURRENT [S1.3] admin: all projects; other roles only records with project in user['projects'] (silently skip others).\nCURRENT [S1.4] only status 'active' unless params.get('include_archived') is True (then archived too).\nCURRENT [S1.5] confidential True never exported, except role admin and params.get('purpose')=='audit'; other rules still apply.\nHISTORY [S1.6] Decision: CSV chosen because finance imports into spreadsheets.\nCURRENT [API] export_records(records,user,params)->str; don't modify input; ignore unknown params; fields exactly as given.'''\nctx={'format':'clm-context/v1','entries':[{'id':'register','role':'note','body':reg},{'id':'status','role':'note','body':'Stage 1 implemented in exporter/core.py (single function export_records). Tests run via unittest discover.'}]}\njson.dump(ctx,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s2.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
+-  },
+-  {
+-   "id": "s2.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 2; body chars 3070 -> 868; removed [s1.act, s1.obs]; added [register, status]; rewritten []"
+   }
+  ]
+ }

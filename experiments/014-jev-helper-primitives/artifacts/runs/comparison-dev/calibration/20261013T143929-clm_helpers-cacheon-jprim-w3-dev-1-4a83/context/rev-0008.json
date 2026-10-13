@@ -1,0 +1,114 @@
+{
+ "number": 8,
+ "parent": 7,
+ "source": "runtime",
+ "step": 6,
+ "sha256": "580ea7b86463a2a9fc4a62febce793a9a42b1a5ca350c2d11b2d23e77b12ff48",
+ "entries": [
+  {
+   "id": "note.ctx",
+   "role": "note",
+   "body": "Stage2 done: core.py implements S1.1-S1.5,S2.1-S2.5 (since, ch residency, max_records, title strip). Helper /task/workspace/regmgr.py: apply(c,new_items,amendments) uses jev to flag affected reg.* items. Register entries id reg.*."
+  },
+  {
+   "id": "reg.api",
+   "role": "summary",
+   "body": "CURRENT [S1.0] export_records(records,user,params)->str; records keys id,title,owner,project,status,amount(str, keep exact),confidential,created,region,optional updated; do not modify input; ignore unknown params; default all records ascending id."
+  },
+  {
+   "id": "reg.S1.1",
+   "role": "summary",
+   "body": "CURRENT [S1.1] CSV via csv.writer lineterminator \\n; header id,title,owner,amount; rows ascending id; no records -> header only."
+  },
+  {
+   "id": "reg.S1.2",
+   "role": "summary",
+   "body": "CURRENT [S1.2] role viewer -> raise PermissionError."
+  },
+  {
+   "id": "reg.S1.3",
+   "role": "summary",
+   "body": "CURRENT [S1.3] admin exports any project; others only records whose project in user projects (silently drop others)."
+  },
+  {
+   "id": "reg.S1.4",
+   "role": "summary",
+   "body": "CURRENT [S1.4] only status active, unless params include_archived is True then archived too."
+  },
+  {
+   "id": "reg.S1.5",
+   "role": "summary",
+   "body": "CURRENT [S1.5] confidential True never exported except role admin and params purpose==audit; other rules still apply."
+  },
+  {
+   "id": "reg.S1.6",
+   "role": "summary",
+   "body": "HISTORY [S1.6] Decision: CSV chosen because finance imports into spreadsheets."
+  },
+  {
+   "id": "reg.S2.1",
+   "role": "summary",
+   "body": "CURRENT [S2.1] params since YYYY-MM-DD: only records with created on/after that date."
+  },
+  {
+   "id": "reg.S2.2",
+   "role": "summary",
+   "body": "CURRENT [S2.2] region ch exported only if ch in user regions; applies to admins too."
+  },
+  {
+   "id": "reg.S2.3",
+   "role": "summary",
+   "body": "CURRENT [S2.3] params max_records int>=1: only first N (ascending id) after all other rules."
+  },
+  {
+   "id": "reg.S2.4",
+   "role": "summary",
+   "body": "CURRENT [S2.4] Obligation: if format changes from CSV, every export in new format must include top-level field exported_by = user name. Until withdrawn/changed."
+  },
+  {
+   "id": "reg.S2.5",
+   "role": "summary",
+   "body": "CURRENT [S2.5] title exported with leading/trailing whitespace stripped."
+  },
+  {
+   "id": "reg.S2.6",
+   "role": "summary",
+   "body": "CURRENT [S2.6] Obligation: if confidential records ever exported for purpose other than audit, export must include top-level field confidential_count = number of confidential records in it."
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Implement stage 2, update register via helper, compact context.\ncode:\nimport re\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"        out.append(r)\",\"\"\"        if params.get('since') is not None and str(r['created'])[:10] < params['since']:\n            continue\n        if r.get('region') == 'ch' and 'ch' not in (user.get('regions') or []):\n            continue\n        out.append(r)\n    mr = params.get('max_records')\n    if isinstance(mr, int) and not isinstance(mr, bool) and mr >= 1:\n        out = out[:mr]\"\"\")\ns=s.replace(\"r['title'], r['owner']\",\"r['title'].strip(), r['owner']\")\nopen(p,'w').write(s)\nimport sys;sys.path.insert(0,'/task/workspace')\nimport regmgr\nc=regmgr.load()\nc['entries']=[e for e in c['entries'] if e['id'] not in('s2.act','s2.obs','s2.rcpt','s3.act','s3.obs')]\nfor e in c['entries']:\n    if e['id']=='note.ctx': e['body']='Stage2 done: core.py implements S1.1-S1.5,S2.1-S2.5 (since, ch residency, max_records, title strip). Helper /task/workspace/regmgr.py: apply(c,new_items,amendments) uses jev to flag affected reg.* items. Register entries id reg.*.'\nregmgr.apply(c,[\n('reg.S2.1','CURRENT [S2.1] params since YYYY-MM-DD: only records with created on/after that date.'),\n('reg.S2.2','CURRENT [S2.2] region ch exported only if ch in user regions; applies to admins too.'),\n('reg.S2.3','CURRENT [S2.3] params max_records int>=1: only first N (ascending id) after all other rules.'),\n('reg.S2.4','CURRENT [S2.4] Obligation: if format changes from CSV, every export in new format must include top-level field exported_by = user name. Until withdrawn/changed.'),\n('reg.S2.5','CURRENT [S2.5] title exported with leading/trailing whitespace stripped.'),\n('reg.S2.6','CURRENT [S2.6] Obligation: if confidential records ever exported for purpose other than audit, export must include top-level field confidential_count = number of confidential records in it.')],{})\nimport subprocess\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-800:])"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=4.5s\n--- stdout ---\nJEV FLAG reg.S2.1 -> reg.api 0.57\nJEV FLAG reg.S2.3 -> reg.api 0.76\nJEV FLAG reg.S2.6 -> reg.S1.5 0.6\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s4.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 13 -> 14; body chars 6968 -> 1742; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added [reg.S2.1, reg.S2.2, reg.S2.3, reg.S2.4, reg.S2.5, reg.S2.6]; rewritten [note.ctx]"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: "
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 7 released.\n# Stage 3 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S3.1] Exports are now JSON text (json.dumps) of an object whose key \"records\" lists one object per exported record, in ascending id order, with exactly the keys \"id\" (int), \"title\", \"owner\" and \"amount\" (str, exactly as given). The hidden tests parse the JSON and compare values, not spacing or key order.\n- [S3.2] Users whose role is neither 'admin' nor 'viewer' may now also export the records they own (record 'owner' equal to user['name']), even outside their projects.\n\n## Notes\n\n- [S3.3] For information: storage for archived projects moves to a cheaper tier next quarter. This does not change what exports contain.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-3/REQUIREMENTS.md (14 lines)"
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Inspect core.py and regmgr briefly, then implement stage 3.\ncode:\nprint(open('/task/workspace/exporter/core.py').read());print(open('/task/workspace/regmgr.py').read()[:1500])"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=0.9s\n--- stdout ---\nimport csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer')\n    out = []\n    for r in sorted(records, key=lambda r: r['id']):\n        if role != 'admin' and r['project'] not in user.get('projects', []):\n            continue\n        st = r['status']\n        if not (st == 'active' or (st == 'archived' and params.get('include_archived') is True)):\n            continue\n        if r['confidential'] is True and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        if params.get('since') is not None and str(r['created'])[:10] < params['since']:\n            continue\n        if r.get('region') == 'ch' and 'ch' not in (user.get('regions') or []):\n            continue\n        out.append(r)\n    mr = params.get('max_records')\n    if isinstance(mr, int) and not isinstance(mr, bool) and mr >= 1:\n        out = out[:mr]\n    buf = io.StringIO()\n    w = csv.writer(buf, lineterminator='\\n')\n    w.writerow(['id', 'title', 'owner', 'amount'])\n    for r in out:\n        w.writerow([r['id'], r['title'].strip(), r['owner'], r['amount']])\n    return buf.getvalue()\n\nimport json, clm_jev\nP='/task/workspace/context.json'\ndef load(): return json.load(open(P))\ndef save(c): json.dump(c,open(P,'w'),indent=0)\ndef reg(c): return [e for e in c['entries'] if e['id'].startswith('reg.')]\ndef affected(new_text, c, thr=0.5):\n    items={e['id']:e['body'] for e in reg(c) if e['body'].startswith('CURRENT')}\n    if not items: return {}\n    r=clm_jev.judge('Does the NEW change item modify, replace, conflict with or withdraw any part of this requirement?',items,background='NEW: '+new_text)\n    a=r.get('answers') or {}\n    return {k:v for k,v in a.items() if v is not None and v>=thr}\ndef apply(c, new_items, amendments):\n    \"\"\"new_items: list of (regid, body). amendments: regid -> new CURRENT body or 'HISTORY ...' text.\n    Uses jev to flag affected items; prints flagged ones lacking an amendment.\"\"\"\n    for rid,body in new_items:\n        if body.startswith('CURRENT') and '[S' in body and rid not in amendments:\n            hits=affected(body,c)\n            for k,p in hits.items():\n                if k not in amendments: print('JEV FLAG',rid,'->',k,round(p,2))\n    ents={e['id']:e for e in c['entries']}\n    for k,b in amendments.items():\n        if k in ents: ents[k]['body']=b\n        else: c['entries'].append({'id':k,'role':'summary','body':b})\n    for rid,body in new_items:\n        if rid in ents: ents[rid]['body']=body\n        else: c['entries'].append({'id':rid,'role':'summary','body':body})\n    save(c)\n\n"
+  }
+ ]
+}

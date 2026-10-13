@@ -1,0 +1,36 @@
+--- rev-24
++++ rev-25
+@@ -9,32 +9,7 @@
+   {
+    "id": "note1",
+    "role": "note",
+-   "body": "Stages 1-5 in core.py; S6 eu filter removal in progress. Helper regtool.py."
+-  },
+-  {
+-   "id": "s16.act",
+-   "role": "assistant",
+-   "body": "[step 16] execute\nthought: Remove eu region filter, update register via helper.\ncode:\nimport sys,subprocess,re\nsys.path.insert(0,'/task/workspace')\nimport regtool\np='/task/workspace/exporter/core.py'\ns=open(p).read()\nfor i,l in enumerate(s.split('\\n')):\n    if 'eu' in l or 'region' in l: print(i,l)\nc=regtool.load()\nreg=[e for e in c['entries'] if e['id']=='register'][0]['body']\nlines=reg.split('\\n')\nitems={str(k):l for k,l in enumerate(lines) if l.startswith('CURRENT')}\naff=regtool.affected({'S6.1':'Residency restriction withdrawn: records of every region exported under ordinary rules.'},items);print({n:{k:v for k,v in d.items() if (v or 0)>0.5} for n,d in aff.items()})\nout=[]\nfor l in lines:\n    if l.startswith('CURRENT [S2.6]'):\n        out.append(\"HISTORY [S2.6, S6.1] Region 'eu' restriction (needed 'eu' in user regions) withdrawn by S6.1; all regions exported under ordinary rules.\")\n    else: out.append(l)\nout.append('HISTORY [S6.2] Note: web UI shows 50 records/page; exports unchanged.')\nregtool.set_entry(c,'register','\\n'.join(out))\nregtool.set_entry(c,'note1','Stages 1-5 in core.py; S6 eu filter removal in progress. Helper regtool.py.','note')\nc['entries']=[e for e in c['entries'] if e['id'] in('register','note1')]\nregtool.save(c)"
+-  },
+-  {
+-   "id": "s16.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n20         if r.get('region') == 'eu' and 'eu' not in (user.get('regions') or []):\n{'S6.1': {'18': 0.93}}\n"
+-  },
+-  {
+-   "id": "s16.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 16: revision 21 -> 22; entries 7 -> 2; body chars 6210 -> 2528; removed [s14.act, s14.obs, s14.rcpt, s15.act, s15.obs]; added []; rewritten [register, note1]"
+-  },
+-  {
+-   "id": "s17.act",
+-   "role": "assistant",
+-   "body": "[step 17] execute\nthought: Remove the eu line from core.py, then run the visible tests.\ncode:\nimport subprocess,sys\np='/task/workspace/exporter/core.py'\nL=open(p).read().split('\\n')\nprint(L[18:24])\nif \"region\" in L[20]:\n    nxt=L[21]\n    print('next:',repr(nxt))\n    if nxt.strip() in('continue','return False'):\n        del L[20:22]\n    else:\n        del L[20]\n    open(p,'w').write('\\n'.join(L))\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])"
+-  },
+-  {
+-   "id": "s17.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.1s\n--- stdout ---\n[\"        if r.get('confidential') is True and not (role == 'admin' and params.get('purpose') in ('audit', 'legal')):\", '            continue', \"        if r.get('region') == 'eu' and 'eu' not in (user.get('regions') or []):\", '            continue', '        out.append(r)', \"    out.sort(key=lambda r: r['id'])\"]\nnext: '            continue'\n..\n----------------------------------------------------------------------\nRan 2 tests in 0.000s\n\nOK\n\n"
++   "body": "Stages 1-6 implemented in core.py (eu filter removed, tests pass). Helper regtool.py (load,save,set_entry,affected). Next: advance to stage 7."
+   }
+  ]
+ }

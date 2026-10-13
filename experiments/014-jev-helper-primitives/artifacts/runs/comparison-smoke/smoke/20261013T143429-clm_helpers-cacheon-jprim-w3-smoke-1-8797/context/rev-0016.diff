@@ -1,0 +1,19 @@
+--- rev-15
++++ rev-16
+@@ -35,6 +35,16 @@
+    "id": "s11.obs",
+    "role": "observation",
+    "body": "Stage 5 of 5 released.\n# Stage 5 of 5: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S5.1] Confidential records may now also be exported when user['role'] is 'admin' and params.get('purpose') == 'regulator'.\n- [S5.2] The \"exported_by\" field is no longer required when user['role'] is 'admin'; admin exports omit it.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-5/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s12.act",
++   "role": "assistant",
++   "body": "[step 12] execute\nthought: Apply stage 5: use helper for jev affected check, update code and register.\ncode:\nimport sys,subprocess;sys.path.insert(0,'/task/workspace')\nimport reghelper as H\np='/task/workspace/exporter/core.py';s=open(p).read()\nimport re\nfor i,l in enumerate(s.splitlines()):\n  if 'audit' in l or 'exported_by' in l: print(i,l)\nc=H.load()\nreg=[e for e in c['entries'] if e['id']=='register'][0]['body'].split('\\n')\ntry:\n  a=H.affected(reg,['S5.1 confidential also exportable when admin and purpose==regulator','S5.2 exported_by omitted for admin exports']);print(a)\nexcept Exception as e: print('jev err',e)"
++  },
++  {
++   "id": "s12.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=0.9s\n--- stdout ---\n12         if r.get('confidential') and not (admin and params.get('purpose') == 'audit'):\n16     return json.dumps({'exported_by': user.get('name'), 'records': [{'id': int(r['id']), 'title': ' '.join(str(r['title']).split()), 'owner': r['owner'], 'amount': str(r['amount'])} for r in out]})\njev err 'list' object has no attribute 'items'\n"
+   }
+  ]
+ }

@@ -1,0 +1,24 @@
+--- rev-13
++++ rev-14
+@@ -105,6 +105,21 @@
+    "id": "reg.S4.3",
+    "role": "summary",
+    "body": "CURRENT [S4.3] titles: additionally collapse internal whitespace runs to single space."
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Implement stage 4 edits, update register via helper, compact context.\ncode:\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"params.get('include_archived') is True)\",\"params.get('include_archived') is True and role == 'admin')\")\ns=s.replace(\"if r.get('region') == 'ch' and 'ch' not in (user.get('regions') or []):\",\"if str(r.get('region') or '').lower() == 'ch' and 'ch' not in [str(x).lower() for x in (user.get('regions') or [])]:\")\ns=s.replace(\"'title': r['title'].strip()\",\"'title': ' '.join(r['title'].split())\")\nopen(p,'w').write(s)\nimport sys;sys.path.insert(0,'/task/workspace')\nimport regmgr\nc=regmgr.load()\nc['entries']=[e for e in c['entries'] if e['id'] not in('s7.act','s7.obs','s7.rcpt','s8.act','s9.act','s9.obs')]\nfor e in c['entries']:\n    if e['id']=='note.ctx': e['body']='Stage4 done: core.py implements all through S4.3. Helper /task/workspace/regmgr.py: apply(c,new_items,amendments) uses jev to flag affected reg.* items. Register entries id reg.*. Next: advance.'\nregmgr.apply(c,[\n('reg.S4.1','CURRENT [S4.1] include_archived honoured only for role admin; other roles never get archived records.'),\n('reg.S4.2','CURRENT [S4.2] region values compared case-insensitively (records and user regions).'),\n('reg.S4.3','CURRENT [S4.3] titles: additionally collapse internal whitespace runs to single space.')],{\n'reg.S1.4':'CURRENT [S1.4, S4.1] only status active; archived also included only if params include_archived is True AND role admin (S4.1).',\n'reg.S2.2':'CURRENT [S2.2, S4.2] region ch (case-insensitive) exported only if ch in user regions (case-insensitive); applies to admins too.',\n'reg.S2.5':'CURRENT [S2.5, S4.3] title exported stripped of leading/trailing whitespace and internal whitespace runs collapsed to one space.',\n'reg.S3.1':'CURRENT [S3.1, S2.5, S4.3] Output is json.dumps of object with key records: list (ascending id) of objects with exactly keys id (int), title (normalized), owner, amount (str exact). Replaces CSV of S1.1.'})\nimport subprocess\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-800:])"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=3.6s\n--- stdout ---\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.001s\n\nOK\n\n"
++  },
++  {
++   "id": "s10.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 10: revision 12 -> 13; entries 24 -> 21; body chars 6568 -> 3602; removed [s7.act, s7.obs, s7.rcpt, s8.act, s9.act, s9.obs]; added [reg.S4.1, reg.S4.2, reg.S4.3]; rewritten [note.ctx, reg.S1.4, reg.S2.2, reg.S2.5, reg.S3.1]"
+   }
+  ]
+ }
