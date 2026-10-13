@@ -1,0 +1,194 @@
+{
+ "case_id": "handbook-diag-1:Q4:specific",
+ "eligible": true,
+ "request": {
+  "state": {
+   "task": "Question-answering task over a company handbook.\n\nThe handbook is in /task/fixtures/handbook/ (40 documents, HB-01.md to HB-40.md). Each document\nhas a header line (version, status, effective dates, what it supersedes) and numbered sections;\neach section is a passage, cited as \"HB-07 §2\". Documents can have superseded versions, and\nmemos can add group exceptions and carve-outs. Use the rule that applies to the situation and\ndate in the question.\n\nTools (in your code):\n  import sys; sys.path.insert(0, \"/task/fixtures\")\n  from handbook_tools import search, show\n  search(\"lodging limit Geneva\", k=5)   # up to k (at most 8) ranked passages, with ids\n  show([\"HB-07 §2\", \"HB-12 §3\"])        # the named passages in full\nEvery search result is also saved under /task/workspace/search-results/ (the path is printed in\nthe result header). You may also read the documents directly.\n\nQuestions:\n- Q1: What is the daily meal allowance for a standard travel day with an approved client dinner today? (answer in EUR per day)\n- Q2: What is the relocation lump sum for an employee relocating to another country in their third month of employment today? (answer in EUR)\n- Q3: What is the home-office equipment allowance for an employee with a medical accessibility plan today? (answer in EUR)\n- Q4: What mileage rate applied to a business trip in a private petrol car on 2026-04-15? (answer in cents per km)\n- Q5: What is the nightly lodging limit for a standard business trip today (2026-10-13)? (answer in EUR per night)\n- Q6: What is the purchase approval threshold for a regular department's purchase from a supplier with a framework contract today? (answer in EUR)\n\nFinish with {\"action\": \"final\", \"answer\": {\"answers\": [{\"question\": \"Q1\", \"value\": \"...\",\n\"citations\": [\"HB-07 §2\", ...]}, ...]}}. Give one entry per question. The value must be the\nexact amount; citations must include every passage needed to support it (for example the\nrule and any exception or carve-out that applies), not just one passage.\n",
+   "query": "mileage rate a business trip in a private petrol car 2026-04-15",
+   "step_intent": "Find the mileage rate that applies to: What mileage rate applied to a business trip in a private petrol car on 2026-04-15?",
+   "passages": [
+    {
+     "id": "HB-36 §2",
+     "source": "HB-36 §2 | Travel policy: private car use — Standard mileage rate | version: 3 · status: current · effective: 2026-05-01 · supersedes: HB-27",
+     "text": "Business kilometres driven with a private car are reimbursed at 28 cents per km. Repeated late or incomplete claims may be escalated to the head of the department. Claims that combine several costs must list each cost on a separate line of the claim. Amounts are stated in euros; conversions use the published rate on the day of payment."
+    },
+    {
+     "id": "HB-27 §4",
+     "source": "HB-27 §4 | Travel policy: private car use — Version status | version: 2 · status: superseded · effective: 2025-04-01 to the day before 2026-05-01 · superseded by: HB-36",
+     "text": "This version applied from 2025-04-01 until the day before 2026-05-01. From 2026-05-01 it is superseded by HB-36; claims for earlier dates keep this version's amounts."
+    },
+    {
+     "id": "HB-27 §2",
+     "source": "HB-27 §2 | Travel policy: private car use — Standard mileage rate | version: 2 · status: superseded · effective: 2025-04-01 to the day before 2026-05-01 · superseded by: HB-36",
+     "text": "Business kilometres driven with a private car are reimbursed at 32 cents per km. This section is reviewed once a year by the finance team together with the policy owner. Claims that combine several costs must list each cost on a separate line of the claim. Costs paid with a company card are reconciled in the same tool as personal claims."
+    },
+    {
+     "id": "HB-36 §5",
+     "source": "HB-36 §5 | Travel policy: private car use — Exceptions | version: 3 · status: current · effective: 2026-05-01 · supersedes: HB-27",
+     "text": "Group exceptions to the mileage rate are published in HB-31. Amounts are stated in euros; conversions use the published rate on the day of payment. This section is reviewed once a year by the finance team together with the policy owner. Line managers check each claim for plausibility before it is released for payment."
+    },
+    {
+     "id": "HB-27 §1",
+     "source": "HB-27 §1 | Travel policy: private car use — Scope | version: 2 · status: superseded · effective: 2025-04-01 to the day before 2026-05-01 · superseded by: HB-36",
+     "text": "This version set the mileage rate for all employees. Employees should keep costs reasonable and book through the approved channels where possible. The policy owner may publish clarifications in the policy FAQ without changing this section. Amounts are stated in euros; conversions use the published rate on the day of payment."
+    }
+   ]
+  },
+  "model": "jev-1.13.0",
+  "questions": {
+   "p0": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-36 §2",
+     "passage": "HB-36 §2 | Travel policy: private car use — Standard mileage rate | version: 3 · status: current · effective: 2026-05-01 · supersedes: HB-27\nBusiness kilometres driven with a private car are reimbursed at 28 cents per km. Repeated late or incomplete claims may be escalated to the head of the department. Claims that combine several costs must list each cost on a separate line of the claim. Amounts are stated in euros; conversions use the published rate on the day of payment.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   },
+   "p1": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-27 §4",
+     "passage": "HB-27 §4 | Travel policy: private car use — Version status | version: 2 · status: superseded · effective: 2025-04-01 to the day before 2026-05-01 · superseded by: HB-36\nThis version applied from 2025-04-01 until the day before 2026-05-01. From 2026-05-01 it is superseded by HB-36; claims for earlier dates keep this version's amounts.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   },
+   "p2": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-27 §2",
+     "passage": "HB-27 §2 | Travel policy: private car use — Standard mileage rate | version: 2 · status: superseded · effective: 2025-04-01 to the day before 2026-05-01 · superseded by: HB-36\nBusiness kilometres driven with a private car are reimbursed at 32 cents per km. This section is reviewed once a year by the finance team together with the policy owner. Claims that combine several costs must list each cost on a separate line of the claim. Costs paid with a company card are reconciled in the same tool as personal claims.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   },
+   "p3": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-36 §5",
+     "passage": "HB-36 §5 | Travel policy: private car use — Exceptions | version: 3 · status: current · effective: 2026-05-01 · supersedes: HB-27\nGroup exceptions to the mileage rate are published in HB-31. Amounts are stated in euros; conversions use the published rate on the day of payment. This section is reviewed once a year by the finance team together with the policy owner. Line managers check each claim for plausibility before it is released for payment.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   },
+   "p4": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-27 §1",
+     "passage": "HB-27 §1 | Travel policy: private car use — Scope | version: 2 · status: superseded · effective: 2025-04-01 to the day before 2026-05-01 · superseded by: HB-36\nThis version set the mileage rate for all employees. Employees should keep costs reasonable and book through the approved channels where possible. The policy owner may publish clarifications in the policy FAQ without changing this section. Amounts are stated in euros; conversions use the published rate on the day of payment.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   }
+  }
+ },
+ "attempts": [
+  {
+   "charged_usd": 0.000152
+  }
+ ],
+ "response": {
+  "model": "jev-1.13.0",
+  "answers": {
+   "p0": {
+    "type": "noul",
+    "noul": 0.7
+   },
+   "p1": {
+    "type": "noul",
+    "noul": 0.93
+   },
+   "p2": {
+    "type": "noul",
+    "noul": 0.96
+   },
+   "p3": {
+    "type": "noul",
+    "noul": 0.69
+   },
+   "p4": {
+    "type": "noul",
+    "noul": 0.56
+   }
+  },
+  "usage": {
+   "input_tokens": 3616,
+   "output_tokens": 89
+  }
+ },
+ "model": "jev-1.13.0",
+ "latency_s": 0.2414,
+ "usage": {
+  "input_tokens": 3616,
+  "output_tokens": 89
+ },
+ "probabilities": [
+  0.7,
+  0.93,
+  0.96,
+  0.69,
+  0.56
+ ],
+ "missing_answers": 0,
+ "jev": {
+  "kept": [
+   "HB-36 §2",
+   "HB-27 §4",
+   "HB-27 §2",
+   "HB-36 §5",
+   "HB-27 §1"
+  ],
+  "support_total": 1,
+  "support_kept": 1,
+  "complete_set_present": true,
+  "complete_set_survives": true,
+  "chars": 2288,
+  "omitted_chars": 0,
+  "omitted_by_label": {
+   "support": 0,
+   "context": 0,
+   "irrelevant": 0
+  }
+ },
+ "term": {
+  "kept": [
+   "HB-36 §2",
+   "HB-27 §4",
+   "HB-27 §2",
+   "HB-36 §5",
+   "HB-27 §1"
+  ],
+  "support_total": 1,
+  "support_kept": 1,
+  "complete_set_present": true,
+  "complete_set_survives": true,
+  "chars": 2288,
+  "omitted_chars": 0,
+  "omitted_by_label": {
+   "support": 0,
+   "context": 0,
+   "irrelevant": 0
+  }
+ }
+}

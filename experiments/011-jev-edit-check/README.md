@@ -22,7 +22,7 @@
 
 **Question:** does checking proposed context edits with Jev improve an agent's task performance enough to justify the extra work?
 
-**This is a development pilot:** 2 development instances × 3 conditions, each run once. It is **not** a held-out evaluation, and it cannot establish a general effect. Pilot evidence is in [`analysis/pilot-edit-review.md`](analysis/pilot-edit-review.md) and [`analysis/pilot_analysis.py`](analysis/pilot_analysis.py).
+**This is a development pilot:** 2 development instances × 3 conditions, each run once. It is **not** a held-out evaluation, and it cannot establish a general effect. Pilot evidence is in [`analysis/pilot-edit-review.md`](analysis/pilot-edit-review.md) and [`analysis/pilot_analysis.py`](analysis/pilot_analysis.py). The review's chronology (what was written before or after Jev's verdicts, with the first exported version recovered) is in [`analysis/provenance/`](analysis/provenance/README.md).
 
 ### The task (W2, `export-gen/1`, scorer `export-checks/1`)
 

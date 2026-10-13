@@ -110,14 +110,15 @@ Experiments 009–013 follow the [Jev-assistance roadmap](experiments/jev-assist
 | [009](experiments/009-jev-update-review/README.md) | Strategy 1 of the [Jev-assistance roadmap](experiments/jev-assistance-roadmap.md): update-triggered Jev review. Both arms see the same round update and review instruction; only the assisted arm also gets Jev's per-entry advice | **Evaluated (24 runs).** The pilot's saving did not hold: with advice, mean cost was USD 0.415 vs 0.375 and time 158 s vs 149 s (cheaper in 4/12 blocks). Strict success 10/12 vs 8/12, which is not conclusive. Diagnostic: 12/13 affected and 1/9 unaffected flagged |
 | [010](experiments/010-jev-initiated-review/README.md) | Strategy 2: a review at Claude's context-edit decisions. v1: optional; v2: required, but Claude's label gated Jev; v3: required, with a runtime-supplied update (A ordinary CLM, B review, C review + Jev) | **v3 evaluated (36 runs):** Jev added nothing measurable over the review alone (cost −2%, the same correctness); the review workflow cost about 30% more than ordinary CLM. Strict success 12/12 (B, C) vs 10/12 (A), not established. v1 and v2 stopped at their gates |
 | [011](experiments/011-jev-edit-check/README.md) | Strategy 3: Jev checks of proposed context rewrites. **Component diagnostics** on labelled context-rewrite examples, and **011: proposed-edit checking on the changing-requirements coding workload — development pilot** | **Diagnostics:** v1 gate failed (3/16 false flags); v2 gate passed (16/16 flagged, 1/16 false flags). **Development pilot** (W2, 2 instances × A/B/C): all 6 runs strict success; no harmful edit occurred; Jev flagged 4/9 proposals, all acceptable; checking added cost (C +58% vs A), almost all Claude-side |
-| [012](experiments/012-jev-result-screening/README.md) | Automatic screening of incoming tool results: a declared runtime policy uses Jev scores to decide what initially enters Claude's context (originals stay accessible) | **Planned. Offline assessment done:** incident tool results are already short and filtered (no meaningful opportunity); a document-search workload is proposed. No runs |
+| [012](experiments/012-jev-result-screening/README.md) | Automatic screening of incoming tool results: Jev scores the passages of a document-search result, and low-scoring passages are omitted with a notice (originals saved) | **Component gate passed** (58/58 support passages, 22% omitted). **Development pilot:** 4/4 correct, but **screening never exercised**: Claude read the handbook files directly instead of searching. No evaluation |
 | 013 | Claude-directed screening of tool results: Claude writes the screening question and uses Jev to choose passages, against CLM with the same file tools | **Planned only** ([roadmap](experiments/jev-assistance-roadmap.md)) |
 
 **How these differ:**
 - **009–010:** affected-entry review on incident investigations.
 - **011's component diagnostics:** labelled context-rewrite examples.
 - **011's development pilot:** proposed-edit checking on the new W2 changing-requirements coding workload.
-- **012–013:** planned approaches that screen incoming tool results.
+- **012:** screening of document-search results (component diagnostic and development pilot).
+- **013:** a planned, Claude-directed screening approach.
 
 In every case, the mandatory review or confirmation steps are experimental interventions; ordinary CLM (model-written edits to the live context file) is unchanged.
 

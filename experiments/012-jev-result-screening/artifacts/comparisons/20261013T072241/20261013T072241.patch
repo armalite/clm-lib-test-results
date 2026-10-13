@@ -1,0 +1,2550 @@
+diff --git a/src/clm_lib/cli.py b/src/clm_lib/cli.py
+index 7a07ff9..9d9c4a2 100644
+--- a/src/clm_lib/cli.py
++++ b/src/clm_lib/cli.py
+@@ -396,6 +396,7 @@ def _live_runner(cfg: Config, max_usd: float | None, need_jev: bool = False) ->
+         or (ur.enabled and ur.advice)
+         or (ir.enabled and ir.advice)
+         or (ec.enabled and ec.advice)
++        or cfg.result_screen.enabled
+     )
+     jev, jev_price = _jev_advisor(cfg) if wanted else (None, None)
+     return Runner(
+@@ -419,7 +420,8 @@ def cmd_run(args: argparse.Namespace) -> int:
+     required = None if args.review_required == "config" else args.review_required == "on"
+     source = None if args.review_update_source == "config" else args.review_update_source
+     echk = None if args.edit_check == "config" else args.edit_check
+-    runner = _live_runner(cfg, args.max_usd, need_jev=bool(jev) or "jev" in (upd, irev, echk))
++    rscr = None if args.result_screen == "config" else args.result_screen
++    runner = _live_runner(cfg, args.max_usd, need_jev=bool(jev) or "jev" in (upd, irev, echk, rscr))
+     caching = None if args.caching == "config" else args.caching == "on"
+     res = runner.run(
+         generate(args.task),
+@@ -432,6 +434,7 @@ def cmd_run(args: argparse.Namespace) -> int:
+         review_required=required,
+         review_update_source=source,
+         edit_check=echk,
++        result_screen=rscr,
+     )
+     _print_result(res)
+     return 0
+@@ -511,29 +514,31 @@ CONDITION_MODES = ("summary", "clm", "clm_direct", "clm_helpers", "clm_reuse")
+ 
+ # Per-run condition flags after "+": (experiment-008 review action, experiment-009 update
+ # review, experiment-010 initiated review, 010 v2 review required before context edits, 010 v3
+-# review update source, experiment-011 pilot proposed-edit checking).
+-CONDITION_FLAGS: dict[str, tuple[bool, str, str, bool, str, str]] = {
+-    "": (False, "off", "off", False, "stated", "off"),
+-    "jev": (True, "off", "off", False, "stated", "off"),
+-    "upd": (False, "control", "off", False, "stated", "off"),
+-    "upd-jev": (False, "jev", "off", False, "stated", "off"),
+-    "rev": (False, "off", "control", False, "stated", "off"),
+-    "rev-jev": (False, "off", "jev", False, "stated", "off"),
+-    "pre": (False, "off", "control", True, "stated", "off"),
+-    "pre-jev": (False, "off", "jev", True, "stated", "off"),
+-    "pre3": (False, "off", "control", True, "latest-round", "off"),
+-    "pre3-jev": (False, "off", "jev", True, "latest-round", "off"),
+-    "chk": (False, "off", "off", False, "stated", "control"),
+-    "chk-jev": (False, "off", "off", False, "stated", "jev"),
++# review update source, experiment-011 pilot proposed-edit checking, experiment-012 search-result
++# screening).
++CONDITION_FLAGS: dict[str, tuple[bool, str, str, bool, str, str, str]] = {
++    "": (False, "off", "off", False, "stated", "off", "off"),
++    "jev": (True, "off", "off", False, "stated", "off", "off"),
++    "upd": (False, "control", "off", False, "stated", "off", "off"),
++    "upd-jev": (False, "jev", "off", False, "stated", "off", "off"),
++    "rev": (False, "off", "control", False, "stated", "off", "off"),
++    "rev-jev": (False, "off", "jev", False, "stated", "off", "off"),
++    "pre": (False, "off", "control", True, "stated", "off", "off"),
++    "pre-jev": (False, "off", "jev", True, "stated", "off", "off"),
++    "pre3": (False, "off", "control", True, "latest-round", "off", "off"),
++    "pre3-jev": (False, "off", "jev", True, "latest-round", "off", "off"),
++    "chk": (False, "off", "off", False, "stated", "control", "off"),
++    "chk-jev": (False, "off", "off", False, "stated", "jev", "off"),
++    "scr": (False, "off", "off", False, "stated", "off", "jev"),
+ }
+ 
+ 
+ def conditions_need_jev(text: str | None) -> bool:
+     for p in (text or "").split(","):
+-        jev, upd, irev, _, _, echk = CONDITION_FLAGS.get(
++        jev, upd, irev, _, _, echk, rscr = CONDITION_FLAGS.get(
+             p.split(":")[0].partition("+")[2], CONDITION_FLAGS[""]
+         )
+-        if jev or "jev" in (upd, irev, echk):
++        if jev or "jev" in (upd, irev, echk, rscr):
+             return True
+     return False
+ 
+@@ -545,7 +550,8 @@ def parse_conditions(text: str) -> list[tuple[str, bool]]:
+     ``+rev`` / ``+rev-jev`` (experiment 010: Claude-initiated review, without or with Jev), or
+     ``+pre`` / ``+pre-jev`` (experiment 010 v2: review required before context edits), or
+     ``+pre3`` / ``+pre3-jev`` (010 v3: the same with the runtime-supplied latest-round update),
+-    or ``+chk`` / ``+chk-jev`` (011 pilot: proposed-edit checking, without or with Jev)."""
++    or ``+chk`` / ``+chk-jev`` (011 pilot: proposed-edit checking, without or with Jev), or
++    ``+scr`` (012: Jev screening of structured search results)."""
+     out = []
+     for part in text.split(","):
+         mode, _, cache = part.strip().partition(":")
+@@ -553,7 +559,7 @@ def parse_conditions(text: str) -> list[tuple[str, bool]]:
+         if flag not in CONDITION_FLAGS:
+             raise ValueError(
+                 f"bad condition {part!r}; only '+jev', '+upd', '+upd-jev', '+rev', '+rev-jev', "
+-                "'+pre', '+pre-jev', '+pre3', '+pre3-jev', '+chk' or '+chk-jev' may follow a mode"
++                "'+pre', '+pre-jev', '+pre3', '+pre3-jev', '+chk', '+chk-jev' or '+scr' may follow a mode"
+             )
+         if base not in CONDITION_MODES or cache not in ("on", "off"):
+             raise ValueError(
+@@ -675,9 +681,10 @@ def run_matrix(
+             required = None
+             source = None
+             echk = None
++            rscr = None
+             if "caching" in cell:  # condition schedules: flags are explicit, otherwise off
+                 mode, _, flag = mode.partition("+")
+-                jev, upd, irev, required, source, echk = CONDITION_FLAGS[flag]
++                jev, upd, irev, required, source, echk, rscr = CONDITION_FLAGS[flag]
+             cell["pair"] = pair
+             if not stopped and runner.ledger.remaining_usd < cfg.budget.min_run_reserve_usd:
+                 stopped = (
+@@ -698,6 +705,7 @@ def run_matrix(
+                     review_required=required,
+                     review_update_source=source,
+                     edit_check=echk,
++                    result_screen=rscr,
+                 )
+                 _print_result(res)
+                 m = res.metrics
+@@ -793,6 +801,28 @@ def cmd_jev_edit_diagnostic(args: argparse.Namespace) -> int:
+     return 0
+ 
+ 
++def cmd_jev_screen_diagnostic(args: argparse.Namespace) -> int:
++    """Experiment 012 component diagnostic: Jev screens labelled search results (paid: TypeSafe
++    only; no main-model calls)."""
++    from .jev_screen_diag import run_screen_diagnostic
++
++    cfg = _config(args)
++    ledger = _ledger(cfg, args.max_usd)
++    advisor, price = _jev_advisor(cfg)
++    out = run_screen_diagnostic(
++        advisor,
++        price,
++        ledger,
++        Path(args.cases),
++        args.split,
++        _runs_dir(cfg) / "jev-diagnostic",
++        cfg.jev.model,
++        retries=cfg.jev.retries,
++    )
++    print(f"diagnostic written to {out}")
++    return 0
++
++
+ def cmd_report(args: argparse.Namespace) -> int:
+     from .report import build_report
+ 
+@@ -905,6 +935,12 @@ def build_parser() -> argparse.ArgumentParser:
+         default="config",
+         help="experiment 011 pilot: proposed-edit checking for this run (default: [edit_check])",
+     )
++    r.add_argument(
++        "--result-screen",
++        choices=("config", "off", "jev"),
++        default="config",
++        help="experiment 012: Jev screening of search results for this run (default: [result_screen])",
++    )
+     r.set_defaults(func=cmd_run)
+ 
+     g = sub.add_parser(
+@@ -946,6 +982,14 @@ def build_parser() -> argparse.ArgumentParser:
+     je.add_argument("--max-usd", type=float, default=None)
+     je.set_defaults(func=cmd_jev_edit_diagnostic)
+ 
++    js = sub.add_parser(
++        "jev-screen-diagnostic", help="experiment 012: Jev screens labelled search results (paid)"
++    )
++    js.add_argument("--cases", required=True)
++    js.add_argument("--split", choices=("dev", "frozen"), default="frozen")
++    js.add_argument("--max-usd", type=float, default=None)
++    js.set_defaults(func=cmd_jev_screen_diagnostic)
++
+     rp = sub.add_parser("report", help="markdown report from recorded runs and the ledger")
+     rp.add_argument("--out", default="")
+     rp.set_defaults(func=cmd_report)
+diff --git a/src/clm_lib/config.py b/src/clm_lib/config.py
+index e840fe0..120aa48 100644
+--- a/src/clm_lib/config.py
++++ b/src/clm_lib/config.py
+@@ -144,6 +144,16 @@ class EditCheckConfig:
+     threshold: float = 0.5  # the frozen reporting threshold of edit-verdict/2
+ 
+ 
++@dataclass
++class ResultScreenConfig:
++    # Experiment 012: Jev screening of structured document-search results (off by default).
++    # `enabled` sets the per-run default; `compare --conditions <mode>+scr:on` overrides it. The
++    # policy constants (result-screen/1) are frozen here; Jev client settings come from [jev].
++    enabled: bool = False
++    threshold: float = 0.5  # keep a passage when Jev's probability is at least this (012 freeze)
++    min_keep: int = 2  # always keep at least this many passages (highest probabilities)
++
++
+ @dataclass
+ class BudgetConfig:
+     ceiling_usd: float = 10.0
+@@ -172,6 +182,7 @@ class Config:
+     update_review: UpdateReviewConfig = field(default_factory=UpdateReviewConfig)
+     initiated_review: InitiatedReviewConfig = field(default_factory=InitiatedReviewConfig)
+     edit_check: EditCheckConfig = field(default_factory=EditCheckConfig)
++    result_screen: ResultScreenConfig = field(default_factory=ResultScreenConfig)
+     runs_dir: str = "runs"
+ 
+     def to_dict(self) -> dict[str, Any]:
+@@ -201,6 +212,7 @@ def load_config(path: Path | None) -> Config:
+         "update_review": UpdateReviewConfig,
+         "initiated_review": InitiatedReviewConfig,
+         "edit_check": EditCheckConfig,
++        "result_screen": ResultScreenConfig,
+     }
+     kwargs: dict[str, Any] = {}
+     for key, cls in sections.items():
+diff --git a/src/clm_lib/export.py b/src/clm_lib/export.py
+index 4ed787e..74c40dd 100644
+--- a/src/clm_lib/export.py
++++ b/src/clm_lib/export.py
+@@ -373,6 +373,30 @@ def _metrics_row(run_id: str, role: str, src: Path, charged: float) -> dict[str,
+             ec_requirement_reads=ec["requirement_reads"],
+             ec_test_runs=ec["test_runs"],
+         )
++    rsc = m.get("result_screen")
++    if rsc is not None and (rsc["blocks"] or rsc["mode"] != "off"):  # experiment 012
++        rec = rsc["recovery"]
++        row.update(
++            rs_mode=rsc["mode"],
++            rs_blocks=rsc["blocks"],
++            rs_eligible=rsc["eligible"],
++            rs_screened=rsc["screened"],
++            rs_errors=rsc["errors"],
++            rs_skipped_provenance=rsc["skipped_provenance"],
++            rs_cap_repairs=rsc["cap_repairs"],
++            rs_passages_in=rsc["passages_in"],
++            rs_passages_omitted=rsc["passages_omitted"],
++            rs_missing_answers=rsc["missing_answers"],
++            rs_chars_in=rsc["chars_in"],
++            rs_chars_screened=rsc["chars_screened"],
++            rs_chars_kept=rsc["chars_kept"],
++            rs_notice_chars=rsc["notice_chars"],
++            rs_recovery_steps=rec["steps"],
++            rs_show_calls=rec["show_calls"],
++            rs_saved_reads=rec["saved_reads"],
++            rs_doc_reads=rec["doc_reads"],
++            rs_omitted_recovered=len(rec["omitted_recovered"]),
++        )
+     by_provider = (m.get("cost") or {}).get("by_provider")
+     if by_provider:
+         row["cost_anthropic_usd"] = by_provider["anthropic"]
+diff --git a/src/clm_lib/prompts.py b/src/clm_lib/prompts.py
+index cab0ebc..13a2d34 100644
+--- a/src/clm_lib/prompts.py
++++ b/src/clm_lib/prompts.py
+@@ -25,7 +25,9 @@ from .context import Entry
+ # conditions, INITIATED_REVIEW_V3_JEV_CLAUSE for the Jev condition); all other texts unchanged.
+ # 2026-10-13.5 adds the experiment-011 pilot clauses (EDIT_CHECK_CLAUSE for both checking
+ # conditions, EDIT_CHECK_JEV_CLAUSE for the Jev condition); all other texts unchanged.
+-PROMPT_VERSION = "2026-10-13.5"
++# 2026-10-13.6 adds the experiment-012 handbook task kind (AGENT_ROLE/FINAL_EXAMPLE entries) and
++# SEARCH_SCREEN_CLAUSE for the screening condition; all other texts unchanged.
++PROMPT_VERSION = "2026-10-13.6"
+ 
+ PROTOCOL = """You are {agent_role} working through a strict JSON protocol.
+ 
+@@ -53,6 +55,7 @@ AGENT_ROLE = {
+     "incident": "an investigation agent",
+     "coding": "a software engineering agent",
+     "rounds": "an investigation agent",
++    "handbook": "a research agent",
+ }
+ FINAL_EXAMPLE = {
+     "incident": (
+@@ -64,6 +67,10 @@ FINAL_EXAMPLE = {
+         '  {"action": "final", "answer": {"incidents": [...], "unresolved": [...],\n'
+         '                                 "summary": "..."}}   (fields as specified in <task>)'
+     ),
++    "handbook": (
++        '  {"action": "final", "answer": {"answers": [{"question": "Q1", "value": "...",\n'
++        '                                              "citations": ["HB-07 §2", ...]}, ...]}}'
++    ),
+ }
+ 
+ CLM_INSTRUCTIONS = """
+@@ -308,6 +315,17 @@ EDIT_CHECK_JEV_CLAUSE = """- In this run, each proposal is also checked by a fas
+   whether to accept, revise or withdraw; you never need to change a proposal or lower a score.
+ """
+ 
++# Experiment 012, screening condition only.
++SEARCH_SCREEN_CLAUSE = """
++SEARCH RESULTS ARE SCREENED (this run):
++- A search result with 3 or more passages and at least 2,000 characters is screened by a fast
++  classifier (Jev) before it reaches you: passages it judges unrelated to your query are
++  omitted, and the result ends with a notice listing the omitted passage ids.
++- Omitted passages are not lost: show(ids) and the saved result file named in the result header
++  print them unscreened, and documents can be read directly. Screening can omit passages you
++  need, and it never adds text.
++"""
++
+ SUMMARY_SYSTEM_TOKEN_TAIL_ROUNDS = """You compress an agent's working transcript. The agent is
+ investigating a multi-service production incident whose evidence arrives in hourly rounds, and will
+ keep working after your summary replaces the entries below. The transcript may include an earlier
+diff --git a/src/clm_lib/runner.py b/src/clm_lib/runner.py
+index d0bc959..2c23629 100644
+--- a/src/clm_lib/runner.py
++++ b/src/clm_lib/runner.py
+@@ -45,6 +45,7 @@ from .context import (
+     unified_diff,
+ )
+ from .executor import DockerExecutor, ExecResult, Executor, ExecutorUnavailable
++from .handbook import HANDBOOK_ANSWER_SCHEMA, HANDBOOK_FIELDS, score_handbook
+ from .jev import QUESTION_VERSION, JevError, ReviewItem, build_request
+ from .jev_edit_check import (
+     EVIDENCE_VERSION,
+@@ -54,6 +55,7 @@ from .jev_edit_check import (
+     build_edit_request_v2,
+     questions_v2_sha256,
+ )
++from .jev_screen import SCREEN_VERSION, recovery_reads, screen_stdout
+ from .prompts import (
+     EDIT_CHECK_CLAUSE,
+     EDIT_CHECK_JEV_CLAUSE,
+@@ -65,6 +67,7 @@ from .prompts import (
+     INITIATED_REVIEW_V3_JEV_CLAUSE,
+     JEV_CLAUSE,
+     PROMPT_VERSION,
++    SEARCH_SCREEN_CLAUSE,
+     SUMMARY_SYSTEM_TOKEN_TAIL_CODING,
+     SUMMARY_SYSTEM_TOKEN_TAIL_ROUNDS,
+     UPDATE_REVIEW_CLAUSE,
+@@ -176,6 +179,11 @@ ROUNDS_ACTION_SCHEMA: dict[str, Any] = {
+     "properties": {**STAGED_ACTION_SCHEMA["properties"], "answer": ROUNDS_ANSWER_SCHEMA},
+ }
+ CODING_FIELDS = ("summary",)
++# Experiment 012 handbook task: unstaged actions with the handbook answer contract.
++HANDBOOK_ACTION_SCHEMA: dict[str, Any] = {
++    **ACTION_SCHEMA,
++    "properties": {**ACTION_SCHEMA["properties"], "answer": HANDBOOK_ANSWER_SCHEMA},
++}
+ 
+ 
+ def with_review_action(schema: dict[str, Any]) -> dict[str, Any]:
+@@ -285,6 +293,8 @@ def parse_action(
+             return None, "evidence_refs must be a list of strings"
+         if "incidents" in need and not isinstance(ans["incidents"], list):
+             return None, "incidents must be a list of objects"
++        if "answers" in need and not isinstance(ans["answers"], list):
++            return None, "answers must be a list of objects"
+         return obj, ""
+     return None, "action must be 'execute' or 'final'"
+ 
+@@ -350,6 +360,7 @@ class Runner:
+         review_required: bool | None = None,
+         review_update_source: str | None = None,
+         edit_check: str | None = None,
++        result_screen: str | None = None,
+     ) -> RunResult:
+         """``caching`` overrides ``request.prompt_caching`` for this run (four-condition runs);
+         ``jev`` overrides ``jev.enabled`` (experiment 008; CLM modes only). ``update_review``
+@@ -418,6 +429,21 @@ class Runner:
+                 raise ValueError("proposed-edit checking is exclusive with the review features")
+             if echk == "jev" and self.jev is None:
+                 raise ValueError("edit-check advice requested but no Jev advisor is configured")
++        rs = self.cfg.result_screen
++        rscr = result_screen or ("jev" if rs.enabled else "off")
++        if rscr not in ("off", "jev"):
++            raise ValueError(f"result_screen must be off or jev, not {rscr!r}")
++        if rscr != "off":
++            if task.kind != "handbook":
++                raise ValueError(
++                    "result screening applies to structured search results (handbook tasks) only"
++                )
++            if jev_on or upd != "off" or irev != "off" or echk != "off":
++                raise ValueError(
++                    "result screening is exclusive with the review and edit-check features"
++                )
++            if self.jev is None:
++                raise ValueError("result screening requested but no Jev advisor is configured")
+         irev_tags = (
+             {"off": "", "control": "-pre3", "jev": "-pre3jev"}
+             if source == "latest-round"
+@@ -431,10 +457,11 @@ class Runner:
+             else {"off": "", "control": "-upd", "jev": "-updjev"}[upd]
+             + irev_tags[irev]
+             + {"off": "", "control": "-chk", "jev": "-chkjev"}[echk]
++            + {"off": "", "jev": "-scr"}[rscr]
+         )
+         run_id = f"{stamp}-{mode}{cond}{tag}-{task.spec.name}-{secrets.token_hex(2)}"
+         return _Run(
+-            self, task, mode, run_id, label, on, jev_on, upd, irev, required, source, echk
++            self, task, mode, run_id, label, on, jev_on, upd, irev, required, source, echk, rscr
+         ).execute()
+ 
+ 
+@@ -504,8 +531,13 @@ class _Run:
+         review_required: bool = False,
+         review_update_source: str = "stated",
+         edit_check: str = "off",
++        result_screen: str = "off",
+     ) -> None:
+         self.r = runner
++        # Experiment 012: "off" (A) or "jev" (B: screening of structured search results).
++        self.rscr = result_screen
++        self.screen_log: list[dict[str, Any]] = []
++        self.recovery_log: list[dict[str, Any]] = []
+         # Experiment 011 pilot: "off" (A), "control" (B: proposals) or "jev" (C: proposals + Jev).
+         self.echk = edit_check
+         self.proposal: dict[str, Any] | None = None  # the pending proposal, if any
+@@ -604,6 +636,8 @@ class _Run:
+             self.system += INITIATED_REVIEW_CLAUSE
+             if self.irev == "jev":
+                 self.system += INITIATED_REVIEW_JEV_CLAUSE
++        if self.rscr == "jev":
++            self.system += SEARCH_SCREEN_CLAUSE
+         if self.echk != "off":
+             self.system += EDIT_CHECK_CLAUSE
+             if self.echk == "jev":
+@@ -1356,6 +1390,8 @@ class _Run:
+             error=res.error,
+             runtime_trace=res.runtime_trace,
+         )
++        if self.task.kind == "handbook":
++            res = self._present_search(res, thought, code)
+         candidates = self._track_files(before, after, code)
+         self._note_reads(code)
+         receipt: str | None = None
+@@ -1475,16 +1511,27 @@ class _Run:
+     def loop(self) -> tuple[str, str]:
+         coding = self.task.kind == "coding"
+         rounds = self.task.kind == "rounds"
++        handbook = self.task.kind == "handbook"
+         schema = (
+             CODING_ACTION_SCHEMA
+             if coding
++            else HANDBOOK_ACTION_SCHEMA
++            if handbook
+             else ROUNDS_ACTION_SCHEMA
+             if rounds
+             else STAGED_ACTION_SCHEMA
+             if self.task.staged
+             else ACTION_SCHEMA
+         )
+-        fields = CODING_FIELDS if coding else ROUNDS_FIELDS if rounds else INCIDENT_FIELDS
++        fields = (
++            CODING_FIELDS
++            if coding
++            else HANDBOOK_FIELDS
++            if handbook
++            else ROUNDS_FIELDS
++            if rounds
++            else INCIDENT_FIELDS
++        )
+         staged = self.task.staged
+         if self.jev_on:
+             schema = with_review_action(schema)
+@@ -2501,6 +2548,82 @@ class _Run:
+             "review_records": reviews,
+         }
+ 
++    # ------------------------------------------- search-result screening (experiment 012)
++    def _present_search(self, res: ExecResult, thought: str, code: str) -> ExecResult:
++        """Both conditions: search blocks cut by the output cap keep complete passages; with
++        screening on, eligible blocks are screened. The observation is built from the result."""
++        call = self._jev_attempts if self.rscr == "jev" else None
++        cfg = self.cfg.result_screen
++        out = screen_stdout(
++            res.stdout,
++            self.task.prompt,
++            thought,
++            self.cfg.jev.model,
++            call,
++            self.ws,
++            cfg.threshold,
++            cfg.min_keep,
++        )
++        for rec in out.records:
++            rec["step"] = self.step
++            if "request" in rec:
++                n = sum(1 for r in self.screen_log if "request" in r) + 1
++                self.trace.write_json(f"result_screen/{self.step:03d}-{rec['rid']}.json", rec)
++                rec = {k: v for k, v in rec.items() if k != "request"}
++                rec["record"] = f"result_screen/{self.step:03d}-{rec['rid']}.json"
++                rec["seq"] = n
++            self.screen_log.append(rec)
++            self.trace.event(
++                "search_result", **{k: v for k, v in rec.items() if k != "probabilities"}
++            )
++        reads = recovery_reads(out.text, code)
++        if reads["show_calls"] or reads["saved_reads"] or reads["doc_reads"]:
++            omitted = {i for r in self.screen_log for i in r.get("omitted", [])}
++            reads.update(step=self.step, omitted_recovered=sorted(omitted & set(reads["show_ids"])))
++            self.recovery_log.append(reads)
++        if out.text == res.stdout:
++            return res
++        whole = res.stdout_bytes <= len(res.stdout.encode())
++        return replace(
++            res, stdout=out.text, stdout_bytes=len(out.text.encode()) if whole else res.stdout_bytes
++        )
++
++    def result_screen_summary(self) -> dict[str, Any]:
++        blocks = [r for r in self.screen_log if r.get("kind") == "block"]
++        screened = [r for r in blocks if r.get("screened")]
++        return {
++            "mode": self.rscr,
++            "version": SCREEN_VERSION,
++            "threshold": self.cfg.result_screen.threshold,
++            "min_keep": self.cfg.result_screen.min_keep,
++            "blocks": len(blocks),
++            "eligible": sum(1 for r in blocks if r["eligible"]),
++            "screened": len(screened),
++            "errors": sum(1 for r in blocks if r.get("error")),
++            "skipped_provenance": sum(1 for r in blocks if r.get("skipped")),
++            "provenance_ok": sum(1 for r in blocks if r.get("provenance_ok")),
++            "cap_repairs": sum(1 for r in self.screen_log if r.get("kind") == "cap_repair"),
++            "passages_in": sum(r["passages"] for r in blocks),
++            "passages_screened": sum(r["passages"] for r in screened),
++            "passages_omitted": sum(len(r["omitted"]) for r in screened),
++            "missing_answers": sum(len(r["missing_answers"]) for r in screened),
++            "chars_in": sum(r["chars"] for r in blocks),
++            "chars_screened": sum(r["chars"] for r in screened),
++            "chars_kept": sum(r["kept_chars"] for r in screened),
++            "notice_chars": sum(r.get("notice_chars", 0) for r in blocks),
++            "recovery": {
++                "steps": len(self.recovery_log),
++                "show_calls": sum(r["show_calls"] for r in self.recovery_log),
++                "saved_reads": sum(r["saved_reads"] for r in self.recovery_log),
++                "doc_reads": sum(r["doc_reads"] for r in self.recovery_log),
++                "omitted_recovered": sorted(
++                    {i for r in self.recovery_log for i in r["omitted_recovered"]}
++                ),
++            },
++            "block_log": blocks,
++            "recovery_log": self.recovery_log,
++        }
++
+     # ------------------------------------------- proposed-edit checking (011 agent pilot)
+     def _note_reads(self, code: str) -> None:
+         """Rereading evidence (all conditions): executions whose code opens requirement files or
+@@ -3023,6 +3146,8 @@ class _Run:
+             score = self.evaluate_coding(completed=self.answer is not None)
+         elif self.task.kind == "rounds":
+             score = score_rounds(self.answer, truth, self.task.files)
++        elif self.task.kind == "handbook":
++            score = score_handbook(self.answer, truth)
+         else:
+             score = (
+                 score_answer(self.answer, truth, self.task.files)
+@@ -3091,6 +3216,7 @@ class _Run:
+             "update_review": self.update_review_summary(),
+             "initiated_review": self.initiated_review_summary(),
+             "edit_check": self.edit_check_summary(),
++            "result_screen": self.result_screen_summary(),
+             "request": self.request_summary(),
+             "peak_working_context_chars": self.peak_ctx_chars,
+             "context_revisions": len(self.store.revisions) - 1,
+diff --git a/src/clm_lib/tasks.py b/src/clm_lib/tasks.py
+index 62d85b4..c603608 100644
+--- a/src/clm_lib/tasks.py
++++ b/src/clm_lib/tasks.py
+@@ -107,6 +107,19 @@ INSTANCES: dict[str, InstanceSpec] = {
+     "w2-dev-1": InstanceSpec("w2-dev-1", 8101, "export_w2", "w2-dev"),
+     "w2-dev-2": InstanceSpec("w2-dev-2", 8102, "export_w2", "w2-dev"),
+     "w2-smoke-1": InstanceSpec("w2-smoke-1", 8301, "export_w2", "w2-smoke"),
++    # Experiment 012: document-search question answering (handbook.py, handbook-gen/1). Two
++    # development instances for the pilot, one integration-smoke instance, and separate
++    # diagnostic instances for the component diagnostic (never used for agent runs). No
++    # held-out evaluation instances are defined yet.
++    "handbook-dev-1": InstanceSpec("handbook-dev-1", 9101, "handbook", "handbook-dev"),
++    "handbook-dev-2": InstanceSpec("handbook-dev-2", 9102, "handbook", "handbook-dev"),
++    "handbook-smoke-1": InstanceSpec("handbook-smoke-1", 9301, "handbook", "handbook-smoke"),
++    **{
++        f"handbook-diag-{i}": InstanceSpec(
++            f"handbook-diag-{i}", 9200 + i, "handbook", "handbook-diag"
++        )
++        for i in range(1, 5)
++    },
+     # Experiment 009: separate instances for diagnostic case text and the integration smoke run
+     # (never used for pilot or evaluation comparisons).
+     **{
+@@ -916,6 +929,10 @@ def generate(name: str) -> TaskInstance:
+         from .w2 import generate_w2
+ 
+         return generate_w2(spec)
++    if spec.scenario == "handbook":
++        from .handbook import generate_handbook
++
++        return generate_handbook(spec)
+     files, truth = _GENERATORS[spec.scenario](spec)
+     return TaskInstance(spec=spec, prompt=task_prompt(files), files=files, truth=truth)
+ 
+diff --git a/tests/test_edit_check_pilot.py b/tests/test_edit_check_pilot.py
+index 6c43dcb..b2e7572 100644
+--- a/tests/test_edit_check_pilot.py
++++ b/tests/test_edit_check_pilot.py
+@@ -104,7 +104,7 @@ def test_condition_a_and_historical_configs_are_unchanged(tmp_path: Path) -> Non
+ 
+ def test_conditions_parse_and_are_exclusive(tmp_path: Path) -> None:
+     assert parse_conditions("clm_helpers:on,clm_helpers+chk:on,clm_helpers+chk-jev:on")
+-    assert CONDITION_FLAGS["chk"][-1] == "control" and CONDITION_FLAGS["chk-jev"][-1] == "jev"
++    assert CONDITION_FLAGS["chk"][5] == "control" and CONDITION_FLAGS["chk-jev"][5] == "jev"
+     assert conditions_need_jev("clm_helpers+chk-jev:on") and not conditions_need_jev(
+         "clm_helpers+chk:on"
+     )
+diff --git a/tests/test_tasks.py b/tests/test_tasks.py
+index 5aefbf8..9fff80b 100644
+--- a/tests/test_tasks.py
++++ b/tests/test_tasks.py
+@@ -7,7 +7,9 @@ from typing import Any
+ from clm_lib.tasks import HELDOUT, INSTANCES, TaskInstance, generate, score_answer
+ 
+ # Experiment 001 task family; the staged family (experiment 002) is tested in test_staged.py.
+-SINGLE = [n for n in INSTANCES if not n.startswith(("staged-", "coding", "rounds-", "w2-"))]
++SINGLE = [
++    n for n in INSTANCES if not n.startswith(("staged-", "coding", "rounds-", "w2-", "handbook-"))
++]
+ 
+ 
+ def refs(inst: TaskInstance) -> list[str]:
+diff --git a/configs/exp012.toml b/configs/exp012.toml
+new file mode 100644
+index 0000000..ed7df06
+--- /dev/null
++++ b/configs/exp012.toml
+@@ -0,0 +1,103 @@
++# Experiment 012 configuration: Jev screening of structured document-search results (handbook
++# workload). Main-model and TypeSafe calls. Identical to configs/exp011pilot.toml except for the
++# ceiling and the [result_screen] section. The conditions set result_screen per run
++# (compare --conditions clm_helpers:on,clm_helpers+scr:on), so [result_screen] enabled stays
++# false here. Ledger ceiling: settled spend at start USD 83.293391 + USD 5 authorised for 012
++# (both providers: diagnostic, smoke, pilot and retries) = 88.293391 (replaces the unused 011
++# pilot allowance).
++runs_dir = "runs"
++
++[provider]
++name = "anthropic"
++model = "claude-opus-5-5"     # verified via the models endpoint by `clm-lib doctor --probe`
++base_url = ""                 # empty: SDK default (or ANTHROPIC_BASE_URL)
++effort = "low"                # output_config.effort; thinking cannot be disabled on this model
++structured_output = true      # output_config.format json_schema for actions
++timeout_s = 120
++api_retries = 2               # runtime-level retries; SDK retries are disabled
++
++[limits]
++max_calls = 90                # per task: actions + repairs + API retries (summaries separate)
++max_output_tokens = 4096
++exec_timeout_s = 30
++output_cap_chars = 6000       # per stream
++context_budget_tokens = 8000  # whole request input
++pressure_ratio = 0.70
++recovery_reserve_tokens = 1000
++spill_min_chars = 1500
++initial_chars_per_token = 3.0
++max_code_chars = 20000
++summary_calls_in_max_calls = false
++max_summary_calls = 20
++spill_past_receipt = true     # defect fix (initial-calibration finding)
++recheck_after_notice = true   # defect fix (revised-calibration finding)
++status_shows_revision = true  # both arms (as experiment 008)
++
++[baseline]
++policy = "token-tail/1"     # experiment 003; experiments 001/002 used "fixed-tail/1"
++tail_entries = 4
++summary_max_chars = 3000
++summary_retries = 1
++tail_ratio = 0.15            # token-tail/1: verbatim recent-entry allowance (fraction of budget)
++newest_ratio = 0.25          # token-tail/1: newest entry kept verbatim if it fits this fraction
++target_ratio = 0.50          # token-tail/1: desired request size after compaction
++summary_min_chars = 600
++
++[budget]
++ceiling_usd = 88.293391            # total live-validation ceiling; ledger keeps the lowest ever set
++min_run_reserve_usd = 2.00    # compare: do not start a run with less remaining
++ledger = "runs/ledger.json"
++prices = "configs/prices.toml"
++
++[sandbox]
++image = "python:3.12-slim"
++memory = "512m"
++cpus = 1.0
++pids_limit = 128
++
++[request]
++layout = "blocks/1"           # stable task first, one block per context entry, status last
++prompt_caching = true         # on for both arms
++cache_ttl = "5m"
++run_isolation = "run-tag/1"   # random 32-hex tag as the first system block of every request
++
++[jev]
++enabled = false               # the experiment-008 review_context action: off in 010
++model = "jev-1.13.0"          # pinned (jev-latest is an alias that can move)
++base_url = "https://api.typesafe.ai/v1/systemone"
++timeout_s = 15.0
++retries = 1                   # runtime retries for 429/529/5xx/timeouts; each attempt in the ledger
++max_reviews = 12              # review_context actions per run (each also uses a main-model call)
++max_entries = 40
++batch_size = 20
++max_update_chars = 4000
++
++[update_review]
++enabled = false               # experiment-009 update review: off in 010
++advice = false
++payload = "round-files/1"
++max_payload_chars = 4000
++max_candidates = 60
++max_batch_chars = 60000
++
++[initiated_review]
++enabled = false               # per run: "+pre3" (B) or "+pre3-jev" (C)
++advice = false
++required = false              # per run: "+pre3"/"+pre3-jev" require a review before context edits
++update_source = "stated"      # per run: "+pre3"/"+pre3-jev" use "latest-round"
++max_reviews = 40
++max_info_chars = 2000
++max_candidates = 60
++max_batch_chars = 60000
++candidate_roles = ["note", "observation", "summary"]
++
++[edit_check]
++enabled = false               # per run: "+chk" (B) or "+chk-jev" (C)
++advice = false
++max_checks = 30               # Jev checks per run; later proposals are shown as not checked
++threshold = 0.5               # the frozen edit-verdict/2 reporting threshold
++
++[result_screen]
++enabled = false               # per run: "+scr" (B)
++threshold = 0.5               # result-screen/1 (frozen after the dev diagnostic; draft 0.3)
++min_keep = 2                  # result-screen/1: always keep the two highest-scoring passages
+diff --git a/src/clm_lib/handbook.py b/src/clm_lib/handbook.py
+new file mode 100644
+index 0000000..38a4145
+--- /dev/null
++++ b/src/clm_lib/handbook.py
+@@ -0,0 +1,766 @@
++"""Experiment 012: document-search question answering over a synthetic handbook.
++
++Generator ``handbook-gen/1``, scorer ``handbook-checks/1``. Each instance is a handbook of 40
++documents (``/task/fixtures/handbook/HB-NN.md``); every numbered section is a passage cited as
++``HB-07 §2``. Six questions per instance need an exact value and the passages that support it:
++
++- ``current``: the value in force today (a superseded older version is a natural distractor);
++- ``past``: the value that applied on a past date (only the superseded version says so);
++- ``exception``: a group exception in a memo;
++- ``carveout``: a subgroup excluded from that exception, so the standard value applies (the
++  memo's carve-out **and** the standard value are both needed);
++- ``additive``: the standard value plus a condition-specific addition (both passages needed).
++
++Every question has alternative valid evidence sets where the handbook restates a fact (a policy
++FAQ restates each current standard value). Values are compared numerically, citations by
++passage id in several spellings, so exact wording is not the only route to a correct answer.
++
++Tools (fixture file ``handbook_tools.py``, identical in every condition): ``search(query, k)``
++prints a ranked, structured result (stdlib BM25 over passages, deterministic) and saves the
++original under ``/task/workspace/search-results/``; ``show(ids)`` prints named passages in full,
++in a different, never-screened format. Documents can also be read directly. Hidden truth
++(answers, support sets) stays in host memory until scoring and is never a tool or Jev input.
++"""
++
++from __future__ import annotations
++
++import random
++import re
++from dataclasses import dataclass, field
++from typing import Any
++
++from .tasks import InstanceSpec, TaskInstance
++
++GENERATOR_VERSION = "handbook-gen/1"
++SCORER_VERSION = "handbook-checks/1"
++QTYPES = ("current", "past", "exception", "carveout", "additive")
++TODAY = "2026-10-13"
++
++DOMAINS: dict[str, dict[str, Any]] = {
++    "lodging": dict(
++        title="Travel policy: lodging",
++        quantity="nightly lodging limit",
++        unit="EUR per night",
++        base=(150, 215, 5),
++        exc=(240, 300, 10),
++        add=(20, 45, 5),
++        rule="The nightly lodging limit for business travel is {v} EUR per night, including taxes and city fees.",
++        base_q="a standard business trip",
++        group="business trips to Zurich, Geneva or Oslo",
++        group_q="a business trip to Geneva",
++        sub="contractors",
++        sub_q="a contractor on a business trip to Geneva",
++        cond="a stay that includes a Saturday night",
++        cond_q="a standard business trip whose stay includes a Saturday night",
++        distract="Lodging for speakers at company events is booked centrally by the events team; the event budget caps each speaker room at {v} EUR per night.",
++    ),
++    "meals": dict(
++        title="Travel policy: meals",
++        quantity="daily meal allowance",
++        unit="EUR per day",
++        base=(40, 61, 1),
++        exc=(70, 91, 1),
++        add=(25, 41, 1),
++        rule="The daily meal allowance during business travel is {v} EUR per day.",
++        base_q="a standard travel day",
++        group="client-site days in London or Paris",
++        group_q="a client-site day in Paris",
++        sub="interns",
++        sub_q="an intern on a client-site day in Paris",
++        cond="a day with an approved client dinner",
++        cond_q="a standard travel day with an approved client dinner",
++        distract="Team lunches during internal workshops are paid from the workshop budget, which allows {v} EUR per participant per workshop.",
++    ),
++    "training": dict(
++        title="Learning policy: training budget",
++        quantity="annual training budget",
++        unit="EUR per year",
++        base=(900, 1550, 50),
++        exc=(2000, 3050, 50),
++        add=(300, 650, 50),
++        rule="Each employee has an annual training budget of {v} EUR per calendar year.",
++        base_q="a regular employee",
++        group="employees in the security team",
++        group_q="an employee in the security team",
++        sub="employees still in their probation period",
++        sub_q="a security-team employee who is still in their probation period",
++        cond="employees who hold a team-lead role",
++        cond_q="a regular employee who holds a team-lead role",
++        distract="Conference attendance is funded by the department conference pool, which reserves {v} EUR per department each year.",
++    ),
++    "mileage": dict(
++        title="Travel policy: private car use",
++        quantity="mileage rate",
++        unit="cents per km",
++        base=(28, 37, 1),
++        exc=(40, 49, 1),
++        add=(4, 9, 1),
++        rule="Business kilometres driven with a private car are reimbursed at {v} cents per km.",
++        base_q="a business trip in a private petrol car",
++        group="electric vehicles",
++        group_q="a business trip in a private electric car",
++        sub="electric rental cars",
++        sub_q="a business trip in an electric rental car",
++        cond="trips towing a trailer",
++        cond_q="a business trip in a private petrol car towing a trailer",
++        distract="Company pool cars are charged to projects at an internal rate of {v} cents per km to cover fuel and maintenance.",
++    ),
++    "purchase": dict(
++        title="Procurement policy: approvals",
++        quantity="purchase approval threshold",
++        unit="EUR",
++        base=(2000, 4250, 250),
++        exc=(8000, 12500, 500),
++        add=(1000, 2250, 250),
++        rule="Purchases up to {v} EUR may be approved by the budget owner alone; larger purchases need a second approval.",
++        base_q="a purchase by a regular department",
++        group="the facilities department",
++        group_q="a purchase by the facilities department",
++        sub="IT hardware bought by the facilities department",
++        sub_q="IT hardware bought by the facilities department",
++        cond="purchases from suppliers with a framework contract",
++        cond_q="a regular department's purchase from a supplier with a framework contract",
++        distract="Petty-cash purchases are limited to {v} EUR per receipt and need no approval.",
++    ),
++    "equipment": dict(
++        title="Remote work: home-office equipment",
++        quantity="home-office equipment allowance",
++        unit="EUR",
++        base=(300, 525, 25),
++        exc=(600, 825, 25),
++        add=(100, 225, 25),
++        rule="Employees may claim a one-off home-office equipment allowance of {v} EUR.",
++        base_q="a regular employee",
++        group="employees with a medical accessibility plan",
++        group_q="an employee with a medical accessibility plan",
++        sub="part-time employees working fewer than 20 hours a week",
++        sub_q="an employee with a medical accessibility plan who works 16 hours a week",
++        cond="employees who work remotely four or more days a week",
++        cond_q="a regular employee who works remotely four days a week",
++        distract="Office desks are refurbished on a five-year cycle; each refurbishment is budgeted at {v} EUR per desk.",
++    ),
++    "phone": dict(
++        title="Communication policy: mobile phones",
++        quantity="monthly mobile allowance",
++        unit="EUR per month",
++        base=(25, 41, 1),
++        exc=(50, 71, 1),
++        add=(15, 31, 1),
++        rule="Employees who use a private phone for work receive a mobile allowance of {v} EUR per month.",
++        base_q="a regular employee using a private phone",
++        group="field engineers",
++        group_q="a field engineer using a private phone",
++        sub="field engineers on a company-paid phone contract",
++        sub_q="a field engineer on a company-paid phone contract",
++        cond="employees on international rotation",
++        cond_q="a regular employee using a private phone while on international rotation",
++        distract="Conference-call services are billed centrally; each team's licence costs {v} EUR per month.",
++    ),
++    "relocation": dict(
++        title="HR policy: relocation support",
++        quantity="relocation lump sum",
++        unit="EUR",
++        base=(2500, 4250, 250),
++        exc=(5000, 7250, 250),
++        add=(500, 1250, 250),
++        rule="Employees who relocate at the company's request receive a relocation lump sum of {v} EUR.",
++        base_q="a regular employee relocating at the company's request",
++        group="relocations to another country",
++        group_q="an employee relocating to another country at the company's request",
++        sub="relocations within the first six months of employment",
++        sub_q="an employee relocating to another country in their third month of employment",
++        cond="employees relocating with dependent children",
++        cond_q="a regular employee relocating at the company's request with dependent children",
++        distract="Temporary housing near a new office is arranged by facilities for up to {v} EUR per month during the first month.",
++    ),
++}
++FILLER = [
++    "Claims are submitted in the expense tool within 30 days of the date the cost was incurred.",
++    "Receipts must be attached for every item claimed; photographs of paper receipts are accepted.",
++    "Questions about this section go to the policy owner named in the document header.",
++    "Line managers check each claim for plausibility before it is released for payment.",
++    "This section is reviewed once a year by the finance team together with the policy owner.",
++    "Amounts are stated in euros; conversions use the published rate on the day of payment.",
++    "Any deviation from this section must be explained in the comment field of the claim.",
++    "The policy owner may publish clarifications in the policy FAQ without changing this section.",
++    "Repeated late or incomplete claims may be escalated to the head of the department.",
++    "Supporting records are kept for seven years in line with the retention schedule.",
++    "Where a local agreement sets stricter rules, the stricter rule applies for that location.",
++    "Employees should keep costs reasonable and book through the approved channels where possible.",
++    "Claims that combine several costs must list each cost on a separate line of the claim.",
++    "Audit samples are drawn every quarter, and selected employees are asked for documentation.",
++    "Costs paid with a company card are reconciled in the same tool as personal claims.",
++    "Managers may reject claims that are not supported by the documentation described here.",
++]
++GENERIC = [
++    ("Glossary of handbook terms", ["Budget owner", "Business travel", "Claim", "Policy owner"]),
++    ("Code of conduct", ["Respect at work", "Conflicts of interest", "Gifts and hospitality"]),
++    ("Information security basics", ["Passwords", "Laptops on the road", "Reporting incidents"]),
++    ("Onboarding checklist", ["First week", "Accounts and access", "Mandatory trainings"]),
++    ("Expense submission process", ["Submitting a claim", "Approval routing", "Payment dates"]),
++    ("Public holidays and office closures", ["Public holidays", "Year-end closure", "Bridge days"]),
++    ("Office access and visitors", ["Badges", "Visitor registration", "Overnight guests"]),
++]
++
++
++def _val(rng: random.Random, spec: tuple[int, int, int]) -> int:
++    return rng.randrange(*spec)
++
++
++def _text(rng: random.Random, core: str, n: int = 1) -> str:
++    """A section: its core statement plus n + 2 general sentences (sections run to 3-6 lines)."""
++    return " ".join([core, *rng.sample(FILLER, n + 2)])
++
++
++@dataclass
++class Passage:
++    pid: str  # "HB-07 §2"
++    doc: str
++    title: str
++    heading: str
++    meta: str
++    text: str
++
++
++def _fmt_doc(doc: str, title: str, meta: str, sections: list[tuple[str, str]]) -> str:
++    lines = [f"# {doc} · {title}", meta, ""]
++    for i, (heading, text) in enumerate(sections, start=1):
++        lines += [f"§{i} {heading}", text, ""]
++    return "\n".join(lines)
++
++
++def build_handbook(seed: int, n_questions: int = 6) -> tuple[dict[str, str], dict[str, Any]]:
++    """(files, truth): 40 documents plus the question set with values and support sets."""
++    rng = random.Random(seed)
++    ids = [f"HB-{i:02d}" for i in range(1, 41)]
++    rng.shuffle(ids)
++    take = iter(ids)
++    domains = list(DOMAINS)
++    rng.shuffle(domains)
++    asked = domains[:n_questions]
++    types = [*QTYPES, rng.choice(["carveout", "additive"])]
++    rng.shuffle(types)
++    docs: dict[str, str] = {}
++    facts: dict[str, dict[str, Any]] = {}
++    faq_doc = next(take)
++    faq_sections: list[tuple[str, str]] = []
++    for d in domains:
++        s = DOMAINS[d]
++        v2, v1 = _val(rng, s["base"]), _val(rng, s["base"])
++        while v1 == v2:
++            v1 = _val(rng, s["base"])
++        vx, add = _val(rng, s["exc"]), _val(rng, s["add"])
++        e2 = f"2026-0{rng.randrange(2, 7)}-01"
++        e1 = f"2025-0{rng.randrange(1, 10)}-01"
++        p, old, memo, dis = next(take), next(take), next(take), next(take)
++        title = s["title"]
++        docs[p] = _fmt_doc(
++            p,
++            title,
++            f"version: 3 · status: current · effective: {e2} · supersedes: {old}",
++            [
++                (
++                    "Scope",
++                    _text(rng, f"This policy sets the {s['quantity']} for all employees.", 1),
++                ),
++                ("Standard " + s["quantity"], _text(rng, s["rule"].format(v=v2))),
++                (
++                    "Additions",
++                    _text(
++                        rng,
++                        f"For {s['cond']}, {add} {s['unit']} is added to the standard {s['quantity']}.",
++                        1,
++                    ),
++                ),
++                (
++                    "Approval and receipts",
++                    _text(rng, "Claims follow the expense submission process.", 2),
++                ),
++                (
++                    "Exceptions",
++                    _text(
++                        rng, f"Group exceptions to the {s['quantity']} are published in {memo}.", 1
++                    ),
++                ),
++            ],
++        )
++        docs[old] = _fmt_doc(
++            old,
++            title,
++            f"version: 2 · status: superseded · effective: {e1} to the day before {e2} · superseded by: {p}",
++            [
++                (
++                    "Scope",
++                    _text(rng, f"This version set the {s['quantity']} for all employees.", 1),
++                ),
++                (
++                    "Standard " + s["quantity"],
++                    _text(rng, s["rule"].format(v=v1).replace(" is ", " was ", 1)),
++                ),
++                (
++                    "Additions",
++                    _text(
++                        rng,
++                        f"For {s['cond']}, {add} {s['unit']} was added to the standard {s['quantity']}.",
++                        1,
++                    ),
++                ),
++                (
++                    "Version status",
++                    f"This version applied from {e1} until the day before {e2}. From {e2} it is superseded by {p}; claims for earlier dates keep this version's amounts.",
++                ),
++            ],
++        )
++        docs[memo] = _fmt_doc(
++            memo,
++            f"Memo: {s['quantity']} exceptions",
++            f"version: 1 · status: current · effective: {e1}",
++            [
++                (
++                    "Purpose",
++                    _text(
++                        rng, f"This memo lists group exceptions to the {s['quantity']} in {p}.", 1
++                    ),
++                ),
++                (
++                    "Exception for " + s["group"],
++                    _text(
++                        rng,
++                        f"For {s['group']}, the {s['quantity']} is {vx} {s['unit']} instead of the standard amount.",
++                        1,
++                    ),
++                ),
++                (
++                    "Carve-out",
++                    _text(
++                        rng,
++                        f"The exception above does not apply to {s['sub']}; they follow the standard {s['quantity']} in {p} §2.",
++                        1,
++                    ),
++                ),
++                ("Review", _text(rng, "This memo is reviewed together with the main policy.", 2)),
++            ],
++        )
++        other = _val(rng, s["base"]) + _val(rng, s["add"])
++        docs[dis] = _fmt_doc(
++            dis,
++            f"Related budgets: {s['title'].split(': ')[-1]}",
++            f"version: 1 · status: current · effective: {e1}",
++            [
++                (
++                    "Scope",
++                    _text(
++                        rng,
++                        f"This document covers budgets related to, but separate from, the {s['quantity']}.",
++                        1,
++                    ),
++                ),
++                ("Central budget", _text(rng, s["distract"].format(v=other), 1)),
++                (
++                    "Contacts",
++                    _text(rng, "The finance team answers questions about these budgets.", 2),
++                ),
++            ],
++        )
++        faq_sections.append(
++            (
++                f"Current {s['quantity']}",
++                f"Q: What is the current standard {s['quantity']}? A: {v2} {s['unit']}, as set in {p} §2 (effective {e2}). Group exceptions are listed in {memo}.",
++            )
++        )
++        facts[d] = dict(
++            v1=v1,
++            v2=v2,
++            vx=vx,
++            add=add,
++            e1=e1,
++            e2=e2,
++            p=p,
++            old=old,
++            memo=memo,
++            dis=dis,
++            faq_sec=len(faq_sections),
++        )
++    docs[faq_doc] = _fmt_doc(
++        faq_doc, "Policy FAQ", "version: 7 · status: current · effective: 2026-01-15", faq_sections
++    )
++    for title, heads in GENERIC:
++        doc = next(take)
++        docs[doc] = _fmt_doc(
++            doc,
++            title,
++            "version: 1 · status: current · effective: 2025-01-01",
++            [(h, _text(rng, f"{h}: general guidance for all employees.", 2)) for h in heads],
++        )
++    questions = []
++    for i, (d, qt) in enumerate(zip(asked, types[:n_questions], strict=True), start=1):
++        s, f = DOMAINS[d], facts[d]
++        faq = f"{faq_doc} §{f['faq_sec']}"
++        rule, rule_old = f"{f['p']} §2", f"{f['old']} §2"
++        if qt == "current":
++            text, value, sets = (
++                f"What is the {s['quantity']} for {s['base_q']} today ({TODAY})?",
++                f["v2"],
++                [[rule], [faq]],
++            )
++        elif qt == "past":
++            day = f"2026-0{int(f['e2'][6]) - 1}-15"  # e2 is 2026-02..06-01, e1 is in 2025
++            text, value, sets = (
++                f"What {s['quantity']} applied to {s['base_q']} on {day}?",
++                f["v1"],
++                [[rule_old]],
++            )
++        elif qt == "exception":
++            text, value, sets = (
++                f"What is the {s['quantity']} for {s['group_q']} today?",
++                f["vx"],
++                [[f"{f['memo']} §2"]],
++            )
++        elif qt == "carveout":
++            text, value, sets = (
++                f"What is the {s['quantity']} for {s['sub_q']} today?",
++                f["v2"],
++                [[f"{f['memo']} §3", rule], [f"{f['memo']} §3", faq]],
++            )
++        else:
++            text, value, sets = (
++                f"What is the {s['quantity']} for {s['cond_q']} today?",
++                f["v2"] + f["add"],
++                [[rule, f"{f['p']} §3"], [faq, f"{f['p']} §3"]],
++            )
++        questions.append(
++            dict(
++                qid=f"Q{i}",
++                domain=d,
++                type=qt,
++                text=text,
++                value=value,
++                unit=s["unit"],
++                support_sets=sets,
++                old_value=f["v1"],
++                old_passage=rule_old,
++                facts=f,
++            )
++        )
++    files = {f"handbook/{doc}.md": body for doc, body in sorted(docs.items())}
++    return files, {"questions": questions, "faq_doc": faq_doc}
++
++
++# ----------------------------------------------------------------------- the search tool
++# The exact source written to /task/fixtures/handbook_tools.py. The host imports the same text
++# for the offline opportunity check and the component diagnostic, so both use one algorithm.
++TOOLS_SOURCE = r'''
++"""Handbook tools (identical in every condition).
++
++search(query, k=5): print up to k (at most 8) ranked passages as a structured result, and save
++  the original under /task/workspace/search-results/ (path printed in the result header).
++show(ids): print the named passages in full (never screened).
++"""
++import json, math, os, re
++
++FIXTURES = os.environ.get("HANDBOOK_FIXTURES", "/task/fixtures/handbook")
++SAVE_DIR = os.environ.get("HANDBOOK_SAVE_DIR", "/task/workspace/search-results")
++MAX_K = 8
++_WORD = re.compile(r"[a-z0-9]+")
++_STOP = set("a an and are as at be by for from has have in is it its of on or the this to was were with what which who how does do".split())
++
++
++def _tok(text):
++    return [w for w in _WORD.findall(text.lower()) if w not in _STOP]
++
++
++def load_passages(root=None):
++    out = []
++    root = root or FIXTURES
++    for name in sorted(os.listdir(root)):
++        if not name.endswith(".md"):
++            continue
++        lines = open(os.path.join(root, name), encoding="utf-8").read().splitlines()
++        doc = name[:-3]
++        title = lines[0].split(" · ", 1)[1] if " · " in lines[0] else lines[0]
++        meta = lines[1]
++        sec = None
++        for line in lines[2:]:
++            m = re.match(r"^§(\d+) (.*)$", line)
++            if m:
++                sec = {"id": f"{doc} §{m.group(1)}", "doc": doc, "title": title, "heading": m.group(2), "meta": meta, "text": ""}
++                out.append(sec)
++            elif sec is not None and line.strip():
++                sec["text"] = (sec["text"] + " " + line.strip()).strip()
++    return out
++
++
++def header(p):
++    return f"=== {p['id']} | {p['title']} — {p['heading']} | {p['meta']}"
++
++
++def rank(passages, query, k):
++    docs = [_tok(p["title"] + " " + p["heading"] + " " + p["text"]) for p in passages]
++    n = len(docs)
++    avg = sum(len(d) for d in docs) / max(1, n)
++    df = {}
++    for d in docs:
++        for w in set(d):
++            df[w] = df.get(w, 0) + 1
++    q = _tok(query)
++    scored = []
++    for i, d in enumerate(docs):
++        s = 0.0
++        for w in q:
++            tf = d.count(w)
++            if tf:
++                idf = math.log(1 + (n - df[w] + 0.5) / (df[w] + 0.5))
++                s += idf * tf * 2.2 / (tf + 1.2 * (0.25 + 0.75 * len(d) / avg))
++        if s > 0:
++            scored.append((-s, passages[i]["id"], i))
++    scored.sort()
++    return [passages[i] for _, _, i in scored[: max(1, min(int(k), MAX_K))]]
++
++
++def _next_id():
++    os.makedirs(SAVE_DIR, exist_ok=True)
++    n = 1 + sum(1 for f in os.listdir(SAVE_DIR) if f.endswith(".json"))
++    return f"SR-{n:03d}"
++
++
++def search(query, k=5):
++    hits = rank(load_passages(), str(query), k)
++    rid = _next_id()
++    path = os.path.join(SAVE_DIR, rid + ".txt")
++    q = str(query).replace('"', "'")[:200]
++    json.dump({"id": rid, "query": q, "k": int(k), "passages": hits}, open(os.path.join(SAVE_DIR, rid + ".json"), "w"))
++    with open(path, "w", encoding="utf-8") as fh:
++        fh.write(f"# saved search result {rid}: query \"{q}\", k={int(k)}, {len(hits)} passages (original, unscreened)\n")
++        for p in hits:
++            fh.write("--- " + header(p)[4:] + "\n" + p["text"] + "\n")
++    print(f'<<search-result {rid} query="{q}" k={int(k)} returned={len(hits)} saved={path}>>')
++    for p in hits:
++        print(header(p))
++        print(p["text"])
++    print(f"<<end search-result {rid}>>")
++
++
++def show(ids):
++    want = [ids] if isinstance(ids, str) else list(ids)
++    by_id = {p["id"]: p for p in load_passages()}
++    norm = {re.sub(r"\s+", " ", i.replace("#", " §").replace("§ ", "§")).strip(): i for i in want}
++    print("<<passages (unscreened): " + ", ".join(norm) + ">>")
++    for i in norm:
++        p = by_id.get(i)
++        print("--- " + header(p)[4:] if p else f"--- {i}: no such passage")
++        if p:
++            print(p["text"])
++    print("<<end passages>>")
++'''
++
++
++def tools_namespace() -> dict[str, Any]:
++    ns: dict[str, Any] = {"__name__": "handbook_tools"}
++    exec(compile(TOOLS_SOURCE, "handbook_tools", "exec"), ns)  # our own fixed source
++    return ns
++
++
++def passages_from_files(files: dict[str, str]) -> list[dict[str, Any]]:
++    """The tool's passage parser applied to in-memory files (host side, same code)."""
++    import tempfile
++    from pathlib import Path
++
++    ns = tools_namespace()
++    with tempfile.TemporaryDirectory() as tmp:
++        for rel, text in files.items():
++            if rel.startswith("handbook/"):
++                (Path(tmp) / rel.split("/", 1)[1]).write_text(text, encoding="utf-8")
++        return list(ns["load_passages"](tmp))
++
++
++# ----------------------------------------------------------------------- documents
++def task_prompt(questions: list[dict[str, Any]], smoke: bool = False) -> str:
++    qs = "\n".join(f"- {q['qid']}: {q['text']} (answer in {q['unit']})" for q in questions)
++    text = f"""Question-answering task over a company handbook.
++
++The handbook is in /task/fixtures/handbook/ (40 documents, HB-01.md to HB-40.md). Each document
++has a header line (version, status, effective dates, what it supersedes) and numbered sections;
++each section is a passage, cited as "HB-07 §2". Documents can have superseded versions, and
++memos can add group exceptions and carve-outs. Use the rule that applies to the situation and
++date in the question.
++
++Tools (in your code):
++  import sys; sys.path.insert(0, "/task/fixtures")
++  from handbook_tools import search, show
++  search("lodging limit Geneva", k=5)   # up to k (at most 8) ranked passages, with ids
++  show(["HB-07 §2", "HB-12 §3"])        # the named passages in full
++Every search result is also saved under /task/workspace/search-results/ (the path is printed in
++the result header). You may also read the documents directly.
++
++Questions:
++{qs}
++
++Finish with {{"action": "final", "answer": {{"answers": [{{"question": "Q1", "value": "...",
++"citations": ["HB-07 §2", ...]}}, ...]}}}}. Give one entry per question. The value must be the
++exact amount; citations must include every passage needed to support it (for example the
++rule and any exception or carve-out that applies), not just one passage.
++"""
++    if smoke:
++        text += (
++            "\nIntegration smoke run (this instance only): start with one search with k=6 for "
++            "the first question. If the result lists omitted passages, print one of them with "
++            "show(). Then answer normally.\n"
++        )
++    return text
++
++
++@dataclass
++class HandbookTruth:
++    questions: list[dict[str, Any]]
++    faq_doc: str
++    notes: str = ""
++
++    def to_dict(self) -> dict[str, Any]:
++        return {
++            "kind": "handbook",
++            "generator_version": GENERATOR_VERSION,
++            "questions": self.questions,
++            "faq_doc": self.faq_doc,
++        }
++
++
++def generate_handbook(spec: InstanceSpec) -> TaskInstance:
++    smoke = spec.name.startswith("handbook-smoke")
++    files, truth = build_handbook(spec.seed, 2 if smoke else 6)
++    files["handbook_tools.py"] = TOOLS_SOURCE
++    return TaskInstance(
++        spec=spec,
++        prompt=task_prompt(truth["questions"], smoke),
++        files=files,
++        truth=HandbookTruth(truth["questions"], truth["faq_doc"]),
++        generator_version=GENERATOR_VERSION,
++        kind="handbook",
++        scorer_version=SCORER_VERSION,
++    )
++
++
++# ----------------------------------------------------------------------- scoring
++HANDBOOK_FIELDS = ("answers",)
++HANDBOOK_ANSWER_SCHEMA: dict[str, Any] = {
++    "type": "object",
++    "properties": {
++        "answers": {
++            "type": "array",
++            "items": {
++                "type": "object",
++                "properties": {
++                    "question": {"type": "string"},
++                    "value": {"type": "string"},
++                    "citations": {"type": "array", "items": {"type": "string"}},
++                },
++                "required": ["question", "value", "citations"],
++                "additionalProperties": False,
++            },
++        }
++    },
++    "required": ["answers"],
++    "additionalProperties": False,
++}
++CITE = re.compile(r"HB-?\s*(\d{1,2})\s*(?:§|#|s(?:ec(?:tion)?)?\.?)\s*(\d+)", re.I)
++NUM = re.compile(r"-?\d+(?:[.,]\d+)?")
++
++
++def norm_citations(cites: list[Any]) -> set[str]:
++    out = set()
++    for c in cites:
++        for m in CITE.finditer(str(c)):
++            out.add(f"HB-{int(m.group(1)):02d} §{int(m.group(2))}")
++    return out
++
++
++def value_number(value: Any) -> float | None:
++    m = NUM.search(
++        str(value).replace(",", "") if "," in str(value) and "." in str(value) else str(value)
++    )
++    if not m:
++        return None
++    try:
++        return float(m.group(0).replace(",", "."))
++    except ValueError:
++        return None
++
++
++@dataclass
++class HandbookScore:
++    completed: bool
++    checks: int
++    passed: int
++    by_category: dict[str, dict[str, int]]
++    stale: int
++    details: list[dict[str, Any]]
++    strict_success: bool
++    outcome: str
++    unsupported_citations: int = 0
++    import_error: None = None
++    evaluation_error: None = None
++    results: list[dict[str, Any]] = field(default_factory=list)
++
++    def to_dict(self) -> dict[str, Any]:
++        return {**self.__dict__, "components": self.components}
++
++    @property
++    def components(self) -> dict[str, float]:
++        out = {"all_checks": self.passed / self.checks if self.checks else 0.0}
++        for cat, v in self.by_category.items():
++            out[cat] = v["passed"] / v["total"] if v["total"] else 0.0
++        return out
++
++
++def score_handbook(answer: dict[str, Any] | None, truth: HandbookTruth) -> HandbookScore:
++    """Per question: value correct (numeric) and a complete valid support set cited. Stale: the
++    superseded value given while the question is not about the past. Extra citations outside
++    every support set are counted (unsupported_citations), not failed."""
++    given: dict[str, dict[str, Any]] = {}
++    if answer and isinstance(answer.get("answers"), list):
++        for a in answer["answers"]:
++            if isinstance(a, dict) and isinstance(a.get("question"), str):
++                given.setdefault(a["question"].strip().upper(), a)
++    by: dict[str, dict[str, int]] = {}
++    details = []
++    passed = stale = unsupported = 0
++    for q in truth.questions:
++        a = given.get(q["qid"])
++        cat = q["type"]
++        by.setdefault(cat, {"total": 0, "passed": 0, "stale": 0})["total"] += 1
++        num = value_number(a.get("value")) if a else None
++        cites = (
++            norm_citations(a.get("citations", []))
++            if a and isinstance(a.get("citations"), list)
++            else set()
++        )
++        value_ok = num is not None and abs(num - q["value"]) < 1e-9
++        sets = [set(s) for s in q["support_sets"]]
++        evidence_ok = any(s <= cites for s in sets)
++        allowed = set().union(*sets)
++        extra = sorted(cites - allowed)
++        unsupported += len(extra)
++        is_stale = q["type"] != "past" and num is not None and abs(num - q["old_value"]) < 1e-9
++        ok = value_ok and evidence_ok
++        passed += ok
++        by[cat]["passed"] += ok
++        if is_stale:
++            stale += 1
++            by[cat]["stale"] += 1
++        details.append(
++            dict(
++                qid=q["qid"],
++                type=cat,
++                value_ok=value_ok,
++                evidence_ok=evidence_ok,
++                stale=is_stale,
++                given_value=a.get("value") if a else None,
++                cited=sorted(cites),
++                unsupported=extra,
++                answered=a is not None,
++            )
++        )
++    completed = answer is not None
++    total = len(truth.questions)
++    strict = completed and passed == total
++    outcome = "correct" if strict else "no_submission" if not completed else "failed_checks"
++    return HandbookScore(completed, total, passed, by, stale, details, strict, outcome, unsupported)
+diff --git a/src/clm_lib/jev_screen.py b/src/clm_lib/jev_screen.py
+new file mode 100644
+index 0000000..f4b2e69
+--- /dev/null
++++ b/src/clm_lib/jev_screen.py
+@@ -0,0 +1,368 @@
++"""Experiment 012: Jev screening of structured document-search results (``result-screen/1``).
++
++Only structured search results are handled: blocks printed by the handbook ``search`` tool,
++
++    <<search-result SR-003 query="..." k=5 returned=5 saved=/task/workspace/search-results/SR-003.txt>>
++    === HB-07 §2 | <title> — <heading> | <document meta>
++    <passage text>
++    ...
++    <<end search-result SR-003>>
++
++``show()`` output (``<<passages ...>>``), saved originals and documents are never screened, so
++recovery reads always come back unfiltered. Arbitrary command output is never screened.
++
++Presentation is identical in both conditions up to the screening step: when the existing
++output cap cuts a search block, the block is cut back to its last complete passage and a notice
++names the passages not shown (from the saved original). Screening then sees exactly the
++passages condition A sees, and never more.
++"""
++
++from __future__ import annotations
++
++import json
++import re
++from collections.abc import Callable
++from dataclasses import dataclass, field
++from pathlib import Path
++from typing import Any
++
++SCREEN_VERSION = "result-screen/1"
++QUESTION_VERSION = "jev-screen-question/1"
++MIN_CHARS = 2000  # presented passage characters (headers + text) for a block to be eligible
++MIN_PASSAGES = 3
++THRESHOLD = 0.5  # frozen after the development diagnostic (draft value 0.3; see the 012 protocol)
++MIN_KEEP = 2
++MAX_TASK_CHARS = 4000
++MAX_INTENT_CHARS = 500
++BLOCK = re.compile(
++    r'<<search-result (?P<rid>SR-\d+) query="(?P<query>[^"]*)" k=(?P<k>\d+) returned=(?P<n>\d+) '
++    r"saved=(?P<saved>\S+)>>\n(?P<body>.*?)(?:<<end search-result (?P=rid)>>\n?|\Z)",
++    re.S,
++)
++NOTICE_PREFIXES = ("[output cap:", f"[{SCREEN_VERSION}:")
++PASSAGES = re.compile(r"<<passages \(unscreened\): (?P<ids>[^>]*)>>")
++
++SCOPE = (
++    "state.task is the agent's task, state.query the search query it ran, state.step_intent what "
++    "it said it was looking for, and state.passages every passage the search returned (one "
++    "passage can be an exception, carve-out or newer version of another). Judge only the "
++    "passage in instructions.passage. Do not judge whether the passage is true."
++)
++QUESTION = {
++    "question": (
++        "Is this passage needed, or could it change the answer, for what the agent searched for "
++        "(state.query and state.step_intent) in this task?"
++    ),
++    "criteria": {
++        "true": (
++            "Yes if the passage states the rule, amount, limit or condition the search is about, "
++            "or states an exception, carve-out, addition, effective date or version status "
++            "(current or superseded) for that same subject that could change which rule or "
++            "amount applies."
++        ),
++        "false": (
++            "No if the passage is about a different subject, budget or process than the search, "
++            "so that it could not change the answer. General administrative text (submitting "
++            "claims, receipts, reviews, contacts) counts as no unless the search is about it."
++        ),
++    },
++}
++
++
++@dataclass
++class SearchBlock:
++    rid: str
++    query: str
++    k: int
++    returned: int
++    saved: str
++    start: int
++    end: int
++    complete: bool
++    passages: list[dict[str, str]] = field(default_factory=list)  # id, header, text
++    notices: list[str] = field(default_factory=list)  # runtime notices already in the block
++
++    @property
++    def chars(self) -> int:
++        return sum(len(p["header"]) + 1 + len(p["text"]) + 1 for p in self.passages)
++
++
++def parse_blocks(stdout: str) -> list[SearchBlock]:
++    out = []
++    for m in BLOCK.finditer(stdout):
++        body = m.group("body")
++        passages: list[dict[str, str]] = []
++        notices: list[str] = []
++        for line in body.split("\n"):
++            if line.startswith(NOTICE_PREFIXES):
++                notices.append(line)
++            elif line.startswith("=== "):
++                pid = line[4:].split(" | ", 1)[0].strip()
++                passages.append({"id": pid, "header": line, "text": ""})
++            elif passages and line:
++                passages[-1]["text"] = (passages[-1]["text"] + "\n" + line).lstrip("\n")
++        complete = m.group(0).rstrip("\n").endswith(f"<<end search-result {m.group('rid')}>>")
++        out.append(
++            SearchBlock(
++                m.group("rid"),
++                m.group("query"),
++                int(m.group("k")),
++                int(m.group("n")),
++                m.group("saved"),
++                m.start(),
++                m.end(),
++                complete,
++                passages,
++                notices,
++            )
++        )
++    return out
++
++
++def render_block(b: SearchBlock, passages: list[dict[str, str]], notice: str = "") -> str:
++    lines = [
++        f'<<search-result {b.rid} query="{b.query}" k={b.k} returned={b.returned} saved={b.saved}>>'
++    ]
++    for p in passages:
++        lines += [p["header"], p["text"]]
++    lines += b.notices
++    if notice:
++        lines.append(notice)
++    lines.append(f"<<end search-result {b.rid}>>")
++    return "\n".join(lines) + "\n"
++
++
++def saved_original(ws: Path, b: SearchBlock) -> list[dict[str, Any]] | None:
++    """The tool's saved JSON for a block, if present and well formed (host-side read)."""
++    p = ws / "search-results" / f"{b.rid}.json"
++    try:
++        if p.is_symlink() or p.stat().st_size > 200_000:
++            return None
++        d = json.loads(p.read_text(encoding="utf-8"))
++        return [x for x in d["passages"] if isinstance(x, dict) and "id" in x]
++    except (OSError, ValueError, KeyError, TypeError):
++        return None
++
++
++def repair_truncated(stdout: str, ws: Path) -> tuple[str, list[dict[str, Any]]]:
++    """Both conditions: a block cut by the output cap keeps only complete passages, plus a
++    notice naming the passages not shown. Returns (text, records)."""
++    recs = []
++    for b in reversed(parse_blocks(stdout)):
++        if b.complete:
++            continue
++        shown = b.passages[:-1] if b.passages else []  # the last one may be cut mid-text
++        saved = saved_original(ws, b) or []
++        missing = [x["id"] for x in saved[len(shown) :]]
++        notice = (
++            f"[output cap: {len(missing) or 'the remaining'} passages of {b.rid} not shown"
++            + (f" ({', '.join(missing)})" if missing else "")
++            + f"; complete result: {b.saved}]"
++        )
++        stdout = stdout[: b.start] + render_block(b, shown, notice) + stdout[b.end :]
++        recs.append({"rid": b.rid, "shown": len(shown), "not_shown": missing})
++    return stdout, recs
++
++
++def eligible(b: SearchBlock) -> bool:
++    return b.complete and len(b.passages) >= MIN_PASSAGES and b.chars >= MIN_CHARS
++
++
++def build_screen_request(
++    task: str, query: str, intent: str, passages: list[dict[str, str]], model: str
++) -> dict[str, Any]:
++    """One request for one block: every passage is in state, and each question judges one
++    passage whose text is also in its instructions."""
++    state = {
++        "task": task[:MAX_TASK_CHARS],
++        "query": query,
++        "step_intent": intent[:MAX_INTENT_CHARS],
++        "passages": [
++            {"id": p["id"], "source": p["header"][4:], "text": p["text"]} for p in passages
++        ],
++    }
++    questions = {
++        f"p{i}": {
++            "type": "noul",
++            "instructions": {
++                "question": QUESTION["question"],
++                "passage_id": p["id"],
++                "passage": p["header"][4:] + "\n" + p["text"],
++                "scope": SCOPE,
++            },
++            "criteria": QUESTION["criteria"],
++        }
++        for i, p in enumerate(passages)
++    }
++    return {"state": state, "model": model, "questions": questions}
++
++
++def select(
++    passages: list[dict[str, str]],
++    probs: list[float | None],
++    threshold: float = THRESHOLD,
++    min_keep: int = MIN_KEEP,
++) -> tuple[list[int], list[int]]:
++    """(kept, missing): indices kept in original order. A missing answer keeps its passage;
++    at least ``min_keep`` passages are kept (highest probabilities, then original rank)."""
++    missing = [i for i, p in enumerate(probs) if p is None]
++    kept = {i for i, p in enumerate(probs) if p is None or p >= threshold}
++    score = [2.0 if p is None else p for p in probs]  # a missing answer is already kept
++    ranked = sorted(range(len(passages)), key=lambda i: (-score[i], i))
++    for i in ranked:
++        if len(kept) >= min(min_keep, len(passages)):
++            break
++        kept.add(i)
++    return sorted(kept), missing
++
++
++STOP = set(
++    [
++        "a",
++        "an",
++        "and",
++        "are",
++        "as",
++        "at",
++        "be",
++        "by",
++        "for",
++        "from",
++        "has",
++        "have",
++        "in",
++        "is",
++        "it",
++        "its",
++        "of",
++        "on",
++        "or",
++        "the",
++        "this",
++        "to",
++        "was",
++        "were",
++        "with",
++        "what",
++        "which",
++        "who",
++        "how",
++        "does",
++        "do",
++        "today",
++        "per",
++    ]
++)
++
++
++def term_select(query: str, passages: list[dict[str, str]], min_keep: int = MIN_KEEP) -> list[int]:
++    """Deterministic reference: keep passages sharing a non-stopword query term (4+ letters),
++    with at least ``min_keep`` kept (most shared terms, then original rank)."""
++    terms = {w for w in re.findall(r"[a-z0-9]+", query.lower()) if w not in STOP and len(w) >= 4}
++    hits = [
++        len(terms & set(re.findall(r"[a-z0-9]+", (p["header"] + " " + p["text"]).lower())))
++        for p in passages
++    ]
++    kept = {i for i, h in enumerate(hits) if h > 0}
++    for i in sorted(range(len(passages)), key=lambda i: (-hits[i], i)):
++        if len(kept) >= min(min_keep, len(passages)):
++            break
++        kept.add(i)
++    return sorted(kept)
++
++
++def notice_text(b: SearchBlock, kept: list[int], total_chars: int, kept_chars: int) -> str:
++    omitted = [p["id"] for i, p in enumerate(b.passages) if i not in kept]
++    if not omitted:
++        return f"[{SCREEN_VERSION}: all {len(kept)} passages kept]"
++    return (
++        f"[{SCREEN_VERSION}: kept {len(kept)} of {len(b.passages)} passages ({kept_chars:,} of "
++        f"{total_chars:,} chars); omitted {', '.join(omitted) or 'none'}; unscreened: show({omitted!r}) "
++        f"or {b.saved}]"
++    )
++
++
++@dataclass
++class ScreenOutcome:
++    text: str
++    records: list[dict[str, Any]]
++
++
++def screen_stdout(
++    stdout: str,
++    task: str,
++    intent: str,
++    model: str,
++    call: Callable[[dict[str, Any]], tuple[Any, str | None]] | None,
++    ws: Path,
++    threshold: float = THRESHOLD,
++    min_keep: int = MIN_KEEP,
++) -> ScreenOutcome:
++    """Present (both conditions) and, with ``call``, screen (condition B) every search block.
++    ``call(body) -> (response or None, error)`` is the runtime's recorded Jev attempt loop."""
++    text, repairs = repair_truncated(stdout, ws)
++    records: list[dict[str, Any]] = [{"kind": "cap_repair", **r} for r in repairs]
++    for b in reversed(parse_blocks(text)):
++        rec: dict[str, Any] = {
++            "kind": "block",
++            "rid": b.rid,
++            "query": b.query,
++            "k": b.k,
++            "passages": len(b.passages),
++            "chars": b.chars,
++            "eligible": eligible(b),
++            "screened": False,
++        }
++        saved = saved_original(ws, b)
++        ok = saved is not None and [x["id"] for x in saved[: len(b.passages)]] == [
++            p["id"] for p in b.passages
++        ]
++        rec["provenance_ok"] = ok
++        if call is None or not rec["eligible"]:
++            records.append(rec)
++            continue
++        if not ok:
++            rec["skipped"] = "saved original missing or different"
++            records.append(rec)
++            continue
++        body = build_screen_request(task, b.query, intent, b.passages, model)
++        resp, err = call(body)
++        rec["request"] = body
++        if resp is None:
++            notice = f"[{SCREEN_VERSION}: screening unavailable ({(err or 'service error')[:80]}); nothing omitted]"
++            text = text[: b.start] + render_block(b, b.passages, notice) + text[b.end :]
++            rec.update(error=err, notice_chars=len(notice))
++            records.append(rec)
++            continue
++        probs = [resp.probabilities.get(f"p{i}") for i in range(len(b.passages))]
++        kept, missing = select(b.passages, probs, threshold, min_keep)
++        kp = [b.passages[i] for i in kept]
++        kept_chars = sum(len(p["header"]) + 1 + len(p["text"]) + 1 for p in kp)
++        notice = notice_text(b, kept, b.chars, kept_chars)
++        text = text[: b.start] + render_block(b, kp, notice) + text[b.end :]
++        rec.update(
++            screened=True,
++            probabilities=probs,
++            kept=[b.passages[i]["id"] for i in kept],
++            omitted=[p["id"] for i, p in enumerate(b.passages) if i not in kept],
++            missing_answers=[b.passages[i]["id"] for i in missing],
++            kept_chars=kept_chars,
++            notice_chars=len(notice),
++            model=resp.model,
++        )
++        records.append(rec)
++    return ScreenOutcome(text, records)
++
++
++def recovery_reads(stdout: str, code: str) -> dict[str, Any]:
++    """Unscreened reads in a step (both conditions): show() calls with their ids, reads of saved
++    originals and direct document reads (from the code text)."""
++    ids = []
++    for m in PASSAGES.finditer(stdout):
++        ids += [x.strip() for x in m.group("ids").split(",") if x.strip()]
++    return {
++        "show_calls": len(PASSAGES.findall(stdout)),
++        "show_ids": ids,
++        "saved_reads": int("search-results/" in code and "open(" in code),
++        "doc_reads": int("fixtures/handbook" in code),  # any direct document access (grep, open)
++    }
+diff --git a/src/clm_lib/jev_screen_diag.py b/src/clm_lib/jev_screen_diag.py
+new file mode 100644
+index 0000000..ac20fde
+--- /dev/null
++++ b/src/clm_lib/jev_screen_diag.py
+@@ -0,0 +1,242 @@
++"""Experiment 012 component diagnostic: ``result-screen/1`` on labelled search results.
++
++``clm-lib jev-screen-diagnostic --cases <file> --split dev|frozen`` sends one TypeSafe request
++per eligible case, built by the same ``build_screen_request`` the runtime uses, applies the same
++``select`` policy, and scores it against the cases' labels. No main-model calls. Labels, support
++sets and case metadata never reach the request (only task, query, intent and passages).
++
++Scores (eligible cases only):
++- support-passage recall: kept ``support`` passages / all ``support`` passages;
++- complete-set survival: among cases whose result holds a complete valid support set, the
++  share where at least one such set is still complete after screening;
++- omitted share: omitted characters / eligible characters, also by label;
++- the same numbers for the deterministic query-term selector on the same inputs.
++"""
++
++from __future__ import annotations
++
++import json
++import time
++from datetime import UTC, datetime
++from pathlib import Path
++from typing import Any
++
++from .budget import BudgetExhausted, Ledger
++from .jev import JevError, JevPrice
++from .jev_screen import (
++    MIN_KEEP,
++    QUESTION,
++    SCOPE,
++    SCREEN_VERSION,
++    THRESHOLD,
++    build_screen_request,
++    select,
++    term_select,
++)
++
++GATE = {
++    "eligible_question_share_min": 0.5,
++    "support_recall_min": 0.95,
++    "omitted_share_min": 0.20,
++    "complete_set_losses_max": 1,
++}
++
++
++def _chars(p: dict[str, str]) -> int:
++    return len(p["header"]) + 1 + len(p["text"]) + 1
++
++
++def score_selection(case: dict[str, Any], kept: list[int]) -> dict[str, Any]:
++    ps, labels = case["passages"], case["labels"]
++    kept_ids = {ps[i]["id"] for i in kept}
++    support = [p["id"] for p in ps if labels[p["id"]] == "support"]
++    present = [s for s in case["support_sets_present"]]
++    survives = any(all(x in kept_ids for x in s) for s in present) if present else None
++    omitted = {"support": 0, "context": 0, "irrelevant": 0}
++    for p in ps:
++        if p["id"] not in kept_ids:
++            omitted[labels[p["id"]]] += _chars(p)
++    return {
++        "kept": sorted(kept_ids, key=[p["id"] for p in ps].index),
++        "support_total": len(support),
++        "support_kept": sum(1 for x in support if x in kept_ids),
++        "complete_set_present": bool(present),
++        "complete_set_survives": survives,
++        "chars": sum(_chars(p) for p in ps),
++        "omitted_chars": sum(omitted.values()),
++        "omitted_by_label": omitted,
++    }
++
++
++def aggregate(rows: list[dict[str, Any]]) -> dict[str, Any]:
++    st = sum(r["support_total"] for r in rows)
++    sk = sum(r["support_kept"] for r in rows)
++    present = [r for r in rows if r["complete_set_present"]]
++    lost = [r["case_id"] for r in present if not r["complete_set_survives"]]
++    ch = sum(r["chars"] for r in rows)
++    om = sum(r["omitted_chars"] for r in rows)
++    by = {
++        k: sum(r["omitted_by_label"][k] for r in rows) for k in ("support", "context", "irrelevant")
++    }
++    return {
++        "cases": len(rows),
++        "support_recall": f"{sk}/{st}",
++        "support_recall_value": sk / st if st else None,
++        "complete_set_cases": len(present),
++        "complete_set_lost": lost,
++        "omitted_share": om / ch if ch else 0.0,
++        "omitted_chars": om,
++        "eligible_chars": ch,
++        "omitted_by_label": by,
++    }
++
++
++def run_screen_diagnostic(
++    advisor: Any,
++    price: JevPrice | None,
++    ledger: Ledger,
++    cases_path: Path,
++    split: str,
++    out_root: Path,
++    model: str,
++    retries: int = 1,
++    sleep: Any = time.sleep,
++) -> Path:
++    doc = json.loads(cases_path.read_text(encoding="utf-8"))
++    cases = [c for c in doc["cases"] if c["split"] == split]
++    stamp = f"{datetime.now(UTC):%Y%m%dT%H%M%S}"
++    out = out_root / f"{stamp}-screen-{split}"
++    (out / "requests").mkdir(parents=True)
++    results: list[dict[str, Any]] = []
++    stopped = None
++    for c in cases:
++        if not c["eligible"]:
++            results.append({"case_id": c["id"], "eligible": False})
++            continue
++        body = build_screen_request(c["task"], c["query"], c["intent"], c["passages"], model)
++        rec: dict[str, Any] = {
++            "case_id": c["id"],
++            "eligible": True,
++            "request": body,
++            "attempts": [],
++        }
++        resp = None
++        for attempt in range(retries + 1):
++            try:
++                res = ledger.reserve(
++                    price.max_cost(body) if price else 0.0, f"jev-screen-{stamp}", "jev-diagnostic"
++                )
++            except BudgetExhausted as exc:
++                stopped = f"budget: {exc}"
++                break
++            try:
++                resp, latency = advisor.call(body)
++            except JevError as exc:
++                entry = ledger.settle(
++                    res,
++                    actual_usd=0.0 if exc.billing == "none" else None,
++                    status=f"error:{exc.kind}",
++                    note=json.dumps({"provider": "typesafe", "error": exc.kind}),
++                )
++                rec["attempts"].append(
++                    {"error": str(exc)[:300], "charged_usd": entry["charged_usd"]}
++                )
++                if exc.retryable and attempt < retries:
++                    sleep(min(10.0, 2.0**attempt))
++                    continue
++                break
++            cost = price.cost(resp.input_tokens, resp.output_tokens) if price else 0.0
++            entry = ledger.settle(
++                res,
++                actual_usd=cost,
++                status="ok",
++                note=json.dumps(
++                    {
++                        "provider": "typesafe",
++                        "model": resp.model,
++                        "input_tokens": resp.input_tokens,
++                        "output_tokens": resp.output_tokens,
++                    }
++                ),
++            )
++            rec["attempts"].append({"charged_usd": entry["charged_usd"]})
++            rec.update(
++                response=resp.raw,
++                model=resp.model,
++                latency_s=round(latency, 4),
++                usage={"input_tokens": resp.input_tokens, "output_tokens": resp.output_tokens},
++            )
++            break
++        probs = [
++            resp.probabilities.get(f"p{i}") if resp else None for i in range(len(c["passages"]))
++        ]
++        rec["probabilities"] = probs
++        if resp is None:
++            rec["outcome"] = "unanswered (shown unscreened)"
++            kept = list(range(len(c["passages"])))
++        else:
++            kept, missing = select(c["passages"], probs, THRESHOLD, MIN_KEEP)
++            rec["missing_answers"] = len(missing)
++        rec["jev"] = score_selection(c, kept)
++        rec["term"] = score_selection(c, term_select(c["query"], c["passages"], MIN_KEEP))
++        (out / "requests" / f"{c['id'].replace(':', '_')}.json").write_text(
++            json.dumps(rec, indent=1, ensure_ascii=False), encoding="utf-8"
++        )
++        results.append({k: v for k, v in rec.items() if k not in ("request", "response")})
++        if stopped:
++            break
++    scored = [r for r in results if r.get("eligible")]
++    jev = aggregate([{**r["jev"], "case_id": r["case_id"]} for r in scored])
++    term = aggregate([{**r["term"], "case_id": r["case_id"]} for r in scored])
++    by_q = {(c["instance"], c["question"]) for c in cases}
++    el_q = {(c["instance"], c["question"]) for c in cases if c["eligible"]}
++    gate = {
++        **GATE,
++        "eligible_question_share": len(el_q) / len(by_q) if by_q else 0.0,
++        "support_recall": jev["support_recall_value"],
++        "omitted_share": jev["omitted_share"],
++        "complete_set_losses": len(jev["complete_set_lost"]),
++        "errors": sum(1 for r in scored if r.get("outcome")),
++        "missing_answers": sum(r.get("missing_answers", 0) for r in scored),
++    }
++    gate["passed"] = (
++        gate["eligible_question_share"] >= GATE["eligible_question_share_min"]
++        and (gate["support_recall"] or 0) >= GATE["support_recall_min"]
++        and gate["omitted_share"] >= GATE["omitted_share_min"]
++        and gate["complete_set_losses"] <= GATE["complete_set_losses_max"]
++        and gate["errors"] == 0
++        and stopped is None
++    )
++    lat = [r["latency_s"] for r in scored if "latency_s" in r]
++    summary = {
++        "cases_file": cases_path.name,
++        "cases_version": doc["version"],
++        "screen_version": SCREEN_VERSION,
++        "question": QUESTION,
++        "scope": SCOPE,
++        "threshold": THRESHOLD,
++        "min_keep": MIN_KEEP,
++        "split": split,
++        "model_requested": model,
++        "stopped": stopped,
++        "results": results,
++        "jev": jev,
++        "term_selector": term,
++        "gate": gate,
++        "latency_s": {
++            "total": round(sum(lat), 4),
++            "mean": round(sum(lat) / len(lat), 4) if lat else None,
++        },
++        "tokens": {
++            k: sum(r.get("usage", {}).get(k, 0) for r in scored)
++            for k in ("input_tokens", "output_tokens")
++        },
++        "cost_usd": round(sum(a["charged_usd"] for r in scored for a in r["attempts"]), 8),
++    }
++    import hashlib
++
++    summary["cases_sha256"] = hashlib.sha256(cases_path.read_bytes()).hexdigest()
++    (out / "summary.json").write_text(
++        json.dumps(summary, indent=1, ensure_ascii=False), encoding="utf-8"
++    )
++    return out
+diff --git a/tests/test_handbook_screen.py b/tests/test_handbook_screen.py
+new file mode 100644
+index 0000000..88a7303
+--- /dev/null
++++ b/tests/test_handbook_screen.py
+@@ -0,0 +1,427 @@
++"""Experiment 012: handbook workload, scorer validation and result-screen/1 (offline; Jev faked).
++
++A: ordinary CLM with unscreened search results. B: the same with Jev screening of eligible
++structured search results. The faulty answers below are scorer tests only.
++"""
++
++from __future__ import annotations
++
++import json
++from dataclasses import dataclass, field
++from pathlib import Path
++from typing import Any
++
++import pytest
++
++from clm_lib.config import load_config
++from clm_lib.handbook import (
++    QTYPES,
++    build_handbook,
++    norm_citations,
++    passages_from_files,
++    score_handbook,
++)
++from clm_lib.jev import JevError, parse_response
++from clm_lib.jev_screen import (
++    MIN_CHARS,
++    build_screen_request,
++    eligible,
++    notice_text,
++    parse_blocks,
++    render_block,
++    repair_truncated,
++    select,
++    term_select,
++)
++from clm_lib.jev_screen_diag import run_screen_diagnostic
++from clm_lib.prompts import SEARCH_SCREEN_CLAUSE
++from clm_lib.tasks import generate
++
++from .conftest import execute, working_block
++
++
++def bodies(user: str) -> str:
++    """The decoded bodies of the working-context entries of a request."""
++    return "\n".join(json.loads(x)["body"] for x in working_block(user).splitlines() if x.strip())
++
++
++REPO = Path(__file__).resolve().parents[1]
++TOOLS = (
++    "import sys; sys.path.insert(0, '/task/fixtures')\nfrom handbook_tools import search, show\n"
++)
++
++
++def answer_from_truth(qs: list[dict[str, Any]], set_index: int = 0) -> dict[str, Any]:
++    return {
++        "answers": [
++            {
++                "question": q["qid"],
++                "value": f"{q['value']} {q['unit']}",
++                "citations": q["support_sets"][min(set_index, len(q["support_sets"]) - 1)],
++            }
++            for q in qs
++        ]
++    }
++
++
++# ------------------------------------------------------------- workload and scorer
++def test_handbook_generation_has_versions_exceptions_and_alternatives() -> None:
++    files, truth = build_handbook(9101)
++    assert files == build_handbook(9101)[0]
++    assert len([f for f in files if f.startswith("handbook/")]) == 40
++    ids = {p["id"] for p in passages_from_files(files)}
++    qs = truth["questions"]
++    assert {q["type"] for q in qs} == set(QTYPES) and len(qs) == 6
++    for q in qs:
++        assert all(x in ids for s in q["support_sets"] for x in s)
++        assert q["old_value"] != q["facts"]["v2"]
++    assert any(len(s) == 2 for q in qs for s in q["support_sets"])  # multi-passage answers
++    assert generate("handbook-dev-1").truth.questions != generate("handbook-dev-2").truth.questions
++
++
++def test_scorer_accepts_valid_routes_and_rejects_wrong_versions_exceptions_and_citations() -> None:
++    t = generate("handbook-dev-1").truth
++    qs = t.questions
++    ok = score_handbook(answer_from_truth(qs), t)
++    assert ok.strict_success and ok.outcome == "correct" and ok.passed == 6
++    assert score_handbook(answer_from_truth(qs, 1), t).strict_success  # alternative support sets
++    spelled = answer_from_truth(qs)
++    for a in spelled["answers"]:
++        a["citations"] = [c.replace("HB-0", "HB-").replace(" §", "#") for c in a["citations"]]
++        a["value"] = "EUR " + a["value"].split()[0]
++    assert score_handbook(spelled, t).strict_success  # other spellings of ids and values
++    for q in qs:
++        bad = answer_from_truth(qs)
++        entry = next(a for a in bad["answers"] if a["question"] == q["qid"])
++        if q["type"] != "past":  # wrong (superseded) version
++            entry["value"] = str(q["old_value"])
++            s = score_handbook(bad, t)
++            assert not s.strict_success and s.stale == 1, q["type"]
++        if q["type"] in ("exception", "carveout", "additive"):  # missed exception or addition
++            entry["value"] = str(q["facts"]["v2"] if q["type"] == "exception" else q["facts"]["vx"])
++            assert not score_handbook(bad, t).strict_success, q["type"]
++        entry.update(value=str(q["value"]), citations=["HB-99 §1"])  # unsupported citation
++        s = score_handbook(bad, t)
++        assert not s.strict_success and s.unsupported_citations == 1
++        if any(len(st) == 2 for st in q["support_sets"]):  # half of a two-passage set
++            entry["citations"] = [q["support_sets"][0][0]]
++            assert not score_handbook(bad, t).strict_success
++    assert score_handbook(None, t).outcome == "no_submission"
++    assert norm_citations(["see HB-7 section 2 and HB-12#3"]) == {"HB-07 §2", "HB-12 §3"}
++
++
++# ------------------------------------------------------------- the screening policy
++def _block(n: int = 5, size: int = 450) -> str:
++    lines = [
++        f'<<search-result SR-001 query="lodging limit Geneva" k=5 returned={n} '
++        "saved=/task/workspace/search-results/SR-001.txt>>"
++    ]
++    for i in range(n):
++        lines += [
++            f"=== HB-{i + 1:02d} §2 | Title {i} — Heading | version: 1 · status: current",
++            f"text {i} " * (size // 7),
++        ]
++    lines.append("<<end search-result SR-001>>")
++    return "\n".join(lines) + "\n"
++
++
++def test_parse_render_eligibility_and_cap_repair(tmp_path: Path) -> None:
++    out = "before\n" + _block() + "after\n"
++    (b,) = parse_blocks(out)
++    assert b.complete and len(b.passages) == 5 and eligible(b) and b.chars >= MIN_CHARS
++    assert out == "before\n" + render_block(b, b.passages) + "after\n"
++    assert not eligible(parse_blocks(_block(2))[0])  # fewer than 3 passages
++    assert not eligible(parse_blocks(_block(3, 200))[0])  # under the minimum size
++    (tmp_path / "search-results").mkdir()
++    saved = {"passages": [{"id": p["id"]} for p in b.passages]}
++    (tmp_path / "search-results" / "SR-001.json").write_text(json.dumps(saved))
++    cut = out[: len(out) // 2]
++    text, recs = repair_truncated(cut, tmp_path)
++    (r,) = parse_blocks(text)
++    assert r.complete and all(p["text"].endswith(" ") for p in r.passages)  # whole passages only
++    assert recs[0]["not_shown"] == [p["id"] for p in b.passages[len(r.passages) :]]
++    assert "[output cap:" in text and "not shown" in text
++
++
++def test_selection_threshold_minimum_missing_answers_and_baseline() -> None:
++    ps = parse_blocks(_block())[0].passages
++    kept, missing = select(ps, [0.1, 0.9, 0.2, 0.05, 0.31])
++    assert kept == [1, 4] and missing == []
++    kept, _ = select(ps, [0.1, 0.05, 0.2, 0.01, 0.02])
++    assert kept == [0, 2]  # at least two, highest first, original order kept
++    kept, missing = select(ps, [0.1, None, 0.05, 0.01, 0.02])
++    assert 1 in kept and missing == [1]  # a missing answer keeps its passage
++    assert term_select("lodging limit Geneva", ps) == [0, 1]  # nothing matches: top two by rank
++    b = parse_blocks(_block())[0]
++    assert "all 5 passages kept" in notice_text(b, [0, 1, 2, 3, 4], 100, 100)
++    n = notice_text(b, [1, 4], 2300, 900)
++    assert "omitted HB-01 §2, HB-03 §2, HB-04 §2" in n and "SR-001.txt" in n and "show(" in n
++
++
++def test_screen_request_holds_passage_text_and_no_labels() -> None:
++    ps = parse_blocks(_block())[0].passages
++    body = build_screen_request("TASK", "lodging limit Geneva", "find the limit", ps, "jev-1.13.0")
++    assert set(body["state"]) == {"task", "query", "step_intent", "passages"}
++    assert [p["text"] for p in body["state"]["passages"]] == [p["text"] for p in ps]
++    for i, p in enumerate(ps):
++        q = body["questions"][f"p{i}"]
++        assert (
++            q["instructions"]["passage_id"] == p["id"] and p["text"] in q["instructions"]["passage"]
++        )
++    cases = (
++        json.loads(
++            (
++                REPO.parent
++                / "clm-lib-test-results"
++                / "experiments"
++                / "012-jev-result-screening"
++                / "screen-cases-v1.json"
++            ).read_text()
++        )
++        if (REPO.parent / "clm-lib-test-results").exists()
++        else None
++    )
++    if cases:
++        c = cases["cases"][0]
++        body = json.dumps(
++            build_screen_request(c["task"], c["query"], c["intent"], c["passages"], "m")
++        )
++        for leak in ('"labels"', "support_sets", '"support"', "irrelevant", c["id"]):
++            assert leak not in body
++
++
++# ------------------------------------------------------------- runtime (Docker)
++@dataclass
++class ScreenJev:
++    """Fake Jev for screening: keeps passages whose text contains ``keep``."""
++
++    keep: str = "lodging"
++    missing: str = ""
++    fail_with: list[JevError] = field(default_factory=list)
++    name: str = "fake"
++    model: str = "fake-jev"
++    calls: list[dict[str, Any]] = field(default_factory=list)
++
++    def call(self, body: dict[str, Any]) -> tuple[Any, float]:
++        self.calls.append(body)
++        if self.fail_with:
++            raise self.fail_with.pop(0)
++        ans = {}
++        for k, q in body["questions"].items():
++            text = q["instructions"]["passage"]
++            if self.missing and self.missing in text:
++                ans[k] = {"type": "noul"}
++            else:
++                ans[k] = {"type": "noul", "noul": 0.9 if self.keep in text.lower() else 0.05}
++        return parse_response(
++            {"model": self.model, "answers": ans, "usage": {"input_tokens": 500}},
++            list(body["questions"]),
++        ), 0.03
++
++
++def _run(
++    make_runner: Any, script: list[Any], arm: str, adv: Any = None, task: str = "handbook-dev-1"
++) -> Any:
++    runner, prov = make_runner(script, ceiling=10.0)
++    runner.jev, runner.jev_price = adv, None
++    return runner.run(generate(task), "clm_helpers", result_screen=arm), prov
++
++
++def _final(task: str = "handbook-dev-1") -> dict[str, Any]:
++    return {"action": "final", "answer": answer_from_truth(generate(task).truth.questions)}
++
++
++SEARCH = TOOLS + "search('nightly lodging limit business trip Geneva contractor', k=6)\n"
++
++
++@pytest.mark.docker
++def test_condition_a_presents_unscreened_and_b_screens_the_same_input(make_runner: Any) -> None:
++    res_a, prov_a = _run(make_runner, [execute(SEARCH, "find the lodging limit"), _final()], "off")
++    obs_a = bodies(prov_a.requests[1].user)
++    assert "<<search-result SR-001" in obs_a and "result-screen/1" not in obs_a
++    assert SEARCH_SCREEN_CLAUSE.strip()[:30] not in prov_a.requests[0].system
++    ra = res_a.metrics["result_screen"]
++    assert (
++        ra["mode"] == "off"
++        and ra["blocks"] == 1
++        and ra["screened"] == 0
++        and ra["provenance_ok"] == 1
++    )
++    assert res_a.metrics["score"]["strict_success"]
++    adv = ScreenJev(keep="geneva")
++    res_b, prov_b = _run(
++        make_runner, [execute(SEARCH, "find the lodging limit"), _final()], "jev", adv
++    )
++    assert "-scr-" in res_b.run_id and SEARCH_SCREEN_CLAUSE in prov_b.requests[0].system
++    # Jev saw exactly the passages A was shown, with their text.
++    a_block = parse_blocks(json.loads('"' + "x" + '"') and _stdout(res_a, 1))[0]
++    sent = adv.calls[0]["state"]["passages"]
++    assert [p["id"] for p in sent] == [p["id"] for p in a_block.passages]
++    assert [p["text"] for p in sent] == [p["text"] for p in a_block.passages]
++    rb = res_b.metrics["result_screen"]
++    assert (
++        rb["screened"] == 1
++        and rb["passages_omitted"] > 0
++        and rb["chars_kept"] < rb["chars_screened"]
++    )
++    obs_b = bodies(prov_b.requests[1].user)
++    log = rb["block_log"][0]
++    for pid in log["omitted"]:
++        assert f"=== {pid} " not in obs_b
++    assert "[result-screen/1: kept" in obs_b and "SR-001.txt" in obs_b
++    # The saved original is complete in both conditions.
++    for res in (res_a, res_b):
++        saved = (res.run_dir / "workspace" / "search-results" / "SR-001.txt").read_text()
++        assert all(p["id"] in saved for p in a_block.passages)
++    assert len(list((res_b.run_dir / "jev").glob("*.json"))) == 1  # every attempt recorded
++    assert (res_b.run_dir / "result_screen" / "001-SR-001.json").exists()
++
++
++def _stdout(res: Any, step: int) -> str:
++    for line in (res.run_dir / "events.jsonl").read_text().splitlines():
++        e = json.loads(line)
++        if e["event"] == "execution_result" and e["step"] == step:
++            return e["stdout"]
++    raise AssertionError("no execution")
++
++
++@pytest.mark.docker
++def test_recovery_reads_are_never_screened_and_are_counted(make_runner: Any) -> None:
++    adv = ScreenJev(keep="geneva")
++    script = [
++        execute(SEARCH, "find the lodging limit"),
++        execute(TOOLS + "show(OMITTED)\n"),
++        _final(),
++    ]
++    runner, prov = make_runner(script, ceiling=10.0)
++    runner.jev, runner.jev_price = adv, None
++    # Fill in the ids omitted at step 1 before step 2 runs (scripted provider reads lazily).
++    orig = runner.executor.run
++
++    def run(code: str, ws: Path, fx: Path) -> Any:
++        if "OMITTED" in code:
++            rec = json.loads(next((ws.parent).glob("result_screen/*.json")).read_text())
++            code = code.replace("OMITTED", repr(rec["omitted"]))
++        return orig(code, ws, fx)
++
++    runner.executor.run = run  # type: ignore[method-assign]
++    res = runner.run(generate("handbook-dev-1"), "clm_helpers", result_screen="jev")
++    rs = res.metrics["result_screen"]
++    assert len(adv.calls) == 1  # the show() output was not screened
++    omitted = rs["block_log"][0]["omitted"]
++    assert omitted and rs["recovery"]["show_calls"] == 1
++    assert rs["recovery"]["omitted_recovered"] == sorted(omitted)
++    obs = bodies(prov.requests[2].user)
++    assert all(f"--- {pid} " in obs for pid in omitted)
++
++
++@pytest.mark.docker
++def test_service_errors_and_missing_answers_fail_open(make_runner: Any) -> None:
++    err = JevError("timeout", "request timed out", retryable=True, billing="unknown")
++    adv = ScreenJev(fail_with=[err, err])
++    res, prov = _run(make_runner, [execute(SEARCH), _final()], "jev", adv)
++    obs = bodies(prov.requests[1].user)
++    assert "screening unavailable" in obs and "nothing omitted" in obs
++    rs = res.metrics["result_screen"]
++    assert rs["errors"] == 1 and rs["screened"] == 0 and len(adv.calls) == 2
++    assert len(list((res.run_dir / "jev").glob("*.json"))) == 2
++    adv2 = ScreenJev(keep="zzz", missing="§2")
++    res2, _ = _run(make_runner, [execute(SEARCH), _final()], "jev", adv2)
++    log = res2.metrics["result_screen"]["block_log"][0]
++    assert log["missing_answers"] and set(log["missing_answers"]) <= set(log["kept"])
++
++
++@pytest.mark.docker
++def test_screening_is_opt_in_limited_and_clm_edits_still_drive_requests(make_runner: Any) -> None:
++    for p in [*sorted((REPO / "configs").glob("exp*.toml")), REPO / "configs" / "default.toml"]:
++        assert load_config(p).result_screen.enabled is False, p.name
++    runner, _ = make_runner([_final()], ceiling=10.0)
++    with pytest.raises(ValueError, match=r"\(handbook tasks\) only"):
++        runner.run(generate("dev"), "clm_helpers", result_screen="jev")
++    with pytest.raises(ValueError, match="no Jev advisor"):
++        runner.run(generate("handbook-dev-1"), "clm_helpers", result_screen="jev")
++    # Arbitrary output that is not a structured search result is never screened.
++    adv = ScreenJev()
++    edit = (
++        "import json\nc=json.load(open('context.json'))\n"
++        "c['entries']=[{'id':'n1','role':'note','body':'lodging note'}]\n"
++        "json.dump(c,open('context.json','w'))\nprint('lodging ' * 400)\n"
++    )
++    res, prov = _run(make_runner, [execute(edit), _final()], "jev", adv)
++    assert adv.calls == [] and res.metrics["result_screen"]["blocks"] == 0
++    assert prov.requests[1].user.count('"id": "n1"') == 1  # the CLM edit set the next context
++
++
++# ------------------------------------------------------------- component diagnostic
++def test_diagnostic_scores_recall_complete_sets_and_gate(tmp_path: Path) -> None:
++    from clm_lib.budget import Ledger
++    from clm_lib.jev import JevPrice
++
++    ps = parse_blocks(_block())[0].passages
++    case = {
++        "id": "x:Q1:specific",
++        "split": "dev",
++        "instance": "x",
++        "question": "Q1",
++        "eligible": True,
++        "task": "T",
++        "query": "lodging limit Geneva",
++        "intent": "find it",
++        "passages": ps,
++        "labels": {
++            ps[0]["id"]: "support",
++            ps[1]["id"]: "support",
++            ps[2]["id"]: "context",
++            ps[3]["id"]: "irrelevant",
++            ps[4]["id"]: "irrelevant",
++        },
++        "support_sets_present": [[ps[0]["id"], ps[1]["id"]]],
++        "support_sets": [[ps[0]["id"], ps[1]["id"]]],
++    }
++    f = tmp_path / "cases.json"
++    f.write_text(json.dumps({"version": "jev-screen-diag/1", "cases": [case]}))
++
++    class Adv:
++        name, model = "fake", "fake"
++
++        def call(self, body: dict[str, Any]) -> tuple[Any, float]:
++            ans = {
++                k: {
++                    "type": "noul",
++                    "noul": 0.9
++                    if q["instructions"]["passage_id"] in (ps[0]["id"], ps[2]["id"])
++                    else 0.1,
++                }
++                for k, q in body["questions"].items()
++            }
++            assert "labels" not in json.dumps(body)
++            return parse_response(
++                {"model": "fake", "answers": ans, "usage": {"input_tokens": 1000}},
++                list(body["questions"]),
++            ), 0.1
++
++    price = JevPrice("fake", 0.042, 0.0, "t", "t")
++    ledger = Ledger.open(tmp_path / "l.json", 1.0)
++    out = run_screen_diagnostic(Adv(), price, ledger, f, "dev", tmp_path, "m", sleep=lambda s: None)
++    s = json.loads((out / "summary.json").read_text())
++    assert s["jev"]["support_recall"] == "1/2" and s["jev"]["complete_set_lost"] == [
++        "x:Q1:specific"
++    ]
++    assert s["gate"]["passed"] is False and len(ledger.entries) == 1
++    assert s["term_selector"]["cases"] == 1
++
++
++def test_recovery_read_detection_counts_direct_document_access() -> None:
++    from clm_lib.jev_screen import recovery_reads
++
++    grep = "import subprocess\nsubprocess.run('grep -n lodging /task/fixtures/handbook/*.md', shell=True)"
++    assert recovery_reads("", grep)["doc_reads"] == 1
++    tool = "import sys; sys.path.insert(0, '/task/fixtures')\nfrom handbook_tools import search"
++    assert recovery_reads("", tool) == {
++        "show_calls": 0,
++        "show_ids": [],
++        "saved_reads": 0,
++        "doc_reads": 0,
++    }
++    saved = "print(open('/task/workspace/search-results/SR-001.txt').read())"
++    assert recovery_reads("", saved)["saved_reads"] == 1

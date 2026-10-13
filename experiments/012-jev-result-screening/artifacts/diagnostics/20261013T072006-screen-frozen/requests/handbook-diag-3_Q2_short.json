@@ -1,0 +1,193 @@
+{
+ "case_id": "handbook-diag-3:Q2:short",
+ "eligible": true,
+ "request": {
+  "state": {
+   "task": "Question-answering task over a company handbook.\n\nThe handbook is in /task/fixtures/handbook/ (40 documents, HB-01.md to HB-40.md). Each document\nhas a header line (version, status, effective dates, what it supersedes) and numbered sections;\neach section is a passage, cited as \"HB-07 §2\". Documents can have superseded versions, and\nmemos can add group exceptions and carve-outs. Use the rule that applies to the situation and\ndate in the question.\n\nTools (in your code):\n  import sys; sys.path.insert(0, \"/task/fixtures\")\n  from handbook_tools import search, show\n  search(\"lodging limit Geneva\", k=5)   # up to k (at most 8) ranked passages, with ids\n  show([\"HB-07 §2\", \"HB-12 §3\"])        # the named passages in full\nEvery search result is also saved under /task/workspace/search-results/ (the path is printed in\nthe result header). You may also read the documents directly.\n\nQuestions:\n- Q1: What is the mileage rate for a business trip in a private electric car today? (answer in cents per km)\n- Q2: What is the daily meal allowance for a standard travel day today (2026-10-13)? (answer in EUR per day)\n- Q3: What is the relocation lump sum for a regular employee relocating at the company's request with dependent children today? (answer in EUR)\n- Q4: What monthly mobile allowance applied to a regular employee using a private phone on 2026-01-15? (answer in EUR per month)\n- Q5: What is the purchase approval threshold for a regular department's purchase from a supplier with a framework contract today? (answer in EUR)\n- Q6: What is the nightly lodging limit for a contractor on a business trip to Geneva today? (answer in EUR per night)\n\nFinish with {\"action\": \"final\", \"answer\": {\"answers\": [{\"question\": \"Q1\", \"value\": \"...\",\n\"citations\": [\"HB-07 §2\", ...]}, ...]}}. Give one entry per question. The value must be the\nexact amount; citations must include every passage needed to support it (for example the\nrule and any exception or carve-out that applies), not just one passage.\n",
+   "query": "daily meal allowance",
+   "step_intent": "Find the daily meal allowance that applies to: What is the daily meal allowance for a standard travel day today (2026-10-13)?",
+   "passages": [
+    {
+     "id": "HB-06 §2",
+     "source": "HB-06 §2 | Policy FAQ — Current daily meal allowance | version: 7 · status: current · effective: 2026-01-15",
+     "text": "Q: What is the current standard daily meal allowance? A: 51 EUR per day, as set in HB-08 §2 (effective 2026-05-01). Group exceptions are listed in HB-02."
+    },
+    {
+     "id": "HB-02 §1",
+     "source": "HB-02 §1 | Memo: daily meal allowance exceptions — Purpose | version: 1 · status: current · effective: 2025-08-01",
+     "text": "This memo lists group exceptions to the daily meal allowance in HB-08. Where a local agreement sets stricter rules, the stricter rule applies for that location. Managers may reject claims that are not supported by the documentation described here. This section is reviewed once a year by the finance team together with the policy owner."
+    },
+    {
+     "id": "HB-08 §2",
+     "source": "HB-08 §2 | Travel policy: meals — Standard daily meal allowance | version: 3 · status: current · effective: 2026-05-01 · supersedes: HB-17",
+     "text": "The daily meal allowance during business travel is 51 EUR per day. Claims that combine several costs must list each cost on a separate line of the claim. Costs paid with a company card are reconciled in the same tool as personal claims. The policy owner may publish clarifications in the policy FAQ without changing this section."
+    },
+    {
+     "id": "HB-17 §2",
+     "source": "HB-17 §2 | Travel policy: meals — Standard daily meal allowance | version: 2 · status: superseded · effective: 2025-08-01 to the day before 2026-05-01 · superseded by: HB-08",
+     "text": "The daily meal allowance during business travel was 59 EUR per day. Claims that combine several costs must list each cost on a separate line of the claim. Receipts must be attached for every item claimed; photographs of paper receipts are accepted. Amounts are stated in euros; conversions use the published rate on the day of payment."
+    },
+    {
+     "id": "HB-02 §3",
+     "source": "HB-02 §3 | Memo: daily meal allowance exceptions — Carve-out | version: 1 · status: current · effective: 2025-08-01",
+     "text": "The exception above does not apply to interns; they follow the standard daily meal allowance in HB-08 §2. Claims that combine several costs must list each cost on a separate line of the claim. Line managers check each claim for plausibility before it is released for payment. Amounts are stated in euros; conversions use the published rate on the day of payment."
+    }
+   ]
+  },
+  "model": "jev-1.13.0",
+  "questions": {
+   "p0": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-06 §2",
+     "passage": "HB-06 §2 | Policy FAQ — Current daily meal allowance | version: 7 · status: current · effective: 2026-01-15\nQ: What is the current standard daily meal allowance? A: 51 EUR per day, as set in HB-08 §2 (effective 2026-05-01). Group exceptions are listed in HB-02.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   },
+   "p1": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-02 §1",
+     "passage": "HB-02 §1 | Memo: daily meal allowance exceptions — Purpose | version: 1 · status: current · effective: 2025-08-01\nThis memo lists group exceptions to the daily meal allowance in HB-08. Where a local agreement sets stricter rules, the stricter rule applies for that location. Managers may reject claims that are not supported by the documentation described here. This section is reviewed once a year by the finance team together with the policy owner.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   },
+   "p2": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-08 §2",
+     "passage": "HB-08 §2 | Travel policy: meals — Standard daily meal allowance | version: 3 · status: current · effective: 2026-05-01 · supersedes: HB-17\nThe daily meal allowance during business travel is 51 EUR per day. Claims that combine several costs must list each cost on a separate line of the claim. Costs paid with a company card are reconciled in the same tool as personal claims. The policy owner may publish clarifications in the policy FAQ without changing this section.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   },
+   "p3": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-17 §2",
+     "passage": "HB-17 §2 | Travel policy: meals — Standard daily meal allowance | version: 2 · status: superseded · effective: 2025-08-01 to the day before 2026-05-01 · superseded by: HB-08\nThe daily meal allowance during business travel was 59 EUR per day. Claims that combine several costs must list each cost on a separate line of the claim. Receipts must be attached for every item claimed; photographs of paper receipts are accepted. Amounts are stated in euros; conversions use the published rate on the day of payment.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   },
+   "p4": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-02 §3",
+     "passage": "HB-02 §3 | Memo: daily meal allowance exceptions — Carve-out | version: 1 · status: current · effective: 2025-08-01\nThe exception above does not apply to interns; they follow the standard daily meal allowance in HB-08 §2. Claims that combine several costs must list each cost on a separate line of the claim. Line managers check each claim for plausibility before it is released for payment. Amounts are stated in euros; conversions use the published rate on the day of payment.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   }
+  }
+ },
+ "attempts": [
+  {
+   "charged_usd": 0.000145
+  }
+ ],
+ "response": {
+  "model": "jev-1.13.0",
+  "answers": {
+   "p0": {
+    "type": "noul",
+    "noul": 0.9
+   },
+   "p1": {
+    "type": "noul",
+    "noul": 0.7
+   },
+   "p2": {
+    "type": "noul",
+    "noul": 0.98
+   },
+   "p3": {
+    "type": "noul",
+    "noul": 0.72
+   },
+   "p4": {
+    "type": "noul",
+    "noul": 0.43
+   }
+  },
+  "usage": {
+   "input_tokens": 3450,
+   "output_tokens": 89
+  }
+ },
+ "model": "jev-1.13.0",
+ "latency_s": 0.2451,
+ "usage": {
+  "input_tokens": 3450,
+  "output_tokens": 89
+ },
+ "probabilities": [
+  0.9,
+  0.7,
+  0.98,
+  0.72,
+  0.43
+ ],
+ "missing_answers": 0,
+ "jev": {
+  "kept": [
+   "HB-06 §2",
+   "HB-02 §1",
+   "HB-08 §2",
+   "HB-17 §2"
+  ],
+  "support_total": 2,
+  "support_kept": 2,
+  "complete_set_present": true,
+  "complete_set_survives": true,
+  "chars": 2191,
+  "omitted_chars": 483,
+  "omitted_by_label": {
+   "support": 0,
+   "context": 483,
+   "irrelevant": 0
+  }
+ },
+ "term": {
+  "kept": [
+   "HB-06 §2",
+   "HB-02 §1",
+   "HB-08 §2",
+   "HB-17 §2",
+   "HB-02 §3"
+  ],
+  "support_total": 2,
+  "support_kept": 2,
+  "complete_set_present": true,
+  "complete_set_survives": true,
+  "chars": 2191,
+  "omitted_chars": 0,
+  "omitted_by_label": {
+   "support": 0,
+   "context": 0,
+   "irrelevant": 0
+  }
+ }
+}

@@ -32,7 +32,7 @@ These are different interventions. Results from one say nothing directly about t
 | [010](010-jev-initiated-review/README.md) | model-controlled | at **Claude's** context-edit decisions (v1 optional; v2 required, Claude-labelled; v3 required, runtime-supplied update) | **v3 complete (36 runs):** Jev added nothing measurable over the review alone; the review workflow costs about 30% more than ordinary CLM. v1 and v2 stopped at their gates |
 | [011](011-jev-edit-check/README.md) | model-controlled (checking) | on a proposed context rewrite | **v1 diagnostic: gate failed. v2 diagnostic: gate passed.** **Development pilot on W2** (2 instances × 3 conditions): all 6 runs strict success; no harmful edit occurred; Jev flagged 4/9 proposals, all acceptable; checking cost +58% (C vs A), almost all Claude-side |
 | W2 workload | a workload, not a strategy | changing requirements that interact | **Implemented** (`export-gen/1`, 2 development instances); used by the 011 development pilot |
-| [012](012-jev-result-screening/README.md) | runtime policy beside CLM | automatic screening of incoming tool results | **Offline assessment done:** the incident workload offers no meaningful opportunity (median observation 539 chars, already filtered by Claude; at most about 3.9% of run cost removable). Alternative proposed: a document-search workload. Not implemented |
+| [012](012-jev-result-screening/README.md) | runtime policy beside CLM | automatic screening of incoming (search) results | **Component gate passed** (58/58 support passages, 23/23 complete sets, 22% omitted); smoke passed; **development pilot: 4/4 correct, but screening never exercised**, because Claude read the 40 documents directly instead of searching in both B runs |
 | 013 | model-controlled | Claude-directed screening of tool results | Planned |
 
 ### 010: Claude-initiated context review
@@ -260,4 +260,16 @@ See [010](010-jev-initiated-review/README.md).
 **The planned workload for 012 (incident rounds) offers no meaningful screening opportunity.** The 23–41K-character logs are source files: Claude's own commands return a median of 539 characters, and only 15% of observations reach 2,000 characters. The audit is offline, with no Jev calls, so it says nothing about Jev's accuracy.
 
 **Recommendation (the maintainer's decision):** proceed with 012 only on a document-search workload, starting with offline construction and an opportunity re-check, then a TypeSafe-only component diagnostic. **012 remains the next integration approach. 013 remains planned after it.**
+
+## Note after 012's diagnostic and development pilot (2026-10-13)
+
+**What was built:** 012 implemented a document-search workload (a 40-document handbook, `search`/`show` tools, saved originals) and `result-screen/1` (Jev scores each passage of an eligible search result; low scores are omitted with a fixed notice).
+
+**The component diagnostic passed:** on 36 frozen labelled results, it kept every support passage and every complete evidence set while omitting 22% of the text. The threshold of 0.5 was set from the development cases.
+
+**The four-run development pilot could not test the intervention:** in both screening runs Claude read the handbook files directly and never called `search`. All four runs answered correctly.
+
+**What it means:** a search-result screen only helps an agent that depends on search. With a corpus small enough to read, a fair control (with the same file access) and the screened condition both bypass it.
+
+**Next (the maintainer's decision):** no larger 012 evaluation on this workload. Continuing would need a workload where search is the natural, not the forced, route (for example a corpus too large to list and read), checked offline first. Otherwise, 013 (Claude-directed screening) has the same dependency on search use.
 
