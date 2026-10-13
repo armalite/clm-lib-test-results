@@ -476,3 +476,244 @@ No further wording change is made, as decided before this run.
   - **The 5 `insufficient` cases:** `insufficient` scored 0.91–0.96, but `changed` also scored 0.90–0.97, so under edit-verdict/2's harm precedence none came out as *uncertain*.
   - **The ambiguous case:** `lost` scored 0.95.
 - **Recorded unchanged.** Nothing was rescored, relabelled or rerun.
+
+---
+
+# Agent pilot (2026-10-13, written before any paid pilot call)
+
+**A separate phase.** Its runs are never combined with the component diagnostics above (v1 or v2), and the diagnostics' evidence is not changed.
+
+## Question
+
+**Does checking proposed context edits with Jev improve an agent's task performance enough to justify the extra work?**
+
+This is a **development pilot**: 2 instances × 3 conditions, run once each. It can show whether the integration works during real task execution, what warnings and reactions occur naturally, whether the workload offers opportunities to prevent harmful edits, and what the workflow costs. **It cannot establish an effect**, and the pilot counts as complete whether or not Jev helps.
+
+## Conditions
+
+All three use the same model, prompts (apart from the clauses below), CLM mode, limits, layout, caching and run isolation. In every condition the model writes its own context-management code and decides what its context contains; no summarisation policy is used.
+
+| | Name | Context edits |
+| --- | --- | --- |
+| **A** | ordinary CLM (`clm_helpers:on`) | a valid `context.json` write takes effect directly (unchanged runtime) |
+| **B** | proposal/confirmation without Jev (`clm_helpers+chk:on`) | a valid, content-changing write is **held as a proposal**; Claude must reply `confirm_edit` accept or withdraw, or write again to revise |
+| **C** | proposal/confirmation with Jev (`clm_helpers+chk-jev:on`) | as B, plus a Jev check of every proposal, shown before Claude's next step |
+
+**Contrasts (all three are reported):**
+- **C vs A:** the total practical effect.
+- **C vs B:** Jev's increment.
+- **B vs A:** the effect and overhead of confirmation itself.
+
+**No advantage over ordinary CLM is claimed from C vs B alone.**
+
+## Workload: W2 changing requirements (`export-gen/1`, scorer `export-checks/1`)
+
+The agent implements `exporter.export_records(records, user, params) -> str` while requirements arrive in 5 stages.
+
+**Development instances:** `w2-dev-1` and `w2-dev-2`. They have different schedules and seeds. No held-out instances are defined, generated or inspected.
+
+| Stage | w2-dev-1 | w2-dev-2 |
+| --- | --- | --- |
+| 1 | CSV format; permissions; status filter | CSV format; permissions; confidential exception |
+| 2 | confidential exception; date filter; **obligation**: "if the format changes from CSV, include `exported_by`" | status filter; the same obligation |
+| 3 | **format CHANGED: CSV → JSON**; "which records are exported does not change" | date filter; the same format change |
+| 4 | **permissions CHANGED in part:** members also get the records they own; the viewer and admin rules unchanged | **status CHANGED in part:** `include_archived` honoured only for admins |
+| 5 | record limit, adding `truncated` | the same |
+
+**How the requirements are given:**
+- **Explicit and rereadable:** requirement files are immutable and stay readable under `/task/fixtures/stage-N/`, equally in all conditions, and each stage's text is also appended to the context at release.
+- **Partial changes:** a CHANGED rule names the part it replaces; the rest stays in force.
+- **The obligation** is stated in stage 2 and becomes relevant at stage 3, which does not restate it.
+- **Visible tests** (`current-tests/test_stage.py`) cover only the latest stage's new or changed rules. The task prompt says so explicitly. The stage-3 format test compares only `records`, so it does not reveal the obligation.
+
+**Hidden checks (35 per instance):**
+- **What they cover:** only requirements disclosed by the final stage, using only disclosed options, on inputs different from the visible tests.
+- **Categories:**
+  - `retained`: unaffected by the format change and never changed;
+  - `exception`: confidential records, including cases where the exception applies;
+  - `replaced`: the format change, and the changed part of the partial change, with stale output identified;
+  - `kept_part`;
+  - `deferred`: `exported_by`;
+  - `final_stage`;
+  - `interaction`.
+- **How they compare:** JSON checks compare the parsed values of named keys, so a missing `exported_by` fails only the `deferred` checks.
+- **Snapshots:** the workspace copied at each release is scored against that stage's rules, so a final retained failure counts as a regression only if it passed earlier.
+
+**Offline scorer validation** (no agent involved): an independently written correct solution passes everything in the sandbox. Deliberately faulty solutions fail their intended categories:
+- still CSV (stale `FORMAT` on every JSON check);
+- a forgotten obligation (`deferred` only);
+- a lost exception (`exception`);
+- a dropped unaffected rule (`retained`);
+- over-applied or whole-replacement partial changes (`kept_part`);
+- a wrong limit order.
+
+**These faulty solutions are scorer tests only. No harmful edit is injected into any agent run.**
+
+## Proposed-edit checking (`edit-check-pilot/1`; B and C)
+
+**The mechanism:**
+- **Holding:** after the step's code runs (once), the runtime validates `context.json` with the existing parser. A valid, content-changing candidate is held host-side as proposal `P<n>`. The live context stays authoritative and unchanged, and the step's action, observation and a receipt are appended as usual.
+- **The receipt** lists the entry and character counts, the removed, added and rewritten ids, and the decision syntax. `/task/workspace/proposed_context.json` holds the full candidate (informational only; acceptance uses the host-held copy). B and C receive identical receipts; C appends the Jev block.
+- **Accept** (`confirm_edit`): commits the candidate followed by every entry the runtime appended since the proposal's base revision, with id collisions renamed. It is refused if the live context changed in any other way since the base (a stale proposal), or if the merged result would break the format limits.
+- **Withdraw:** discards the proposal. The observation states that other file changes made by the proposing code remain.
+- **Revise:** a new content-changing write becomes a new proposal (revalidated and, in C, rechecked) and marks the old one `revised`.
+
+**What never applies a proposal:**
+- an unrelated execution;
+- an unchanged write;
+- a confirm with a wrong id;
+- `final` (recorded as `unresolved_at_final`);
+- the end of the run (`unresolved_at_end`).
+
+**A stage release discards** a pending proposal (`expired_at_stage_release`), and says so in the release observation.
+
+**Declared exception:** when the runtime has issued an OVER LIMIT recovery request (it demands a shrinking edit in that very step), a write in that step is applied directly and recorded as `recovery_exempt_applied`, as in 010 v2. A pending proposal is then `superseded_by_recovery_edit`.
+
+**A is unchanged:** direct edits, and no new clause or action.
+
+**Prompt clauses** (`2026-10-13.5`):
+- `EDIT_CHECK_CLAUSE` (B and C) explains the proposal, accept, withdraw and revise, and the exception.
+- `EDIT_CHECK_JEV_CLAUSE` (C) describes the four questions. It says the scores are advice; that a flag means "inspect, not wrong" and missing evidence may explain one; that a clear result is no guarantee; and that Claude never needs to change a proposal or lower a score.
+
+**No note structure is imposed.**
+
+## Jev check in C (frozen component, unchanged)
+
+**Questions and evidence:** `jev-edit-check/2` (`questions_sha256` `8ad0d68a…`) on `edit-evidence/1`, with the limits frozen in the v2 diagnostic. The case is built from runtime inputs only:
+- **`task`:** the task prompt;
+- **`current`:** the live revision at the proposal;
+- **`update`:** the latest released stage's requirements text;
+- **`exec_output`:** the proposing execution's stdout;
+- **`sources`:** the released fixture files up to the current stage, for newly cited `path:line` references, resolved exactly or by a unique suffix (ambiguous paths are reported, not guessed);
+- **`proposed`:** the candidate.
+
+**Never included:** deleted revisions, unreleased stages, hidden checks or evaluator truth.
+
+**No integration change** to the component was needed. The model is `jev-1.13.0`, with a 15 s timeout and 1 runtime retry; every attempt is in the ledger.
+
+**Presentation** (fixed before calibration): the four probabilities with "(flag)" at ≥ 0.5, then a result line:
+- FLAGGED (any harm answer ≥ 0.5);
+- UNCERTAIN (`insufficient` ≥ 0.5 and no harm flag);
+- INCOMPLETE (a missing answer and no flag);
+- clear.
+
+Then any evidence notes, and the fixed caveat.
+
+**Failures are never shown as clear:**
+- A service error reads "unavailable (service error …). This is not a clear result."
+- Beyond the limit of **30 checks per run**, a check reads "not checked (check limit …). This is not a clear result."
+
+**Flags never reject automatically.**
+
+## Limits (all conditions)
+
+- `max_calls` 90 per run (actions, repairs and API retries), with a context budget of 8,000 tokens.
+- Pressure at 70%, and a recovery reserve of 1,000 tokens.
+- Output capped at 6,000 characters per stream.
+- A 30 s execution timeout.
+
+The number of revisions is bounded by `max_calls`, and Jev rechecks by `max_checks` = 30. An exhausted run is kept, charged and reported, never replaced.
+
+## Metrics (per run, all conditions)
+
+- **Outcome:** strict success; hidden checks passed; per category (`retained` and `exception` = unaffected requirements, `replaced` = correctly replaced, `kept_part`, `deferred`, `final_stage`, `interaction`); stale modules; retained-rule failures; regressions.
+- **Work:**
+  - model calls, repairs, executions, stages, steps and elapsed time;
+  - tokens, including cache reads and writes;
+  - cost by provider;
+  - Jev attempts, cost and latency.
+- **Edits:**
+  - **in A:** accepted context edits;
+  - **in B and C:** proposals, accepted, revised, withdrawn, expired, refused or unresolved, and confirm actions (including invalid ones).
+- **Warnings (C):** verdict counts, and the reaction to each verdict (accepted, revised or withdrawn), including accepted flagged and accepted uncertain proposals.
+- **Rereading:** executions whose code opens requirement files, and test runs.
+- **Evidence saved:** every revision; `context/proposal-P<n>.json` (before, candidate); `edit_check/P<n>.json` (the exact request and answers); the confirm log; and all requests and responses.
+
+## Edit-level analysis (exploratory; rubric written now)
+
+**For each run:** every accepted content-changing edit (A: model edits; B and C: accepted proposals and recovery edits) is compared before and after, against the requirements in force at that point.
+
+**Classes for a requirement item** (a rule, a part of a rule, the exception, the obligation, an option or a value):
+- **L, visibly lost or changed in an edit:** present in the context before and still in force, but absent or altered afterwards (not just reworded).
+- **R, retrieved:** an L item that later code reread from `/task/fixtures`. Recorded with the steps used.
+
+**For each final hidden-check failure:** the responsible requirement item is traced through the revisions and classified as one of:
+- **E:** lost or changed in an edit before the code that fails was last written;
+- **N:** never recorded in a form that survived into the context;
+- **U:** still present in the context but not used correctly.
+
+**What is not assumed:** a code failure is not assumed to be caused by an edit, and context removal of information still available in files is not by itself a failure.
+
+**Blinding:** for B and C, proposals are classified from their diffs **before Jev's verdicts are read** (the classification listing omits the check fields). Verdicts are joined afterwards.
+
+**Status:** author judgement, exploratory, not a scored outcome.
+
+## Order, budget and stopping rules
+
+- **Order:** `compare --conditions clm_helpers:on,clm_helpers+chk:on,clm_helpers+chk-jev:on --tasks w2-dev-1,w2-dev-2 --reps 1` (the three-condition all-orders schedule):
+  - w2-dev-1: A, B, C;
+  - w2-dev-2: B, C, A.
+
+  Each condition takes two different positions.
+- **Runs:** sequential.
+- **Budget:** USD 15 in total (both providers; the smoke, the 6 runs and retries). The ceiling is settled spend at the start (82.010420) + 15 = **97.010420**, replacing the unused v2 allowance. The per-run reserve is USD 2.00.
+- **Smoke first:** one explicitly prompted live integration run (`w2-smoke-1`, 2 stages, condition C) asks the agent to add a note early and decide on the proposal. **It is excluded from every comparison.**
+- **If the smoke finds a material defect:** it is fixed and documented before the freeze, and the smoke may be repeated once.
+- **During the 6 runs:**
+  - no tuning between runs;
+  - no replacement of failed runs;
+  - no stopping because Jev looks good or bad.
+- **What stops the matrix:** the existing compare halts (accounting violation, executor unavailable, infrastructure error), the per-run reserve, or the budget.
+- **A material defect found mid-matrix:** the matrix stops, the defect is fixed and documented, and runs from different behavioural versions are not combined.
+- **Freeze:** the workload, prompts and code state are fingerprinted in the freeze record after the smoke and before run 1.
+
+## Agent-pilot integration smoke (2026-10-13; excluded from every comparison)
+
+**Run `20261013T044621-clm_helpers-cacheon-chkjev-w2-smoke-1-1855`** (condition C on `w2-smoke-1`, 2 stages, the explicit smoke prompt):
+- **Outcome:** completed, 11/11 hidden checks, 8 model calls.
+- **Cost:** USD 0.127231 (Anthropic 0.126778, TypeSafe 0.000453).
+
+**What it exercised:**
+- **P1** (adds a note): checked (clear, all answers ≤ 0.23), then **accepted**. The runtime appends since its base were kept.
+- **P2** (a shrink from 8,083 to 662 body chars, proposed under pressure): checked (clear), but the next request exceeded the hard limit (7,811 > 7,000 tokens), because the shrink was still pending while the step's own action, output and receipt were appended.
+- **The OVER LIMIT step:** the model wrote `context.json` directly, which was applied under the declared exception. P2 became `superseded_by_recovery_edit`.
+
+**Finding:**
+- **The mechanism worked as specified,** but the smoke shows a pre-freeze **confirmation-integrity gap**. Under this tight budget, a held shrink delays relief by one step and can push B/C into OVER LIMIT recovery. There, the status line only said "shrink context.json", so an already-checked pending proposal was bypassed rather than accepted, although accepting it would have satisfied the recovery request.
+- **No defect was found** in holding, checking, acceptance, merging or accounting.
+
+**Fixes before the freeze (presentation only; no change to the decision logic, the exception or the Jev component):**
+1. **In B/C, the OVER LIMIT line** now adds, when a pending proposal is still acceptable: "In this run, accepting pending proposal P<n> with confirm_edit also counts: it would leave about N body chars (now M) before this step's own output. A change you write to context.json instead is applied directly."
+2. **A recovery-exempt edit's receipt** now ends "Applied directly (OVER LIMIT exception; not held as a proposal); pending proposal P<n> is superseded."
+
+**Tests:** both changes are covered by tests. A is unaffected (it has no proposals).
+
+**The smoke is not repeated:** the changed path occurs only under OVER LIMIT with a pending proposal and could not be forced by a prompt. The live path (proposal, Jev check, accept, ledger) is already shown.
+
+**Recorded as a limitation:** recovery-exempt edits in C are not Jev-checked, and their number is reported per run.
+
+## Agent-pilot freeze (2026-10-13, before pilot run 1)
+
+- **Code:** clm-lib HEAD `2c9db0b` plus uncommitted pilot changes. The comparison record stores the source patch and its hash.
+- **File fingerprints (SHA-256 prefixes):**
+  - `w2.py` `018a3bd985b49274`;
+  - `runner.py` `d9ba466279d4761c`;
+  - `context.py` `04eb5550470e2f73`;
+  - `prompts.py` `0b665dd711ee88db`;
+  - `jev_edit_check.py` `c1d4034deddf20a5` (identical to the v2 freeze).
+- **Config:** `configs/exp011pilot.toml`, `f94157752306c472`.
+- **Model and settings:** `claude-opus-5-5`, effort low, structured output, `blocks/1`, prompt caching on (5 min TTL), `run-tag/1` isolation.
+- **Jev:** `jev-1.13.0`, a 15 s timeout and 1 retry.
+- **Prompts:** version `2026-10-13.5`. System-prompt SHA-256 for `clm_helpers` on the coding kind:
+  - A: `b9e445cd…`;
+  - B: `93040327…`;
+  - C: `ffede1bd…`.
+
+  Task prompt `56941d1b…` (the same for both instances).
+- **Workload:** `export-gen/1`, scorer `export-checks/1`.
+  - `w2-dev-1`: fixtures `7a53444688090a5e`, truth `702a255e964a8fa0`.
+  - `w2-dev-2`: fixtures `8e6b37ae80e3a753`, truth `101c724cc5385701`.
+  - 35 hidden checks each.
+- **Checker:** `jev-edit-check/2` (`8ad0d68a…`), `edit-evidence/1`, threshold 0.5, `max_checks` 30, version `edit-check-pilot/1`.
+- **Limits, metrics, rubric, order, budget and stopping rules:** as written above.
+- **Ledger at the freeze:** spent USD 82.137651 (after the smoke), ceiling 97.010420.
