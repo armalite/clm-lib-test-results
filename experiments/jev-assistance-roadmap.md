@@ -34,6 +34,7 @@ These are different interventions. Results from one say nothing directly about t
 | W2 workload | a workload, not a strategy | changing requirements that interact | **Implemented** (`export-gen/1`, 2 development instances); used by the 011 development pilot |
 | [012](012-jev-result-screening/README.md) | runtime policy beside CLM | automatic screening of incoming (search) results | **v1** (local files): component gate passed; pilot never exercised screening. **v2** (document service): screening exercised in 12/12 searches; 4/4 correct; no needed passage omitted; Claude fetched most omitted passages back, so B cost +10%. No evaluation |
 | 013 | model-controlled | Claude-directed screening of tool results | **Not recommended**: see the [programme review](jev-programme-review.md#does-013-add-a-distinct-question). Not implemented |
+| [014](014-jev-helper-primitives/README.md) | model-authored code (Jev as a primitive) | inside Claude's own context-management code, mid-execution | **Planned.** Capability `jev-primitive/1` implemented and verified offline (scripted fake Jev); no live run |
 
 ### 010: Claude-initiated context review
 
@@ -292,4 +293,10 @@ See [010](010-jev-initiated-review/README.md).
 **The conclusion:** there is **no demonstrated agent benefit in the tested settings**, although several Jev components were accurate on labelled examples.
 
 **The 013 decision:** 013 is not recommended. The review recommends **stopping the agent-integration programme here** and writing up the results.
+
+## Note: experiment 014 (2026-10-13)
+
+**What 014 adds:** a distinct direction from 008–013. Jev is called **from Claude's own context-management code** during an execution (`jev-primitive/1`), and the code uses the answers to edit `context.json` itself. No extra Claude turn is involved, and no host editing policy applies.
+
+**Status:** the capability is implemented and verified offline with a scripted fake Jev. A one-run prompted demonstration on W2 is the proposed next step (about USD 0.3; not authorised). The programme review's results are unaffected; they neither establish nor rule out this direction.
 
