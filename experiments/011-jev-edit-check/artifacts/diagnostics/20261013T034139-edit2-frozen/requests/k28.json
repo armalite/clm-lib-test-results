@@ -1,0 +1,197 @@
+{
+ "case_id": "k28",
+ "request": {
+  "state": {
+   "task": "Production incident investigation across several services; evidence arrives in hourly rounds (logs, incident-board updates that list only what changed, and change records; APPLIED changes took effect, PROPOSED did not). The final answer must list every real incident with its current cause, all affected services, current status and path:line evidence for the current cause and status, plus the follow-up items still open. The agent keeps working notes in its context; tool outputs it printed stay in the context until it removes them.",
+   "current_context": [
+    {
+     "id": "n1",
+     "role": "note",
+     "body": "R1: board empty; round-01/changes.md:3 CHG-108 APPLIED TLS session ticket rotation. Slow-query WARNs = noise everywhere.\nR2: board empty. round-02/changes.md:4 CHG-120 APPLIED search-api 8.48.0 sets http.max_inflight=-1 (possible BAD_CONFIG later); :5 CHG-121 shipping no cfg. ledger-svc DNS SERVFAIL host=geo.internal round-02/logs/ledger-svc.log:3-81 (lines 3,22,...,81) -> DNS_RESOLUTION candidate. search-api no errors yet."
+    },
+    {
+     "id": "s6.act",
+     "role": "assistant",
+     "body": "[step 6] execute\nthought: Compress context with round 2 findings.\ncode:\nimport json\nn='R1: board empty; round-01/changes.md:3 CHG-108 APPLIED TLS session ticket rotation. Slow-query WARNs = noise everywhere.\\nR2: board empty. round-02/changes.md:4 CHG-120 APPLIED search-api 8.48.0 sets http.max_inflight=-1 (possible BAD_CONFIG later); :5 CHG-121 shipping no cfg. ledger-svc DNS SERVFAIL host=geo.internal round-02/logs/ledger-svc.log:3-81 (lines 3,22,...,81) -> DNS_RESOLUTION candidate. search-api no errors yet.'\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+    },
+    {
+     "id": "s6.obs",
+     "role": "observation",
+     "body": "exit_code=0 duration=1.4s"
+    },
+    {
+     "id": "s6.rcpt",
+     "role": "receipt",
+     "body": "context.json edit accepted at step 6: revision 6 -> 7; entries 8 -> 1; body chars 3311 -> 427; removed [s3.act, s3.obs, s3.rcpt, s4.act, s4.obs, s5.act, s5.obs]; added []; rewritten [n1]"
+    },
+    {
+     "id": "s7.act",
+     "role": "assistant",
+     "body": "[step 7] advance\nthought: "
+    },
+    {
+     "id": "s7.obs",
+     "role": "observation",
+     "body": "Stage 3 of 10 released.\nRound 3 of 10 released. New files are under /task/fixtures/round-03/.\n\nNew files:\n  round-03/board.md (4 lines)\n  round-03/logs/inventory-svc.log (69 lines)\n  round-03/logs/ledger-svc.log (73 lines)\n  round-03/logs/notify-worker.log (56 lines)\n  round-03/logs/search-api.log (70 lines)\n  round-03/logs/shipping-svc.log (57 lines)"
+    },
+    {
+     "id": "s8.act",
+     "role": "assistant",
+     "body": "[step 8] execute\nthought: Inspect round 3 board and error lines.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-03/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-03/logs/*.log')):\n    for i,l in enumerate(open(f),1):\n        if re.search(r'ERROR|FATAL|CRIT|error',l) and 'slow' not in l.lower():\n            print(f.split('/')[-1],i,l.strip()[:150])"
+    },
+    {
+     "id": "s8.obs",
+     "role": "observation",
+     "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 03\n\n- Thread A opened: DNS lookups failing for a dependency confirmed as the cause (code DNS_RESOLUTION) in ledger-svc; impact also on inventory-svc. Status: ongoing.\n- Follow-up OPEN POSTMORTEM_DRAFT: drafting the postmortem.\n\ninventory-svc.log 1 2026-09-14T10:00:02Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc.log 10 2026-09-14T10:09:40Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc.log 11 2026-09-14T10:10:04Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc.log 16 2026-09-14T10:16:37Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc.log 19 2026-09-14T10:19:04Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc.log 26 2026-09-14T10:22:01Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc.log 28 2026-09-14T10:24:54Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc.log 34 2026-09-14T10:27:39Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc.log 41 2026-09-14T10:33:40Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc.log 54 2026-09-14T10:51:55Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 14 2026-09-14T10:10:47Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 17 2026-09-14T10:16:19Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 25 2026-09-14T10:21:14Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 31 2026-09-14T10:28:04Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 64 2026-09-14T10:51:04Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 67 2026-09-14T10:55:35Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\n"
+    }
+   ],
+   "update": "round-03/board.md:3: - Thread A opened: DNS lookups failing for a dependency confirmed as the cause (code DNS_RESOLUTION) in ledger-svc; impact also on inventory-svc. Status: ongoing.\nround-03/board.md:4: - Follow-up OPEN POSTMORTEM_DRAFT: drafting the postmortem.",
+   "execution_output": "",
+   "cited_sources": [
+    {
+     "reference": "round-03/board.md:3",
+     "lines": [
+      "round-03/board.md:3: - Thread A opened: DNS lookups failing for a dependency confirmed as the cause (code DNS_RESOLUTION) in ledger-svc; impact also on inventory-svc. Status: ongoing."
+     ]
+    },
+    {
+     "reference": "round-03/logs/inventory-svc.log:1-19",
+     "lines": [
+      "round-03/logs/inventory-svc.log:1: 2026-09-14T10:00:02Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL",
+      "round-03/logs/inventory-svc.log:2: 2026-09-14T10:01:57Z INFO  inventory-svc health ok probe=readiness",
+      "round-03/logs/inventory-svc.log:3: 2026-09-14T10:02:11Z INFO  inventory-svc gc cycle pause_ms=22",
+      "round-03/logs/inventory-svc.log:4: 2026-09-14T10:02:23Z INFO  inventory-svc gc cycle pause_ms=9",
+      "round-03/logs/inventory-svc.log:5: 2026-09-14T10:02:42Z INFO  inventory-svc heartbeat uptime_s=21910",
+      "round-03/logs/inventory-svc.log:6: 2026-09-14T10:03:22Z INFO  inventory-svc health ok probe=readiness",
+      "round-03/logs/inventory-svc.log:7: 2026-09-14T10:04:27Z INFO  inventory-svc gc cycle pause_ms=8",
+      "round-03/logs/inventory-svc.log:8: 2026-09-14T10:05:42Z INFO  inventory-svc request ok route=/v1/health status=200 ms=17",
+      "round-03/logs/inventory-svc.log:9: 2026-09-14T10:06:33Z INFO  inventory-svc health ok probe=readiness",
+      "round-03/logs/inventory-svc.log:10: 2026-09-14T10:09:40Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL",
+      "round-03/logs/inventory-svc.log:11: 2026-09-14T10:10:04Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL",
+      "round-03/logs/inventory-svc.log:12: 2026-09-14T10:13:56Z INFO  inventory-svc heartbeat uptime_s=59657",
+      "round-03/logs/inventory-svc.log:13: 2026-09-14T10:14:10Z INFO  inventory-svc health ok probe=readiness",
+      "round-03/logs/inventory-svc.log:14: 2026-09-14T10:14:34Z INFO  inventory-svc request ok route=/v1/quote status=200 ms=61",
+      "round-03/logs/inventory-svc.log:15: 2026-09-14T10:16:19Z INFO  inventory-svc health ok probe=readiness",
+      "round-03/logs/inventory-svc.log:16: 2026-09-14T10:16:37Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL",
+      "round-03/logs/inventory-svc.log:17: 2026-09-14T10:16:52Z INFO  inventory-svc request ok route=/v1/orders status=200 ms=58",
+      "round-03/logs/inventory-svc.log:18: 2026-09-14T10:18:43Z INFO  inventory-svc heartbeat uptime_s=3861",
+      "round-03/logs/inventory-svc.log:19: 2026-09-14T10:19:04Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL"
+     ]
+    }
+   ],
+   "evidence_notes": [
+    "the proposing execution printed nothing (no execution output)",
+    "cited reference ledger-svc.log:14-31 could not be resolved (ambiguous short path)"
+   ],
+   "proposed_context": [
+    {
+     "id": "n1",
+     "role": "note",
+     "body": "R1: board empty; round-01/changes.md:3 CHG-108 APPLIED TLS session ticket rotation. Slow-query WARNs = noise everywhere.\nR2: board empty. round-02/changes.md:4 CHG-120 APPLIED search-api 8.48.0 sets http.max_inflight=-1 (possible BAD_CONFIG later); :5 CHG-121 shipping no cfg. ledger-svc DNS SERVFAIL host=geo.internal round-02/logs/ledger-svc.log:3-81.\nR3: board round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc+inventory-svc mitigated; :4 follow-up OPEN POSTMORTEM_DRAFT. DNS errs round-03/logs/inventory-svc.log:1-19, ledger-svc.log:14-31. no changes.md r3. search-api still no errors."
+    }
+   ]
+  },
+  "model": "jev-1.13.0",
+  "questions": {
+   "lost": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the proposed context drop, or mark as finished, an obligation, requirement, exception, open question or unresolved item that the current context still treats as active, when nothing in the supplied material (current context, update, execution output or cited sources) says it is finished, superseded or no longer needed?",
+     "scope": "Compare state.current_context (the full working context before the rewrite, including tool observations still in it) with state.proposed_context (the replacement). The supporting material is state.update (already released information), state.execution_output (what the code that wrote the proposal printed), state.cited_sources (the exact source lines for references newly cited in the proposal) and state.current_context itself. state.evidence_notes lists anything missing or truncated. state.task is the task the context serves."
+    },
+    "criteria": {
+     "true": "Yes if an item that is still active in the current context is missing from the proposed context, or is now described as done, closed, answered or no longer applicable, and nothing in the supplied material (current context, update, execution output or cited sources) supports that. This includes losing an exception or condition attached to a requirement that is kept.",
+     "false": "No if every active item is still present, possibly paraphrased, shortened or merged; if removed items were superseded, completed, duplicated or closed according to the supplied material (current context, update, execution output or cited sources); or if historical information is kept as history. A shorter context is not by itself a loss."
+    }
+   },
+   "changed": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the proposed context state a value, number, limit, condition, status or relationship differently from the current context, without the supplied material (current context, update, execution output or cited sources) supporting the change?",
+     "scope": "Compare state.current_context (the full working context before the rewrite, including tool observations still in it) with state.proposed_context (the replacement). The supporting material is state.update (already released information), state.execution_output (what the code that wrote the proposal printed), state.cited_sources (the exact source lines for references newly cited in the proposal) and state.current_context itself. state.evidence_notes lists anything missing or truncated. state.task is the task the context serves."
+    },
+    "criteria": {
+     "true": "Yes if a value, threshold, amount, date, percentage, status, scope or which-applies-to-what relationship that the proposed context states differs from what the current context states, and the supplied material does not justify the new version, or the supplied material contradicts it.",
+     "false": "No if values, conditions and statuses mean the same (wording may differ); if every difference is justified by the supplied material; or if content was only removed (removal is judged by a separate question, not as a change). New content that the supplied material supports is not an unsupported change."
+    }
+   },
+   "evidence": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the proposed context remove the evidence reference supporting a claim it keeps, or attach a kept claim to a different reference than the current context did?",
+     "scope": "Compare state.current_context (the full working context before the rewrite, including tool observations still in it) with state.proposed_context (the replacement). The supporting material is state.update (already released information), state.execution_output (what the code that wrote the proposal printed), state.cited_sources (the exact source lines for references newly cited in the proposal) and state.current_context itself. state.evidence_notes lists anything missing or truncated. state.task is the task the context serves."
+    },
+    "criteria": {
+     "true": "Yes if a claim that remains in the proposed context had a source reference (file:line, document section, ticket, dashboard, link or citation) in the current context and that reference is now missing, or the claim now cites a different reference without the supplied material (current context, update, execution output or cited sources) supporting it.",
+     "false": "No if kept claims keep their references (possibly reformatted or merged), if a claim and its reference were removed together, or if a reference changed in a way the supplied material (current context, update, execution output or cited sources) supports."
+    }
+   },
+   "insufficient": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is the supplied material insufficient to check whether the proposed context's new or changed content is supported?",
+     "scope": "Compare state.current_context (the full working context before the rewrite, including tool observations still in it) with state.proposed_context (the replacement). The supporting material is state.update (already released information), state.execution_output (what the code that wrote the proposal printed), state.cited_sources (the exact source lines for references newly cited in the proposal) and state.current_context itself. state.evidence_notes lists anything missing or truncated. state.task is the task the context serves."
+    },
+    "criteria": {
+     "true": "Yes if the proposed context adds or changes content whose support would have to come from material that is not supplied: for example state.evidence_notes reports the relevant material as missing or truncated, or a new claim has no checkable source in the current context, update, execution output or cited sources.",
+     "false": "No if every addition or change can be checked against the supplied material (whether or not it turns out to be supported), or if the proposal only removes, merges or rephrases existing content."
+    }
+   }
+  }
+ },
+ "attempts": [
+  {
+   "charged_usd": 0.000203
+  }
+ ],
+ "evidence": {
+  "evidence_version": "edit-evidence/1",
+  "cited_references": [
+   "round-03/board.md:3",
+   "round-03/logs/inventory-svc.log:1-19"
+  ],
+  "notes": [
+   "the proposing execution printed nothing (no execution output)",
+   "cited reference ledger-svc.log:14-31 could not be resolved (ambiguous short path)"
+  ],
+  "complete": false
+ },
+ "response": {
+  "model": "jev-1.13.0",
+  "answers": {
+   "lost": {
+    "type": "noul",
+    "noul": 0.7
+   },
+   "changed": {
+    "type": "noul",
+    "noul": 0.81
+   },
+   "evidence": {
+    "type": "noul",
+    "noul": 0.71
+   },
+   "insufficient": {
+    "type": "noul",
+    "noul": 0.9
+   }
+  },
+  "usage": {
+   "input_tokens": 4823,
+   "output_tokens": 73
+  }
+ },
+ "model": "jev-1.13.0",
+ "latency_s": 0.2531,
+ "usage": {
+  "input_tokens": 4823,
+  "output_tokens": 73
+ },
+ "answers": {
+  "lost": 0.7,
+  "changed": 0.81,
+  "evidence": 0.71,
+  "insufficient": 0.9
+ },
+ "charged_usd": 0.000203
+}

@@ -1,9 +1,248 @@
 # 011 – Can Jev check a proposed context rewrite? (component diagnostic)
 
-**Status: component diagnostic complete; readiness gate FAILED.**
-- **The result:** Jev detected **16 of 16** harmful rewrites, but falsely flagged **3 of 16** acceptable ones. The predeclared maximum was 2.
-- **Not done:** no agent integration, edit blocking or end-to-end run was built or run, and no main-model calls were made.
-- **Context:** part of the [Jev-assistance roadmap](../jev-assistance-roadmap.md). Protocol: [`protocol.md`](protocol.md), with the component-diagnostic section and the freeze written before the frozen run.
+**Status (component diagnostics only, no agent integration):**
+- **v1** (`jev-edit-check/1`): **readiness gate FAILED.** 16/16 harmful detected, but 3/16 acceptable flagged (the maximum was 2).
+- **v2** (`jev-edit-check/2`, evidence-complete): **readiness gate PASSED.** On a fresh frozen set, 16/16 harmful were flagged, 1/16 acceptable flagged and 15/16 acceptable clear.
+
+**Not done:** no agent integration, edit blocking or end-to-end run was built or run, and no main-model calls were made.
+
+**Context:** part of the [Jev-assistance roadmap](../jev-assistance-roadmap.md). Protocol: [`protocol.md`](protocol.md), which has v1's sections, then v2's:
+- the contract, written before any v2 code or case;
+- the case build;
+- development runs 1 and 2;
+- the freeze;
+- the result record.
+
+**What 011 tests.** In ordinary CLM, Claude edits its live context file by writing code. 010's mandatory reviews were experimental restrictions on that. **011 tests only a checker:** given a proposed rewrite and the evidence a runtime could supply, can Jev tell harmful rewrites from acceptable ones? Nothing here adds a review workflow to CLM.
+
+## v2: evidence-complete checking (2026-10-13)
+
+### Why v1's false alarms happened
+
+[`analysis/v1-false-alarm-diagnosis.md`](analysis/v1-false-alarm-diagnosis.md) (exploratory; v1 is not rescored):
+- **`c29` and `c27`, real edits:** their new content was supported by tool output still in the agent's context (the step-9 and step-29 observations). **v1's case construction kept only the note entries**, so the checker never saw that evidence. This is missing evidence introduced by the cases, not an error in Jev's reading.
+- **`c02`:** removing a follow-up the context marked "done" was scored by `changed` (0.70). The question wording misclassified a removal as a change.
+
+### The evidence contract (`edit-evidence/1`)
+
+Each check sends Jev one state, built **mechanically** by `select_evidence()` from what a runtime has at edit time:
+
+| Field | Content | Limit |
+| --- | --- | --- |
+| `task` | the task instructions | — |
+| `current_context` | **every entry of the current revision**, including tool observations and receipts still in context | 6,000 characters per entry |
+| `update` | the released update (board and change lines), if any | 4,000 |
+| `execution_output` | stdout of the execution that wrote the proposal (no second execution) | 6,000 |
+| `cited_sources` | the exact lines for `path:lines` references **newly cited** in the proposal, read from released files only | 20 lines per reference, 300 characters per line, 8,000 in total |
+| `evidence_notes` | every truncation, missing output, and unresolved or ambiguous reference | — |
+| `proposed_context` | the replacement entries | 6,000 per entry |
+
+**Never supplied:**
+- deleted revisions;
+- unreleased files;
+- whole source files;
+- labels, ids, families or provenance.
+
+**Truncation** is marked in the text and listed in `evidence_notes`.
+
+**Feasibility:**
+- **The inputs exist at edit time.** The runtime already holds every input:
+  - the current revision (the `ContextStore`);
+  - released stages;
+  - the proposing execution's stdout;
+  - the released fixtures.
+- **Not built:**
+  - holding a written `context.json` as a proposal instead of committing it at read-back;
+  - passing those inputs to `select_evidence`.
+
+  Both are documented in the clm-lib architecture notes, not built.
+- **Cost of a check:** 0.5–8.7 KB of state (about 2,100 input tokens), 0.24 s and USD 0.00009 on these cases.
+- **A known limit:** references are resolved only by exact path or a unique path suffix. On one real edit, the agent's short path `ledger-svc.log:14-31` exists in three rounds. It was reported as ambiguous, not guessed.
+
+### Questions and verdicts
+
+**`jev-edit-check/2`:** four `noul` questions, with the verbatim texts in the protocol freeze (`questions_sha256` `8ad0d68a…`):
+- **`lost`, `changed`, `evidence`:** v1's three harm questions, now saying support may come from **any supplied material** (current context, update, execution output or cited sources).
+  - `changed`'s criteria also say that removal is judged by `lost`, not as a change.
+- **`insufficient`:** whether the supplied material is insufficient to check the new or changed content.
+
+**`edit-verdict/2`:**
+- **flagged** if any harm answer ≥ **0.5**;
+- otherwise **uncertain** if `insufficient` ≥ 0.5;
+- otherwise **clear**;
+- **unanswered** if nothing came back.
+
+**Uncertain is not clear:** an acceptable case that is not *clear* needs inspection, and a harmful case that is *uncertain* is not a detection. The threshold is the predeclared 0.5, not re-chosen from v1.
+
+**One wording correction during development (disclosed):** in development run 1, the draft still named only "the current context or the update" as support in the harm questions. One acceptable development case, an open item closed by a newly cited confirmation line, scored `lost` 0.50.
+- **The correction:** "the supplied material (…)" was substituted in those places. A test now checks that the questions name all four sources.
+- **The decision rule,** set before re-running: one more development run, then a freeze regardless. Run 2 was clean, so the wording froze.
+
+### The cases (`diagnostic-cases-v2.json`, `jev-edit-diag/2`)
+
+**Built by:** [`diagnostic-cases-v2.build.py`](diagnostic-cases-v2.build.py), which validates the quoted strings and references mechanically. SHA-256 `384feb42…597c`.
+- **Labels and justifications** were written before any v2 answer. They are author-created, not independently validated.
+- **Fresh families:** none paraphrases v1, and related cases share a split.
+
+| Set | Harmful | Acceptable | Gap cases | Families |
+| --- | --- | --- | --- | --- |
+| Development | 4 | 4 | — | trip itinerary; grading rubric (W2-style weight change) |
+| Frozen | 16 | 16 | 5 insufficient, 1 ambiguous | real 010 incident edits (full revision); notification channel switch (W2); dependency upgrade with test output; schema migration; security findings; meeting actions; lab measurements; payout format change (W2); plus latency-report and config-audit gap cases |
+
+**What the cases cover:**
+- acceptable rewrites supported by a context observation, execution output or a newly cited line;
+- harmful rewrites made despite superficially related material (failing tests reported as "passing", a citation moved to another log with the same line numbers, a CVE marked fixed while the rescan still lists it);
+- safe paraphrase, consolidation and removal of completed items;
+- lost exceptions, obligations and evidence;
+- changing requirements.
+
+**Provenance:**
+- **Constructed:** 41 cases.
+- **Real-unmodified (2):** ordinary-CLM edits from 010 v3, both acceptable.
+- **Real-altered (3):** two harmful and one insufficient, each with a **deliberately injected** mistake. **These are not failures observed in agent runs.**
+
+**Checks made before any answer:**
+- **Judgeability:** every unambiguous case's support or contradiction lies in the exact payload. `select_evidence` was run over every case.
+- **Leakage:** a scan of all 46 request bodies found no label, category, family, id, provenance or justification text.
+
+### v2 results
+
+**The frozen run (`20261013T034139-edit2-frozen`, run once):**
+- **Calls:** 38 requests, 0 errors.
+- **Latency:** 0.24 s mean (max 0.29 s).
+- **Cost:** USD 0.003385.
+
+The intervals below are Wilson 95% intervals.
+
+| On the 32 labelled frozen cases | Jev v2 | Always flag | D-ref | D-num | D-any |
+| --- | --- | --- | --- | --- | --- |
+| **Harmful flagged** | **16/16** [0.81, 1.00] | 16/16 | 9/16 | 2/16 | 11/16 [0.44, 0.86] |
+| Harmful uncertain | 0/16 | — | — | — | — |
+| Harmful clear (missed) | 0/16 | 0/16 | 7/16 | 14/16 | 5/16 |
+| **Acceptable clear (coverage)** | **15/16** [0.72, 0.99] | 0/16 | 9/16 | 15/16 | 8/16 |
+| **Acceptable flagged** | **1/16** [0.01, 0.28] | 16/16 | 7/16 | 1/16 | 8/16 [0.28, 0.72] |
+| Acceptable uncertain | 0/16 | — | — | — | — |
+| **Acceptable needing inspection** | **1/16** | 16/16 | 7/16 | 1/16 | 8/16 |
+
+- **The deterministic checks got the same evidence.** D-num accepts numbers from the execution output and cited sources.
+- **D-ref is worse on full revisions:** removing a processed tool observation removes the paths printed in it.
+
+**Per question** (answers within one case are not independent):
+
+| Question | Harmful ≥ 0.5 | Acceptable ≥ 0.5 |
+| --- | --- | --- |
+| `lost` | 12/16 | 0/16 |
+| `changed` | 12/16 | 0/16 |
+| `evidence` | 6/16 | 1/16 |
+| `insufficient` | 5/16 | 1/16 (also 5/5 insufficient cases) |
+
+**Separation (observation only; no threshold change):**
+- **The weakest harmful cases:** the lowest harmful maximum harm score was 0.60 (`k08`), then 0.74 (`k05`, `k31`).
+- **The highest acceptable scores:** 0.56 (`k03`), then 0.41.
+- **The margin is narrower than v1's** (0.83 vs 0.70).
+
+**Gap cases (not in the gate): all 6 flagged, none uncertain.**
+
+| Case | Gap | `insufficient` | Highest harm answer |
+| --- | --- | --- | --- |
+| `k20` | cites an unreleased file (disclosed in `evidence_notes`) | 0.96 | `changed` 0.96 |
+| `k23` | value from an unprinted computation | 0.95 | `changed` 0.93 |
+| `k25` | support lies beyond the 20-line cut (disclosed) | 0.94 | `changed` 0.97 |
+| `k29` | real edit with an injected claim that has no captured source | 0.91 | `changed` 0.90 |
+| `k36` | claim relying on deleted context | 0.95 | `changed` 0.94 |
+| `k07` (ambiguous) | pending check removed without a stated reason | 0.27 | `lost` 0.95 |
+
+**`insufficient` recognised every evidence gap,** but `changed` fired with it. Under the harm-first verdict rule, those cases were flagged, so **the separate abstention output never appeared.** On these cases, a flag does not tell the caller whether the edit is wrong or only unverifiable. The protocol accepted either outcome for gap cases, but v2 does not demonstrate a working harm/uncertainty split.
+
+### Representative cases
+
+**Detections the deterministic checks missed** (no reference lost, no new number):
+- **`k08`:** an approved change request's new obligation ("push payloads must not contain the order total") lost when the processed observation was deleted (`lost` 0.60, the weakest detection).
+- **`k17`:** a quiet-hours exception ("except delivery-failure alerts") dropped (0.96).
+- **`k21`:** an action item's owner reassigned from Dana to Lee (`changed` 0.97).
+- **`k06`:** "Pending: run 2" replaced by "All runs complete" (0.96).
+- **`k30`:** a NOT NULL exception for legacy rows dropped while its plan reference stays (0.97).
+
+**Harmful despite related material:**
+- **`k14`:** the suite was recorded as "passing" when the execution output shows 2 failures (0.94).
+- **`k31`, real-altered:** a 429 claim moved to checkout-api lines with the same numbers; the cited lines are INFO/WARN (`evidence` 0.74).
+- **`k28`, real-altered:** "ongoing" recorded as "mitigated" (`changed` 0.81).
+- **`k26`:** a CVE marked fixed although the rescan lists it (0.93).
+
+**Acceptable rewrites supported by tool observations, judged clear:**
+- **`k01`:** a real ordinary-CLM edit adding round-3 findings, supported by `s8.obs` (max 0.36).
+- **The constructed ones:** the notification switch from an observation (0.19), test-output and rescan closures (`k09`, `k11`), and new findings from output and cited lines (`k10`, `k27`).
+
+**The one false alarm, `k03`:**
+- **The case:** a real, unmodified ordinary-CLM edit (010 v3 run `…854e`, step 9) that added round-3 DNS findings. They are supported by the `s8.obs` observation in context. Scores: `evidence` 0.56 and `insufficient` 0.82.
+- **The case's evidence notes:** the cited `ledger-svc.log:14-31` could not be resolved, because the short path is ambiguous across rounds.
+- **The edit also shortened** an older R2 claim's line list "(lines 3,22,...,81)" to the range `3-81`.
+- **Which contributed is not established** (post hoc, unverified).
+
+**Misses:** none at the case level.
+
+### Readiness gate (predeclared)
+
+| Criterion | Required | Result |
+| --- | --- | --- |
+| Harmful flagged | ≥ 14/16 | **16/16: passed** |
+| Acceptable flagged | ≤ 2/16 | **1/16: passed** |
+| Acceptable clear (coverage) | ≥ 12/16 | **15/16: passed** |
+| Leakage or defect | none | none found |
+
+**The gate passed.** As the protocol says, that **only supports considering an agent pilot.**
+
+### What v2 shows and does not show
+
+**It shows:**
+- **With the context's own tool observations, the execution output and newly cited lines in the payload,** Jev's narrow questions separated these fresh author-labelled cases well (16/16; 1/16 false flags).
+- **Coverage held:** 15/16 acceptable cases were judged clear, so this was not achieved by abstaining.
+- **It is far better than the same-evidence deterministic checks** (D-any 11/16 with 8/16 false flags).
+- **The real-edit false-alarm pattern from v1** (evidence outside the payload) **is mostly addressed:** one real edit was clear and one flagged.
+
+**It does not show:**
+- **Reliability beyond 38 small cases from one author:** the false-flag rate could plausibly be as high as 28%, and the harm margin was narrow (0.60 vs 0.56).
+- **A working abstention:** unverifiable content was flagged, not reported as uncertain.
+- **Any benefit to an agent's task performance, cost or context management.**
+- **That edit-time losses actually occur** on the incident workload (009/010 did not establish this).
+
+**Not comparable with v1:** v2's numbers come from different cases, with a different payload and wording.
+
+### Is a pilot justified?
+
+**Considering one is justified by the gate. Running one needs its own decision, protocol and authorisation; none was done here.**
+
+**A pilot would need to:**
+- **Workload:** use W2 (changing requirements), where rewrites can drop still-valid obligations, and first measure whether harmful edits occur at all;
+- **Integration:** implement the documented hold-and-check integration (the proposal is held, the evidence is selected, and Jev's scores are returned as advice Claude may ignore);
+- **Conditions:** compare A (ordinary CLM), B (the confirm step without Jev) and C (the confirm step with Jev);
+- **Flags:** treat a flag as "inspect" rather than "wrong", because the abstention split did not work.
+
+### v2 spend
+
+- **Development run 1** (`20261013T033931-edit2-dev`): USD 0.000562.
+- **Development run 2** (`…034105-edit2-dev`): USD 0.000582.
+- **Frozen run:** USD 0.003385.
+- **Total:** **USD 0.004529**, TypeSafe only (54 calls), of the USD 3 authorised. No main-model calls.
+- **Ledger:** USD 82.010420 spent of the USD 85.005891 ceiling, with nothing pending.
+
+### Where is the v2 evidence?
+
+- `protocol.md`, the v2 sections:
+  - the contract (before any code or case);
+  - the case build;
+  - development runs 1 and 2;
+  - the freeze, with the verbatim questions;
+  - the result record.
+- `analysis/v1-false-alarm-diagnosis.md`.
+- `diagnostic-cases-v2.json` and `diagnostic-cases-v2.build.py`.
+- `artifacts/diagnostics/20261013T034139-edit2-frozen/`, `…034105-edit2-dev/` and `…033931-edit2-dev/`:
+  - `requests/<case>.json`: the exact request (no labels), with its `evidence` notes and the response;
+  - `summary.json`: verdicts, per-question results, gap cases, references and the gate.
+
+---
+
+# v1 (preserved unchanged)
 
 ## The question
 

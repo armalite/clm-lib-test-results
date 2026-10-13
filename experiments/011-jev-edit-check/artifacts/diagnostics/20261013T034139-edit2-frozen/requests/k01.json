@@ -1,0 +1,201 @@
+{
+ "case_id": "k01",
+ "request": {
+  "state": {
+   "task": "Production incident investigation across several services; evidence arrives in hourly rounds (logs, incident-board updates that list only what changed, and change records; APPLIED changes took effect, PROPOSED did not). The final answer must list every real incident with its current cause, all affected services, current status and path:line evidence for the current cause and status, plus the follow-up items still open. The agent keeps working notes in its context; tool outputs it printed stay in the context until it removes them.",
+   "current_context": [
+    {
+     "id": "n1",
+     "role": "note",
+     "body": "R1: board empty; logs only routine slow-query WARNs (all 5 svcs: shipping-svc, checkout-api, pricing-svc, inventory-svc, search-api). Noise. changes: round-01/changes.md:4 CHG-113 APPLIED checkout-api build 4.33.8 sets feature.batch_size=0 (suspicious BAD_CONFIG); line5 CHG-114 inventory-svc no config; CHG-111 PROPOSED only. R1 done -> advance next."
+    },
+    {
+     "id": "n2",
+     "role": "note",
+     "body": "R2: board: follow-ups OPEN VENDOR_TICKET (round-02/board.md:3), POSTMORTEM_DRAFT (:4). changes CHG-116 log sampling (noise). pricing-svc 429 upstream=sms-gateway ERRORs round-02/logs/pricing-svc.log:4,6,12,21,34,37,53,54,67,68,72,73 -> UPSTREAM_RATE_LIMIT candidate. No board incident yet. Next: advance to R3."
+    },
+    {
+     "id": "s6.act",
+     "role": "assistant",
+     "body": "[step 6] execute\nthought: Compact round 2 into note, then advance next step.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\nc['entries'].append({'id':'n2','role':'note','body':'R2: board: follow-ups OPEN VENDOR_TICKET (round-02/board.md:3), POSTMORTEM_DRAFT (:4). changes CHG-116 log sampling (noise). pricing-svc 429 upstream=sms-gateway ERRORs round-02/logs/pricing-svc.log:4,6,12,21,34,37,53,54,67,68,72,73 -> UPSTREAM_RATE_LIMIT candidate. No board incident yet. Next: advance to R3.'})\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+    },
+    {
+     "id": "s6.obs",
+     "role": "observation",
+     "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+    },
+    {
+     "id": "s6.rcpt",
+     "role": "receipt",
+     "body": "context.json edit accepted at step 6: revision 8 -> 9; entries 4 -> 2; body chars 2951 -> 661; removed [s5.act, s5.obs, s5.rcpt]; added [n2]; rewritten []"
+    },
+    {
+     "id": "s7.act",
+     "role": "assistant",
+     "body": "[step 7] advance\nthought: "
+    },
+    {
+     "id": "s7.obs",
+     "role": "observation",
+     "body": "Stage 3 of 12 released.\nRound 3 of 12 released. New files are under /task/fixtures/round-03/.\n\nNew files:\n  round-03/board.md (3 lines)\n  round-03/logs/checkout-api.log (65 lines)\n  round-03/logs/inventory-svc.log (59 lines)\n  round-03/logs/pricing-svc.log (64 lines)\n  round-03/logs/search-api.log (81 lines)\n  round-03/logs/shipping-svc.log (55 lines)"
+    },
+    {
+     "id": "s8.act",
+     "role": "assistant",
+     "body": "[step 8] execute\nthought: Inspect round 3 board and error lines.\ncode:\nimport glob,re\nprint(open('/task/fixtures/round-03/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-03/logs/*.log')):\n    L=open(f).read().splitlines()\n    hits=[(i+1,l) for i,l in enumerate(L) if re.search(r'ERROR|FATAL|CRIT',l)]\n    print(f.split('/')[-1],len(hits))\n    for i,l in hits[:4]: print(' ',i,l[:150])"
+    },
+    {
+     "id": "s8.obs",
+     "role": "observation",
+     "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 03\n\n- Thread A opened: an upstream provider rejecting requests with 429 confirmed as the cause (code UPSTREAM_RATE_LIMIT) in pricing-svc; impact also on search-api. Status: ongoing.\n\ncheckout-api.log 0\ninventory-svc.log 0\npricing-svc.log 9\n  4 2026-09-14T10:05:09Z ERROR pricing-svc upstream returned 429 upstream=sms-gateway retry_after_s=50\n  7 2026-09-14T10:11:57Z ERROR pricing-svc upstream returned 429 upstream=sms-gateway retry_after_s=14\n  8 2026-09-14T10:13:33Z ERROR pricing-svc upstream returned 429 upstream=sms-gateway retry_after_s=53\n  9 2026-09-14T10:15:05Z ERROR pricing-svc upstream returned 429 upstream=sms-gateway retry_after_s=23\nsearch-api.log 13\n  8 2026-09-14T10:05:31Z ERROR search-api upstream returned 429 upstream=sms-gateway retry_after_s=26\n  14 2026-09-14T10:11:00Z ERROR search-api upstream returned 429 upstream=sms-gateway retry_after_s=24\n  23 2026-09-14T10:14:38Z ERROR search-api upstream returned 429 upstream=sms-gateway retry_after_s=23\n  31 2026-09-14T10:19:22Z ERROR search-api upstream returned 429 upstream=sms-gateway retry_after_s=8\nshipping-svc.log 0\n"
+    }
+   ],
+   "update": "round-03/board.md:3: - Thread A opened: an upstream provider rejecting requests with 429 confirmed as the cause (code UPSTREAM_RATE_LIMIT) in pricing-svc; impact also on search-api. Status: ongoing.",
+   "execution_output": "ok\n",
+   "cited_sources": [
+    {
+     "reference": "round-03/board.md:3",
+     "lines": [
+      "round-03/board.md:3: - Thread A opened: an upstream provider rejecting requests with 429 confirmed as the cause (code UPSTREAM_RATE_LIMIT) in pricing-svc; impact also on search-api. Status: ongoing."
+     ]
+    },
+    {
+     "reference": "round-03/logs/pricing-svc.log:4,7,8,9",
+     "lines": [
+      "round-03/logs/pricing-svc.log:4: 2026-09-14T10:05:09Z ERROR pricing-svc upstream returned 429 upstream=sms-gateway retry_after_s=50",
+      "round-03/logs/pricing-svc.log:7: 2026-09-14T10:11:57Z ERROR pricing-svc upstream returned 429 upstream=sms-gateway retry_after_s=14",
+      "round-03/logs/pricing-svc.log:8: 2026-09-14T10:13:33Z ERROR pricing-svc upstream returned 429 upstream=sms-gateway retry_after_s=53",
+      "round-03/logs/pricing-svc.log:9: 2026-09-14T10:15:05Z ERROR pricing-svc upstream returned 429 upstream=sms-gateway retry_after_s=23"
+     ]
+    },
+    {
+     "reference": "round-03/logs/search-api.log:8,14,23,31",
+     "lines": [
+      "round-03/logs/search-api.log:8: 2026-09-14T10:05:31Z ERROR search-api upstream returned 429 upstream=sms-gateway retry_after_s=26",
+      "round-03/logs/search-api.log:14: 2026-09-14T10:11:00Z ERROR search-api upstream returned 429 upstream=sms-gateway retry_after_s=24",
+      "round-03/logs/search-api.log:23: 2026-09-14T10:14:38Z ERROR search-api upstream returned 429 upstream=sms-gateway retry_after_s=23",
+      "round-03/logs/search-api.log:31: 2026-09-14T10:19:22Z ERROR search-api upstream returned 429 upstream=sms-gateway retry_after_s=8"
+     ]
+    }
+   ],
+   "evidence_notes": [],
+   "proposed_context": [
+    {
+     "id": "n1",
+     "role": "note",
+     "body": "R1: board empty; logs only routine slow-query WARNs (all 5 svcs: shipping-svc, checkout-api, pricing-svc, inventory-svc, search-api). Noise. changes: round-01/changes.md:4 CHG-113 APPLIED checkout-api build 4.33.8 sets feature.batch_size=0 (suspicious BAD_CONFIG); line5 CHG-114 inventory-svc no config; CHG-111 PROPOSED only. R1 done -> advance next."
+    },
+    {
+     "id": "n2",
+     "role": "note",
+     "body": "R2: board: follow-ups OPEN VENDOR_TICKET (round-02/board.md:3), POSTMORTEM_DRAFT (:4). changes CHG-116 log sampling (noise). pricing-svc 429 upstream=sms-gateway ERRORs round-02/logs/pricing-svc.log:4,6,12,21,34,37,53,54,67,68,72,73 -> UPSTREAM_RATE_LIMIT candidate. No board incident yet. Next: advance to R3."
+    },
+    {
+     "id": "n3",
+     "role": "note",
+     "body": "R3: board Thread A opened UPSTREAM_RATE_LIMIT pricing-svc + search-api ongoing (round-03/board.md:3). 429 sms-gateway: round-03/logs/pricing-svc.log:4,7,8,9; round-03/logs/search-api.log:8,14,23,31. No changes.md. Next: advance to R4."
+    }
+   ]
+  },
+  "model": "jev-1.13.0",
+  "questions": {
+   "lost": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the proposed context drop, or mark as finished, an obligation, requirement, exception, open question or unresolved item that the current context still treats as active, when nothing in the supplied material (current context, update, execution output or cited sources) says it is finished, superseded or no longer needed?",
+     "scope": "Compare state.current_context (the full working context before the rewrite, including tool observations still in it) with state.proposed_context (the replacement). The supporting material is state.update (already released information), state.execution_output (what the code that wrote the proposal printed), state.cited_sources (the exact source lines for references newly cited in the proposal) and state.current_context itself. state.evidence_notes lists anything missing or truncated. state.task is the task the context serves."
+    },
+    "criteria": {
+     "true": "Yes if an item that is still active in the current context is missing from the proposed context, or is now described as done, closed, answered or no longer applicable, and nothing in the supplied material (current context, update, execution output or cited sources) supports that. This includes losing an exception or condition attached to a requirement that is kept.",
+     "false": "No if every active item is still present, possibly paraphrased, shortened or merged; if removed items were superseded, completed, duplicated or closed according to the supplied material (current context, update, execution output or cited sources); or if historical information is kept as history. A shorter context is not by itself a loss."
+    }
+   },
+   "changed": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the proposed context state a value, number, limit, condition, status or relationship differently from the current context, without the supplied material (current context, update, execution output or cited sources) supporting the change?",
+     "scope": "Compare state.current_context (the full working context before the rewrite, including tool observations still in it) with state.proposed_context (the replacement). The supporting material is state.update (already released information), state.execution_output (what the code that wrote the proposal printed), state.cited_sources (the exact source lines for references newly cited in the proposal) and state.current_context itself. state.evidence_notes lists anything missing or truncated. state.task is the task the context serves."
+    },
+    "criteria": {
+     "true": "Yes if a value, threshold, amount, date, percentage, status, scope or which-applies-to-what relationship that the proposed context states differs from what the current context states, and the supplied material does not justify the new version, or the supplied material contradicts it.",
+     "false": "No if values, conditions and statuses mean the same (wording may differ); if every difference is justified by the supplied material; or if content was only removed (removal is judged by a separate question, not as a change). New content that the supplied material supports is not an unsupported change."
+    }
+   },
+   "evidence": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the proposed context remove the evidence reference supporting a claim it keeps, or attach a kept claim to a different reference than the current context did?",
+     "scope": "Compare state.current_context (the full working context before the rewrite, including tool observations still in it) with state.proposed_context (the replacement). The supporting material is state.update (already released information), state.execution_output (what the code that wrote the proposal printed), state.cited_sources (the exact source lines for references newly cited in the proposal) and state.current_context itself. state.evidence_notes lists anything missing or truncated. state.task is the task the context serves."
+    },
+    "criteria": {
+     "true": "Yes if a claim that remains in the proposed context had a source reference (file:line, document section, ticket, dashboard, link or citation) in the current context and that reference is now missing, or the claim now cites a different reference without the supplied material (current context, update, execution output or cited sources) supporting it.",
+     "false": "No if kept claims keep their references (possibly reformatted or merged), if a claim and its reference were removed together, or if a reference changed in a way the supplied material (current context, update, execution output or cited sources) supports."
+    }
+   },
+   "insufficient": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is the supplied material insufficient to check whether the proposed context's new or changed content is supported?",
+     "scope": "Compare state.current_context (the full working context before the rewrite, including tool observations still in it) with state.proposed_context (the replacement). The supporting material is state.update (already released information), state.execution_output (what the code that wrote the proposal printed), state.cited_sources (the exact source lines for references newly cited in the proposal) and state.current_context itself. state.evidence_notes lists anything missing or truncated. state.task is the task the context serves."
+    },
+    "criteria": {
+     "true": "Yes if the proposed context adds or changes content whose support would have to come from material that is not supplied: for example state.evidence_notes reports the relevant material as missing or truncated, or a new claim has no checkable source in the current context, update, execution output or cited sources.",
+     "false": "No if every addition or change can be checked against the supplied material (whether or not it turns out to be supported), or if the proposal only removes, merges or rephrases existing content."
+    }
+   }
+  }
+ },
+ "attempts": [
+  {
+   "charged_usd": 0.000177
+  }
+ ],
+ "evidence": {
+  "evidence_version": "edit-evidence/1",
+  "cited_references": [
+   "round-03/board.md:3",
+   "round-03/logs/pricing-svc.log:4,7,8,9",
+   "round-03/logs/search-api.log:8,14,23,31"
+  ],
+  "notes": [],
+  "complete": true
+ },
+ "response": {
+  "model": "jev-1.13.0",
+  "answers": {
+   "lost": {
+    "type": "noul",
+    "noul": 0.36
+   },
+   "changed": {
+    "type": "noul",
+    "noul": 0.17
+   },
+   "evidence": {
+    "type": "noul",
+    "noul": 0.23
+   },
+   "insufficient": {
+    "type": "noul",
+    "noul": 0.22
+   }
+  },
+  "usage": {
+   "input_tokens": 4219,
+   "output_tokens": 73
+  }
+ },
+ "model": "jev-1.13.0",
+ "latency_s": 0.2829,
+ "usage": {
+  "input_tokens": 4219,
+  "output_tokens": 73
+ },
+ "answers": {
+  "lost": 0.36,
+  "changed": 0.17,
+  "evidence": 0.23,
+  "insufficient": 0.22
+ },
+ "charged_usd": 0.000177
+}

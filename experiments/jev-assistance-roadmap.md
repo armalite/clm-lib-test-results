@@ -30,7 +30,7 @@ These are different interventions. Results from one say nothing directly about t
 | [008](008-jev-context-review/README.md) | model-controlled | an optional Jev tool Claude may call | Complete: the tool was never used (evidence about optional-tool availability) |
 | [009](009-jev-update-review/README.md) | model-controlled | automatically at every incoming update, before Claude's next turn | Complete: no cost, time or established correctness benefit in 24 evaluation runs |
 | [010](010-jev-initiated-review/README.md) | model-controlled | at **Claude's** context-edit decisions (v1 optional; v2 required, Claude-labelled; v3 required, runtime-supplied update) | **v3 complete (36 runs):** Jev added nothing measurable over the review alone; the review workflow costs about 30% more than ordinary CLM. v1 and v2 stopped at their gates |
-| [011](011-jev-edit-check/README.md) | model-controlled (checking) | on a proposed context rewrite | **Component diagnostic complete; gate failed** (16/16 harmful detected, 3/16 false flags against a limit of 2). No agent integration |
+| [011](011-jev-edit-check/README.md) | model-controlled (checking) | on a proposed context rewrite | **v1 diagnostic: gate failed** (16/16 harmful detected, 3/16 false flags against a limit of 2). **v2 diagnostic (evidence-complete, fresh cases): gate passed** (16/16 flagged, 1/16 false flags, 15/16 acceptable clear). No agent integration |
 | W2 workload | a workload, not a strategy | changing requirements that interact | Planned (not implemented) |
 | 012 | runtime policy beside CLM | automatic screening of incoming tool results | Planned: the first proposed screening experiment |
 | 013 | model-controlled | Claude-directed screening of tool results | Planned |
@@ -206,3 +206,30 @@ See [010](010-jev-initiated-review/README.md).
 - **Why the gate failed:** two of the false flags were real edits whose new content came from tool output the checker never saw.
 - **Next step:** this is not a basis for an agent pilot. If pursued, a **diagnostic v2** would include the tool observations since the last revision in the checker's input, with **fresh** labelled cases, followed only then by a W2-workload pilot (A ordinary CLM / B confirm step / C confirm step + Jev).
 - **Unchanged:** 012 and 013 remain planned.
+
+## Note after 011's v2 diagnostic (2026-10-13)
+
+**What v2 changed:** the checker now sees the evidence a runtime has at edit time (`edit-evidence/1`):
+- the full current revision, including tool observations;
+- the released update;
+- the proposing execution's stdout;
+- the lines of newly cited released files.
+
+**It also gained a fourth `insufficient` question.** The cases and families were fresh, and the frozen set was run once.
+
+**The result:** **16/16** harmful flagged, **1/16** acceptable flagged and **15/16** acceptable clear, so **the gate passed**. The deterministic checks given the same evidence managed 11/16 with 8/16 false flags.
+
+**Caveats:**
+- one author's 38 cases;
+- a narrow margin;
+- the uncertain output never appeared: all 6 gap cases were flagged, with `insufficient` and `changed` both high.
+
+**Next (the maintainer's decision; not started):** an agent pilot on the **W2** workload can now be considered. It would:
+- implement the documented hold-and-check integration;
+- compare A (ordinary CLM), B (the confirm step without Jev) and C (the confirm step with Jev);
+- first measure whether harmful edits occur at all;
+- treat flags as advice to inspect.
+
+**Building W2 comes first.**
+
+**Unchanged:** 012 and 013 remain planned.
