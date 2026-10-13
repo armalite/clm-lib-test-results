@@ -32,7 +32,7 @@ These are different interventions. Results from one say nothing directly about t
 | [010](010-jev-initiated-review/README.md) | model-controlled | at **Claude's** context-edit decisions (v1 optional; v2 required, Claude-labelled; v3 required, runtime-supplied update) | **v3 complete (36 runs):** Jev added nothing measurable over the review alone; the review workflow costs about 30% more than ordinary CLM. v1 and v2 stopped at their gates |
 | [011](011-jev-edit-check/README.md) | model-controlled (checking) | on a proposed context rewrite | **v1 diagnostic: gate failed. v2 diagnostic: gate passed.** **Development pilot on W2** (2 instances × 3 conditions): all 6 runs strict success; no harmful edit occurred; Jev flagged 4/9 proposals, all acceptable; checking cost +58% (C vs A), almost all Claude-side |
 | W2 workload | a workload, not a strategy | changing requirements that interact | **Implemented** (`export-gen/1`, 2 development instances); used by the 011 development pilot |
-| [012](012-jev-result-screening/README.md) | runtime policy beside CLM | automatic screening of incoming (search) results | **Component gate passed** (58/58 support passages, 23/23 complete sets, 22% omitted); smoke passed; **development pilot: 4/4 correct, but screening never exercised**, because Claude read the 40 documents directly instead of searching in both B runs |
+| [012](012-jev-result-screening/README.md) | runtime policy beside CLM | automatic screening of incoming (search) results | **v1** (local files): component gate passed; pilot never exercised screening. **v2** (document service): screening exercised in 12/12 searches; 4/4 correct; no needed passage omitted; Claude fetched most omitted passages back, so B cost +10%. No evaluation |
 | 013 | model-controlled | Claude-directed screening of tool results | Planned |
 
 ### 010: Claude-initiated context review
@@ -272,4 +272,16 @@ See [010](010-jev-initiated-review/README.md).
 **What it means:** a search-result screen only helps an agent that depends on search. With a corpus small enough to read, a fair control (with the same file access) and the screened condition both bypass it.
 
 **Next (the maintainer's decision):** no larger 012 evaluation on this workload. Continuing would need a workload where search is the natural, not the forced, route (for example a corpus too large to list and read), checked offline first. Otherwise, 013 (Claude-directed screening) has the same dependency on search use.
+
+## Note after 012 v2 (document service, 2026-10-13)
+
+**What changed:** v2 moved the handbook behind runtime `search`/`fetch` actions, so neither condition could read files directly.
+
+**What happened:**
+- **Screening ran on every search in B,** removing about a fifth of the text with no needed passage lost.
+- **Claude fetched most omitted passages back,** so B used more calls, time and cost than A (+10%), with equal correctness.
+
+**What it means:** on this workload, Jev's screening is safe but not useful. Disclosing omissions invites the agent to check them, which cancels the input saving. These are 2 development instances, not an evaluation.
+
+**Next (the maintainer's decision):** do not scale 012 up. A screening test would only be informative on a workload whose search results are much larger and noisier than these. Across 008–012, no Jev integration has shown a measurable benefit over ordinary CLM, so a programme-level review is recommended before further integration work. **013 remains planned.**
 

@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Q1: 42 EUR (HB-38 §2). Q2: 350 EUR (HB-16 §2 superseded version effective 2025-03-01..2026-03-31; HB-46 memo, regular=standard). Q3: 450 EUR (HB-56 §2 400 + HB-56 §3 +50 checked equipment; HB-62 only intercontinental). Q4: 75 EUR (HB-33 §2 standard; HB-34 §2 city-centre 120 but HB-34 §3 carve-out assigned space -> standard). Q5: 250 EUR (HB-31 §2 std 185; HB-53 §2 Geneva exception 250; carve-out only contractors). Next: Q6 bike-leasing e-bike insurance.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

@@ -436,3 +436,184 @@ By provider: TypeSafe USD 0.007200 and Anthropic USD 0.515326. **Ledger:** USD 8
 **Defects:** none found in the pilot runs.
 - **Before any live call:** offline tests found and fixed a runtime notice being re-parsed as passage text.
 - **At export:** the exporter's rescoring did not know the new `handbook` task kind. It now keeps the recorded score, as for coding and rounds tasks. Run evidence is unaffected.
+
+---
+
+# Protocol v2 (2026-10-13): document-service workload (`docsvc-gen/1`)
+
+**Why a new version:**
+- **What v1 showed:** v1's workload (`handbook-gen/1`) mounted the handbook as files in the sandbox. In both screening runs of the v1 pilot, Claude read those files directly and never searched, so **screening was never exercised**.
+- **v1 stays as it was:** its task, configuration, prompts and evidence are unchanged. Its pilot is not evidence for or against screening's effectiveness, and it is not rerun.
+
+**What v2 changes:** v2 models a **document service**.
+- **The service boundary:** the corpus exists only in host memory. Claude reaches it only through two runtime actions, `search` and `fetch`. Nothing of the corpus is mounted; the fixture mount holds only a one-line `SERVICE.md`.
+- **The same in A and B:** this is a declared service boundary, identical in both conditions and **different from v1's locally mounted task**.
+- **Unchanged in both:** normal code execution and CLM context editing, no sandbox network, and no credentials in the sandbox.
+
+## Workload v2 (implemented; uncommitted at the time of writing)
+
+- **Corpus** (`docservice.py`, instances `docsvc-dev-1/2` for the pilot, `docsvc-smoke-1`, `docsvc-diag-1..3`): 74 documents and 232 passages.
+  - **16 policy subjects with overlapping vocabulary:** 8 on travel and expenses, 8 on people and facilities. Each has a current policy, a superseded version, an exception memo with a carve-out, and a related-budgets distractor.
+  - **Also:** two FAQ documents restating current standard values, and 8 general documents.
+  - **Sections** carry subject-specific procedural sentences, **not v1's generic filler** (passage text median 279 characters).
+  - **Questions:** 6 per instance, of the same 5 types and with the same support-set rules as v1. Answer documents are not named in the task, and no query sequence is prescribed.
+- **Scorer:** `handbook-checks/1`, unchanged; it was re-validated for v2 with correct, missed-exception and superseded-version answers.
+- **Actions** (both conditions, runtime-handled, one model step each):
+  - `{"action": "search", "query": ..., "k": 1-8 (default 5)}` returns the v1 structured block (`=== <id> | <title> — <heading> | <meta>`) and saves the original (`.txt`, `.json`) under `/task/workspace/search-results/`;
+  - `{"action": "fetch", "ids": [...]}` (≤ 10 passage or document ids) returns passages as `<<passages (unscreened): ...>>`.
+
+  Both are capped at the existing 6,000-character output cap, with whole passages only.
+- **What is screened:** only `search` results. Fetches, saved results read by code, any `execute` output, errors, runtime notices and context edits are never screened.
+
+## Screening policy: unchanged, with one documented presentation adaptation
+
+- **Unchanged:** `result-screen/1`, with the frozen question (`sha256 6332a7b4…`), payload, threshold 0.5, minimum of 2 kept, eligibility (≥ 3 passages, ≥ 2,000 characters), failure handling, and `jev-1.13.0`.
+- **The adaptation:** v1's notice and system clause name `show()`, which does not exist in the service, so in v2 the notice reads `unscreened: fetch([...]) or <saved path>`, and B's clause is `SEARCH_SCREEN_SERVICE_CLAUSE` (the same text, naming the fetch action). v1's texts are unchanged.
+- **Step intent:** the search action's `thought`.
+
+## Offline checks v2 (no Jev; `analysis/v2_service_cases.py`, outputs `analysis/v2_opportunity_summary.txt`)
+
+| Ordinary queries at k = 5 | Pilot instances (12 questions, 24 queries) | Compatibility instances (18 questions, 36 queries) |
+| --- | --- | --- |
+| Result size, characters | median 2,119 (1,955–2,504) | median 2,081 (1,853–2,400) |
+| Eligible results | 21/24; every question has one | 26/36; 16/18 questions |
+| Results holding a complete support set | 16/24 | 21/36 |
+| Eligible characters: support / context / irrelevant | 24% / 74% / 2% | 22% / 74% / 4% |
+
+**Findings:**
+- **Results mix needed and not-needed passages,** but nearly all of them are about the same subject. A larger corpus does not make results more off-topic.
+- **Ordinary results sit near the 2,000-character eligibility line,** so eligibility is common but not universal.
+
+**Boundary and capability checks (tests in `tests/test_docservice.py`):**
+- **The corpus is unreachable from the sandbox.** A whole-filesystem `grep` for corpus text finds nothing, and `/task` holds only `SERVICE.md` and the context file.
+- **Fetch returns full passages or documents, unscreened.**
+- **Ids and citations survive** search, screening and fetch.
+- **A and B receive identical pre-screening blocks.**
+- **Execute output is never screened.**
+- **Context edits still drive the next request.**
+
+## Compatibility diagnostic (fresh, small; frozen before any Jev call)
+
+- **Why:** the service changes the corpus and the source of the step intent, though not the passage structure.
+- **Cases:** `screen-cases-v2-service.json` (SHA-256 `0d0f3de9fc01897a…`): 36 cases from `docsvc-diag-1..3`, **26 eligible** (only eligible cases are sent). Labels come from generator truth, written before any answer.
+- **Policy:** exactly `result-screen/1` as frozen; no development tuning.
+- **Predeclared compatibility criteria** (reported separately from v1's gate):
+  - support-passage recall ≥ 0.95;
+  - at most 1 eligible case with a complete support set loses every complete set;
+  - 0 service errors.
+
+  The omitted share is **reported, not required**. The tool's built-in v1 gate field (which includes ≥ 20% omission) is shown for reference only.
+- **It runs once.**
+
+### Compatibility diagnostic result (run once, `20261013T081130-screen-frozen`)
+
+**Calls and cost:** 26 eligible requests, 0 errors, 0 missing answers. Usage was 89,252 input and 2,314 output tokens, at 0.25 s mean latency. **USD 0.003747.**
+
+| v2 compatibility (26 eligible cases) | Jev `result-screen/1` | Term-match baseline |
+| --- | --- | --- |
+| Support-passage recall | **28/28** | 28/28 |
+| Cases keeping a complete support set | **16/16** | 16/16 |
+| Omitted share (reported) | **23.1%**: all 1,965 irrelevant characters, plus 10,891 context | 0% |
+
+**All predeclared compatibility criteria are met.**
+
+**What the screen omitted:** mostly `§1 Scope` and `§1 Purpose` sections, and some same-subject memo sections. Several scored 0.43–0.49, just under the threshold. **The policy is compatible with the service workload. Nothing was tuned.**
+
+## v2 integration smoke (excluded from every comparison)
+
+**Run `20261013T081206-clm_helpers-cacheon-scr-docsvc-smoke-1-e31d`** (condition B, `docsvc-smoke-1`, an explicitly prompted first search with k = 6):
+- **Outcome:** completed, 2/2 questions correct with complete support, 4 model calls.
+- **Cost:** **USD 0.033546** (Anthropic 0.033227, TypeSafe 0.000319). All 6 ledger attempts are recorded.
+
+**Verified live:**
+- **Two real service searches,** both eligible, both screened by real Jev calls. SR-001 kept all 6 passages; SR-002 kept 5 of 6 and omitted `HB-58 §1` (a memo's Purpose section, probability 0.48).
+- **The next request held SR-002** with the fixed notice: `[result-screen/1: kept 5 of 6 passages (2,171 of 2,577 chars); omitted HB-58 §1; unscreened: fetch(['HB-58 §1']) or …/SR-002.txt]`.
+- **Recovery:** as the smoke prompt asked, Claude then **fetched `HB-58 §1`**, which came back unscreened (`<<passages (unscreened): …>>`) and was counted as an omitted passage recovered. This recovery was prompted by the smoke instructions, not spontaneous.
+
+**The service boundary held** (the grep test). **No separate scripted recovery check was needed.**
+
+## v2 pilot freeze (before pilot run 1)
+
+- **Conditions:**
+  - **A:** `clm_helpers:on`, ordinary CLM using the document service;
+  - **B:** `clm_helpers+scr:on`, the same with `result-screen/1` (0.5, minimum 2, `jev-1.13.0`) on eligible search results.
+
+  Identical in both:
+  - `claude-opus-5-5` (effort low), the task text and the service actions;
+  - limits: 90 calls, an 8,000-token context budget, a 6,000-character output cap;
+  - `blocks/1` layout, caching (5 min), `run-tag/1` isolation;
+  - ordinary CLM editing.
+
+  No queries, result counts or edits are prescribed.
+- **Instances (fresh):** `docsvc-dev-1` and `docsvc-dev-2`. Task prompts `2e8f74c4…` and `fe5f9b0b…`; truth `4facb63e…` and `de90df52…`; corpora `42f26b13…` and `37a578a0…`.
+- **Order:** dev-1 A then B; dev-2 B then A.
+- **Prompts:** version `2026-10-13.7`; system prompt A `f9e1588f…` (identical to v1's A), B `1c05e629…` (`SEARCH_SCREEN_SERVICE_CLAUSE`).
+- **Code:**
+  - `runner.py` `44c11c39…`;
+  - `jev_screen.py` `03f0a216…`;
+  - `docservice.py` `29a6fa85…`;
+  - `prompts.py` `199e2a73…`;
+  - `configs/exp012v2.toml` `d48c4326…`.
+
+  The question hash is `6332a7b4…`, unchanged.
+- **Metrics:**
+  - correctness and evidence completeness;
+  - searches, fetches and recovery;
+  - eligible and screened results, kept and omitted passages and characters, notice characters;
+  - needed evidence omitted (evaluator-only, against truth, afterwards) and later fetched;
+  - cost by provider, elapsed time, Jev latency, main-model tokens and cache use;
+  - context edits and when they happened;
+  - errors and fallbacks.
+- **Stopping rules:** the existing compare halts, the per-run reserve (USD 2.00) and the ceiling. No tuning or replacement.
+- **Budget before the pilot:** USD 83.853203 spent of the 93.815911 ceiling. The estimate is USD 0.15–0.40 per run.
+
+## v2 development pilot result (comparison `20261013T081314`, run once; no run repeated or replaced)
+
+**Cells:** 4/4 completed, not halted, in the frozen order (dev-1: A, B; dev-2: B, A). Table: `analysis/v2_pilot_table.py`, output `analysis/v2_pilot_summary.txt`.
+
+| Instance | Cond. | Strict | Calls | Elapsed s | Cost USD (Anthropic + TypeSafe) | Searches (eligible) | Fetches (ids) | Screened | Passages omitted | Omitted passages fetched back by id / by any fetch | Context edits (steps) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| docsvc-dev-1 | A | 6/6 | 16 | 70.3 | 0.124155 | 6 (5) | 4 (10) | — | — | — | 5 (2, 5, 8, 11, 14) |
+| docsvc-dev-1 | B | 6/6 | 16 | 75.8 | 0.121745 + 0.000944 | 6 (6) | 4 (9) | 6/6 | 4 | 4 / 4 | 5 (2, 5, 7, 10, 13) |
+| docsvc-dev-2 | B | 6/6 | 19 | 80.3 | 0.137606 + 0.000901 | 6 (6) | 7 (18) | 6/6 | 10 | 6 / 8 | 5 (4, 8, 10, 13, 16) |
+| docsvc-dev-2 | A | 6/6 | 13 | 51.6 | 0.113186 | 6 (6) | 1 (3) | — | — | — | 5 (2, 4, 6, 8, 10) |
+
+**Means (2 runs each):**
+
+| | A | B |
+| --- | --- | --- |
+| Cost USD | 0.118670 | 0.130598 (TypeSafe 0.000922) |
+| Elapsed s | 61.0 | 78.0 |
+| Calls | 14.5 | 17.5 |
+| Fetches | 2.5 | 5.5 |
+| Cache-read tokens | 37,798 | 50,927 |
+| Cache-write tokens | 12,916 | 14,162 |
+| Uncached input tokens | 1,650 | 1,990 |
+| Output tokens | 1,996 | 2,036 |
+
+**Screening was exercised:**
+- **Coverage:** all 12 searches in B were eligible and screened, with 12 Jev requests, **0 errors**, 0 missing answers, about 0.25 s each and 1.5 s per run.
+- **Volume:** 28,217 screened characters, 22,655 kept (19.7% omitted), plus 1,744 notice characters.
+- **What was omitted:** 14 passages, mostly `§1 Scope` and `§1 Purpose` sections.
+- **No needed evidence was lost.** Evaluator-only check, after the run, against the exported truth: **none of the 14 omitted passages is in any valid support set.**
+
+**Claude's reaction (spontaneous; not prompted):**
+- **Most omitted passages were fetched back:** 10 by id (4/4 on dev-1, 6/10 on dev-2), plus 2 more inside whole-document fetches. None of them was needed.
+- **On dev-2,** B made 7 fetches where A made 1 (6 more calls).
+- **On dev-1,** B made the same number of fetches as A (4), but each of B's fetches included an omitted passage.
+
+**Correctness:** every run answered 6/6 with complete support, in both conditions.
+
+**Total efficiency:** **B cost more**: USD +0.0119 per run (+10%), +3 calls and +17 s on average. Jev's own cost and latency are small; the extra cost is Claude's recovery fetches and the longer context they bring (more cache reads). These are 2 runs per condition, so this is no estimate of an effect. But **no saving survived the full overhead** in either instance pair: dev-1 −1.2% (about equal), dev-2 +22%.
+
+**Context editing:** active in every run, with 5 accepted edits each, typically right after each search or fetch to replace the raw result with a note. Screening and context editing therefore interacted naturally; there were no pressure steps, recoveries or spills.
+
+**Defects:** none.
+
+**Spend for v2:**
+- compatibility diagnostic USD 0.003747;
+- smoke USD 0.033546;
+- pilot USD 0.498537 (from the run summaries);
+- **ledger total USD 0.535821.**
+
+**Ledger:** USD 84.351732 spent of 93.815911, with nothing pending.

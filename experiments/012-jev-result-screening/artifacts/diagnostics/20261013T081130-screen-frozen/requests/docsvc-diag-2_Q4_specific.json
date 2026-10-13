@@ -1,0 +1,193 @@
+{
+ "case_id": "docsvc-diag-2:Q4:specific",
+ "eligible": true,
+ "request": {
+  "state": {
+   "task": "Question-answering task using the company document service.\n\nThe company handbook is held by a document service; it is not available as files. Documents\nhave a header line (version, status, effective dates, what they supersede) and numbered\nsections; each section is a passage, cited as \"HB-07 §2\". Documents can have superseded\nversions, and memos can add group exceptions and carve-outs. Use the rule that applies to the\nsituation and date in the question.\n\nService actions (reply with one of these instead of \"execute\"):\n  {\"action\": \"search\", \"query\": \"lodging limit Geneva\", \"k\": 5, \"thought\": \"...\"}\n      up to k (at most 8; default 5) ranked passages with ids and document headers. Each\n      result is also saved under /task/workspace/search-results/ (path in the result header),\n      where your code can read it later.\n  {\"action\": \"fetch\", \"ids\": [\"HB-07 §2\", \"HB-12\"], \"thought\": \"...\"}\n      the named passages in full; a document id (\"HB-12\") returns all its sections; at most\n      10 ids per fetch.\nYou can still use \"execute\" for code (for example to read saved results or manage your\ncontext), and \"final\" to answer.\n\nQuestions:\n- Q1: What is the relocation lump sum for an employee relocating to another country at the company's request today? (answer in EUR)\n- Q2: What is the purchase approval threshold for IT hardware bought by the facilities department today? (answer in EUR)\n- Q3: What is the bike-leasing allowance for a regular employee leasing an e-bike with the insurance package today? (answer in EUR per month)\n- Q4: What is the nightly lodging limit for a standard business trip today (2026-10-13)? (answer in EUR per night)\n- Q5: What is the taxi allowance for a daytime business taxi ride with trade-fair luggage today? (answer in EUR per ride)\n- Q6: What monthly mobile allowance applied to a regular employee using a private phone on 2026-05-15? (answer in EUR per month)\n\nFinish with {\"action\": \"final\", \"answer\": {\"answers\": [{\"question\": \"Q1\", \"value\": \"...\",\n\"citations\": [\"HB-07 §2\", ...]}, ...]}}. Give one entry per question. The value must be the\nexact amount; citations must include every passage needed to support it (for example the rule\nand any exception or carve-out that applies), not just one passage.\n",
+   "query": "nightly lodging limit a standard business trip",
+   "step_intent": "Find the nightly lodging limit that applies to: What is the nightly lodging limit for a standard business trip today (2026-10-13)?",
+   "passages": [
+    {
+     "id": "HB-55 §2",
+     "source": "HB-55 §2 | Memo: nightly lodging limit exceptions — Exception for business trips to Zurich, Geneva or Oslo | version: 1 · status: current · effective: 2025-07-01",
+     "text": "For business trips to Zurich, Geneva or Oslo, the nightly lodging limit is 270 EUR per night instead of the standard amount. Managers confirm claims for the nightly lodging limit before payment in the next payroll run. The travel office reviews the nightly lodging limit once a year and announces changes in advance."
+    },
+    {
+     "id": "HB-22 §2",
+     "source": "HB-22 §2 | Travel policy: lodging — Standard nightly lodging limit | version: 2 · status: superseded · effective: 2025-07-01 to the day before 2026-02-01 · superseded by: HB-39",
+     "text": "The nightly lodging limit for business travel was 150 EUR per night, including taxes and city fees. Each claim for the nightly lodging limit needs a receipt showing the date, the amount and the supplier. Claims for the nightly lodging limit are filed in the expense tool under 'Travel policy: lodging'."
+    },
+    {
+     "id": "HB-39 §2",
+     "source": "HB-39 §2 | Travel policy: lodging — Standard nightly lodging limit | version: 3 · status: current · effective: 2026-02-01 · supersedes: HB-22",
+     "text": "The nightly lodging limit for business travel is 160 EUR per night, including taxes and city fees. Claims for the nightly lodging limit are filed in the expense tool under 'Travel policy: lodging'. Questions about the nightly lodging limit go to the travel office, who keeps the record of decisions."
+    },
+    {
+     "id": "HB-55 §3",
+     "source": "HB-55 §3 | Memo: nightly lodging limit exceptions — Carve-out | version: 1 · status: current · effective: 2025-07-01",
+     "text": "The exception above does not apply to contractors; they follow the standard nightly lodging limit in HB-39 §2. Claims for the nightly lodging limit are filed in the expense tool under 'Travel policy: lodging'. The travel office reviews the nightly lodging limit once a year and announces changes in advance."
+    },
+    {
+     "id": "HB-55 §1",
+     "source": "HB-55 §1 | Memo: nightly lodging limit exceptions — Purpose | version: 1 · status: current · effective: 2025-07-01",
+     "text": "This memo lists group exceptions to the nightly lodging limit in HB-39. Each claim for the nightly lodging limit needs a receipt showing the date, the amount and the supplier. The travel office publishes worked examples of the nightly lodging limit on the intranet."
+    }
+   ]
+  },
+  "model": "jev-1.13.0",
+  "questions": {
+   "p0": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-55 §2",
+     "passage": "HB-55 §2 | Memo: nightly lodging limit exceptions — Exception for business trips to Zurich, Geneva or Oslo | version: 1 · status: current · effective: 2025-07-01\nFor business trips to Zurich, Geneva or Oslo, the nightly lodging limit is 270 EUR per night instead of the standard amount. Managers confirm claims for the nightly lodging limit before payment in the next payroll run. The travel office reviews the nightly lodging limit once a year and announces changes in advance.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   },
+   "p1": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-22 §2",
+     "passage": "HB-22 §2 | Travel policy: lodging — Standard nightly lodging limit | version: 2 · status: superseded · effective: 2025-07-01 to the day before 2026-02-01 · superseded by: HB-39\nThe nightly lodging limit for business travel was 150 EUR per night, including taxes and city fees. Each claim for the nightly lodging limit needs a receipt showing the date, the amount and the supplier. Claims for the nightly lodging limit are filed in the expense tool under 'Travel policy: lodging'.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   },
+   "p2": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-39 §2",
+     "passage": "HB-39 §2 | Travel policy: lodging — Standard nightly lodging limit | version: 3 · status: current · effective: 2026-02-01 · supersedes: HB-22\nThe nightly lodging limit for business travel is 160 EUR per night, including taxes and city fees. Claims for the nightly lodging limit are filed in the expense tool under 'Travel policy: lodging'. Questions about the nightly lodging limit go to the travel office, who keeps the record of decisions.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   },
+   "p3": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-55 §3",
+     "passage": "HB-55 §3 | Memo: nightly lodging limit exceptions — Carve-out | version: 1 · status: current · effective: 2025-07-01\nThe exception above does not apply to contractors; they follow the standard nightly lodging limit in HB-39 §2. Claims for the nightly lodging limit are filed in the expense tool under 'Travel policy: lodging'. The travel office reviews the nightly lodging limit once a year and announces changes in advance.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   },
+   "p4": {
+    "type": "noul",
+    "instructions": {
+     "question": "Is this passage needed, or could it change the answer, for what the agent searched for (state.query and state.step_intent) in this task?",
+     "passage_id": "HB-55 §1",
+     "passage": "HB-55 §1 | Memo: nightly lodging limit exceptions — Purpose | version: 1 · status: current · effective: 2025-07-01\nThis memo lists group exceptions to the nightly lodging limit in HB-39. Each claim for the nightly lodging limit needs a receipt showing the date, the amount and the supplier. The travel office publishes worked examples of the nightly lodging limit on the intranet.",
+     "scope": "state.task is the agent's task, state.query the search query it ran, state.step_intent what it said it was looking for, and state.passages every passage the search returned (one passage can be an exception, carve-out or newer version of another). Judge only the passage in instructions.passage. Do not judge whether the passage is true."
+    },
+    "criteria": {
+     "true": "Yes if the passage states the rule, amount, limit or condition the search is about, or states an exception, carve-out, addition, effective date or version status (current or superseded) for that same subject that could change which rule or amount applies.",
+     "false": "No if the passage is about a different subject, budget or process than the search, so that it could not change the answer. General administrative text (submitting claims, receipts, reviews, contacts) counts as no unless the search is about it."
+    }
+   }
+  }
+ },
+ "attempts": [
+  {
+   "charged_usd": 0.000145
+  }
+ ],
+ "response": {
+  "model": "jev-1.13.0",
+  "answers": {
+   "p0": {
+    "type": "noul",
+    "noul": 0.9
+   },
+   "p1": {
+    "type": "noul",
+    "noul": 0.72
+   },
+   "p2": {
+    "type": "noul",
+    "noul": 0.98
+   },
+   "p3": {
+    "type": "noul",
+    "noul": 0.62
+   },
+   "p4": {
+    "type": "noul",
+    "noul": 0.35
+   }
+  },
+  "usage": {
+   "input_tokens": 3456,
+   "output_tokens": 89
+  }
+ },
+ "model": "jev-1.13.0",
+ "latency_s": 0.2466,
+ "usage": {
+  "input_tokens": 3456,
+  "output_tokens": 89
+ },
+ "probabilities": [
+  0.9,
+  0.72,
+  0.98,
+  0.62,
+  0.35
+ ],
+ "missing_answers": 0,
+ "jev": {
+  "kept": [
+   "HB-55 §2",
+   "HB-22 §2",
+   "HB-39 §2",
+   "HB-55 §3"
+  ],
+  "support_total": 1,
+  "support_kept": 1,
+  "complete_set_present": true,
+  "complete_set_survives": true,
+  "chars": 2227,
+  "omitted_chars": 385,
+  "omitted_by_label": {
+   "support": 0,
+   "context": 385,
+   "irrelevant": 0
+  }
+ },
+ "term": {
+  "kept": [
+   "HB-55 §2",
+   "HB-22 §2",
+   "HB-39 §2",
+   "HB-55 §3",
+   "HB-55 §1"
+  ],
+  "support_total": 1,
+  "support_kept": 1,
+  "complete_set_present": true,
+  "complete_set_survives": true,
+  "chars": 2227,
+  "omitted_chars": 0,
+  "omitted_by_label": {
+   "support": 0,
+   "context": 0,
+   "irrelevant": 0
+  }
+ }
+}

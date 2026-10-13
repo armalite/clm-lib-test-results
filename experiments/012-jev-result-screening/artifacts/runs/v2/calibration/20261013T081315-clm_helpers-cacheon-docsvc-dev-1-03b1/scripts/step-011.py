@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Q1 DONE: 375 EUR cite HB-62 §2, HB-24 §2, HB-24 §3. Q2 DONE: 250 EUR cite HB-64 §2, HB-53 §2 (carve-out HB-53 §3 contractors only, n/a). Q3 DONE: 29 EUR cite HB-70 §2, HB-70 §3. Q4 DONE: 12 weeks cite HB-06 §2, HB-71 §2, HB-71 §3 (carve-out first-year -> standard). Next: Q5 relocation, Q6 parking.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

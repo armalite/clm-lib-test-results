@@ -6,3 +6,13 @@
 - **Development pilot** (2 instances × A/B): all 4 runs correct. But **Claude never called search in the screening condition**: it read the documents directly. So screening was never exercised, and the pilot shows no effect either way.
 - **Spend:** USD 0.52.
 - **What it means:** a search-result filter only matters when the agent depends on search. On a corpus this small it does not.
+
+**v2, document service (2026-10-13):**
+- **The setting:** the handbook moved behind runtime `search` and `fetch` actions, with no files in the sandbox and the same boundary in both conditions. 74 documents; the screening policy is unchanged.
+- **Compatibility diagnostic:** 28/28 support passages and 16/16 complete evidence sets kept, with 23% of text omitted.
+- **Development pilot** (2 fresh instances × A/B):
+  - **Screening was exercised:** 12/12 searches screened.
+  - **Correctness:** all runs correct, and none of the 14 omitted passages was needed.
+  - **Recovery:** Claude fetched 12 of them back.
+  - **Cost:** B cost USD 0.131 against A's 0.119 per run (+10%), with 17.5 against 14.5 calls and 78 s against 61 s.
+- **What it means:** the screen worked mechanically and safely here, but produced **no saving**, because the agent checked the omitted passages.

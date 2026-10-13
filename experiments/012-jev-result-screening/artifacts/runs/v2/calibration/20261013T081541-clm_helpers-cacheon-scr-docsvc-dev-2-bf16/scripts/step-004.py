@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Q1 done: daytime taxi = 42 EUR, cite HB-38 §2 (current since 2026-03-01; HB-47 superseded 45). HB-01 night exception 70 (22-06) not applicable daytime. Next: Q2 home-office 2026-03-15, Q3 flight, Q4 parking, Q5 Geneva lodging, Q6 bike leasing. Check memos/exceptions + omitted passages via fetch.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))
