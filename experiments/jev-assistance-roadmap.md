@@ -32,7 +32,7 @@ These are different interventions. Results from one say nothing directly about t
 | [010](010-jev-initiated-review/README.md) | model-controlled | at **Claude's** context-edit decisions (v1 optional; v2 required, Claude-labelled; v3 required, runtime-supplied update) | **v3 complete (36 runs):** Jev added nothing measurable over the review alone; the review workflow costs about 30% more than ordinary CLM. v1 and v2 stopped at their gates |
 | [011](011-jev-edit-check/README.md) | model-controlled (checking) | on a proposed context rewrite | **v1 diagnostic: gate failed. v2 diagnostic: gate passed.** **Development pilot on W2** (2 instances × 3 conditions): all 6 runs strict success; no harmful edit occurred; Jev flagged 4/9 proposals, all acceptable; checking cost +58% (C vs A), almost all Claude-side |
 | W2 workload | a workload, not a strategy | changing requirements that interact | **Implemented** (`export-gen/1`, 2 development instances); used by the 011 development pilot |
-| 012 | runtime policy beside CLM | automatic screening of incoming tool results | Planned: the first proposed screening experiment |
+| [012](012-jev-result-screening/README.md) | runtime policy beside CLM | automatic screening of incoming tool results | **Offline assessment done:** the incident workload offers no meaningful opportunity (median observation 539 chars, already filtered by Claude; at most about 3.9% of run cost removable). Alternative proposed: a document-search workload. Not implemented |
 | 013 | model-controlled | Claude-directed screening of tool results | Planned |
 
 ### 010: Claude-initiated context review
@@ -91,6 +91,9 @@ These are different interventions. Results from one say nothing directly about t
   - the policy's threshold is a design choice, so it is fixed before evaluation;
   - screening also changes context pressure.
 - **Readiness gate:** an offline replay of existing traces showing what the policy would drop, against the scorer's evidence lines, before any agent run. **Status: planned, the first proposed screening experiment.**
+- **Offline assessment (2026-10-13), see [012's protocol draft](012-jev-result-screening/protocol.md):**
+  - **The incident workload:** 12 ordinary-CLM runs from 010 v3 (261 executions) showed that tool results already reach Claude short and filtered by its own code. Observations are about 10% of request characters, and at most about 3.9% of run cost is removable background noise under prompt caching. That noise is mixed with evidence. **This workload is not retained for 012.**
+  - **Proposed instead:** a document-search workload in which a search helper naturally returns several passages, compared as A (ordinary CLM with saved results) vs B (the same with `result-screen/1` screening after the output cap). It needs a component diagnostic and a smoke before any pilot. **Unimplemented and unrun.**
 
 ### 013: Claude-directed screening of incoming tool results
 
@@ -251,4 +254,10 @@ See [010](010-jev-initiated-review/README.md).
 - **The workflow's overhead** belongs to the experimental confirmation step, not to CLM.
 
 **Next (the maintainer's decision):** **012 remains the next planned approach**, starting with its offline replay readiness gate (no agent runs). 013 remains planned after 012.
+
+## Note after 012's offline assessment (2026-10-13)
+
+**The planned workload for 012 (incident rounds) offers no meaningful screening opportunity.** The 23–41K-character logs are source files: Claude's own commands return a median of 539 characters, and only 15% of observations reach 2,000 characters. The audit is offline, with no Jev calls, so it says nothing about Jev's accuracy.
+
+**Recommendation (the maintainer's decision):** proceed with 012 only on a document-search workload, starting with offline construction and an opportunity re-check, then a TypeSafe-only component diagnostic. **012 remains the next integration approach. 013 remains planned after it.**
 
