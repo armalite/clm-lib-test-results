@@ -1,0 +1,1 @@
+print(open('/task/workspace/exporter/core.py').read()[-2500:])

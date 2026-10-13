@@ -1,0 +1,24 @@
+--- rev-5
++++ rev-6
+@@ -10,6 +10,21 @@
+    "id": "n.s2",
+    "role": "note",
+    "body": "Stage2 done: confidential True skipped unless admin & purpose=='audit'; params since 'YYYY-MM-DD' -> created>=since (string cmp first 10 chars). OBLIGATION: if format changes from CSV, add top-level 'exported_by'=user['name'] unless withdrawn."
++  },
++  {
++   "id": "s4.act",
++   "role": "assistant",
++   "body": "[step 4] execute\nthought: Implement stage 2, then update context via helper.\ncode:\nimport subprocess,sys\nsys.path.insert(0,'/task/workspace')\nprint(open('/task/fixtures/current-tests/test_stage.py').read()[:1500])\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"        out.append(r)\",\"\"\"        if r.get('confidential') is True and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        if params.get('since') is not None and str(r.get('created',''))[:10] < params['since']:\n            continue\n        out.append(r)\"\"\")\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nimport ctxhelper\nreq=open('/task/fixtures/stage-2/REQUIREMENTS.md').read()\nprint(ctxhelper.update(req,{'n.s2':\"Stage2 done: confidential True skipped unless admin & purpose=='audit'; params since 'YYYY-MM-DD' -> created>=since (string cmp first 10 chars). OBLIGATION: if format changes from CSV, add top-level 'exported_by'=user['name'] unless withdrawn.\"}))"
++  },
++  {
++   "id": "s4.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=4.5s\n--- stdout ---\n\"\"\"Visible tests for the rules introduced or changed in stage 2 only.\n\nEarlier rules still apply; they are not repeated here.\nRun from /task/workspace:  python -m unittest discover -s /task/fixtures/current-tests\n\"\"\"\n\nimport json\nimport unittest\n\nimport exporter\n\n\nclass TestStage(unittest.TestCase):\n    maxDiff = None\n\n    def test_conf_1(self):\n        self.assertEqual(exporter.export_records(*[[{'id': 831, 'title': 'Q3 report', 'owner': 'eli', 'project': 'apollo', 'status': 'active', 'amount': '799.4', 'confidential': True, 'created': '2026-06-18'}, {'id': 268, 'title': 'Q3 report', 'owner': 'chen', 'project': 'apollo', 'status': 'active', 'amount': '589.4', 'confidential': True, 'created': '2026-01-08'}, {'id': 12, 'title': 'Roadmap', 'owner': 'eli', 'project': 'delta', 'status': 'active', 'amount': '174.55', 'confidential': True, 'created': '2026-03-20'}, {'id': 873, 'title': 'Audit prep', 'owner': 'dara', 'project': 'eos', 'status': 'active', 'amount': '173', 'confidential': False, 'created': '2026-08-24'}, {'id': 494, 'title': 'Notes \"final\"', 'owner': 'ana', 'project': 'apollo', 'status': 'active', 'amount': '544.0', 'confidential': False, 'created': '2026-01-06'}, {'id': 955, 'title': 'Notes \"final\"', 'owner': 'chen', 'project': 'borealis', 'status': 'archived', 'amount': '645.8', 'confidential': False, 'created': '2026-09-08'}], {'name': 'chen', 'role': 'member', 'projects': ['apollo', 'delta']}, {'purpose': 'report', 'since': '2026-03-17'}]), 'id,title,owner,amount\\\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n\n{'n.s1': 0.21}\n"
++  },
++  {
++   "id": "s4.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 6 -> 2; body chars 4578 -> 534; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added [n.s2]; rewritten []"
+   }
+  ]
+ }

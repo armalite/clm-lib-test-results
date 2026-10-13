@@ -1,0 +1,39 @@
+{
+ "number": 4,
+ "parent": 3,
+ "source": "runtime",
+ "step": 3,
+ "sha256": "0a66f20876f3331a442c424b398738d5a99e5ae95749f1fa50438e348430cd1f",
+ "entries": [
+  {
+   "id": "n.s1",
+   "role": "note",
+   "body": "Stage1 done in exporter/core.py: CSV header id,title,owner,amount (csv.writer, lt \\n, asc id); viewer->PermissionError; admin all projects, others only user[projects]; only active unless params include_archived is True. Helper ctxhelper.update(new_req_text,{id:body}) uses jev to flag notes."
+  },
+  {
+   "id": "s2.act",
+   "role": "assistant",
+   "body": "[step 2] execute\nthought: Implement stage 1, write helper, compact context.\ncode:\nimport json,subprocess,sys\nopen('/task/workspace/exporter/core.py','w').write('''import csv, io\\n\\ndef export_records(records, user, params):\\n    params = params or {}\\n    role = user.get('role')\\n    if role == 'viewer':\\n        raise PermissionError('viewer')\\n    out = []\\n    for r in sorted(records, key=lambda r: r['id']):\\n        if role != 'admin' and r['project'] not in user.get('projects', []):\\n            continue\\n        if r['status'] != 'active' and not (r['status'] == 'archived' and params.get('include_archived') is True):\\n            continue\\n        out.append(r)\\n    buf = io.StringIO()\\n    w = csv.writer(buf, lineterminator='\\\\n')\\n    w.writerow(['id', 'title', 'owner', 'amount'])\\n    for r in out:\\n        w.writerow([int(r['id']), r['title'], r['owner'], r['amount']])\\n    return buf.getvalue()\\n''')\nopen('/task/workspace/ctxhelper.py','w').write('''import json, clm_jev\\nP='/task/workspace/context.json'\\ndef load(): return json.load(open(P))\\ndef save(c): json.dump(c, open(P,'w'))\\ndef update(new_req, new_notes, drop_prefixes=('s',)):\\n    \"\"\"Ask Jev whether new requirements affect each note; keep unaffected/historical, mark affected.\"\"\"\\n    c = load(); ents = c['entries']\\n    notes = {e['id']: e['body'] for e in ents if e['role']=='note'}\\n    probs = {}\\n    if notes:\\n        r = clm_jev.judge('Do the new requirements change or replace the rule described in this note?', notes, background=new_req[:6000])\\n        if r.get('status')=='ok': probs = r['answers']\\n    keep = []\\n    for e in ents:\\n        if e['role']=='note':\\n            p = probs.get(e['id'])\\n            if 'HISTORICAL' not in e['body'] and p is not None and p > 0.5:\\n                e['body'] = '[REVIEW: possibly affected by newer stage, see CHANGED rules] ' + e['body']\\n            keep.append(e)\\n        elif not e['id'].startswith(drop_prefixes):\\n            keep.append(e)\\n    for i,b in new_notes.items(): keep.append({'id':i,'role':'note','body':b})\\n    c['entries'] = keep; save(c); return probs\\n''')\nsys.path.insert(0,'/task/workspace')\nimport ctxhelper\nc=ctxhelper.load()\nc['entries']=[{'id':'n.s1','role':'note','body':'Stage1 done in exporter/core.py: CSV header id,title,owner,amount (csv.writer, lt \\\\n, asc id); viewer->PermissionError; admin all projects, others only user[projects]; only active unless params include_archived is True. Helper ctxhelper.update(new_req_text,{id:body}) uses jev to flag notes.'}]\nctxhelper.save(c)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])"
+  },
+  {
+   "id": "s2.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.0s\n--- stdout ---\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.000s\n\nOK\n\n"
+  },
+  {
+   "id": "s2.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 2755 -> 291; removed [s1.act, s1.obs]; added [n.s1]; rewritten []"
+  },
+  {
+   "id": "s3.act",
+   "role": "assistant",
+   "body": "[step 3] advance\nthought: "
+  },
+  {
+   "id": "s3.obs",
+   "role": "observation",
+   "body": "Stage 2 of 5 released.\n# Stage 2 of 5 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; every other earlier rule, obligation and exception stays in force.\n\n## Changes\n\n- [NEW] Confidential records: a record whose 'confidential' is True is never exported, with one exception: it is exported when user['role'] is 'admin' and params.get('purpose') == 'audit' (every other rule still applies to it).\n- [NEW] Date filter: params may contain 'since', a date string 'YYYY-MM-DD'. When it is present, only records whose 'created' date is on or after that date are exported.\n- [NEW] Compliance obligation (no code change is needed while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must also include a top-level field \"exported_by\" whose value is user['name']. This obligation stays in force unless a later stage withdraws it.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (30 lines)\n  stage-2/REQUIREMENTS.md (11 lines)"
+  }
+ ]
+}

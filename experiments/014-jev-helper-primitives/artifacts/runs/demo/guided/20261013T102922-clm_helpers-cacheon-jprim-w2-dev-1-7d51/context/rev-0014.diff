@@ -1,0 +1,24 @@
+--- rev-13
++++ rev-14
+@@ -20,6 +20,21 @@
+    "id": "n.s4",
+    "role": "note",
+    "body": "Stage4 done: non-admin (non-viewer) also gets records with owner==user['name'] even outside projects. Viewer/admin rules unchanged; rest of stage1 permission rule in force."
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Implement stage 4 ownership rule, improve helper to avoid duplicate REVIEW tags, and compact context.\ncode:\nimport subprocess,sys,json\nsys.path.insert(0,'/task/workspace')\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"if role != 'admin' and r['project'] not in user.get('projects', []):\",\"if role != 'admin' and r['project'] not in user.get('projects', []) and r.get('owner') != user.get('name'):\")\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-500:])\nh=open('/task/workspace/ctxhelper.py').read()\nh=h.replace(\"if 'HISTORICAL' not in e['body'] and p is not None and p > 0.5:\",\"if 'historical' not in e['body'].lower() and '[REVIEW' not in e['body'] and p is not None and p > 0.5:\")\nopen('/task/workspace/ctxhelper.py','w').write(h)\nimport importlib,ctxhelper;importlib.reload(ctxhelper)\nc=json.load(open('/task/workspace/context.json'))\nfor e in c['entries']:\n  if e['role']=='note': e['body']=e['body'].replace('[REVIEW: possibly affected by newer stage, see CHANGED rules] ','')\njson.dump(c,open('/task/workspace/context.json','w'))\nreq=open('/task/fixtures/stage-4/REQUIREMENTS.md').read()\nprint(ctxhelper.update(req,{'n.s4':\"Stage4 done: non-admin (non-viewer) also gets records with owner==user['name'] even outside projects. Viewer/admin rules unchanged; rest of stage1 permission rule in force.\"}))\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['role']=='note']\njson.dump(c,open('/task/workspace/context.json','w'))\nprint([(e['id'],e['body'][:40]) for e in c['entries']])"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.5s\n--- stdout ---\n..\n----------------------------------------------------------------------\nRan 2 tests in 0.000s\n\nOK\n\n{'n.s1': 0.92, 'n.s2': 0.17, 'n.s3': 0.24}\n[('n.s1', '[REVIEW: possibly affected by newer stag'), ('n.s2', 'Stage2 done: confidential True skipped u'), ('n.s3', \"Stage3 done: output json.dumps({'records\"), ('n.s4', 'Stage4 done: non-admin (non-viewer) also')]\n"
++  },
++  {
++   "id": "s10.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 10: revision 12 -> 13; entries 10 -> 4; body chars 5645 -> 987; removed [s7.act, s7.obs, s7.rcpt, s8.act, s8.obs, s9.act, s9.obs]; added [n.s4]; rewritten [n.s2]"
+   }
+  ]
+ }

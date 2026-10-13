@@ -34,7 +34,7 @@ These are different interventions. Results from one say nothing directly about t
 | W2 workload | a workload, not a strategy | changing requirements that interact | **Implemented** (`export-gen/1`, 2 development instances); used by the 011 development pilot |
 | [012](012-jev-result-screening/README.md) | runtime policy beside CLM | automatic screening of incoming (search) results | **v1** (local files): component gate passed; pilot never exercised screening. **v2** (document service): screening exercised in 12/12 searches; 4/4 correct; no needed passage omitted; Claude fetched most omitted passages back, so B cost +10%. No evaluation |
 | 013 | model-controlled | Claude-directed screening of tool results | **Not recommended**: see the [programme review](jev-programme-review.md#does-013-add-a-distinct-question). Not implemented |
-| [014](014-jev-helper-primitives/README.md) | model-authored code (Jev as a primitive) | inside Claude's own context-management code, mid-execution | **Planned.** Capability `jev-primitive/1` implemented and verified offline (scripted fake Jev); no live run |
+| [014](014-jev-helper-primitives/README.md) | model-authored code (Jev as a primitive) | inside Claude's own context-management code, mid-execution | **Prompted live demonstration done** (one instructed run, not adoption): Claude's helper called real Jev at 4 updates and its threshold selected which notes to mark; 35/35, USD 0.184, no extra model calls. No benefit measured; comparison proposed only |
 
 ### 010: Claude-initiated context review
 
@@ -300,3 +300,7 @@ See [010](010-jev-initiated-review/README.md).
 
 **Status:** the capability is implemented and verified offline with a scripted fake Jev. A one-run prompted demonstration on W2 is the proposed next step (about USD 0.3; not authorised). The programme review's results are unaffected; they neither establish nor rule out this direction.
 
+**Update (2026-10-13, later):** the one-run prompted demonstration was authorised (USD 1) and run once on `w2-dev-1`.
+- **What happened:** Claude wrote a reusable helper that called real Jev inside 4 executions, and the helper's `p > 0.5` rule decided which notes received a review marker.
+- **The result:** the edits were accepted and reached the next requests, with 35/35 hidden checks, 14 model calls and USD 0.184.
+- **What it shows:** the capability works. Jev's influence was small, and the use was instructed. A benefit comparison is proposed in the 014 README, but has no protocol and is not authorised.
