@@ -1,0 +1,46 @@
+{
+ "id": "P2",
+ "step": 8,
+ "stage": 2,
+ "base_revision": 8,
+ "base_sha256": "1ebf681966dd8c1a560890de4a145242f94471cf7485191a8857408f769f1558",
+ "candidate_sha256": "503d6a54becbeb76dad11040ad26c83d8324da28617a7009ffa0df03e0e99701",
+ "replaces": null,
+ "entries_before": 12,
+ "entries_after": 2,
+ "chars_before": 5929,
+ "chars_after": 1379,
+ "removed": [
+  "s3.act",
+  "s3.obs",
+  "s3.rcpt",
+  "s4.act",
+  "s4.obs",
+  "s5.act",
+  "s5.obs",
+  "s6.act",
+  "s6.obs",
+  "s7.act",
+  "s7.obs"
+ ],
+ "added": [
+  "sum2"
+ ],
+ "rewritten": [
+  "sum1"
+ ],
+ "status": "pending",
+ "check": null,
+ "candidate": [
+  {
+   "id": "sum1",
+   "role": "summary",
+   "body": "Stage 1 rules (verbatim essentials): export_records(records,user,params)->str. records: dicts id(int unique),title,owner,project,status(active|archived),amount(decimal str keep exact),confidential(bool),created(YYYY-MM-DD); do not modify input. user: name,role,projects. params may be empty; ignore unmentioned keys. Base: all records, ascending id. [Format] CSV via csv.writer default dialect, lineterminator='\\n', header id,title,owner,amount; id as int, amount as given; no records -> header only. [Permissions] role viewer -> PermissionError; admin any project; other roles only records with project in user[projects], others silently dropped. [Confidential] confidential True never exported, except role admin and params.get(purpose)==audit (other rules still apply). Implemented in /task/workspace/exporter/core.py (sorted, filter perms, filter confidential, csv write); stage 1 visible tests 6/6 OK."
+  },
+  {
+   "id": "sum2",
+   "role": "summary",
+   "body": "Stage 2 rules: [NEW Status] only status 'active' exported, unless params.get('include_archived') is True; then 'archived' also exported. [NEW Compliance obligation] if a later stage changes export format from CSV, every export in new format must include top-level field \"exported_by\" = user['name']; stays in force unless later stage withdraws it. Implemented status filter in core.py loop (after confidential check); stage 2 visible tests 2/2 OK. Next: advance to stage 3."
+  }
+ ]
+}

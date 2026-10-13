@@ -32,3 +32,17 @@
   - every gap case was *flagged*, not *uncertain*, so the abstention output did not work separately.
 - **Cost and latency:** USD 0.0045 in total; about USD 0.00009 and 0.24 s per check.
 - **What it means:** an agent pilot (W2; A ordinary CLM / B confirm step / C confirm step + Jev) can now be considered. It needs its own protocol and authorisation.
+
+**011: proposed-edit checking on the changing-requirements coding workload — development pilot (2026-10-13):**
+- **Workload:** the new W2 workload, a 5-stage data-export task with a CSV → JSON change, unaffected rules, an exception, a partial change and a deferred obligation; 35 hidden checks.
+- **Conditions:**
+  - A, ordinary CLM;
+  - B, an experimental proposal/confirmation step for context edits;
+  - C, B plus Jev's check of each proposal.
+
+  2 development instances × 3 conditions, run once.
+- **Outcome:** **all 6 runs were strict successes (35/35).**
+- **Mean cost and calls:** A USD 0.155 / 15.5 calls, B USD 0.177 / 18.0, C USD 0.246 / 23.0 (Jev's own share USD 0.0009).
+- **Edits:** no harmful context edit was observed (exploratory blind review of 26 applied edits). Every edit in B and C went through confirmation (0 bypasses), and Jev checked 9/9 proposals in C.
+- **Jev's flags:** 4 flags, all on acceptable proposals (3 accepted, 1 unnecessarily revised), and no useful warning, since nothing harmful occurred.
+- **What it means:** on this workload the checking workflow added cost and calls without an observable benefit. It is a development pilot, not an evaluation.

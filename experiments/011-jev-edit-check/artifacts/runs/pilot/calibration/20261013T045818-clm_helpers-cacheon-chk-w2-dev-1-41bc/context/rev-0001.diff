@@ -1,0 +1,19 @@
+--- rev-0
++++ rev-1
+@@ -1,4 +1,15 @@
+ {
+  "format": "clm-context/v1",
+- "entries": []
++ "entries": [
++  {
++   "id": "s1.act",
++   "role": "assistant",
++   "body": "[step 1] execute\nthought: \ncode:\nimport os\nfor r,d,f in os.walk('/task/fixtures'):print(r,f)\nprint(open('/task/fixtures/stage-1/REQUIREMENTS.md').read())\nfor r,d,f in os.walk('/task/workspace/exporter'):\n  for x in f:print(x,open(os.path.join(r,x)).read())"
++  },
++  {
++   "id": "s1.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.7s\n--- stdout ---\n/task/fixtures []\n/task/fixtures/stage-1 ['REQUIREMENTS.md']\n/task/fixtures/current-tests ['test_stage.py']\n# Stage 1 of 5 requirements\n\n## Package and API\n\nImplement `exporter.export_records(records, user, params) -> str` in the package\n/task/workspace/exporter/ (a starting skeleton is provided). Standard library only.\n\n- `records`: a list of dicts with exactly these keys: \"id\" (int, unique in the list), \"title\"\n  (str), \"owner\" (str), \"project\" (str), \"status\" (\"active\" or \"archived\"), \"amount\" (a\n  decimal string such as \"12.50\"; keep it exactly as given), \"confidential\" (bool) and\n  \"created\" (a date string \"YYYY-MM-DD\"). Do not modify the input.\n- `user`: a dict with \"name\" (str), \"role\" (str) and \"projects\" (list of str).\n- `params`: a dict of export options; it may be empty. Rules introduce the options; ignore keys\n  that no rule in force mentions.\n- Base behaviour, unless a rule says otherwise: every record is exported, in ascending id\n  order, in the format that the format rule specifies.\n\n## Rules introduced in stage 1\n\n- [NEW] Format: return CSV text. The first row is the header `id,title,owner,amount`; then one row per exported record, in ascending id order, with those four fields. Produce it with Python's csv.writer (default dialect and quoting) and lineterminator='\\n', writing id as an integer and amount exactly as given in the record. With no exported records the result is the header row alone (ending in '\\n').\n- [NEW] Permissions: if user['role'] is 'viewer', raise PermissionError (nothing is exported). A user whose role is 'admin' may export records of any project. Any other role exports only records whose 'project' is in user['projects']; other records are left out without an error.\n- [NEW] Status: only records with status 'active' are exported, unless params.get('include_archived') is True; then records with status 'archived' are exported too.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\ncore.py \"\"\"Implementation goes here.\"\"\"\n\n\ndef export_records(records, user, params):\n    raise NotImplementedError\n\n__init__.py \"\"\"Data-export package (implement the requirements in /task/fixtures/stage-*/).\"\"\"\n\nfrom .core import export_records\n\n__all__ = [\"export_records\"]\n\n"
++  }
++ ]
+ }

@@ -1,0 +1,19 @@
+--- rev-18
++++ rev-19
+@@ -40,6 +40,16 @@
+    "id": "s13.rcpt",
+    "role": "receipt",
+    "body": "context.json edit accepted at step 13: revision 16 -> 17; entries 11 -> 5; body chars 4299 -> 958; removed [s10.act, s10.obs, s10.rcpt, s11.act, s11.obs, s12.act, s12.obs]; added [n5]; rewritten []"
++  },
++  {
++   "id": "s14.act",
++   "role": "assistant",
++   "body": "[step 14] execute\nthought: Verify stage 5 requirements against implementation before finalizing.\ncode:\nprint(open('/task/fixtures/stage-5/REQUIREMENTS.md').read()[:3000]);print(open('/task/workspace/exporter/core.py').read()[-1500:])"
++  },
++  {
++   "id": "s14.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.6s\n--- stdout ---\n# Stage 5 of 5 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; every other earlier rule, obligation and exception stays in force.\n\n## Changes\n\n- [NEW] Record limit: params may contain 'max_records', an int of at least 1. Export only the first max_records records (in ascending id order) that remain after every other rule. The JSON object must also have the key \"truncated\": true if this limit left out at least one record, otherwise false (also when max_records is absent).\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nimport csv, io, json\n\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer cannot export')\n    out = []\n    for r in records:\n        if role != 'admin' and r['project'] not in user.get('projects', []) and r.get('owner') != user.get('name'):\n            continue\n        if r['status'] != 'active' and not (r['status'] == 'archived' and params.get('include_archived') is True):\n            continue\n        if r.get('confidential') is True and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        since = params.get('since')\n        if since is not None and str(r.get('created'))[:10] < since:\n            continue\n        out.append(r)\n    out.sort(key=lambda r: r['id'])\n    truncated = False\n    mr = params.get('max_records')\n    if mr is not None and len(out) > mr:\n        out = out[:mr]\n        truncated = True\n    return json.dumps({'exported_by': user.get('name'), 'truncated': truncated, 'records': [{'id': int(r['id']), 'title': r['title'], 'owner': r['owner'], 'amount': r['amount']} for r in out]})\n\n"
+   }
+  ]
+ }

@@ -1,19 +1,154 @@
-# 011 – Can Jev check a proposed context rewrite? (component diagnostic)
+# 011 – Can Jev check a proposed context rewrite? (component diagnostics and agent pilot)
 
-**Status (component diagnostics only, no agent integration):**
-- **v1** (`jev-edit-check/1`): **readiness gate FAILED.** 16/16 harmful detected, but 3/16 acceptable flagged (the maximum was 2).
-- **v2** (`jev-edit-check/2`, evidence-complete): **readiness gate PASSED.** On a fresh frozen set, 16/16 harmful were flagged, 1/16 acceptable flagged and 15/16 acceptable clear.
+**Three separate phases. Their results are never combined.**
 
-**Not done:** no agent integration, edit blocking or end-to-end run was built or run, and no main-model calls were made.
+| Phase | What ran | Result |
+| --- | --- | --- |
+| Component diagnostic v1 (`jev-edit-check/1`) | labelled context-rewrite examples; TypeSafe only | readiness gate **failed** (16/16 harmful detected; 3/16 acceptable flagged, limit 2) |
+| Component diagnostic v2 (`jev-edit-check/2`, evidence-complete) | fresh labelled examples; TypeSafe only | readiness gate **passed** (16/16 flagged; 1/16 acceptable flagged; 15/16 clear) |
+| **011: proposed-edit checking on the changing-requirements coding workload — development pilot** | 2 development instances × 3 conditions, run once (W2 workload) | **all 6 runs strict success** (35/35 hidden checks); no harmful context edit observed; Jev flagged 4 of 9 proposals, all acceptable; checking added cost and calls |
 
-**Context:** part of the [Jev-assistance roadmap](../jev-assistance-roadmap.md). Protocol: [`protocol.md`](protocol.md), which has v1's sections, then v2's:
-- the contract, written before any v2 code or case;
-- the case build;
-- development runs 1 and 2;
-- the freeze;
-- the result record.
+**Context:** part of the [Jev-assistance roadmap](../jev-assistance-roadmap.md). Protocol: [`protocol.md`](protocol.md):
+- the planned design;
+- the v1 and v2 diagnostic sections;
+- then the agent-pilot sections (the protocol written before any paid pilot call, the smoke, the freeze and the result record).
 
-**What 011 tests.** In ordinary CLM, Claude edits its live context file by writing code. 010's mandatory reviews were experimental restrictions on that. **011 tests only a checker:** given a proposed rewrite and the evidence a runtime could supply, can Jev tell harmful rewrites from acceptable ones? Nothing here adds a review workflow to CLM.
+**What 011 tests, and what CLM is:**
+- **In ordinary CLM,** Claude's own code edits its live context file, and each accepted revision determines the next request.
+- **The diagnostics** test a checker component only.
+- **The agent pilot** adds an **experimental** proposal/confirmation workflow around that mechanism (conditions B and C). Its overhead belongs to that intervention, not to CLM. Condition A is unchanged CLM.
+
+## Agent pilot: 011: proposed-edit checking on the changing-requirements coding workload — development pilot (2026-10-13)
+
+**Question:** does checking proposed context edits with Jev improve an agent's task performance enough to justify the extra work?
+
+**This is a development pilot:** 2 development instances × 3 conditions, each run once. It is **not** a held-out evaluation, and it cannot establish a general effect. Pilot evidence is in [`analysis/pilot-edit-review.md`](analysis/pilot-edit-review.md) and [`analysis/pilot_analysis.py`](analysis/pilot_analysis.py).
+
+### The task (W2, `export-gen/1`, scorer `export-checks/1`)
+
+Claude implements `exporter.export_records(records, user, params) -> str` while requirements arrive in 5 stages:
+- **A format change:** CSV, then JSON in stage 3.
+- **Rules the change does not affect:** permissions, a status filter and a date filter.
+- **An exception:** confidential records, exported only for an admin audit.
+- **A later partial change** to permissions or status.
+- **An obligation stated in stage 2** that applies only when the format leaves CSV (`exported_by`). It is not restated in stage 3.
+
+Requirement files stay readable. The visible tests cover only the latest stage. **35 hidden checks** per instance cover every requirement in force at the end.
+
+### Conditions
+
+- **A, ordinary CLM:** Claude's context edits take effect directly.
+- **B, proposal/confirmation without Jev:**
+  - a valid change to `context.json` is held as a proposal;
+  - Claude must reply accept or withdraw, or write again to revise;
+  - only accept applies it, and runtime appends are kept.
+- **C:** B plus a Jev check (`jev-edit-check/2` on `edit-evidence/1`, frozen from the v2 diagnostic) of every proposal, shown before Claude's next step as four probabilities. "A flag means inspect, not wrong"; nothing is rejected automatically.
+
+**Shared settings:** the same model (`claude-opus-5-5`, effort low), limits (8,000-token context budget, 90 calls), prompt caching (5 min, per-run isolation) and order (w2-dev-1: A, B, C; w2-dev-2: B, C, A).
+
+### Results (development pilot; one run per cell)
+
+| Instance | Condition | Strict success | Hidden checks | Model calls | Context edits applied | Proposals (status) | Confirmations | Jev checks (flagged) | Cost USD (Anthropic + TypeSafe) | Elapsed s |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| w2-dev-1 | A | yes | 35/35 | 15 | 5 | — | — | — | 0.150107 | 88.2 |
+| w2-dev-1 | B | yes | 35/35 | 19 | 4 | 4 (4 accepted) | 4 | — | 0.190929 | 93.5 |
+| w2-dev-1 | C | yes | 35/35 | 20 | 3 | 3 (3 accepted) | 3 | 3 (1) | 0.205780 + 0.000560 | 115.0 |
+| w2-dev-2 | B | yes | 35/35 | 17 | 3 | 3 (3 accepted) | 3 | — | 0.163378 | 91.3 |
+| w2-dev-2 | C | yes | 35/35 | 26 | 5 | 6 (5 accepted, 1 revised) | 5 | 6 (3) | 0.283671 + 0.001257 | 148.6 |
+| w2-dev-2 | A | yes | 35/35 | 16 | 5 | — | — | — | 0.160059 | 88.1 |
+
+**Per condition** (mean of the 2 runs; the same two instances in every condition):
+
+| | A | B | C |
+| --- | --- | --- | --- |
+| Strict success | 2/2 | 2/2 | 2/2 |
+| Mean cost USD (all providers) | 0.155083 | 0.177153 | 0.245634 (of which TypeSafe 0.000909) |
+| Mean elapsed (wall clock, s) | 88.2 | 92.4 | 131.8 |
+| Mean model calls | 15.5 | 18.0 | 23.0 |
+| Mean tokens: uncached input / cache read / cache write / output | 1,766 / 36,670 / 14,501 / 3,409 | 2,571 / 63,373 / 17,513 / 3,332 | 3,400 / 97,024 / 22,241 / 5,026 |
+| Pressure steps (both runs) / OVER LIMIT requests | 0 / 0 | 7 / 2 | 16 / 2 |
+| Repairs, API retries, Jev errors | 0, 0, — | 0, 0, — | 0, 0, 0 |
+
+**Jev itself:** 9 checks, with 43,277 input and 657 output tokens, 2.45 s of latency in total, and **USD 0.001817**.
+
+### The three contrasts (descriptive, n = 2 per condition)
+
+- **C vs A (the complete assisted workflow):** the same outcome (2/2 vs 2/2, 35/35 everywhere), at **+USD 0.091 per run (+58%)**, +44 s and +7.5 calls. **No practical benefit was observed.**
+- **C vs B (Jev's increment):** the same outcome, at +USD 0.069 per run (+39%) and +5 calls. Jev's own API cost is only USD 0.0009 per run, so almost all of the difference is Claude's extra work (below). **Jev prevented no harmful edit,** because none occurred.
+- **B vs A (the confirmation workflow itself):** the same outcome, at +USD 0.022 per run (+14%) and +2.5 calls. That is about one `confirm_edit` call per proposal, plus a delayed shrink that triggered one OVER LIMIT request per run.
+
+### What Jev contributed
+
+- **Verdicts:** 9 proposals checked, **4 flagged** (all by `evidence` at 0.51–0.56; one also `lost` 0.59) and 5 clear. There were **no missing-evidence notes** (no truncation, empty output or unresolved citation), and no uncertain-only results.
+- **The blind review** (made before the verdicts were read, except P5 as disclosed) judged **all 9 proposals acceptable**. So:
+  - **useful warnings: 0** (no harmful proposal existed);
+  - **false alarms: 4 of 4 flags**;
+  - **advice not acted on: 3** (the flagged proposals were accepted, correctly);
+  - **unnecessary revision: 1** (w2-dev-2 P5 → P6, which added only a test-status line and was flagged again).
+- **The pattern:** every proposal replaced raw step entries (code, test output, receipts) with a summary note, and `evidence` stayed near the threshold (0.40–0.56) throughout.
+- **A reasoned reaction** (C, w2-dev-2, accepting flagged P2):
+  > "Jev flagged P2, so I checked it. sum2 restates both stage 2 rules: the status filter, and the exported_by obligation if the format ever moves off CSV. The stage 1 summary is unchanged except for a stale 'next' note. The removed entries are only the raw transcript that these summaries cover, so I'm accepting."
+
+### Did harmful context edits occur?
+
+**No harmful edit was observed** (exploratory rubric, `analysis/pilot-edit-review.md`):
+- **What was reviewed:** all 26 applied edits (A 10, B 7, C 8), plus 1 revised proposal.
+- **Rule level:** none lost a rule, exception or obligation still in force. The `exported_by` obligation was written into notes before its stage text was deleted, in all six runs.
+- **Detail level:** A's very short notes (about 300–960 characters) did drop sub-conditions of rules already implemented and tested (for example "limit applied after every other rule", "`truncated` false when absent"), as did one B proposal. There was no observed consequence: the code was already written, the files stayed readable, A reread them once near the end, and every hidden check passes.
+- **Failures:** there is no task failure to attribute to an edit, and "never recorded" and "present but misused" were not observed.
+
+### Intervention coverage and the OVER LIMIT exception
+
+- **Held:** every content-changing write in B and C (7 and 9) was held as a proposal.
+- **Bypasses:** **0 edits bypassed confirmation**, and **0 bypassed Jev in C** (9/9 checked). No already-checked proposal was bypassed.
+- **Recovery requests:** each B and C run had exactly one OVER LIMIT request, caused by a shrinking proposal still pending. All four were answered by accepting it. This followed the pre-freeze status-line fix prompted by the smoke, where the same situation had produced one bypass.
+- **Coverage did not differ between B and C,** and no bypass limited the comparison.
+
+### Why C cost more, especially on w2-dev-2
+
+**Step accounting from `analysis/pilot_analysis.py`:**
+
+| w2-dev-2 | B (17 calls, USD 0.163) | C (26 calls, USD 0.285) |
+| --- | --- | --- |
+| Confirmations | 3 (0.021) | 5 (0.040) |
+| Revision prompted by a flag | 0 | 1 (0.020) |
+| Steps writing context (with or without code) | 3 (0.049) | 5 (0.067) |
+| Code-only steps | 2 (0.026) | 4 (0.050) |
+| Tests and inspection | 3 (0.015) | 5 (0.037) |
+| Requirement rereads, advances, final | 6 (0.053) | 6 (0.069) |
+| Jev API | — | 0.001257 |
+
+**Breakdown:**
+- **Directly attributable to Jev's advice:** one revision step (about USD 0.020). It also delayed acceptance, which caused that run's OVER LIMIT request.
+- **The rest is Claude's behaviour in this run:**
+  - it compacted at every stage, including stage 1 (5 accepted edits versus 3);
+  - it wrote code and context in separate steps;
+  - it kept longer, near-verbatim requirement notes (3,100–4,950 body characters after each edit, versus 2,400–2,800 in B and 290–960 in A).
+
+  The longer notes meant more pressure steps (10) and more cached input.
+- **Both C runs** kept longer notes than B, which is *consistent with* the Jev clause encouraging more complete notes. With one run per cell this is not established.
+
+### Limitations
+
+- **Two development instances,** one run per cell, one author's rubric and an exploratory edit review.
+- **No failures in any condition:** the workload did not produce the harmful edits the checker targets, so it gave no opportunity to show a benefit.
+- **The order was balanced across two blocks only.** Instance and position effects cannot be separated.
+- **W2's tight budget** forces frequent compaction, but A's code-and-notes-in-one-step pattern avoided pressure entirely.
+
+### Spend and evidence
+
+- **Smoke** (excluded): USD 0.127231.
+- **Six pilot runs:** USD 1.155741 (Anthropic 1.153924, TypeSafe 0.001817).
+- **Total: USD 1.282972** of the USD 15 authorised.
+- **Ledger:** USD 83.293391 spent of the 97.010420 ceiling, with nothing pending; every entry is settled `ok`, and none was charged from a reservation.
+- **Artifacts:**
+  - `artifacts/runs/pilot/calibration/<run_id>/` (the six pilot runs) and `artifacts/runs/pilot/smoke/` (requests, revisions, `context/proposal-P*.json`, `edit_check/P*.json`, the evaluator);
+  - `artifacts/comparisons/20261013T045649/` (the frozen record and source patch);
+  - `metrics.csv` (`ec_*` columns).
+
+---
+
+# Component diagnostics (v2, then v1)
 
 ## v2: evidence-complete checking (2026-10-13)
 

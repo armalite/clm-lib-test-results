@@ -30,8 +30,8 @@ These are different interventions. Results from one say nothing directly about t
 | [008](008-jev-context-review/README.md) | model-controlled | an optional Jev tool Claude may call | Complete: the tool was never used (evidence about optional-tool availability) |
 | [009](009-jev-update-review/README.md) | model-controlled | automatically at every incoming update, before Claude's next turn | Complete: no cost, time or established correctness benefit in 24 evaluation runs |
 | [010](010-jev-initiated-review/README.md) | model-controlled | at **Claude's** context-edit decisions (v1 optional; v2 required, Claude-labelled; v3 required, runtime-supplied update) | **v3 complete (36 runs):** Jev added nothing measurable over the review alone; the review workflow costs about 30% more than ordinary CLM. v1 and v2 stopped at their gates |
-| [011](011-jev-edit-check/README.md) | model-controlled (checking) | on a proposed context rewrite | **v1 diagnostic: gate failed** (16/16 harmful detected, 3/16 false flags against a limit of 2). **v2 diagnostic (evidence-complete, fresh cases): gate passed** (16/16 flagged, 1/16 false flags, 15/16 acceptable clear). No agent integration |
-| W2 workload | a workload, not a strategy | changing requirements that interact | Planned (not implemented) |
+| [011](011-jev-edit-check/README.md) | model-controlled (checking) | on a proposed context rewrite | **v1 diagnostic: gate failed. v2 diagnostic: gate passed.** **Development pilot on W2** (2 instances × 3 conditions): all 6 runs strict success; no harmful edit occurred; Jev flagged 4/9 proposals, all acceptable; checking cost +58% (C vs A), almost all Claude-side |
+| W2 workload | a workload, not a strategy | changing requirements that interact | **Implemented** (`export-gen/1`, 2 development instances); used by the 011 development pilot |
 | 012 | runtime policy beside CLM | automatic screening of incoming tool results | Planned: the first proposed screening experiment |
 | 013 | model-controlled | Claude-directed screening of tool results | Planned |
 
@@ -233,3 +233,22 @@ See [010](010-jev-initiated-review/README.md).
 **Building W2 comes first.**
 
 **Unchanged:** 012 and 013 remain planned.
+
+## Note after 011's development pilot (2026-10-13)
+
+**What ran:** 011: proposed-edit checking on the changing-requirements coding workload — development pilot. That is A (ordinary CLM), B (an experimental proposal/confirmation step) and C (B plus Jev's check of each proposal), on 2 W2 development instances, run once each.
+
+**Results:**
+- **Outcome:** all six runs were strict successes (35/35 hidden checks).
+- **Edits:** no harmful context edit was observed.
+- **Coverage:** every B and C edit went through confirmation, and Jev checked all 9 C proposals.
+- **Jev's flags:** 4 flags (all from the `evidence` question near its threshold, on routine transcript compaction), all on acceptable proposals. There were no useful warnings.
+- **Cost:** C cost +58% over A and +39% over B. Jev's own API cost was negligible; the difference is Claude's confirmation, revision and longer notes.
+
+**What it means:**
+- **On this workload,** proposed-edit checking had nothing to catch and only added work.
+- **A larger 011 evaluation would mainly measure overhead and false alarms,** and is not recommended unless a workload is shown to produce harmful edits under ordinary CLM.
+- **The workflow's overhead** belongs to the experimental confirmation step, not to CLM.
+
+**Next (the maintainer's decision):** **012 remains the next planned approach**, starting with its offline replay readiness gate (no agent runs). 013 remains planned after 012.
+

@@ -1,0 +1,19 @@
+--- rev-11
++++ rev-12
+@@ -40,6 +40,16 @@
+    "id": "s8.obs",
+    "role": "observation",
+    "body": "Stage 4 of 5 released.\n# Stage 4 of 5 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; every other earlier rule, obligation and exception stays in force.\n\n## Changes\n\n- [CHANGED] Permissions (partly replaces the stage-1 rule): a user whose role is not 'admin' now also receives the records they own (record 'owner' equal to user['name']), even outside their projects. The 'viewer' rule (PermissionError) and the 'admin' rule from stage 1 are unchanged.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (26 lines)\n  stage-4/REQUIREMENTS.md (9 lines)"
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Look at permission filter in core.py.\ncode:\nprint(open('/task/workspace/exporter/core.py').read())"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nimport csv, io, json\n\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer cannot export')\n    out = []\n    for r in records:\n        if role != 'admin' and r['project'] not in user.get('projects', []):\n            continue\n        if r['status'] != 'active' and not (r['status'] == 'archived' and params.get('include_archived') is True):\n            continue\n        if r.get('confidential') is True and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        since = params.get('since')\n        if since is not None and str(r.get('created'))[:10] < since:\n            continue\n        out.append(r)\n    out.sort(key=lambda r: r['id'])\n    return json.dumps({'exported_by': user.get('name'), 'records': [{'id': int(r['id']), 'title': r['title'], 'owner': r['owner'], 'amount': r['amount']} for r in out]})\n\n"
+   }
+  ]
+ }

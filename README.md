@@ -109,9 +109,17 @@ Experiments 009–013 follow the [Jev-assistance roadmap](experiments/jev-assist
 | [008](experiments/008-jev-context-review/README.md) | Can a fast decision model (TypeSafe Jev) help an agent manage its own context? Optional, model-invoked advice on which context entries an update affects | Diagnostic: Jev flagged 10/10 affected and 1/12 unaffected labelled entries. Pilot (4 runs): all succeeded; the agent never used the optional review action. No evidence of an effect; larger evaluation not run |
 | [009](experiments/009-jev-update-review/README.md) | Strategy 1 of the [Jev-assistance roadmap](experiments/jev-assistance-roadmap.md): update-triggered Jev review. Both arms see the same round update and review instruction; only the assisted arm also gets Jev's per-entry advice | **Evaluated (24 runs).** The pilot's saving did not hold: with advice, mean cost was USD 0.415 vs 0.375 and time 158 s vs 149 s (cheaper in 4/12 blocks). Strict success 10/12 vs 8/12, which is not conclusive. Diagnostic: 12/13 affected and 1/9 unaffected flagged |
 | [010](experiments/010-jev-initiated-review/README.md) | Strategy 2: a review at Claude's context-edit decisions. v1: optional; v2: required, but Claude's label gated Jev; v3: required, with a runtime-supplied update (A ordinary CLM, B review, C review + Jev) | **v3 evaluated (36 runs):** Jev added nothing measurable over the review alone (cost −2%, the same correctness); the review workflow cost about 30% more than ordinary CLM. Strict success 12/12 (B, C) vs 10/12 (A), not established. v1 and v2 stopped at their gates |
-| [011](experiments/011-jev-edit-check/README.md) | Strategy 3: can Jev detect information wrongly lost or changed in a proposed context rewrite? Component diagnostics only (no agent runs) | **v1: gate failed** (16/16 detected, 3/16 false flags; two were real edits justified by tool output the checker never saw). **v2, evidence-complete with fresh cases: gate passed** (16/16 flagged, 1/16 false flags, 15/16 acceptable clear; same-evidence deterministic checks 11/16 with 8/16 false flags). Abstention did not separate from flagging |
+| [011](experiments/011-jev-edit-check/README.md) | Strategy 3: Jev checks of proposed context rewrites. **Component diagnostics** on labelled context-rewrite examples, and **011: proposed-edit checking on the changing-requirements coding workload — development pilot** | **Diagnostics:** v1 gate failed (3/16 false flags); v2 gate passed (16/16 flagged, 1/16 false flags). **Development pilot** (W2, 2 instances × A/B/C): all 6 runs strict success; no harmful edit occurred; Jev flagged 4/9 proposals, all acceptable; checking added cost (C +58% vs A), almost all Claude-side |
 | 012 | Automatic screening of incoming tool results: a declared runtime policy uses Jev scores to decide what initially enters Claude's context (originals stay accessible) | **Planned only** ([roadmap](experiments/jev-assistance-roadmap.md)); the first proposed screening experiment |
 | 013 | Claude-directed screening of tool results: Claude writes the screening question and uses Jev to choose passages, against CLM with the same file tools | **Planned only** ([roadmap](experiments/jev-assistance-roadmap.md)) |
+
+**How these differ:**
+- **009–010:** affected-entry review on incident investigations.
+- **011's component diagnostics:** labelled context-rewrite examples.
+- **011's development pilot:** proposed-edit checking on the new W2 changing-requirements coding workload.
+- **012–013:** planned approaches that screen incoming tool results.
+
+In every case, the mandatory review or confirmation steps are experimental interventions; ordinary CLM (model-written edits to the live context file) is unchanged.
 
 ## Navigating the raw evidence
 

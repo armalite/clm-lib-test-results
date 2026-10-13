@@ -1,10 +1,10 @@
 {
  "format": "clm-results-export/1",
  "experiment": "011-jev-edit-check",
- "title": "Can Jev detect important information incorrectly lost or changed in a proposed context rewrite? (component diagnostic)",
+ "title": "Experiment 011: Jev checks of proposed context rewrites (component diagnostics v1/v2) and proposed-edit checking on the changing-requirements coding workload (development pilot)",
  "exported_with": {
   "clm_lib_version": "0.1.0",
-  "current_scorer": "score/2"
+  "current_scorer": "export-checks/1"
  },
  "provenance": {
   "source_repo": "https://github.com/armalite/clm-lib",
@@ -15,7 +15,7 @@
   "cases": "experiments/011-jev-edit-check/diagnostic-cases-v1.json in the results repository (jev-edit-diag/1)",
   "jev_price": "USD 0.042 per million input tokens, output free (docs.typesafe.ai/models, retrieved 2026-10-12)",
   "budget": "ledger ceiling set explicitly from USD 93.725281 to USD 85.003257 (settled spend USD 82.003257 + USD 3 TypeSafe-only for this diagnostic); replaces earlier unused allowances",
-  "status": "v1: component diagnostic complete, readiness gate failed. v2 (evidence-complete): component diagnostic complete, readiness gate passed. No agent integration in either.",
+  "status": "v1 diagnostic: gate failed. v2 diagnostic: gate passed. Agent pilot (W2, development pilot, 2 instances x 3 conditions): complete; all 6 runs strict success; no harmful context edit observed; Jev flagged 4 of 9 proposals, all judged acceptable.",
   "v2": {
    "tree_state": "HEAD 44a5532 plus the uncommitted 011 v2 diagnostic (jev_edit_check.py v2 functions, tests, exp011v2 config)",
    "question_version": "jev-edit-check/2 (questions_sha256 8ad0d68a86c4a47eb7a3489e210fbdce607c3aa3b61f1aa1e9ee54d1cc67df83; development run 1 used a pre-freeze draft, see protocol)",
@@ -24,18 +24,426 @@
    "cases": "experiments/011-jev-edit-check/diagnostic-cases-v2.json in the results repository (jev-edit-diag/2, SHA-256 384feb4221d3baeb19d54068c0cbe36238e715e816bd4a00dd5d4eb7bf29597c)",
    "budget": "ledger ceiling set explicitly from USD 85.003257 to USD 85.005891 (settled spend USD 82.005891 + USD 3 TypeSafe-only for v2); replaces the unused v1 allowance",
    "config": "configs/exp011v2.toml (identical to exp011.toml except the ceiling)"
+  },
+  "pilot": {
+   "label": "011: proposed-edit checking on the changing-requirements coding workload — development pilot",
+   "tree_state": "clm-lib commit b6fefb5 (identical to the frozen pilot code: w2.py 018a3bd9, runner.py d9ba4662, context.py 04eb5550, prompts.py 0b665dd7, jev_edit_check.py c1d4034d); the comparison record holds the source patch against 2c9db0b",
+   "generator_version": "export-gen/1",
+   "scorer": "export-checks/1",
+   "edit_check_version": "edit-check-pilot/1",
+   "question_version": "jev-edit-check/2 (questions_sha256 8ad0d68a...)",
+   "evidence_version": "edit-evidence/1",
+   "prompt_version": "2026-10-13.5",
+   "model": "claude-opus-5-5 (effort low)",
+   "jev_model": "jev-1.13.0",
+   "config": "configs/exp011pilot.toml",
+   "budget": "ledger ceiling set explicitly from USD 85.005891 to USD 97.010420 (settled spend USD 82.010420 + USD 15 for the pilot, both providers); replaces the unused v2 allowance"
   }
  },
  "settings": {
   "config": "configs/exp011.toml",
-  "command": "jev-edit-diagnostic"
+  "command": "jev-edit-diagnostic",
+  "pilot": {
+   "config": "configs/exp011pilot.toml",
+   "command": "compare",
+   "conditions": [
+    "clm_helpers:on",
+    "clm_helpers+chk:on",
+    "clm_helpers+chk-jev:on"
+   ],
+   "tasks": [
+    "w2-dev-1",
+    "w2-dev-2"
+   ],
+   "repetitions": 1,
+   "order": "all-orders-3",
+   "smoke_task": "w2-smoke-1"
+  }
  },
- "runs": [],
- "comparisons": [],
- "fixtures": {},
+ "runs": [
+  {
+   "run_id": "20261013T044621-clm_helpers-cacheon-chkjev-w2-smoke-1-1855",
+   "role": "smoke",
+   "group": "pilot",
+   "phase": "pilot-smoke",
+   "note": "agent-pilot live integration smoke: C on w2-smoke-1; excluded from all comparisons",
+   "artifact_path": "artifacts/runs/pilot/smoke/20261013T044621-clm_helpers-cacheon-chkjev-w2-smoke-1-1855",
+   "sha256sums_sha256": "42446572a2ebdf86cf5ba032bec7cb7588b7ea274ec3c9f377d2ccc37d5ddef7",
+   "files": 59,
+   "ledger_charged_usd": 0.127231,
+   "mode": "clm_helpers",
+   "task": "w2-smoke-1",
+   "prompt_version": "2026-10-13.5",
+   "generator_version": "export-gen/1",
+   "fixture_seed": 8301,
+   "fixture_sha256": "e10ad3b6bfb30689edf4052b6a6f65983f653d5241abd39d241f83143d37a5a8",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "started": "2026-10-13T04:46:21.158+00:00",
+   "stages_released": 2,
+   "fixtures_on_disk_sha256": "e10ad3b6bfb30689edf4052b6a6f65983f653d5241abd39d241f83143d37a5a8",
+   "fixtures_match_generator": true
+  },
+  {
+   "run_id": "20261013T045650-clm_helpers-cacheon-w2-dev-1-64e8",
+   "role": "calibration",
+   "group": "pilot",
+   "phase": "pilot",
+   "note": "development pilot block 0 position 0: A (ordinary CLM) on w2-dev-1",
+   "artifact_path": "artifacts/runs/pilot/calibration/20261013T045650-clm_helpers-cacheon-w2-dev-1-64e8",
+   "sha256sums_sha256": "89b47219db845c2408881d4b5e7bf971729ab8aa608fc68adc2ae0a0526d7e54",
+   "files": 101,
+   "ledger_charged_usd": 0.15011,
+   "mode": "clm_helpers",
+   "task": "w2-dev-1",
+   "prompt_version": "2026-10-13.5",
+   "generator_version": "export-gen/1",
+   "fixture_seed": 8101,
+   "fixture_sha256": "7a53444688090a5ebe5abbf60d0cf416652e82453f9bdafa8bc78256fe92f7b6",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "started": "2026-10-13T04:56:50.491+00:00",
+   "stages_released": 5,
+   "fixtures_on_disk_sha256": "7a53444688090a5ebe5abbf60d0cf416652e82453f9bdafa8bc78256fe92f7b6",
+   "fixtures_match_generator": true
+  },
+  {
+   "run_id": "20261013T045818-clm_helpers-cacheon-chk-w2-dev-1-41bc",
+   "role": "calibration",
+   "group": "pilot",
+   "phase": "pilot",
+   "note": "development pilot block 0 position 1: B (proposal/confirmation without Jev) on w2-dev-1",
+   "artifact_path": "artifacts/runs/pilot/calibration/20261013T045818-clm_helpers-cacheon-chk-w2-dev-1-41bc",
+   "sha256sums_sha256": "87d15688cf5faab7472f380505d796cdd282ce5ea9d57ebb2382ebd934f3bc3d",
+   "files": 115,
+   "ledger_charged_usd": 0.190927,
+   "mode": "clm_helpers",
+   "task": "w2-dev-1",
+   "prompt_version": "2026-10-13.5",
+   "generator_version": "export-gen/1",
+   "fixture_seed": 8101,
+   "fixture_sha256": "7a53444688090a5ebe5abbf60d0cf416652e82453f9bdafa8bc78256fe92f7b6",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "started": "2026-10-13T04:58:18.822+00:00",
+   "stages_released": 5,
+   "fixtures_on_disk_sha256": "7a53444688090a5ebe5abbf60d0cf416652e82453f9bdafa8bc78256fe92f7b6",
+   "fixtures_match_generator": true
+  },
+  {
+   "run_id": "20261013T045952-clm_helpers-cacheon-chkjev-w2-dev-1-4641",
+   "role": "calibration",
+   "group": "pilot",
+   "phase": "pilot",
+   "note": "development pilot block 0 position 2: C (proposal/confirmation with Jev advice) on w2-dev-1",
+   "artifact_path": "artifacts/runs/pilot/calibration/20261013T045952-clm_helpers-cacheon-chkjev-w2-dev-1-4641",
+   "sha256sums_sha256": "d9b788724bc8bdc8d8e02637141fa5d18702887467101abc27f510e17ed86914",
+   "files": 123,
+   "ledger_charged_usd": 0.206339,
+   "mode": "clm_helpers",
+   "task": "w2-dev-1",
+   "prompt_version": "2026-10-13.5",
+   "generator_version": "export-gen/1",
+   "fixture_seed": 8101,
+   "fixture_sha256": "7a53444688090a5ebe5abbf60d0cf416652e82453f9bdafa8bc78256fe92f7b6",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "started": "2026-10-13T04:59:52.519+00:00",
+   "stages_released": 5,
+   "fixtures_on_disk_sha256": "7a53444688090a5ebe5abbf60d0cf416652e82453f9bdafa8bc78256fe92f7b6",
+   "fixtures_match_generator": true
+  },
+  {
+   "run_id": "20261013T050147-clm_helpers-cacheon-chk-w2-dev-2-1be3",
+   "role": "calibration",
+   "group": "pilot",
+   "phase": "pilot",
+   "note": "development pilot block 1 position 0: B (proposal/confirmation without Jev) on w2-dev-2",
+   "artifact_path": "artifacts/runs/pilot/calibration/20261013T050147-clm_helpers-cacheon-chk-w2-dev-2-1be3",
+   "sha256sums_sha256": "6c277b52bc291cddb274ca264b92a7c74b5e6c1b3b92a5bbc74f5e9205800ee0",
+   "files": 105,
+   "ledger_charged_usd": 0.163377,
+   "mode": "clm_helpers",
+   "task": "w2-dev-2",
+   "prompt_version": "2026-10-13.5",
+   "generator_version": "export-gen/1",
+   "fixture_seed": 8102,
+   "fixture_sha256": "8e6b37ae80e3a7537c4cadb32991fa5bff0c9bf8736cc90dc2953ca038312f32",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "started": "2026-10-13T05:01:47.715+00:00",
+   "stages_released": 5,
+   "fixtures_on_disk_sha256": "8e6b37ae80e3a7537c4cadb32991fa5bff0c9bf8736cc90dc2953ca038312f32",
+   "fixtures_match_generator": true
+  },
+  {
+   "run_id": "20261013T050319-clm_helpers-cacheon-chkjev-w2-dev-2-55fc",
+   "role": "calibration",
+   "group": "pilot",
+   "phase": "pilot",
+   "note": "development pilot block 1 position 1: C (proposal/confirmation with Jev advice) on w2-dev-2",
+   "artifact_path": "artifacts/runs/pilot/calibration/20261013T050319-clm_helpers-cacheon-chkjev-w2-dev-2-55fc",
+   "sha256sums_sha256": "6dc90d62feb78dfc30c8ded2deeb8b4089dd32410529dec2518957de4b85c0ae",
+   "files": 158,
+   "ledger_charged_usd": 0.284926,
+   "mode": "clm_helpers",
+   "task": "w2-dev-2",
+   "prompt_version": "2026-10-13.5",
+   "generator_version": "export-gen/1",
+   "fixture_seed": 8102,
+   "fixture_sha256": "8e6b37ae80e3a7537c4cadb32991fa5bff0c9bf8736cc90dc2953ca038312f32",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "started": "2026-10-13T05:03:19.138+00:00",
+   "stages_released": 5,
+   "fixtures_on_disk_sha256": "8e6b37ae80e3a7537c4cadb32991fa5bff0c9bf8736cc90dc2953ca038312f32",
+   "fixtures_match_generator": true
+  },
+  {
+   "run_id": "20261013T050547-clm_helpers-cacheon-w2-dev-2-a6dc",
+   "role": "calibration",
+   "group": "pilot",
+   "phase": "pilot",
+   "note": "development pilot block 1 position 2: A (ordinary CLM) on w2-dev-2",
+   "artifact_path": "artifacts/runs/pilot/calibration/20261013T050547-clm_helpers-cacheon-w2-dev-2-a6dc",
+   "sha256sums_sha256": "4aafbb71ec5120c91106f596a2f561943bf1ee13397ce50af5ff33fe7348b83c",
+   "files": 105,
+   "ledger_charged_usd": 0.160061,
+   "mode": "clm_helpers",
+   "task": "w2-dev-2",
+   "prompt_version": "2026-10-13.5",
+   "generator_version": "export-gen/1",
+   "fixture_seed": 8102,
+   "fixture_sha256": "8e6b37ae80e3a7537c4cadb32991fa5bff0c9bf8736cc90dc2953ca038312f32",
+   "model": "claude-opus-5-5",
+   "effort": "low",
+   "started": "2026-10-13T05:05:47.940+00:00",
+   "stages_released": 5,
+   "fixtures_on_disk_sha256": "8e6b37ae80e3a7537c4cadb32991fa5bff0c9bf8736cc90dc2953ca038312f32",
+   "fixtures_match_generator": true
+  }
+ ],
+ "comparisons": [
+  {
+   "comparison": "20261013T045649",
+   "artifact_path": "artifacts/comparisons/20261013T045649",
+   "frozen": {
+    "source_patch": "20261013T045649.patch",
+    "source_patch_sha256": "ae43948bf0a3324d9d32e3b66efbb57d81436eec37f1215abbe24883930bd1be",
+    "model": "claude-opus-5-5",
+    "provider": {
+     "provider": "anthropic",
+     "model": "claude-opus-5-5",
+     "base_url": "(SDK default / ANTHROPIC_BASE_URL)",
+     "effort": "low",
+     "structured_output": true,
+     "timeout_s": 120,
+     "sdk_retries": 0,
+     "sampling": "provider defaults (temperature/top_p not settable on this model family)"
+    },
+    "prompt_version": "2026-10-13.5",
+    "generator_version": [
+     "export-gen/1"
+    ],
+    "scorer_version": [
+     "export-checks/1"
+    ],
+    "mode_order": "all-orders-3",
+    "conditions": [
+     "clm_helpers:on",
+     "clm_helpers+chk:on",
+     "clm_helpers+chk-jev:on"
+    ],
+    "tasks": [
+     "w2-dev-1",
+     "w2-dev-2"
+    ],
+    "reps": 1,
+    "summary_policy": "token-tail/1",
+    "config": {
+     "provider": {
+      "name": "anthropic",
+      "model": "claude-opus-5-5",
+      "base_url": "",
+      "effort": "low",
+      "structured_output": true,
+      "timeout_s": 120,
+      "api_retries": 2
+     },
+     "limits": {
+      "max_calls": 90,
+      "max_output_tokens": 4096,
+      "exec_timeout_s": 30,
+      "output_cap_chars": 6000,
+      "context_budget_tokens": 8000,
+      "pressure_ratio": 0.7,
+      "recovery_reserve_tokens": 1000,
+      "spill_min_chars": 1500,
+      "initial_chars_per_token": 3.0,
+      "max_code_chars": 20000,
+      "summary_calls_in_max_calls": false,
+      "max_summary_calls": 20,
+      "spill_past_receipt": true,
+      "recheck_after_notice": true,
+      "status_shows_revision": true
+     },
+     "baseline": {
+      "policy": "token-tail/1",
+      "tail_entries": 4,
+      "summary_max_chars": 3000,
+      "summary_retries": 1,
+      "tail_ratio": 0.15,
+      "newest_ratio": 0.25,
+      "target_ratio": 0.5,
+      "summary_min_chars": 600
+     },
+     "budget": {
+      "ceiling_usd": 97.01042,
+      "min_run_reserve_usd": 2.0,
+      "ledger": "runs/ledger.json",
+      "prices": "configs/prices.toml"
+     },
+     "sandbox": {
+      "image": "python:3.12-slim",
+      "memory": "512m",
+      "cpus": 1.0,
+      "pids_limit": 128
+     },
+     "request": {
+      "layout": "blocks/1",
+      "prompt_caching": true,
+      "cache_ttl": "5m",
+      "run_isolation": "run-tag/1"
+     },
+     "jev": {
+      "enabled": false,
+      "model": "jev-1.13.0",
+      "base_url": "https://api.typesafe.ai/v1/systemone",
+      "timeout_s": 15.0,
+      "retries": 1,
+      "max_reviews": 12,
+      "max_entries": 40,
+      "batch_size": 20,
+      "max_update_chars": 4000
+     },
+     "update_review": {
+      "enabled": false,
+      "advice": false,
+      "payload": "round-files/1",
+      "max_payload_chars": 4000,
+      "max_candidates": 60,
+      "max_batch_chars": 60000
+     },
+     "initiated_review": {
+      "enabled": false,
+      "advice": false,
+      "required": false,
+      "update_source": "stated",
+      "max_reviews": 40,
+      "max_info_chars": 2000,
+      "max_candidates": 60,
+      "max_batch_chars": 60000,
+      "candidate_roles": [
+       "note",
+       "observation",
+       "summary"
+      ]
+     },
+     "edit_check": {
+      "enabled": false,
+      "advice": false,
+      "max_checks": 30,
+      "threshold": 0.5
+     },
+     "runs_dir": "runs"
+    },
+    "code_state": {
+     "git_head": "2c9db0bc3bf63ef3e83c49bd396bf3af54ee64e4",
+     "uncommitted_diff_sha256": "94bd55ed74caa39c2a29bbb914df6b1521102632f20d73f40692fe9b4e446864",
+     "untracked_src_files": [
+      "configs/exp011pilot.toml",
+      "src/clm_lib/w2.py"
+     ]
+    },
+    "schedule": [
+     {
+      "task": "w2-dev-1",
+      "rep": 1,
+      "block": 0,
+      "position": 0,
+      "williams_row": 0,
+      "mode": "clm_helpers",
+      "caching": "on"
+     },
+     {
+      "task": "w2-dev-1",
+      "rep": 1,
+      "block": 0,
+      "position": 1,
+      "williams_row": 0,
+      "mode": "clm_helpers+chk",
+      "caching": "on"
+     },
+     {
+      "task": "w2-dev-1",
+      "rep": 1,
+      "block": 0,
+      "position": 2,
+      "williams_row": 0,
+      "mode": "clm_helpers+chk-jev",
+      "caching": "on"
+     },
+     {
+      "task": "w2-dev-2",
+      "rep": 1,
+      "block": 1,
+      "position": 0,
+      "williams_row": 1,
+      "mode": "clm_helpers+chk",
+      "caching": "on"
+     },
+     {
+      "task": "w2-dev-2",
+      "rep": 1,
+      "block": 1,
+      "position": 1,
+      "williams_row": 1,
+      "mode": "clm_helpers+chk-jev",
+      "caching": "on"
+     },
+     {
+      "task": "w2-dev-2",
+      "rep": 1,
+      "block": 1,
+      "position": 2,
+      "williams_row": 1,
+      "mode": "clm_helpers",
+      "caching": "on"
+     }
+    ]
+   },
+   "halted": null,
+   "cells": 6,
+   "missing": 0
+  }
+ ],
+ "fixtures": {
+  "w2-dev-1": {
+   "sha256": "7a53444688090a5ebe5abbf60d0cf416652e82453f9bdafa8bc78256fe92f7b6",
+   "path": "artifacts/fixtures/w2-dev-1"
+  },
+  "w2-dev-2": {
+   "sha256": "8e6b37ae80e3a7537c4cadb32991fa5bff0c9bf8736cc90dc2953ca038312f32",
+   "path": "artifacts/fixtures/w2-dev-2"
+  },
+  "w2-smoke-1": {
+   "sha256": "e10ad3b6bfb30689edf4052b6a6f65983f653d5241abd39d241f83143d37a5a8",
+   "path": "artifacts/fixtures/w2-smoke-1"
+  }
+ },
  "ledger_snapshot": {
-  "path": "../../ledger-snapshots/ledger-6e5f5019dc55.json",
-  "sha256": "6e5f5019dc55f3642ad487ca3aa1bd23c53997271fc32ea6304b4422dcc2746e",
+  "path": "../../ledger-snapshots/ledger-029b64bf93c6.json",
+  "sha256": "029b64bf93c6498a898eb9d39c48c8e243470f6aafa8a39ed7967a5e526d16ee",
   "note": "historical copy; the active ledger stays in the clm-lib repo"
  },
  "documents": {

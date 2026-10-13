@@ -1,0 +1,19 @@
+--- rev-6
++++ rev-7
+@@ -40,6 +40,16 @@
+    "id": "s5.obs",
+    "role": "observation",
+    "body": "Stage 2 of 5 released.\n# Stage 2 of 5 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; every other earlier rule, obligation and exception stays in force.\n\n## Changes\n\n- [NEW] Status: only records with status 'active' are exported, unless params.get('include_archived') is True; then records with status 'archived' are exported too.\n- [NEW] Compliance obligation (no code change is needed while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must also include a top-level field \"exported_by\" whose value is user['name']. This obligation stays in force unless a later stage withdraws it.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (24 lines)\n  stage-2/REQUIREMENTS.md (10 lines)"
++  },
++  {
++   "id": "s6.act",
++   "role": "assistant",
++   "body": "[step 6] execute\nthought: Implement status filter; check core.py.\ncode:\nprint(open('/task/workspace/exporter/core.py').read())"
++  },
++  {
++   "id": "s6.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nimport csv, io\n\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer cannot export')\n    out = []\n    for r in sorted(records, key=lambda r: r['id']):\n        if role != 'admin' and r['project'] not in user.get('projects', []):\n            continue\n        if r['confidential'] and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        out.append(r)\n    buf = io.StringIO()\n    w = csv.writer(buf, lineterminator='\\n')\n    w.writerow(['id', 'title', 'owner', 'amount'])\n    for r in out:\n        w.writerow([int(r['id']), r['title'], r['owner'], r['amount']])\n    return buf.getvalue()\n\n"
+   }
+  ]
+ }

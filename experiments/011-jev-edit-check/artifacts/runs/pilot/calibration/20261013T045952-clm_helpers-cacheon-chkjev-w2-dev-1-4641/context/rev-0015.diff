@@ -1,0 +1,19 @@
+--- rev-14
++++ rev-15
+@@ -40,6 +40,16 @@
+    "id": "s12.obs",
+    "role": "observation",
+    "body": "Stage 4 of 5 released.\n# Stage 4 of 5 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; every other earlier rule, obligation and exception stays in force.\n\n## Changes\n\n- [CHANGED] Permissions (partly replaces the stage-1 rule): a user whose role is not 'admin' now also receives the records they own (record 'owner' equal to user['name']), even outside their projects. The 'viewer' rule (PermissionError) and the 'admin' rule from stage 1 are unchanged.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (26 lines)\n  stage-4/REQUIREMENTS.md (9 lines)"
++  },
++  {
++   "id": "s13.act",
++   "role": "assistant",
++   "body": "[step 13] execute\nthought: Inspect core.py permission logic to add owner rule.\ncode:\nimport re\ns=open('/task/workspace/exporter/core.py').read()\nfor i,l in enumerate(s.splitlines(),1):print(i,l)"
++  },
++  {
++   "id": "s13.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n1 import csv, io, json\n2 \n3 def export_records(records, user, params):\n4     params = params or {}\n5     role = user.get('role')\n6     if role == 'viewer':\n7         raise PermissionError('viewer may not export')\n8     out = []\n9     for r in records:\n10         if role != 'admin' and r['project'] not in user.get('projects', []):\n11             continue\n12         if r['status'] != 'active' and not (r['status'] == 'archived' and params.get('include_archived') is True):\n13             continue\n14         if r['confidential'] is True and not (role == 'admin' and params.get('purpose') == 'audit'):\n15             continue\n16         if params.get('since') is not None and r['created'] < params['since']:\n17             continue\n18         out.append(r)\n19     out.sort(key=lambda r: r['id'])\n20     return json.dumps({'exported_by': user.get('name'), 'records': [{'id': int(r['id']), 'title': r['title'], 'owner': r['owner'], 'amount': r['amount']} for r in out]})\n"
+   }
+  ]
+ }

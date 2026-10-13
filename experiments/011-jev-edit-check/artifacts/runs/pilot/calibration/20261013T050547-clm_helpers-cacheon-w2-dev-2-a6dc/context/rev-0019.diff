@@ -1,0 +1,19 @@
+--- rev-18
++++ rev-19
+@@ -40,6 +40,16 @@
+    "id": "s13.rcpt",
+    "role": "receipt",
+    "body": "context.json edit accepted at step 13: revision 16 -> 17; entries 11 -> 5; body chars 6898 -> 845; removed [s10.act, s10.obs, s10.rcpt, s11.act, s11.obs, s12.act, s12.obs]; added [n5]; rewritten []"
++  },
++  {
++   "id": "s14.act",
++   "role": "assistant",
++   "body": "[step 14] execute\nthought: Verify stage 5 released and review core.py before finishing.\ncode:\nimport os;print(os.listdir('/task/fixtures'));print(open('/task/workspace/exporter/core.py').read())"
++  },
++  {
++   "id": "s14.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n['stage-1', 'stage-5', 'stage-4', 'stage-2', 'current-tests', 'stage-3']\nimport csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer cannot export')\n    out = []\n    for r in records:\n        st = r.get('status')\n        if not (st == 'active' or (st == 'archived' and params.get('include_archived') is True and user.get('role') == 'admin')):\n            continue\n        if role != 'admin' and r['project'] not in user.get('projects', []):\n            continue\n        if r['confidential'] and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        if params.get('since') is not None and str(r.get('created',''))[:10] < params['since']:\n            continue\n        out.append(r)\n    out.sort(key=lambda r: r['id'])\n    truncated = False\n    mr = params.get('max_records')\n    if isinstance(mr, int) and not isinstance(mr, bool) and mr >= 1 and len(out) > mr:\n        out = out[:mr]; truncated = True\n    import json\n    return json.dumps({'exported_by': user.get('name'), 'records': [{'id': int(r['id']), 'title': r['title'], 'owner': r['owner'], 'amount': str(r['amount'])} for r in out], 'truncated': truncated})\n\n"
+   }
+  ]
+ }

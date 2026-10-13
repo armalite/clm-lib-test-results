@@ -1,0 +1,19 @@
+--- rev-8
++++ rev-9
+@@ -35,6 +35,16 @@
+    "id": "s6.obs",
+    "role": "observation",
+    "body": "Stage 2 of 2 released.\n# Stage 2 of 2 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; every other earlier rule, obligation and exception stays in force.\n\n## Changes\n\n- [CHANGED] Format (replaces the whole CSV format rule from stage 1): return JSON text (json.dumps) of an object whose key \"records\" is a list with one object per exported record, in ascending id order, each with exactly the keys \"id\" (int), \"title\", \"owner\" and \"amount\" (str; amount exactly as given in the record). The hidden tests parse the JSON and compare values, not spacing or key order. Which records are exported does not change.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (26 lines)\n  stage-2/REQUIREMENTS.md (9 lines)"
++  },
++  {
++   "id": "s7.act",
++   "role": "assistant",
++   "body": "[step 7] execute\nthought: Implement JSON format with exported_by obligation.\ncode:\nimport subprocess,sys\nsrc='''import json\n\n\ndef export_records(records, user, params):\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer may not export')\n    if role == 'admin':\n        sel = list(records)\n    else:\n        projs = set(user.get('projects') or [])\n        sel = [r for r in records if r.get('project') in projs]\n    sel = sorted(sel, key=lambda r: int(r['id']))\n    out = {'records': [{'id': int(r['id']), 'title': r['title'], 'owner': r['owner'], 'amount': r['amount']} for r in sel],\n           'exported_by': user.get('name')}\n    return json.dumps(out)\n'''\nopen('/task/workspace/exporter/core.py','w').write(src)\nprint(open('/task/workspace/exporter/__init__.py').read())\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-800:])"
++  },
++  {
++   "id": "s7.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.8s\n--- stdout ---\n\"\"\"Data-export package (implement the requirements in /task/fixtures/stage-*/).\"\"\"\n\nfrom .core import export_records\n\n__all__ = [\"export_records\"]\n\n..\n----------------------------------------------------------------------\nRan 2 tests in 0.000s\n\nOK\n\n"
+   }
+  ]
+ }

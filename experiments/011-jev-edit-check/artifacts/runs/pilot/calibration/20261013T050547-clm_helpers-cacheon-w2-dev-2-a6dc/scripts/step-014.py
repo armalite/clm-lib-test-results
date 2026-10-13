@@ -1,0 +1,1 @@
+import os;print(os.listdir('/task/fixtures'));print(open('/task/workspace/exporter/core.py').read())

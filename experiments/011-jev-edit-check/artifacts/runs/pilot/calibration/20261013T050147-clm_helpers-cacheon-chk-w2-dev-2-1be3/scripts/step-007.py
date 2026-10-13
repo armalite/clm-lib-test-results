@@ -1,0 +1,1 @@
+print(open('/task/workspace/exporter/core.py').read());print(open('/task/fixtures/current-tests/test_stage.py').read())

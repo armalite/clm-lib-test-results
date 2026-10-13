@@ -1,0 +1,19 @@
+--- rev-21
++++ rev-22
+@@ -30,6 +30,16 @@
+    "id": "s17.obs",
+    "role": "observation",
+    "body": "Proposal P4 accepted. context.json edit accepted at step 17: revision 19 -> 20; entries 13 -> 4; body chars 9624 -> 2681; removed [s12.act, s12.obs, s12.rcpt, s13.act, s13.obs, s14.act, s14.obs, s15.act, s15.obs]; added []; rewritten [notes]"
++  },
++  {
++   "id": "s18.act",
++   "role": "assistant",
++   "body": "[step 18] execute\nthought: Quick review of core.py before finalizing.\ncode:\nprint(open('/task/workspace/exporter/core.py').read()[:3500])"
++  },
++  {
++   "id": "s18.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n\"\"\"Exporter implementation.\"\"\"\nimport json\n\n\ndef _filter(records, user, params):\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer cannot export')\n    out = []\n    for r in records:\n        if role != 'admin' and r['project'] not in user.get('projects', []) and r.get('owner') != user.get('name'):\n            continue\n        if r['status'] != 'active' and not (r['status'] == 'archived' and params.get('include_archived') is True):\n            continue\n        if r['confidential'] is True and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        since = params.get('since')\n        if since is not None and r['created'] < since:\n            continue\n        out.append(r)\n    return sorted(out, key=lambda r: r['id'])\n\n\ndef export_records(records, user, params):\n    params = params or {}\n    recs = _filter(records, user, params)\n    mr = params.get('max_records')\n    truncated = False\n    if isinstance(mr, int) and not isinstance(mr, bool) and mr >= 1 and len(recs) > mr:\n        recs = recs[:mr]; truncated = True\n    out = [{'id': int(r['id']), 'title': r['title'], 'owner': r['owner'], 'amount': str(r['amount'])} for r in recs]\n    return json.dumps({'exported_by': user.get('name'), 'records': out, 'truncated': truncated})\n\n"
+   }
+  ]
+ }

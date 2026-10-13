@@ -717,3 +717,30 @@ The number of revisions is bounded by `max_calls`, and Jev rechecks by `max_chec
 - **Checker:** `jev-edit-check/2` (`8ad0d68a…`), `edit-evidence/1`, threshold 0.5, `max_checks` 30, version `edit-check-pilot/1`.
 - **Limits, metrics, rubric, order, budget and stopping rules:** as written above.
 - **Ledger at the freeze:** spent USD 82.137651 (after the smoke), ceiling 97.010420.
+
+## Agent-pilot result record (2026-10-13, written after the six runs; no run repeated or replaced)
+
+**Comparison `20261013T045649`:**
+- **Cells:** 6/6 completed, not halted, in the frozen order. All valid for comparison.
+- **Code:** identical to the freeze fingerprints (later committed unchanged as clm-lib `b6fefb5`).
+- **Ledger:** each run's ledger entries reconcile with its recorded cost; every entry is `ok`, none charged from a reservation, and nothing is pending.
+
+**Outcome:**
+- **All six runs were strict successes,** 35/35 hidden checks each.
+- **Mean cost:** A USD 0.155083, B 0.177153, C 0.245634 (C TypeSafe 0.000909).
+- **Mean calls:** A 15.5, B 18.0, C 23.0.
+- **Mean elapsed:** A 88.2 s, B 92.4 s, C 131.8 s.
+
+**Intervention:**
+- **B and C:** 16 proposals, of which 15 were accepted and 1 revised; 0 withdrawn, expired, refused or unresolved.
+- **Bypasses:** **0 recovery-exempt edits**. All 4 OVER LIMIT requests were resolved by accepting the pending proposal.
+- **C:** 9/9 proposals checked, 0 errors, 4 flagged, 5 clear, 0 uncertain, and no evidence notes.
+
+**Edit review (exploratory, `analysis/pilot-edit-review.md`):**
+- no rule-level loss in any of the 26 applied edits;
+- all 4 flags were on acceptable proposals;
+- 3 flagged proposals accepted, 1 revised without a requirement change.
+
+**Defects:** none found in the pilot runs. The one pre-freeze issue (the OVER LIMIT bypass seen in the smoke) is recorded above, and did not recur.
+
+**Interpretation:** see the README. **No effect is claimed** from a 2 × 3 development pilot.

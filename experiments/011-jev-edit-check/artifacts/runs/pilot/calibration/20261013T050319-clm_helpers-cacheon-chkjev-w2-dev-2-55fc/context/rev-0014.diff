@@ -1,0 +1,19 @@
+--- rev-13
++++ rev-14
+@@ -55,6 +55,16 @@
+    "id": "s11.obs",
+    "role": "observation",
+    "body": "exit_code=0 duration=1.5s\n--- stdout ---\nimport csv, io\n\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer cannot export')\n    out = []\n    for r in sorted(records, key=lambda r: r['id']):\n        if role != 'admin' and r['project'] not in user.get('projects', []):\n            continue\n        if r['confidential'] and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        if r.get('status') != 'active' and not (params.get('include_archived') is True and r.get('status') == 'archived'):\n            continue\n        out.append(r)\n    buf = io.StringIO()\n    w = csv.writer(buf, lineterminator='\\n')\n    w.writerow(['id', 'title', 'owner', 'amount'])\n    for r in out:\n        w.writerow([int(r['id']), r['title'], r['owner'], r['amount']])\n    return buf.getvalue()\n\n"
++  },
++  {
++   "id": "s12.act",
++   "role": "assistant",
++   "body": "[step 12] execute\nthought: Implement since filter and JSON format including exported_by obligation (format changed from CSV).\ncode:\nimport re\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace('import csv, io','import json')\ns=s.replace(\"        out.append(r)\",\"        since = params.get('since')\\n        if since is not None and r['created'] < since:\\n            continue\\n        out.append(r)\")\ni=s.index('    buf = io.StringIO()')\ns=s[:i]+\"    return json.dumps({'exported_by': user.get('name'), 'records': [{'id': int(r['id']), 'title': r['title'], 'owner': r['owner'], 'amount': r['amount']} for r in out]})\\n\"\nopen(p,'w').write(s)\nimport subprocess,sys\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])"
++  },
++  {
++   "id": "s12.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.9s\n--- stdout ---\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n\n"
+   }
+  ]
+ }

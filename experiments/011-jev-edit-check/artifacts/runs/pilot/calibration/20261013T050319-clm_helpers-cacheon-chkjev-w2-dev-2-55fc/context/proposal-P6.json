@@ -1,0 +1,62 @@
+{
+ "id": "P6",
+ "step": 23,
+ "stage": 5,
+ "base_revision": 26,
+ "base_sha256": "0ae39951618462775f16dad0149e61027d74debcd971c79980a0d09e3860e148",
+ "candidate_sha256": "742edde318eee6e593d698983dd5c99a7610e457a490d9d8c8d9a102cb2d3eb3",
+ "replaces": "P5",
+ "entries_before": 16,
+ "entries_after": 5,
+ "chars_before": 9236,
+ "chars_after": 2905,
+ "removed": [
+  "s18.act",
+  "s18.obs",
+  "s18.rcpt",
+  "s19.act",
+  "s19.obs",
+  "s20.act",
+  "s20.obs",
+  "s21.act",
+  "s21.obs",
+  "s22.act",
+  "s22.obs",
+  "s22.rcpt"
+ ],
+ "added": [
+  "sum5"
+ ],
+ "rewritten": [
+  "sum4"
+ ],
+ "status": "pending",
+ "check": null,
+ "candidate": [
+  {
+   "id": "sum1",
+   "role": "summary",
+   "body": "Stage 1 rules (verbatim essentials): export_records(records,user,params)->str. records: dicts id(int unique),title,owner,project,status(active|archived),amount(decimal str keep exact),confidential(bool),created(YYYY-MM-DD); do not modify input. user: name,role,projects. params may be empty; ignore unmentioned keys. Base: all records, ascending id. [Format] CSV via csv.writer default dialect, lineterminator='\\n', header id,title,owner,amount; id as int, amount as given; no records -> header only. [Permissions] role viewer -> PermissionError; admin any project; other roles only records with project in user[projects], others silently dropped. [Confidential] confidential True never exported, except role admin and params.get(purpose)==audit (other rules still apply). Implemented in /task/workspace/exporter/core.py (sorted, filter perms, filter confidential, csv write); stage 1 visible tests 6/6 OK."
+  },
+  {
+   "id": "sum2",
+   "role": "summary",
+   "body": "Stage 2 rules: [NEW Status] only status 'active' exported, unless params.get('include_archived') is True; then 'archived' also exported. [NEW Compliance obligation] if a later stage changes export format from CSV, every export in new format must include top-level field \"exported_by\" = user['name']; stays in force unless later stage withdraws it. Implemented status filter in core.py loop (after confidential check); stage 2 visible tests 2/2 OK."
+  },
+  {
+   "id": "sum3",
+   "role": "summary",
+   "body": "Stage 3 rules: [NEW Date filter] params may contain 'since' (YYYY-MM-DD); when present only records with created >= since exported. [CHANGED Format] replaces whole stage 1 CSV rule: return json.dumps of object with key \"records\" = list, one object per exported record, ascending id, each exactly keys id(int),title,owner,amount(str exactly as given); tests parse JSON, compare values. Which records exported unchanged. Stage 2 compliance obligation now active: top-level \"exported_by\"=user['name'] included. Implemented in core.py (since filter in loop; json.dumps({'exported_by':..,'records':[...]})); stage 3 visible tests 4/4 OK."
+  },
+  {
+   "id": "sum4",
+   "role": "summary",
+   "body": "Stage 4 rules: [CHANGED Status, partly replaces stage-2 rule] include_archived is honoured only when user['role']=='admin'; for every other role archived records are never exported. Rest of stage-2 status rule unchanged (only 'active' by default; include_archived must be True). Implemented in core.py line 15 (added user.get('role')=='admin' to the include_archived condition); stage 4 visible tests 2/2 OK."
+  },
+  {
+   "id": "sum5",
+   "role": "summary",
+   "body": "Stage 5 (all 5 released): [NEW Record limit] params may contain 'max_records' int>=1; export only first max_records records (ascending id) remaining after every other rule; JSON object key \"truncated\": true if limit left out >=1 record, else false (also when absent). Implemented in core.py just before json.dumps: truncated=False; if max_records not None and len(out)>mr: out=out[:mr]; truncated=True; output keys exported_by, truncated, records. Stage 5 visible tests 2/2 OK (step 22). Remaining: final answer."
+  }
+ ]
+}

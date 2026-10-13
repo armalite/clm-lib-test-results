@@ -1,0 +1,19 @@
+--- rev-24
++++ rev-25
+@@ -55,6 +55,16 @@
+    "id": "s20.obs",
+    "role": "observation",
+    "body": "Stage 5 of 5 released.\n# Stage 5 of 5 requirements\n\nOnly the changes are listed. A CHANGED rule says which part of an earlier rule it replaces; every other earlier rule, obligation and exception stays in force.\n\n## Changes\n\n- [NEW] Record limit: params may contain 'max_records', an int of at least 1. Export only the first max_records records (in ascending id order) that remain after every other rule. The JSON object must also have the key \"truncated\": true if this limit left out at least one record, otherwise false (also when max_records is absent).\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (28 lines)\n  stage-5/REQUIREMENTS.md (9 lines)"
++  },
++  {
++   "id": "s21.act",
++   "role": "assistant",
++   "body": "[step 21] execute\nthought: Look at core.py then implement max_records.\ncode:\nprint(open('/task/workspace/exporter/core.py').read())"
++  },
++  {
++   "id": "s21.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.6s\n--- stdout ---\nimport json\n\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer cannot export')\n    out = []\n    for r in sorted(records, key=lambda r: r['id']):\n        if role != 'admin' and r['project'] not in user.get('projects', []):\n            continue\n        if r['confidential'] and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        if r.get('status') != 'active' and not (params.get('include_archived') is True and user.get('role') == 'admin' and r.get('status') == 'archived'):\n            continue\n        since = params.get('since')\n        if since is not None and r['created'] < since:\n            continue\n        out.append(r)\n    return json.dumps({'exported_by': user.get('name'), 'records': [{'id': int(r['id']), 'title': r['title'], 'owner': r['owner'], 'amount': r['amount']} for r in out]})\n\n"
+   }
+  ]
+ }

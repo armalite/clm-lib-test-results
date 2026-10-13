@@ -1,0 +1,7 @@
+import json,subprocess,sys
+open('/task/workspace/exporter/core.py','w').write('''import csv, io\n\n\ndef export_records(records, user, params):\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer may not export')\n    if role == 'admin':\n        sel = list(records)\n    else:\n        projs = set(user.get('projects') or [])\n        sel = [r for r in records if r['project'] in projs]\n    sel = sorted(sel, key=lambda r: r['id'])\n    buf = io.StringIO()\n    w = csv.writer(buf, lineterminator='\\\\n')\n    w.writerow(['id', 'title', 'owner', 'amount'])\n    for r in sel:\n        w.writerow([int(r['id']), r['title'], r['owner'], r['amount']])\n    return buf.getvalue()\n''')
+r=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-800:])
+p='/task/workspace/context.json'
+c=json.load(open(p))
+c['entries']=[e for e in c['entries'] if e['id']=='note.stage1']+[{'id':'note.progress','role':'note','body':'Steps1-3: read reqs/skeleton/tests, note accepted. Step4: wrote exporter/core.py implementing stage 1 (csv.writer, perms, sort by id).'}]
+json.dump(c,open(p,'w'))

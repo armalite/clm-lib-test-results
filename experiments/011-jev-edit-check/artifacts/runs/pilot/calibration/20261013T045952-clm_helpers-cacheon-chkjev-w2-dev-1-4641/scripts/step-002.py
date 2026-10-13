@@ -1,0 +1,27 @@
+print(open('/task/workspace/exporter/core.py').read())
+code='''import csv, io
+
+def export_records(records, user, params):
+    params = params or {}
+    role = user.get('role')
+    if role == 'viewer':
+        raise PermissionError('viewer may not export')
+    out = []
+    for r in records:
+        if role != 'admin' and r['project'] not in user.get('projects', []):
+            continue
+        if r['status'] != 'active' and not (r['status'] == 'archived' and params.get('include_archived') is True):
+            continue
+        out.append(r)
+    out.sort(key=lambda r: r['id'])
+    buf = io.StringIO()
+    w = csv.writer(buf, lineterminator='\\n')
+    w.writerow(['id', 'title', 'owner', 'amount'])
+    for r in out:
+        w.writerow([int(r['id']), r['title'], r['owner'], r['amount']])
+    return buf.getvalue()
+'''
+open('/task/workspace/exporter/core.py','w').write(code)
+import subprocess,sys
+r=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)
+print(r.stderr[-1500:])
