@@ -1,0 +1,5 @@
+import json
+n1={'id':'n1','role':'note','body':'Round1: board empty. CHG-111 PROPOSED (not applied); CHG-113 APPLIED build 4.33.8 checkout-api sets feature.batch_size=0 (round-01/changes.md:4, BAD_CONFIG_ROLLOUT candidate); CHG-114 APPLIED inventory-svc no config. Logs routine. Format: TS LEVEL svc msg.'}
+n2={'id':'n2','role':'note','body':'Round2: board follow-ups OPEN VENDOR_TICKET, POSTMORTEM_DRAFT (round-02/board.md:3-4). CHG-116 APPLIED log sampling (benign). pricing-svc ERROR upstream returned 429 upstream=sms-gateway at round-02/logs/pricing-svc.log lines 4,6,12,21,34,37,53,54,67,68,72,73 -> UPSTREAM_RATE_LIMIT pricing-svc. checkout-api round2 routine (health/gc/heartbeat). Round 2 fully analysed; next: advance.'}
+json.dump({'format':'clm-context/v1','entries':[n1,n2]},open('/task/workspace/context.json','w'))
+print('ok')

@@ -1,0 +1,36 @@
+--- rev-11
++++ rev-12
+@@ -4,32 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Round1 notes: board empty. All 5 services (checkout-api,pricing-svc,ledger-svc,inventory-svc,search-api) only WARN slow query ms 200-450 (noise, no ERRORs). changes.md round-01: line3 CHG-110 APPLIED retry budget GET=1; line4 CHG-113 APPLIED build 3.22.4 pricing-svc sets cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT); line5 CHG-114 APPLIED 3.22.4 ledger-svc no config. Next: advance to round 2. Grep logs for ERROR/non slow-query lines."
+-  },
+-  {
+-   "id": "s7.act",
+-   "role": "assistant",
+-   "body": "[step 7] execute\nthought: Read spilled obs and round-02 md, then compact context.\ncode:\nimport json\nprint(open('/task/fixtures/round-02/board.md').read());print(open('/task/fixtures/round-02/changes.md').read())\ns=open('/task/workspace/spill/s5.obs.txt').read()\nimport re\nfrom collections import Counter\nls=[l for l in s.splitlines() if l.strip()]\nprint(len(ls))\nfor l in ls[:40]: print(l[:150])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id']=='n1']\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s7.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.6s\n--- stdout ---\n# Incident board: updates in round 02\n\n- Follow-up OPEN CAPACITY_REVIEW: capacity review of the affected tier.\n\n# Change log: round 02\n\n- CHG-115 APPLIED: retry budget for idempotent GETs set to 1\n\n73\nexit_code=0 duration=1.4s\n--- stdout ---\n/task/fixtures/round-02/board.md\n# Incident board: updates in round 02\n- Follow-up OPEN CAPACITY_REVIEW: capacity review of the affected tier.\n/task/fixtures/round-02/changes.md\n# Change log: round 02\n- CHG-115 APPLIED: retry budget for idempotent GETs set to 1\ncheckout-api.log 1 2026-09-14T09:00:43Z INFO  checkout-api heartbeat uptime_s=40208\ncheckout-api.log 3 2026-09-14T09:02:41Z INFO  checkout-api heartbeat uptime_s=63371\ncheckout-api.log 5 2026-09-14T09:03:14Z INFO  checkout-api health ok probe=readiness\ncheckout-api.log 6 2026-09-14T09:04:37Z INFO  checkout-api health ok probe=readiness\ncheckout-api.log 8 2026-09-14T09:05:09Z INFO  checkout-api request ok route=/v1/orders status=200 ms=69\ncheckout-api.log 9 2026-09-14T09:05:23Z INFO  checkout-api request ok route=/v1/orders status=200 ms=34\ncheckout-api.log 10 2026-09-14T09:05:23Z INFO  checkout-api heartbeat uptime_s=54075\ncheckout-api.log 11 2026-09-14T09:05:31Z INFO  checkout-api heartbeat uptime_s=64439\ncheckout-api.log 12 2026-09-14T09:07:07Z INFO  checkout-api request ok route=/v1/health status=200 ms=33\ncheckout-api.log 13 2026-09-14T09:07:16Z INFO  checkout-api heartbeat uptime_s=20205\ncheckout-api.log 14 2026-09-14T09:07:25Z INFO  checkout-api request ok route=/v1/health status=200 ms=19\ncheckout-api.log 15 2026-09-14T09:08:56Z INFO  checkout-api heartbeat uptime_s=59773\ncheckout-api.log 16 2026-09-14T09:09:27Z INFO  checkout-api health ok probe=readiness\ncheckout-api.log 17 2026-09-14T09:09:39Z INFO  checkout-api gc cycle pause_ms=23\ncheckout-api.log 18 2026-09-14T09:09:56Z INFO  checkout-api health ok probe=readiness\ncheckout-api.log 19 2026-09-14T09:10:44Z INFO  checkout-api health ok probe=readiness\ncheckout-api.log 20 2026-09-14T09:11:52Z INFO  checkout-api heartbeat uptime_s=65003\ncheckout-api.log 21 2026-09-14T09:12:39Z INFO  checkout-api health ok probe=readiness\ncheckout-api.log 22 2026-09-14T09:14:02Z INFO  checkout-api request ok route=/v1/health status=200 ms=85\ncheckout-api.log 23 2026-09-14T09:16:32Z INFO  checkout-api request ok route=/v1/health status=200 ms=53\ncheckout-api.log 25 2026-09-14T09:18:47Z INFO  checkout-api request ok route=/v1/items status=200 ms=25\ncheckout-api.log 26 2026-09-14T09:19:02Z INFO  checkout-api gc cycle pause_ms=22\ncheckout-api.log 28 2026-09-14T09:20:58Z INFO  checkout-api gc cycle pause_ms=11\ncheckout-api.log 29 2026-09-14T09:26:40Z INFO  checkout-api heartbeat uptime_s=56562\ncheckout-api.log 30 2026-09-14T09:28:24Z INFO  checkout-api heartbeat uptime_s=88096\ncheckout-api.log 31 2026-09-14T09:29:56Z INFO  checkout-api health ok probe=readiness\ncheckout-api.log 32 2026-09-14T09:30:21Z INFO  checkout-api request ok route=/v1/items status=200 ms=30\ncheckout-api.log 33 2026-09-14T09:30:26Z INFO  checkout-api heartbeat uptime_s=2744\ncheckout-api.log 34 2026-09-14T09:32:34Z INFO  checkout-api heartbeat uptime_s=8067\ncheckout-api.log 35 2026-09-14T09:32:41Z INFO  checkout-api gc cycle pause_ms=20\ncheckout-api.log 36 2026-09-14T09:33:01Z INFO  checkout-api health ok probe=readiness\ncheckout-api.log 37 2026-09-14T09:33:56Z INFO  checkout-api request ok route=/v1/orders status=200 ms=27\n"
+-  },
+-  {
+-   "id": "s7.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 7: revision 8 -> 9; entries 10 -> 1; body chars 3084 -> 435; removed [s3.act, s3.obs, s3.rcpt, s4.act, s4.obs, s5.act, s5.obs, s6.act, s6.obs]; added []; rewritten []"
+-  },
+-  {
+-   "id": "s8.act",
+-   "role": "assistant",
+-   "body": "[step 8] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s8.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 10; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 2 (2 lines; files round-02/board.md, round-02/changes.md; sha256 65fd60f85fd2)\nEntries to review (2): n1, s7.obs (2 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 10; update: round 2 board and change-log lines). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.56\n  s7.obs: 0.19\nCoverage: 2 of 2 entries answered."
++   "body": "Round1: board empty. 5 services (checkout-api,pricing-svc,ledger-svc,inventory-svc,search-api) only WARN slow query noise. round-01/changes.md:3 CHG-110 APPLIED retry GET=1; :4 CHG-113 APPLIED 3.22.4 pricing-svc cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT); :5 CHG-114 APPLIED 3.22.4 ledger-svc no config. Round2: board.md follow-up OPEN CAPACITY_REVIEW; changes.md CHG-115 APPLIED retry GET=1. round-02 checkout-api logs all INFO (need grep ERROR/WARN other services r2). Next: grep r2 logs non-INFO, then advance."
+   }
+  ]
+ }

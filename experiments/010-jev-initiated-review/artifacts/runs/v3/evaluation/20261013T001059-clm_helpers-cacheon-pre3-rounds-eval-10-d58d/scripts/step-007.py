@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Round1: board empty. CHG-113 APPLIED build 6.58.8 shipping-svc sets retry.backoff_ms=0 (round-01/changes.md:3); CHG-114 APPLIED search-api no config changes (:4). Logs routine slow query WARNs only. Services: shipping-svc, checkout-api, auth-svc, inventory-svc, search-api.'},{'id':'n2','role':'note','body':'Round2: board: follow-ups OPEN DATA_BACKFILL (round-02/board.md:3), POSTMORTEM_DRAFT (:4). auth-svc ERROR dns lookup failed host=geo.internal SERVFAIL lines 4,7,9,14,15,37,41,59,60,70,72 (round-02/logs/auth-svc.log:4-15 etc) -> DNS_RESOLUTION auth-svc, not on board yet. Others clean. Next: advance.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

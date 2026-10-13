@@ -1,0 +1,4 @@
+import json
+n=json.load(open('/task/workspace/context.json'))['entries'][0]['body'].replace(' Next: advance to round 10.','')
+n+='\nRound10: board round-10/board.md:3 Thread B now includes shipping-svc; :4 Thread C opened checkout-api request failures ongoing, cause unidentified. Logs: checkout-api ERROR config validation failed feature.batch_size=0 round-10/logs/checkout-api.log:1-61 (=> BAD_CONFIG_ROLLOUT from CHG-113 round-01/changes.md:4). DNS SERVFAIL round-10/logs/inventory-svc.log:2-75, shipping-svc.log:1-68. CHG-174 PROPOSED noise. pricing/search no errors. Next: advance to round 11.'
+json.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))

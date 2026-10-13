@@ -1,0 +1,5 @@
+import json
+e=json.load(open('/task/workspace/context.json'))['entries']
+keep=[x for x in e if x['id'].startswith('n')]
+keep.append({'id':'n7','role':'note','body':'Round7: board: Thread B cause revised DISK_PRESSURE (shipping-svc, notify-worker) (round-07/board.md:3); Thread D (CERT shipping) closed false alarm (round-07/board.md:4); Follow-up CLOSED POSTMORTEM_DRAFT (round-07/board.md:5). changes: CHG-149 PROPOSED only. Logs: no DNS errors; search-api no errors; notify-worker disk round-07/logs/notify-worker.log:2,6,8,12,19,25,28,30; shipping-svc disk round-07/logs/shipping-svc.log:18,22,23,25,27,33,41,47. Open followups: DATA_BACKFILL, VENDOR_TICKET, RUNBOOK_UPDATE. Next: advance to round 8.'})
+json.dump({'format':'clm-context/v1','entries':keep},open('/task/workspace/context.json','w'))

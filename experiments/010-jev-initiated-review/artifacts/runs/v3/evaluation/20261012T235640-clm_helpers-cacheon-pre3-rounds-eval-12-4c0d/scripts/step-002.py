@@ -1,0 +1,1 @@
+print(open('/task/fixtures/round-01/changes.md').read()[:1500])

@@ -1,0 +1,3 @@
+import json
+ctx={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. changes.md:3 CHG-110 APPLIED retry budget=1; :4 CHG-113 APPLIED pricing-svc build 3.22.4 sets cache.ttl_s=-1 (suspicious BAD_CONFIG); :5 CHG-114 ledger-svc no config. Routine noise regex: heartbeat|health ok|gc cycle|slow query|request ok. Services: checkout-api pricing-svc ledger-svc inventory-svc search-api.'},{'id':'n2','role':'note','body':'R2: board.md:3 follow-up OPEN CAPACITY_REVIEW. changes.md:3 CHG-115 APPLIED retry budget (noise). search-api.log:11,15,19,24,27,33,57 tls handshake failed peer=sso.example.net certificate_expired -> CERT_EXPIRED search-api (no board thread yet).'}]}
+json.dump(ctx,open('/task/workspace/context.json','w'))

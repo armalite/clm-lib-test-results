@@ -1,0 +1,3 @@
+import json
+json.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty; round-01/changes.md:3 CHG-108 APPLIED TLS session ticket rotation hourly. Routine log lines filter: heartbeat|health ok|request ok|gc cycle|slow query. services: notify-worker shipping-svc ledger-svc inventory-svc search-api.\nR2: board empty. round-02/changes.md:4 CHG-120 APPLIED search-api build 8.48.0 sets http.max_inflight=-1 (possible BAD_CONFIG, no errors yet). changes.md:5 CHG-121 shipping-svc no config. ledger-svc DNS SERVFAIL host=geo.internal round-02/logs/ledger-svc.log:3-81 (12 errors). Next: advance to R3.'}]},open('/task/workspace/context.json','w'))
+print('ok')

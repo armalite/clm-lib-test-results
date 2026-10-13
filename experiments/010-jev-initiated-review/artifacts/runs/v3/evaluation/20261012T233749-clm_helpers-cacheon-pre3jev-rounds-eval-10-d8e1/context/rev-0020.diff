@@ -1,0 +1,76 @@
+--- rev-19
++++ rev-20
+@@ -4,72 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Round1: services shipping-svc, checkout-api, auth-svc, inventory-svc, search-api. Noise: WARN slow query. round-01/changes.md:3 CHG-113 APPLIED build 6.58.8 shipping-svc sets retry.backoff_ms=0; :4 CHG-114 APPLIED search-api no config changes. Round2 board: follow-ups OPEN DATA_BACKFILL, POSTMORTEM_DRAFT. round-02 auth-svc.log 4-72 dns SERVFAIL geo.internal. Round3: board.md:3 Thread A DNS_RESOLUTION confirmed auth-svc + checkout-api ongoing. board.md:4 Thread B search-api SUSPECTED DB_POOL_EXHAUSTED ongoing, BUT search-api.log lines 16-62 show ERROR upstream 429 fx-rates (UPSTREAM_RATE_LIMIT likely). round-03 auth-svc.log:2-59 dns errors; checkout-api.log:14-63 dns errors. changes.md:3 CHG-123 dashboards (irrelevant). shipping/inventory no errors. Next: advance to round 4."
+-  },
+-  {
+-   "id": "s11.act",
+-   "role": "assistant",
+-   "body": "[step 11] execute\nthought: Compact context with authorised review.\ncode:\nimport json\nn='Round1: services shipping-svc, checkout-api, auth-svc, inventory-svc, search-api. Noise: WARN slow query. round-01/changes.md:3 CHG-113 APPLIED build 6.58.8 shipping-svc sets retry.backoff_ms=0; :4 CHG-114 APPLIED search-api no config changes. Round2 board: follow-ups OPEN DATA_BACKFILL, POSTMORTEM_DRAFT. round-02 auth-svc.log 4-72 dns SERVFAIL geo.internal. Round3: board.md:3 Thread A DNS_RESOLUTION confirmed auth-svc + checkout-api ongoing. board.md:4 Thread B search-api SUSPECTED DB_POOL_EXHAUSTED ongoing, BUT search-api.log lines 16-62 show ERROR upstream 429 fx-rates (UPSTREAM_RATE_LIMIT likely). round-03 auth-svc.log:2-59 dns errors; checkout-api.log:14-63 dns errors. changes.md:3 CHG-123 dashboards (irrelevant). shipping/inventory no errors. Next: advance to round 4.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s11.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s"
+-  },
+-  {
+-   "id": "s11.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 11: revision 12 -> 13; entries 10 -> 1; body chars 5083 -> 784; removed [s7.act, s7.obs, s7.rcpt, s8.act, s8.obs, s9.act, s9.obs, s10.act, s10.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s12.act",
+-   "role": "assistant",
+-   "body": "[step 12] advance\nthought: "
+-  },
+-  {
+-   "id": "s12.obs",
+-   "role": "observation",
+-   "body": "Stage 4 of 11 released.\nRound 4 of 11 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (2 lines)\n  round-04/logs/auth-svc.log (67 lines)\n  round-04/logs/checkout-api.log (67 lines)\n  round-04/logs/inventory-svc.log (68 lines)\n  round-04/logs/search-api.log (90 lines)\n  round-04/logs/shipping-svc.log (58 lines)"
+-  },
+-  {
+-   "id": "s13.act",
+-   "role": "assistant",
+-   "body": "[step 13] execute\nthought: \ncode:\nimport re\nb='/task/fixtures/round-04/'\nprint(open(b+'board.md').read())\nfor s in ['auth-svc','checkout-api','inventory-svc','search-api','shipping-svc']:\n    L=open(b+'logs/'+s+'.log').read().splitlines()\n    e=[i+1 for i,l in enumerate(L) if re.search('ERROR|error|FATAL',l)]\n    print(s,len(e),e[:1],e[-1:] if e else '')\n    if e: print(' ',L[e[0]-1][:200])"
+-  },
+-  {
+-   "id": "s13.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 04\n\n\nauth-svc 6 [3] [57]\n  2026-09-14T11:02:07Z ERROR auth-svc dns lookup failed host=geo.internal err=SERVFAIL\ncheckout-api 10 [2] [64]\n  2026-09-14T11:00:46Z ERROR checkout-api dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc 0 [] \nsearch-api 12 [4] [90]\n  2026-09-14T11:08:38Z ERROR search-api upstream returned 429 upstream=fx-rates retry_after_s=41\nshipping-svc 0 [] \n"
+-  },
+-  {
+-   "id": "s14.act",
+-   "role": "assistant",
+-   "body": "[step 14] advance\nthought: "
+-  },
+-  {
+-   "id": "s14.obs",
+-   "role": "observation",
+-   "body": "Stage 5 of 11 released.\nRound 5 of 11 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (2 lines)\n  round-05/changes.md (3 lines)\n  round-05/logs/auth-svc.log (66 lines)\n  round-05/logs/checkout-api.log (68 lines)\n  round-05/logs/inventory-svc.log (75 lines)\n  round-05/logs/search-api.log (66 lines)\n  round-05/logs/shipping-svc.log (74 lines)"
+-  },
+-  {
+-   "id": "s15.act",
+-   "role": "assistant",
+-   "body": "[step 15] execute\nthought: \ncode:\nimport re\nb='/task/fixtures/round-05/'\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\nfor s in ['auth-svc','checkout-api','inventory-svc','search-api','shipping-svc']:\n    L=open(b+'logs/'+s+'.log').read().splitlines()\n    e=[i+1 for i,l in enumerate(L) if re.search('ERROR|error|FATAL',l)]\n    print(s,len(e),e[:1],e[-1:] if e else '')\n    if e: print(' ',L[e[0]-1][:160])"
+-  },
+-  {
+-   "id": "s15.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 05\n\n\n# Change log: round 05\n\n- CHG-140 APPLIED: log sampling for /v1/health reduced to 1%\n\nauth-svc 8 [1] [60]\n  2026-09-14T12:00:59Z ERROR auth-svc dns lookup failed host=geo.internal err=SERVFAIL\ncheckout-api 11 [2] [66]\n  2026-09-14T12:00:36Z ERROR checkout-api dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc 0 [] \nsearch-api 10 [5] [64]\n  2026-09-14T12:08:21Z ERROR search-api upstream returned 429 upstream=fx-rates retry_after_s=41\nshipping-svc 0 [] \n"
+-  },
+-  {
+-   "id": "s16.act",
+-   "role": "assistant",
+-   "body": "[step 16] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s16.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 18; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 5 (1 lines; files round-05/board.md, round-05/changes.md; sha256 ba9b8de4f482)\nEntries to review (6): n1, s11.obs, s12.obs, s13.obs, s14.obs, s15.obs (6 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 18; update: round 5 board and change-log lines). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.12\n  s11.obs: 0.10\n  s12.obs: 0.13\n  s13.obs: 0.11\n  s14.obs: 0.15\n  s15.obs: 0.19\nCoverage: 6 of 6 entries answered."
++   "body": "Round1: services shipping-svc, checkout-api, auth-svc, inventory-svc, search-api. Noise: WARN slow query. round-01/changes.md:3 CHG-113 APPLIED build 6.58.8 shipping-svc sets retry.backoff_ms=0; :4 CHG-114 APPLIED search-api no config changes. Round2 board: follow-ups OPEN DATA_BACKFILL, POSTMORTEM_DRAFT. round-02 auth-svc.log 4-72 dns SERVFAIL geo.internal. Round3: board.md:3 Thread A DNS_RESOLUTION confirmed auth-svc + checkout-api ongoing. board.md:4 Thread B search-api SUSPECTED DB_POOL_EXHAUSTED ongoing, BUT search-api.log 16-62 ERROR upstream 429 fx-rates (UPSTREAM_RATE_LIMIT likely). round-03 auth-svc.log:2-59, checkout-api.log:14-63 dns errors. Round4: board empty; auth 3-57, checkout 2-64 dns; search-api 4-90 429 fx-rates. Round5: board empty; changes CHG-140 log sampling (irrelevant); auth 1-60, checkout 2-66 dns; search-api 5-64 429. shipping/inventory no errors through r5. Next: advance to round 6."
+   }
+  ]
+ }

@@ -1,0 +1,19 @@
+--- rev-40
++++ rev-41
+@@ -75,6 +75,16 @@
+    "id": "s30.obs",
+    "role": "observation",
+    "body": "Stage 11 of 11 released.\nRound 11 of 11 released. New files are under /task/fixtures/round-11/.\n\nNew files:\n  round-11/board.md (2 lines)\n  round-11/changes.md (3 lines)\n  round-11/logs/auth-svc.log (76 lines)\n  round-11/logs/checkout-api.log (68 lines)\n  round-11/logs/inventory-svc.log (77 lines)\n  round-11/logs/search-api.log (63 lines)\n  round-11/logs/shipping-svc.log (77 lines)"
++  },
++  {
++   "id": "s31.act",
++   "role": "assistant",
++   "body": "[step 31] execute\nthought: Inspect round 11 board/changes and error lines.\ncode:\nimport re,glob\nfor f in ['board.md','changes.md']:\n print(f);print(open('/task/fixtures/round-11/'+f).read())\nfor f in sorted(glob.glob('/task/fixtures/round-11/logs/*')):\n L=[i+1 for i,l in enumerate(open(f)) if re.search('ERROR|FATAL|429|fail',l) and 'slow' not in l]\n print(f.split('/')[-1],len(L),L[:3],L[-3:])\n if L: print(open(f).readlines()[L[0]-1][:200])"
++  },
++  {
++   "id": "s31.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md\n# Incident board: updates in round 11\n\n\nchanges.md\n# Change log: round 11\n\n- CHG-182 APPLIED: retry budget for idempotent GETs set to 1\n\nauth-svc.log 0 [] []\ncheckout-api.log 0 [] []\ninventory-svc.log 2 [15, 39] [15, 39]\n{\"ts\":\"2026-09-14T18:08:39Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":30}\n\nsearch-api.log 2 [13, 56] [13, 56]\n{\"ts\":\"2026-09-14T18:10:28Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":36}\n\nshipping-svc.log 9 [2, 16, 20] [58, 65, 72]\n{\"ts\":\"2026-09-14T18:00:53Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"6.58.8\"}\n\n"
+   }
+  ]
+ }

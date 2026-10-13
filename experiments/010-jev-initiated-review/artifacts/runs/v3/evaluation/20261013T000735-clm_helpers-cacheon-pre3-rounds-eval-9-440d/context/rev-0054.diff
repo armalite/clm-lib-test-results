@@ -1,0 +1,56 @@
+--- rev-53
++++ rev-54
+@@ -4,52 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: no errors; CHG-108 APPLIED TLS session ticket rotation hourly (round-01/changes.md:3).\nR2: board empty. changes: CHG-117 log sampling (r02 changes.md:3); CHG-120 APPLIED build 8.48.0 search-api sets http.max_inflight=-1 (round-02/changes.md:4) suspicious BAD_CONFIG; CHG-121 shipping-svc no config (:5). ledger-svc DNS SERVFAIL host=geo.internal round-02/logs/ledger-svc.log:3-81 (lines 3,22,27,34,35,41,48,52,59,71,77,81) -> DNS_RESOLUTION candidate. search-api no errors yet. Next: advance to round 3.\nR3: board Thread A DNS_RESOLUTION ledger-svc+inventory-svc ongoing (round-03/board.md:3); follow-up OPEN POSTMORTEM_DRAFT (round-03/board.md:4). No changes.md. Errors SERVFAIL geo.internal: round-03/logs/ledger-svc.log:14-31,64-67; round-03/logs/inventory-svc.log:1-19,26-41,54. search-api still no errors. Next: advance to round 4.\nR4: board Thread B DB_POOL_EXHAUSTED shipping-svc ongoing (round-04/board.md:3); follow-up OPEN DATA_BACKFILL (round-04/board.md:4). changes: CHG-131 APPLIED TLS ticket rotation (round-04/changes.md:3). DNS SERVFAIL continues: round-04/logs/inventory-svc.log:11, ledger-svc.log:5,7. Disk usage high /var/data 91-98% on notify-worker (round-04/logs/notify-worker.log:2,6) and shipping-svc (round-04/logs/shipping-svc.log:9,11) -> DISK_PRESSURE candidate (board says DB pool; verify, no pool errors seen yet). search-api only slow queries. Next: advance to round 5.\nR5: board Thread B services += notify-worker (round-05/board.md:3); Thread D CERT_EXPIRED shipping-svc ongoing (round-05/board.md:4) - verify, no cert errors seen; follow-up OPEN VENDOR_TICKET (round-05/board.md:5). DNS errors continue: round-05/logs/inventory-svc.log:22-75 (22,32,33,35,38,49,54,55,66,72,75), ledger-svc.log:17-68. notify-worker disk usage high round-05/logs/notify-worker.log:2-21,45,53 (DISK_PRESSURE candidate). Next: check shipping-svc r5 log then advance to round 6.\nR5 shipping-svc: tls cert expired peer=bank-api round-05/logs/shipping-svc.log:1,7,11,17,37-65 (CERT_EXPIRED confirmed); disk high shipping too :4,18,56,60. Round 6 released.\nR6: board Thread A mitigated (round-06/board.md:3); follow-up OPEN RUNBOOK_UPDATE (round-06/board.md:4). changes: CHG-142 retry budget (round-06/changes.md:3); CHG-150 APPLIED thread A mitigation ledger-svc (round-06/changes.md:4). Logs: no DNS errors in inventory/ledger r6; notify-worker disk high round-06/logs/notify-worker.log:12,14,48,52; shipping cert expired round-06/logs/shipping-svc.log:1,22, disk :13,17. search-api no errors. Next: advance to round 7.\nR7: board Thread B cause revised DISK_PRESSURE (round-07/board.md:3); Thread D closed false alarm (round-07/board.md:4); follow-up CLOSED POSTMORTEM_DRAFT (round-07/board.md:5). changes: CHG-149 PROPOSED only (round-07/changes.md:3). notify-worker disk high round-07/logs/notify-worker.log:2,3,6; shipping hits round-07/logs/shipping-svc.log (check disk lines). No DNS errors listed. Next: advance to round 8."
+-  },
+-  {
+-   "id": "s36.act",
+-   "role": "assistant",
+-   "body": "[step 36] execute\nthought: Compact R7 into n1 and drop other entries.\ncode:\nimport json\np='/task/workspace/context.json'\nc=json.load(open(p))\nn=[e for e in c['entries'] if e['id']=='n1'][0]\nn['body']+=\"\\nR7: board Thread B cause revised DISK_PRESSURE (round-07/board.md:3); Thread D closed false alarm (round-07/board.md:4); follow-up CLOSED POSTMORTEM_DRAFT (round-07/board.md:5). changes: CHG-149 PROPOSED only (round-07/changes.md:3). notify-worker disk high round-07/logs/notify-worker.log:2,3,6; shipping hits round-07/logs/shipping-svc.log (check disk lines). No DNS errors listed. Next: advance to round 8.\"\nc['entries']=[n]\njson.dump(c,open(p,'w'))\nprint('ok')"
+-  },
+-  {
+-   "id": "s36.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s36.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 36: revision 48 -> 49; entries 10 -> 1; body chars 6363 -> 2944; removed [s32.act, s32.obs, s32.rcpt, s33.act, s33.obs, s34.act, s34.obs, s35.act, s35.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s37.act",
+-   "role": "assistant",
+-   "body": "[step 37] advance\nthought: "
+-  },
+-  {
+-   "id": "s37.obs",
+-   "role": "observation",
+-   "body": "Stage 8 of 10 released.\nRound 8 of 10 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (6 lines)\n  round-08/changes.md (3 lines)\n  round-08/logs/inventory-svc.log (77 lines)\n  round-08/logs/ledger-svc.log (60 lines)\n  round-08/logs/notify-worker.log (74 lines)\n  round-08/logs/search-api.log (82 lines)\n  round-08/logs/shipping-svc.log (74 lines)"
+-  },
+-  {
+-   "id": "s38.act",
+-   "role": "assistant",
+-   "body": "[step 38] execute\nthought: Inspect round 8 board, changes and error lines compactly.\ncode:\nimport re\nb='/task/fixtures/round-08/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip()[:200])\nfor s in ['inventory-svc','ledger-svc','notify-worker','search-api','shipping-svc']:\n  h=[i for i,l in enumerate(open(b+'logs/'+s+'.log'),1) if re.search('error|ERROR|fail|expired|disk|SERVFAIL|max_inflight|invalid|429|pool',l,re.I)]\n  print(s,len(h),h[:15])\n  if h:print(' ',open(b+'logs/'+s+'.log').readlines()[h[0]-1].strip()[:180])"
+-  },
+-  {
+-   "id": "s38.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 08\nboard.md 2 \nboard.md 3 - Thread A status: resolved (no recurrence for two hours).\nboard.md 4 - Thread B status: mitigated (workaround in place; permanent fix pending).\nboard.md 5 - Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\nboard.md 6 - Follow-up CLOSED VENDOR_TICKET.\nchanges.md 1 # Change log: round 08\nchanges.md 2 \nchanges.md 3 - CHG-159 APPLIED: retry budget for idempotent GETs set to 1\ninventory-svc 1 [66]\n  {\"ts\":\"2026-09-14T15:54:47Z\",\"level\":\"WARN\",\"svc\":\"inventory-svc\",\"msg\":\"slow query\",\"ms\":429,\"table\":\"events\"}\nledger-svc 0 []\nnotify-worker 2 [17, 58]\n  {\"ts\":\"2026-09-14T15:12:17Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":96}\nsearch-api 7 [9, 19, 22, 59, 61, 68, 75]\n  {\"ts\":\"2026-09-14T15:04:29Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.48.0\"}\nshipping-svc 2 [14, 28]\n  {\"ts\":\"2026-09-14T15:07:29Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":96}\n"
+-  },
+-  {
+-   "id": "s39.act",
+-   "role": "assistant",
+-   "body": "[step 39] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s39.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 52; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 8 (5 lines; files round-08/board.md, round-08/changes.md; sha256 075e38719d2e)\nEntries to review (4): n1, s36.obs, s37.obs, s38.obs (4 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged."
++   "body": "R1: no errors; CHG-108 APPLIED TLS session ticket rotation hourly (round-01/changes.md:3).\nR2: board empty. changes: CHG-117 log sampling (r02 changes.md:3); CHG-120 APPLIED build 8.48.0 search-api sets http.max_inflight=-1 (round-02/changes.md:4) suspicious BAD_CONFIG; CHG-121 shipping-svc no config (:5). ledger-svc DNS SERVFAIL host=geo.internal round-02/logs/ledger-svc.log:3-81 (lines 3,22,27,34,35,41,48,52,59,71,77,81) -> DNS_RESOLUTION candidate. search-api no errors yet. Next: advance to round 3.\nR3: board Thread A DNS_RESOLUTION ledger-svc+inventory-svc ongoing (round-03/board.md:3); follow-up OPEN POSTMORTEM_DRAFT (round-03/board.md:4). No changes.md. Errors SERVFAIL geo.internal: round-03/logs/ledger-svc.log:14-31,64-67; round-03/logs/inventory-svc.log:1-19,26-41,54. search-api still no errors. Next: advance to round 4.\nR4: board Thread B DB_POOL_EXHAUSTED shipping-svc ongoing (round-04/board.md:3); follow-up OPEN DATA_BACKFILL (round-04/board.md:4). changes: CHG-131 APPLIED TLS ticket rotation (round-04/changes.md:3). DNS SERVFAIL continues: round-04/logs/inventory-svc.log:11, ledger-svc.log:5,7. Disk usage high /var/data 91-98% on notify-worker (round-04/logs/notify-worker.log:2,6) and shipping-svc (round-04/logs/shipping-svc.log:9,11) -> DISK_PRESSURE candidate (board says DB pool; verify, no pool errors seen yet). search-api only slow queries. Next: advance to round 5.\nR5: board Thread B services += notify-worker (round-05/board.md:3); Thread D CERT_EXPIRED shipping-svc ongoing (round-05/board.md:4) - verify, no cert errors seen; follow-up OPEN VENDOR_TICKET (round-05/board.md:5). DNS errors continue: round-05/logs/inventory-svc.log:22-75 (22,32,33,35,38,49,54,55,66,72,75), ledger-svc.log:17-68. notify-worker disk usage high round-05/logs/notify-worker.log:2-21,45,53 (DISK_PRESSURE candidate). Next: check shipping-svc r5 log then advance to round 6.\nR5 shipping-svc: tls cert expired peer=bank-api round-05/logs/shipping-svc.log:1,7,11,17,37-65 (CERT_EXPIRED confirmed); disk high shipping too :4,18,56,60. Round 6 released.\nR6: board Thread A mitigated (round-06/board.md:3); follow-up OPEN RUNBOOK_UPDATE (round-06/board.md:4). changes: CHG-142 retry budget (round-06/changes.md:3); CHG-150 APPLIED thread A mitigation ledger-svc (round-06/changes.md:4). Logs: no DNS errors in inventory/ledger r6; notify-worker disk high round-06/logs/notify-worker.log:12,14,48,52; shipping cert expired round-06/logs/shipping-svc.log:1,22, disk :13,17. search-api no errors. Next: advance to round 7.\nR7: board Thread B cause revised DISK_PRESSURE (round-07/board.md:3); Thread D closed false alarm (round-07/board.md:4); follow-up CLOSED POSTMORTEM_DRAFT (round-07/board.md:5). changes: CHG-149 PROPOSED only (round-07/changes.md:3). notify-worker disk high round-07/logs/notify-worker.log:2,3,6; shipping hits round-07/logs/shipping-svc.log (check disk lines). No DNS errors listed. Next: advance to round 8.\nR8: board Thread A resolved (round-08/board.md:3); Thread B mitigated (round-08/board.md:4); Thread C opened search-api failures cause unknown ongoing (round-08/board.md:5); follow-up CLOSED VENDOR_TICKET (round-08/board.md:6). changes CHG-159 retry budget (round-08/changes.md:3). search-api config validation failed http.max_inflight=-1 build 8.48.0 round-08/logs/search-api.log:9,19,22,59,61,68,75 -> BAD_CONFIG_ROLLOUT via CHG-120. disk high notify-worker round-08/logs/notify-worker.log:17,58; shipping round-08/logs/shipping-svc.log:14,28. Open follow-ups: DATA_BACKFILL, RUNBOOK_UPDATE. Next: advance to round 9."
+   }
+  ]
+ }

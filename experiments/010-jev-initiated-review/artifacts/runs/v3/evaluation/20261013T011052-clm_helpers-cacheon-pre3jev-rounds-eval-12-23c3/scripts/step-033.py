@@ -1,0 +1,6 @@
+import json
+c=json.load(open('/task/workspace/context.json'))
+b='STATE after R8. Thread A CERT_EXPIRED search-api+inventory-svc RESOLVED round-08/board.md:3 (cause refs round-03/board.md:3, round-03/logs/inventory-svc.log, search-api.log errs; mitigated round-06/board.md:3, changes round-06/changes.md:3). Thread B UPSTREAM_RATE_LIMIT ledger-svc+checkout-api ongoing: round-08/board.md:4, round-07/board.md:3 (checkout added), round-08/logs/ledger-svc.log:9-21, round-08/logs/checkout-api.log:26-37. Thread C pricing-svc ongoing round-08/board.md:5; logs round-08/logs/pricing-svc.log:5,17,28 config validation failed cache.ttl_s=-1 build 3.22.4 -> BAD_CONFIG_ROLLOUT traced to round-01/changes.md:4 CHG-113 APPLIED. Open follow-ups: CAPACITY_REVIEW(r2 board:3),RUNBOOK_UPDATE,POSTMORTEM_DRAFT(r3 board:4,5),CUSTOMER_COMMS(r5 board:3),ALERT_TUNING(r6 board:4). Next: advance to round 9, check board/changes/errors.'
+c['entries']=[{'id':'st8','role':'note','body':b}]
+json.dump(c,open('/task/workspace/context.json','w'))
+print('ok')

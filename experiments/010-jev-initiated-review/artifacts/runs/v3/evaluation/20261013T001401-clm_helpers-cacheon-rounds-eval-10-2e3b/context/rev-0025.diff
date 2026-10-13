@@ -1,0 +1,24 @@
+--- rev-24
++++ rev-25
+@@ -5,6 +5,21 @@
+    "id": "notes",
+    "role": "note",
+    "body": "R1: board empty. changes.md:3 CHG-113 APPLIED shipping-svc build 6.58.8 sets retry.backoff_ms=0 (suspicious BAD_CONFIG); :4 CHG-114 search-api no config. Logs routine.\nR2: board.md:3 FU OPEN DATA_BACKFILL; :4 FU OPEN POSTMORTEM_DRAFT. auth-svc.log:4-72 ERROR dns SERVFAIL geo.internal.\nR3: board.md:3 Thread A DNS_RESOLUTION confirmed auth-svc+checkout-api ongoing; :4 Thread B search-api suspected DB_POOL_EXHAUSTED ongoing BUT logs show 429 upstream=fx-rates (search-api.log:16-62) -> really UPSTREAM_RATE_LIMIT. auth-svc.log:2-59 dns errs; checkout-api.log:14-63 dns errs. changes:3 CHG-123 dashboards irrelevant.\nR4: board empty update. auth-svc.log:3-57 dns errs; checkout-api.log:2-64 dns errs; search-api.log:4-90 429 fx-rates. No changes.\nR5: board empty. changes:3 CHG-140 log sampling irrelevant. auth-svc.log:1-60 dns; checkout-api.log:2-66 dns; search-api.log:5-64 429 fx-rates.\nR6: board.md:3 Thread A mitigated; :4 Thread B revised UPSTREAM_RATE_LIMIT; :5 FU OPEN ALERT_TUNING. changes:3 CHG-150 APPLIED mitigation A auth-svc. (scan.py printed INFO lines in R6 - log format may have changed; check levels.)\nTool: python /task/workspace/scan.py NN (prints md + non-info log lines)."
++  },
++  {
++   "id": "s18.act",
++   "role": "assistant",
++   "body": "[step 18] execute\nthought: Check R6 non-info lines excluding slow query noise, then compact.\ncode:\nimport json,glob,re\nd=json.load(open('/task/workspace/context.json'))\nd['entries']=[e for e in d['entries'] if e['id']=='notes']\njson.dump(d,open('/task/workspace/context.json','w'))\nfor f in sorted(glob.glob('/task/fixtures/round-06/logs/*.log')):\n  L=open(f).read().splitlines()\n  hits=[(i+1,l) for i,l in enumerate(L) if not re.search(r'INFO|info|slow query',l)]\n  print(f.split('/')[-1],len(hits),[h[0] for h in hits][:3],hits[-1][0] if hits else '')\n  for h in hits[:2]: print(h[1][:180])"
++  },
++  {
++   "id": "s18.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nauth-svc.log 0 [] \ncheckout-api.log 0 [] \ninventory-svc.log 13 [3, 4, 10] 69\n{\"ts\":\"2026-09-14T13:05:12Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":24}\n{\"ts\":\"2026-09-14T13:05:13Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":39}\nsearch-api.log 13 [6, 9, 12] 69\n{\"ts\":\"2026-09-14T13:04:34Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":42}\n{\"ts\":\"2026-09-14T13:05:22Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":33}\nshipping-svc.log 0 [] \n"
++  },
++  {
++   "id": "s18.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 18: revision 23 -> 24; entries 4 -> 1; body chars 3105 -> 1194; removed [s17.act, s17.obs, s17.rcpt]; added []; rewritten []"
+   }
+  ]
+ }

@@ -1,0 +1,44 @@
+{
+ "number": 23,
+ "parent": 22,
+ "source": "runtime",
+ "step": 17,
+ "sha256": "2a4c7cf0a5918f6b8996412b1b32971193b82032c06c700a735c262668a1a8ad",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: changes.md:3 CHG-110 APPLIED retry budget GETs=1; :4 CHG-113 APPLIED build 3.22.4 pricing-svc sets cache.ttl_s=-1 (BAD_CONFIG_ROLLOUT candidate, no errors yet); :5 CHG-114 APPLIED 3.22.4 ledger-svc no config."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 Follow-up OPEN CAPACITY_REVIEW. changes.md:3 CHG-115 retry budget. search-api.log 11,15,19 certificate_expired peer=sso.example.net."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread A CERT_EXPIRED search-api + inventory-svc ongoing; :4 OPEN RUNBOOK_UPDATE; :5 OPEN POSTMORTEM_DRAFT. changes.md:3 CHG-126 TLS ticket rotation hourly. inventory-svc.log 1-75 & search-api.log 9-78 cert_expired errors. Open: CAPACITY_REVIEW,RUNBOOK_UPDATE,POSTMORTEM_DRAFT. Next: advance to round 4."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board.md:3 Thread B ledger-svc QUEUE_BACKLOG ongoing (suspected). changes.md:3 CHG-129 PROPOSED only. ledger-svc.log 429s lines 2-37 (7x) -> maybe UPSTREAM_RATE_LIMIT not queue; ERR line 53. inventory-svc cert_expired lines 3-62. checkout-api many WARNs (unclassified). Next: inspect ledger/checkout round4 then advance to round 5."
+  },
+  {
+   "id": "s17.act",
+   "role": "assistant",
+   "body": "[step 17] execute\nthought: Compact: add R4 note, drop s15/s16 entries.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3')]\nc['entries'].append({'id':'n4','role':'note','body':'R4: board.md:3 Thread B ledger-svc QUEUE_BACKLOG ongoing (suspected). changes.md:3 CHG-129 PROPOSED only. ledger-svc.log 429s lines 2-37 (7x) -> maybe UPSTREAM_RATE_LIMIT not queue; ERR line 53. inventory-svc cert_expired lines 3-62. checkout-api many WARNs (unclassified). Next: inspect ledger/checkout round4 then advance to round 5.'})\njson.dump(c,open('/task/workspace/context.json','w'))\nimport re\nfor f in ['ledger-svc','checkout-api']:\n  L=open('/task/fixtures/round-04/logs/%s.log'%f).read().splitlines()\n  for i in [1,9,52]:\n    if i<len(L):print(f,i+1,L[i][:160])"
+  },
+  {
+   "id": "s17.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nledger-svc 2 2026-09-14T11:03:12Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=8\nledger-svc 10 2026-09-14T11:09:44Z WARN  ledger-svc slow query ms=426 table=events\nledger-svc 53 2026-09-14T11:36:14Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=22\ncheckout-api 2 2026-09-14T11:02:00Z INFO  checkout-api request ok route=/v1/items status=200 ms=56\ncheckout-api 10 2026-09-14T11:07:08Z WARN  checkout-api slow query ms=207 table=orders\ncheckout-api 53 2026-09-14T11:37:34Z WARN  checkout-api slow query ms=404 table=events\n"
+  },
+  {
+   "id": "s17.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 17: revision 21 -> 22; entries 8 -> 4; body chars 6358 -> 1012; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs]; added [n4]; rewritten []"
+  }
+ ]
+}

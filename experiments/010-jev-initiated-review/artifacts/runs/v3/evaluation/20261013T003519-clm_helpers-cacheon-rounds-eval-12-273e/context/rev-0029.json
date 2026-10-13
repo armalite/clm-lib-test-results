@@ -1,0 +1,79 @@
+{
+ "number": 29,
+ "parent": 28,
+ "source": "runtime",
+ "step": 22,
+ "sha256": "7b0cc5647a4642e35c26a1e051debdec354cd1a7bdfd84c34d22f1a9d8c6b743",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. changes.md:3 CHG-110 APPLIED retry budget=1; :4 CHG-113 APPLIED pricing-svc build 3.22.4 sets cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT); :5 CHG-114 ledger-svc 3.22.4 no config. Logs: only routine slow-query WARNs, noise. Scan: print md fully + ERROR/WARN lines excluding slow query."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 follow-up OPEN CAPACITY_REVIEW. changes CHG-115 benign. search-api.log:11-57 ERROR tls sso.example.net certificate_expired."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread A CERT_EXPIRED search-api+inventory-svc ongoing; :4 OPEN RUNBOOK_UPDATE; :5 OPEN POSTMORTEM_DRAFT. changes CHG-126 benign. inventory-svc.log:1-75 & search-api.log:9-78 cert_expired errors."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board.md:3 Thread B ledger-svc suspected QUEUE_BACKLOG ongoing. But ledger-svc.log:2-86 ERROR upstream returned 429? upstream=tax-provider retry_after_s (likely UPSTREAM_RATE_LIMIT). CHG-129 PROPOSED ignore. Cert errors continue inventory-svc.log:3-62, search-api.log:11-89."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board.md:3 OPEN CUSTOMER_COMMS. No changes.md. inventory-svc.log:10-73 & search-api.log:6-70 cert_expired continue; ledger-svc.log:7-61 429 tax-provider continue. checkout/pricing clean. Next: advance to R6."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board.md:3 Thread A mitigated; :4 OPEN ALERT_TUNING. changes.md:3 CHG-150 APPLIED mitigation search-api. No cert errors in inventory/search. 429 tax-provider now also checkout-api.log:21-74 and ledger-svc.log:17-76. Next: advance R7."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board.md:3 Thread B services +checkout-api, cause/status unchanged. CHG-152 PROPOSED ignore. 429 tax-provider checkout-api.log:4-49, ledger-svc.log:13-77. Next: advance R8."
+  },
+  {
+   "id": "s20.act",
+   "role": "assistant",
+   "body": "[step 20] execute\nthought: Save R7 note, compress.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\ne=[x for x in c['entries'] if x['id'].startswith('n')]\ne.append({'id':'n7','role':'note','body':'R7: board.md:3 Thread B services +checkout-api, cause/status unchanged. CHG-152 PROPOSED ignore. 429 tax-provider checkout-api.log:4-49, ledger-svc.log:13-77. Next: advance R8.'})\nc['entries']=e\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+  },
+  {
+   "id": "s20.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s20.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 20: revision 25 -> 26; entries 13 -> 7; body chars 3759 -> 1551; removed [s17.act, s17.obs, s17.rcpt, s18.act, s18.obs, s19.act, s19.obs]; added [n7]; rewritten []"
+  },
+  {
+   "id": "s21.act",
+   "role": "assistant",
+   "body": "[step 21] advance\nthought: "
+  },
+  {
+   "id": "s21.obs",
+   "role": "observation",
+   "body": "Stage 8 of 10 released.\nRound 8 of 10 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (5 lines)\n  round-08/logs/checkout-api.log (78 lines)\n  round-08/logs/inventory-svc.log (68 lines)\n  round-08/logs/ledger-svc.log (89 lines)\n  round-08/logs/pricing-svc.log (85 lines)\n  round-08/logs/search-api.log (62 lines)"
+  },
+  {
+   "id": "s22.act",
+   "role": "assistant",
+   "body": "[step 22] execute\nthought: Scan R8.\ncode:\nimport re,glob\nd='/task/fixtures/round-08/'\nprint(open(d+'board.md').read())\nfor f in sorted(glob.glob(d+'logs/*.log')):\n  L=open(f).read().splitlines();h=[i+1 for i,l in enumerate(L) if re.search('ERROR|WARN|error|warn',l) and 'slow' not in l]\n  print(f.split('/')[-1],len(h),h[:3],h[-1:] if h else '')\n  if h: print(L[h[0]-1][:200])"
+  },
+  {
+   "id": "s22.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 08\n\n- Thread A status: resolved (no recurrence for two hours).\n- Thread B root cause revised: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT); this supersedes the earlier suspicion of QUEUE_BACKLOG.\n- Thread C opened: request failures on some pricing-svc pods; cause not yet identified. Status: ongoing.\n\ncheckout-api.log 6 [26, 27, 37] [66]\n{\"ts\":\"2026-09-14T15:16:43Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":35}\ninventory-svc.log 0 [] \nledger-svc.log 10 [9, 12, 21] [76]\n{\"ts\":\"2026-09-14T15:06:18Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":25}\npricing-svc.log 9 [5, 17, 28] [83]\n{\"ts\":\"2026-09-14T15:01:37Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"3.22.4\"}\nsearch-api.log 0 [] \n"
+  }
+ ]
+}

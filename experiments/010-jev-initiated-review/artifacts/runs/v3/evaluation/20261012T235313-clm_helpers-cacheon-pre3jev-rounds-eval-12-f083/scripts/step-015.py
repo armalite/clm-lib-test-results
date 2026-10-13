@@ -1,0 +1,6 @@
+import json
+c=json.load(open('/task/workspace/context.json'))
+b="Round1: board empty. round-01/changes.md:3 CHG-110 APPLIED retry GET=1; :4 CHG-113 APPLIED 3.22.4 pricing-svc cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT, no errors yet); :5 CHG-114 APPLIED ledger-svc no config. Round2: board follow-up OPEN CAPACITY_REVIEW; CHG-115 APPLIED retry. r2: search-api CERT_EXPIRED peer=sso.example.net round-02/logs/search-api.log:11,15,19,24,27,33,57. Round3: round-03/board.md:3 Thread A CERT_EXPIRED search-api + inventory-svc ongoing; :4 OPEN RUNBOOK_UPDATE; :5 OPEN POSTMORTEM_DRAFT; changes.md:3 CHG-126 APPLIED TLS ticket rotation hourly (irrelevant). r3 logs cert errors: inventory-svc.log:1,8,36,56,60,65,72,75; search-api.log:9,14,33,36,40-50,63,78. Open follow-ups: CAPACITY_REVIEW,RUNBOOK_UPDATE,POSTMORTEM_DRAFT. Next: advance round 4; grep non-INFO/non-slow-query + board/changes."
+c['entries']=[{'id':'n1','role':'note','body':b}]
+json.dump(c,open('/task/workspace/context.json','w'))
+print('ok')

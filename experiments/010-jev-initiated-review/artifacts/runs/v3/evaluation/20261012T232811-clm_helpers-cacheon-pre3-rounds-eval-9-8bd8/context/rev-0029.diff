@@ -1,0 +1,46 @@
+--- rev-28
++++ rev-29
+@@ -24,42 +24,7 @@
+   {
+    "id": "n5",
+    "role": "note",
+-   "body": "Round5: released; raw filtered output in /task/workspace/spill/s18.obs.txt (not yet analysed). Next: read round-05/board.md and summarize spill."
+-  },
+-  {
+-   "id": "s20.act",
+-   "role": "assistant",
+-   "body": "[step 20] execute\nthought: Compact context: drop step entries, keep notes; read round5 spill summary briefly.\ncode:\nimport json\ne=json.load(open('/task/workspace/context.json'))['entries']\nkeep=[x for x in e if x['id'] in('n1','n2','n3','n4')]\nkeep.append({'id':'n5','role':'note','body':'Round5: released; raw filtered output in /task/workspace/spill/s18.obs.txt (not yet analysed). Next: read round-05/board.md and summarize spill.'})\njson.dump({'format':'clm-context/v1','entries':keep},open('/task/workspace/context.json','w'))\nprint(open('/task/fixtures/round-05/board.md').read())\nimport collections\nc=collections.Counter()\nfor l in open('/task/workspace/spill/s18.obs.txt'):\n  p=l.split()\n  if len(p)>4: c[(p[0],' '.join(p[4:7]))]+=1\nfor k,v in c.most_common(15): print(k,v)"
+-  },
+-  {
+-   "id": "s20.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 05\n\n- Thread B update: affected services now also include notify-worker; cause and status unchanged.\n- Thread D opened: an expired TLS certificate on a dependency alerts (CERT_EXPIRED) on shipping-svc. Status: ongoing.\n- Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\n\n('shipping-svc.log', 'shipping-svc tls handshake') 12\n('inventory-svc.log', 'inventory-svc dns lookup') 11\n('notify-worker.log', 'notify-worker disk usage') 11\n('shipping-svc.log', 'shipping-svc disk usage') 10\n('ledger-svc.log', 'ledger-svc dns lookup') 7\n('#', 'in round 05') 1\n('-', 'affected services now') 1\n('-', 'an expired TLS') 1\n('-', 'a ticket open') 1\n"
+-  },
+-  {
+-   "id": "s20.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 20: revision 24 -> 25; entries 13 -> 5; body chars 4693 -> 2046; removed [s16.act, s16.obs, s16.rcpt, s17.act, s17.obs, s18.act, s18.obs, s19.act, s19.obs]; added [n5]; rewritten []"
+-  },
+-  {
+-   "id": "s21.act",
+-   "role": "assistant",
+-   "body": "[step 21] execute\nthought: Get line numbers for round5 tls handshake errors in shipping-svc and check changes.md.\ncode:\nimport os\nr='/task/fixtures/round-05/'\nprint(os.listdir(r))\nif os.path.exists(r+'changes.md'):print(open(r+'changes.md').read())\nfor f in ['shipping-svc','notify-worker']:\n  L=[i for i,l in enumerate(open(r+'logs/'+f+'.log'),1) if ('tls' in l or 'disk' in l or 'pool' in l)]\n  print(f,L[:20])\n  ls=open(r+'logs/'+f+'.log').read().splitlines()\n  print(ls[L[0]-1] if L else '')"
+-  },
+-  {
+-   "id": "s21.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n['board.md', 'logs']\nshipping-svc [1, 4, 5, 7, 9, 11, 17, 18, 36, 37, 39, 42, 44, 50, 53, 55, 56, 60, 65, 68]\n2026-09-14T12:00:06Z ERROR shipping-svc tls handshake failed peer=bank-api reason=certificate_expired\nnotify-worker [2, 5, 6, 7, 10, 17, 19, 21, 45, 53, 57]\n2026-09-14T12:02:30Z WARN  notify-worker disk usage high path=/var/data used_pct=96\n"
+-  },
+-  {
+-   "id": "s22.act",
+-   "role": "assistant",
+-   "body": "[step 22] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s22.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 27; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 5 (3 lines; files round-05/board.md; sha256 a8c271d4c444)\nEntries to review (7): n1, n2, n3, n4, n5, s20.obs, s21.obs (3 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged."
++   "body": "Round5: board: Thread B (DB_POOL shipping) now also notify-worker (round-05/board.md:3); Thread D opened CERT_EXPIRED shipping-svc ongoing (round-05/board.md:4); Follow-up OPEN VENDOR_TICKET (round-05/board.md:5). No changes.md. Logs: shipping-svc tls handshake failed peer=bank-api certificate_expired round-05/logs/shipping-svc.log:1,4,5,7,9,11,17,18 (plus disk lines mixed); notify-worker disk 96% round-05/logs/notify-worker.log:2,5,6,7,10,17,19,21; DNS geo.internal continues inventory/ledger. Still no db pool errors seen -> Thread B likely really DISK_PRESSURE. Next: advance to round 6."
+   }
+  ]
+ }

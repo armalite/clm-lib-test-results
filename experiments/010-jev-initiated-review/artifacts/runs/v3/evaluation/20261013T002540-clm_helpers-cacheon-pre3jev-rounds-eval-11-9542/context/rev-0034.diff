@@ -1,0 +1,82 @@
+--- rev-33
++++ rev-34
+@@ -4,7 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: 5 svcs shipping-svc, checkout-api, pricing-svc, inventory-svc, search-api; WARN slow query = noise. round-01/changes.md:3 CHG-111 PROPOSED; :4 CHG-113 APPLIED checkout-api feature.batch_size=0 (BAD_CONFIG candidate, no errors yet); :5 CHG-114 APPLIED inventory."
++   "body": "R1: 5 svcs shipping-svc, checkout-api, pricing-svc, inventory-svc, search-api; WARN slow query = noise. round-01/changes.md:3 CHG-111 PROPOSED; :4 CHG-113 APPLIED checkout-api feature.batch_size=0 (BAD_CONFIG candidate, no errors yet thru R7); :5 CHG-114 APPLIED inventory."
+   },
+   {
+    "id": "n2",
+@@ -14,62 +14,22 @@
+   {
+    "id": "n3",
+    "role": "note",
+-   "body": "Thread A UPSTREAM_RATE_LIMIT (429 sms-gateway) pricing-svc + search-api: round-03/board.md:3 ongoing; round-06/board.md:3 MITIGATED after round-06/changes.md:4 CHG-150 APPLIED; no 429s in R6 logs."
++   "body": "Thread A UPSTREAM_RATE_LIMIT (429 sms-gateway) pricing-svc + search-api: round-03/board.md:3 ongoing; round-06/board.md:3 MITIGATED after round-06/changes.md:4 CHG-150 APPLIED; no 429s R6-R7."
+   },
+   {
+    "id": "n4",
+    "role": "note",
+-   "body": "Thread B inventory-svc board says suspected CERT_EXPIRED ongoing (round-04/board.md:3), BUT logs show DNS SERVFAIL kms.internal round-04/logs/inventory-svc.log:16-70, R5 :20-67, R6 round-06/logs/inventory-svc.log:3-81 (DNS_RESOLUTION, ongoing). CHG-131 TLS ticket rotation round-04/changes.md:3 maybe irrelevant."
++   "body": "Thread B inventory-svc DNS_RESOLUTION (board revised round-07/board.md:3, supersedes CERT_EXPIRED) ongoing; DNS SERVFAIL kms.internal round-04/logs/inventory-svc.log:16-70, R6 :3-81, R7 round-07/logs/inventory-svc.log:1-21 (7 errors)."
++  },
++  {
++   "id": "n6",
++   "role": "note",
++   "body": "Thread D MEMORY_LEAK pricing-svc ongoing round-07/board.md:4 (no ERROR in R7 pricing log; check memory/restart lines). round-07/changes.md:3 CHG-153 PROPOSED only."
+   },
+   {
+    "id": "n5",
+    "role": "note",
+-   "body": "R6 done (checkout/shipping clean). Next: advance to round 7; grep ERROR/429 excluding slow query, print board+changes."
+-  },
+-  {
+-   "id": "s24.act",
+-   "role": "assistant",
+-   "body": "[step 24] execute\nthought: \ncode:\nimport json\nE=[{'id':'n1','role':'note','body':'R1: 5 svcs shipping-svc, checkout-api, pricing-svc, inventory-svc, search-api; WARN slow query = noise. round-01/changes.md:3 CHG-111 PROPOSED; :4 CHG-113 APPLIED checkout-api feature.batch_size=0 (BAD_CONFIG candidate, no errors yet); :5 CHG-114 APPLIED inventory.'},{'id':'n2','role':'note','body':'Follow-ups: VENDOR_TICKET opened round-02/board.md:3, CLOSED round-06/board.md:4. POSTMORTEM_DRAFT OPEN round-02/board.md:4. CAPACITY_REVIEW OPEN round-04/board.md:4.'},{'id':'n3','role':'note','body':'Thread A UPSTREAM_RATE_LIMIT (429 sms-gateway) pricing-svc + search-api: round-03/board.md:3 ongoing; round-06/board.md:3 MITIGATED after round-06/changes.md:4 CHG-150 APPLIED; no 429s in R6 logs.'},{'id':'n4','role':'note','body':'Thread B inventory-svc board says suspected CERT_EXPIRED ongoing (round-04/board.md:3), BUT logs show DNS SERVFAIL kms.internal round-04/logs/inventory-svc.log:16-70, R5 :20-67, R6 round-06/logs/inventory-svc.log:3-81 (DNS_RESOLUTION, ongoing). CHG-131 TLS ticket rotation round-04/changes.md:3 maybe irrelevant.'},{'id':'n5','role':'note','body':'R6 done (checkout/shipping clean). Next: advance to round 7; grep ERROR/429 excluding slow query, print board+changes.'}]\njson.dump({'format':'clm-context/v1','entries':E},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s24.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s"
+-  },
+-  {
+-   "id": "s24.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 24: revision 28 -> 29; entries 14 -> 5; body chars 5368 -> 1057; removed [s20.act, s20.obs, s20.rcpt, s21.act, s21.obs, s22.act, s22.obs, s23.act, s23.obs]; added []; rewritten [n2, n3, n4, n5]"
+-  },
+-  {
+-   "id": "s25.act",
+-   "role": "assistant",
+-   "body": "[step 25] advance\nthought: "
+-  },
+-  {
+-   "id": "s25.obs",
+-   "role": "observation",
+-   "body": "Stage 7 of 12 released.\nRound 7 of 12 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/changes.md (3 lines)\n  round-07/logs/checkout-api.log (73 lines)\n  round-07/logs/inventory-svc.log (73 lines)\n  round-07/logs/pricing-svc.log (72 lines)\n  round-07/logs/search-api.log (68 lines)\n  round-07/logs/shipping-svc.log (58 lines)"
+-  },
+-  {
+-   "id": "s26.act",
+-   "role": "assistant",
+-   "body": "[step 26] execute\nthought: \ncode:\nimport re,glob\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-07/'+f),1):print(f,i,l.rstrip())\nfor p in sorted(glob.glob('/task/fixtures/round-07/logs/*')):\n  n=0\n  for i,l in enumerate(open(p),1):\n    if ('ERROR' in l or '429' in l or 'FATAL' in l) and 'slow query' not in l:\n      n+=1\n      if n<=3:print(p.split('/')[-1],i,l.rstrip()[:160])\n  print(p.split('/')[-1],'count',n)"
+-  },
+-  {
+-   "id": "s26.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 07\nboard.md 2 \nboard.md 3 - Thread B root cause revised: DNS lookups failing for a dependency (DNS_RESOLUTION); this supersedes the earlier suspicion of CERT_EXPIRED.\nboard.md 4 - Thread D opened: process memory growing until restarts alerts (MEMORY_LEAK) on pricing-svc. Status: ongoing.\nchanges.md 1 # Change log: round 07\nchanges.md 2 \nchanges.md 3 - CHG-153 PROPOSED: move batch jobs to off-peak window (not applied)\ncheckout-api.log count 0\ninventory-svc.log 1 {\"ts\":\"2026-09-14T14:00:03Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\ninventory-svc.log 3 {\"ts\":\"2026-09-14T14:01:20Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\ninventory-svc.log 21 {\"ts\":\"2026-09-14T14:21:38Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\ninventory-svc.log count 7\npricing-svc.log count 0\nsearch-api.log count 0\nshipping-svc.log count 0\n"
+-  },
+-  {
+-   "id": "s27.act",
+-   "role": "assistant",
+-   "body": "[step 27] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s27.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 32; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 7 (3 lines; files round-07/board.md, round-07/changes.md; sha256 795f5ab1ae11)\nEntries to review (8): n1, n2, n3, n4, n5, s24.obs, s25.obs, s26.obs (4 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 32; update: round 7 board and change-log lines). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.27\n  n2: 0.17\n  n3: 0.11\n  n4: 0.88\n  n5: 0.27\n  s24.obs: 0.14\n  s25.obs: 0.22\n  s26.obs: 0.55\nCoverage: 8 of 8 entries answered."
++   "body": "R7 done. Next: advance to round 8; grep ERROR/429/restart/mem excluding slow query, print board+changes."
+   }
+  ]
+ }

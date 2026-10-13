@@ -1,0 +1,5 @@
+import json
+ctx=json.load(open('/task/workspace/context.json'))
+b='''State thru R11. Incidents: A UPSTREAM_RATE_LIMIT pricing-svc+search-api RESOLVED (round-08/board.md:3; mitigated round-06/board.md:3, CHG-150 round-06/changes.md:4; 429 round-03/logs/search-api.log:8). B DNS_RESOLUTION inventory-svc+shipping-svc (round-07/board.md:3, round-10/board.md:3) MITIGATED round-11/board.md:3; dns errors round-11/logs/inventory-svc.log:68,70 shipping-svc.log:35,41. C BAD_CONFIG_ROLLOUT checkout-api ongoing (round-10/board.md:4, round-11/board.md:4) from CHG-113 round-01/changes.md:4; errors round-11/logs/checkout-api.log:2,7,30. D MEMORY_LEAK false alarm (round-09/board.md:3). Follow-ups OPEN: POSTMORTEM_DRAFT, CAPACITY_REVIEW, DATA_BACKFILL; VENDOR_TICKET closed. Board format: '- Thread X status:'. Next: advance to R12, read board/changes, then final.'''
+ctx['entries']=[{'id':'sum1','role':'summary','body':b}]
+json.dump(ctx,open('/task/workspace/context.json','w'))

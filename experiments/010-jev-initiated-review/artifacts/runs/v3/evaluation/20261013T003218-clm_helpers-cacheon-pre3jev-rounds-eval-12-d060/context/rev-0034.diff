@@ -1,0 +1,56 @@
+--- rev-33
++++ rev-34
+@@ -4,52 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: CHG-113 APPLIED pricing-svc cache.ttl_s=-1 (round-01/changes.md:4, suspicious BAD_CONFIG/CACHE); CHG-110/114 benign. R1 logs baseline (slow query WARN noise). R2: board.md:3 Follow-up OPEN CAPACITY_REVIEW; CHG-115 benign. search-api certificate_expired peer=sso.example.net round-02/logs/search-api.log:11,15,19,24,27,33,57. R3: board.md:3 Thread A CERT_EXPIRED search-api + inventory-svc ongoing; board.md:4 OPEN RUNBOOK_UPDATE; :5 OPEN POSTMORTEM_DRAFT. changes.md:3 CHG-126 APPLIED TLS ticket rotation (benign). r3 logs: inventory-svc.log:1-8,56-75 cert_expired; search-api.log:9-50,63,78 cert_expired. Other r3 logs clean. Next: advance to r4. R4: board.md:3 Thread B ledger-svc suspected QUEUE_BACKLOG ongoing, BUT logs show 429 upstream=tax-provider (UPSTREAM_RATE_LIMIT) round-04/logs/ledger-svc.log:2,12,15,24,28,32,37,53,59,63,75,86; no lag lines. changes.md:3 CHG-129 PROPOSED (ignore). inventory-svc still tls sso.example. Next: advance to r5. R5: board.md:3 OPEN CUSTOMER_COMMS. No changes.md. Logs: inventory-svc cert_expired still (round-05/logs/inventory-svc.log:10), search-api cert_expired (round-05/logs/search-api.log:6), ledger-svc 429 tax-provider (round-05/logs/ledger-svc.log:7). Others slow-query noise. Next: advance to r6."
+-  },
+-  {
+-   "id": "s23.act",
+-   "role": "assistant",
+-   "body": "[step 23] execute\nthought: Compact R5 findings into n1 and drop other entries.\ncode:\nimport json\nctx=json.load(open('/task/workspace/context.json'))\nn=[e for e in ctx['entries'] if e['id']=='n1'][0]\nn['body']+=\" R5: board.md:3 OPEN CUSTOMER_COMMS. No changes.md. Logs: inventory-svc cert_expired still (round-05/logs/inventory-svc.log:10), search-api cert_expired (round-05/logs/search-api.log:6), ledger-svc 429 tax-provider (round-05/logs/ledger-svc.log:7). Others slow-query noise. Next: advance to r6.\"\nctx['entries']=[n]\njson.dump(ctx,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s23.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s"
+-  },
+-  {
+-   "id": "s23.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 23: revision 28 -> 29; entries 10 -> 1; body chars 5984 -> 1252; removed [s19.act, s19.obs, s19.rcpt, s20.act, s20.obs, s21.act, s21.obs, s22.act, s22.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s24.act",
+-   "role": "assistant",
+-   "body": "[step 24] advance\nthought: "
+-  },
+-  {
+-   "id": "s24.obs",
+-   "role": "observation",
+-   "body": "Stage 6 of 10 released.\nRound 6 of 10 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (4 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/checkout-api.log (77 lines)\n  round-06/logs/inventory-svc.log (63 lines)\n  round-06/logs/ledger-svc.log (76 lines)\n  round-06/logs/pricing-svc.log (57 lines)\n  round-06/logs/search-api.log (73 lines)"
+-  },
+-  {
+-   "id": "s25.act",
+-   "role": "assistant",
+-   "body": "[step 25] execute\nthought: \ncode:\nimport re\nb='/task/fixtures/round-06/'\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\nfor s in ['checkout-api','inventory-svc','ledger-svc','pricing-svc','search-api']:\n  L=open(b+'logs/'+s+'.log').read().splitlines()\n  hits=[(i+1,l[:140]) for i,l in enumerate(L) if re.search(r'ERROR|WARN|429|cert|lag|cache|pool|dns|disk|mem',l,re.I) and 'slow' not in l.lower()]\n  print(s,len(hits));[print(h) for h in hits[:5]]"
+-  },
+-  {
+-   "id": "s25.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 06\n\n- Thread A status: mitigated (errors reduced after the applied change; monitoring).\n- Follow-up OPEN ALERT_TUNING: tuning of noisy or late alerts.\n\n# Change log: round 06\n\n- CHG-150 APPLIED: mitigation for thread A deployed to search-api\n\ncheckout-api 6\n(21, '2026-09-14T13:16:37Z ERROR checkout-api upstream returned 429 upstream=tax-provider retry_after_s=58')\n(30, '2026-09-14T13:23:57Z ERROR checkout-api upstream returned 429 upstream=tax-provider retry_after_s=48')\n(49, '2026-09-14T13:35:42Z ERROR checkout-api upstream returned 429 upstream=tax-provider retry_after_s=26')\n(50, '2026-09-14T13:36:23Z ERROR checkout-api upstream returned 429 upstream=tax-provider retry_after_s=32')\n(60, '2026-09-14T13:43:07Z ERROR checkout-api upstream returned 429 upstream=tax-provider retry_after_s=10')\ninventory-svc 0\nledger-svc 8\n(17, '2026-09-14T13:13:31Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=18')\n(24, '2026-09-14T13:18:34Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=6')\n(28, '2026-09-14T13:28:07Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=21')\n(34, '2026-09-14T13:33:28Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=14')\n(38, '2026-09-14T13:38:43Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=51')\npricing-svc 0\nsearch-api 0\n"
+-  },
+-  {
+-   "id": "s26.act",
+-   "role": "assistant",
+-   "body": "[step 26] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s26.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 32; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 6 (3 lines; files round-06/board.md, round-06/changes.md; sha256 486a94dcd0d9)\nEntries to review (4): n1, s23.obs, s24.obs, s25.obs (4 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 32; update: round 6 board and change-log lines). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.69\n  s23.obs: 0.16\n  s24.obs: 0.16\n  s25.obs: 0.29\nCoverage: 4 of 4 entries answered."
++   "body": "R1: CHG-113 APPLIED pricing-svc cache.ttl_s=-1 (round-01/changes.md:4, suspicious BAD_CONFIG/CACHE); CHG-110/114 benign. R1 logs baseline (slow query WARN noise). R2: board.md:3 Follow-up OPEN CAPACITY_REVIEW; CHG-115 benign. search-api certificate_expired peer=sso.example.net round-02/logs/search-api.log:11,15,19,24,27,33,57. R3: board.md:3 Thread A CERT_EXPIRED search-api + inventory-svc ongoing; board.md:4 OPEN RUNBOOK_UPDATE; :5 OPEN POSTMORTEM_DRAFT. changes.md:3 CHG-126 APPLIED TLS ticket rotation (benign). r3 logs: inventory-svc.log:1-8,56-75 cert_expired; search-api.log:9-50,63,78 cert_expired. Other r3 logs clean. Next: advance to r4. R4: board.md:3 Thread B ledger-svc suspected QUEUE_BACKLOG ongoing, BUT logs show 429 upstream=tax-provider (UPSTREAM_RATE_LIMIT) round-04/logs/ledger-svc.log:2,12,15,24,28,32,37,53,59,63,75,86; no lag lines. changes.md:3 CHG-129 PROPOSED (ignore). inventory-svc still tls sso.example. Next: advance to r5. R5: board.md:3 OPEN CUSTOMER_COMMS. No changes.md. Logs: inventory-svc cert_expired still (round-05/logs/inventory-svc.log:10), search-api cert_expired (round-05/logs/search-api.log:6), ledger-svc 429 tax-provider (round-05/logs/ledger-svc.log:7). Others slow-query noise. Next: advance to r6. R6: board.md:3 Thread A mitigated (after CHG-150); board.md:4 OPEN ALERT_TUNING. changes.md:3 CHG-150 APPLIED mitigation thread A search-api. Logs: inventory-svc & search-api clean (no cert errors). checkout-api now 429 tax-provider round-06/logs/checkout-api.log:21,30,49,50,60 (UPSTREAM_RATE_LIMIT spreads to checkout-api); ledger-svc 429 round-06/logs/ledger-svc.log:17,24,28,34,38. pricing clean. Next: advance to r7."
+   }
+  ]
+ }

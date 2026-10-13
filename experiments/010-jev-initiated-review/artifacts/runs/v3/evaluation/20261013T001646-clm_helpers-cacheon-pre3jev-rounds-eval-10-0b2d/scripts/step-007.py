@@ -1,0 +1,5 @@
+import json
+b='R1: only background slow-query WARNs (noise). changes r1: CHG-113 APPLIED build 6.58.8 shipping-svc sets retry.backoff_ms=0 (round-01/changes.md:3); CHG-114 APPLIED 6.58.8 search-api no config (line 4).\nR2: board: follow-ups OPEN DATA_BACKFILL, POSTMORTEM_DRAFT (round-02/board.md:3-4). auth-svc ERROR dns lookup failed host=geo.internal SERVFAIL, round-02/logs/auth-svc.log:4-72 (lines 4,7,9,14,15,37,41,59,60,70,72). Candidate DNS_RESOLUTION on auth-svc, board not yet declared. Other services no errors r2.\nNext: advance to round 3.'
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':b}]}
+json.dump(c,open('/task/workspace/context.json','w'))
+print('ok')

@@ -1,0 +1,19 @@
+--- rev-39
++++ rev-40
+@@ -55,6 +55,16 @@
+    "id": "s30.obs",
+    "role": "observation",
+    "body": "Stage 8 of 10 released.\nRound 8 of 10 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (5 lines)\n  round-08/logs/checkout-api.log (78 lines)\n  round-08/logs/inventory-svc.log (68 lines)\n  round-08/logs/ledger-svc.log (89 lines)\n  round-08/logs/pricing-svc.log (85 lines)\n  round-08/logs/search-api.log (62 lines)"
++  },
++  {
++   "id": "s31.act",
++   "role": "assistant",
++   "body": "[step 31] execute\nthought: \ncode:\nimport glob,re\nfor f in ['board.md']:\n  for i,l in enumerate(open('/task/fixtures/round-08/'+f).read().splitlines(),1):print(f,i,l[:200])\nfor f in sorted(glob.glob('/task/fixtures/round-08/logs/*.log')):\n  L=open(f).read().splitlines()\n  h=[i+1 for i,l in enumerate(L) if re.search(r'certificate|429|ttl|stampede|lag|oom|disk|dns|pool|ERROR',l,re.I)]\n  print(f.split('/')[-1],h[:12])\n  if h: print(L[h[0]-1][:150])"
++  },
++  {
++   "id": "s31.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.1s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 08\nboard.md 2 \nboard.md 3 - Thread A status: resolved (no recurrence for two hours).\nboard.md 4 - Thread B root cause revised: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT); this supersedes the earlier suspicion of QUEUE_BACKLOG.\nboard.md 5 - Thread C opened: request failures on some pricing-svc pods; cause not yet identified. Status: ongoing.\ncheckout-api.log [26, 27, 37, 51, 60, 66]\n{\"ts\":\"2026-09-14T15:16:43Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":35}\ninventory-svc.log []\nledger-svc.log [9, 12, 21, 30, 35, 45, 48, 58, 62, 76]\n{\"ts\":\"2026-09-14T15:06:18Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":25}\npricing-svc.log [5, 17, 28, 38, 57, 60, 61, 68, 83]\n{\"ts\":\"2026-09-14T15:01:37Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"3.22.4\"}\nsearch-api.log []\n"
+   }
+  ]
+ }

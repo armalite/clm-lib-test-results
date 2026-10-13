@@ -1,0 +1,19 @@
+--- rev-50
++++ rev-51
+@@ -50,6 +50,16 @@
+    "id": "s39.obs",
+    "role": "observation",
+    "body": "Stage 10 of 10 released.\nRound 10 of 10 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (3 lines)\n  round-10/changes.md (3 lines)\n  round-10/logs/auth-svc.log (65 lines)\n  round-10/logs/checkout-api.log (65 lines)\n  round-10/logs/notify-worker.log (84 lines)\n  round-10/logs/payments-svc.log (72 lines)\n  round-10/logs/search-api.log (70 lines)"
++  },
++  {
++   "id": "s40.act",
++   "role": "assistant",
++   "body": "[step 40] execute\nthought: Read round 10 board, changes, and notify-worker errors.\ncode:\nimport re\nb='/task/fixtures/round-10/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor s in ['notify-worker','payments-svc','checkout-api','auth-svc','search-api']:\n  n=0\n  for i,l in enumerate(open(b+'logs/'+s+'.log'),1):\n    if 'slow query' in l:continue\n    if re.search('error|fail|429|expire|pool|inflight|ERROR',l,re.I):\n      n+=1\n      if n<=4:print(s,i,l.rstrip()[:150])\n  print(s,'count',n)"
++  },
++  {
++   "id": "s40.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 10\nboard.md 2 \nboard.md 3 - Follow-up CLOSED CAPACITY_REVIEW.\nchanges.md 1 # Change log: round 10\nchanges.md 2 \nchanges.md 3 - CHG-171 APPLIED: retry budget for idempotent GETs set to 1\nnotify-worker 16 {\"ts\":\"2026-09-14T17:09:35Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.5\nnotify-worker 21 {\"ts\":\"2026-09-14T17:12:32Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.5\nnotify-worker 27 {\"ts\":\"2026-09-14T17:16:33Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.5\nnotify-worker 30 {\"ts\":\"2026-09-14T17:18:11Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.5\nnotify-worker count 9\npayments-svc 56 {\"ts\":\"2026-09-14T17:44:56Z\",\"level\":\"ERROR\",\"svc\":\"payments-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":15}\npayments-svc 72 {\"ts\":\"2026-09-14T17:59:21Z\",\"level\":\"ERROR\",\"svc\":\"payments-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":41}\npayments-svc count 2\ncheckout-api 6 {\"ts\":\"2026-09-14T17:04:29Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":53}\ncheckout-api 11 {\"ts\":\"2026-09-14T17:07:08Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":11}\ncheckout-api count 2\nauth-svc count 0\nsearch-api count 0\n"
+   }
+  ]
+ }

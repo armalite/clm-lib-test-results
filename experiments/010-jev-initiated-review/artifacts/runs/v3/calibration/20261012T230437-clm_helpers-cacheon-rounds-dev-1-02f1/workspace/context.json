@@ -1,0 +1,70 @@
+{
+ "format": "clm-context/v1",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty; logs mostly INFO + benign slow query WARNs (230-440ms) in all 5 services (notify-worker,checkout-api,auth-svc,payments-svc,search-api)."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board follow-ups OPEN ALERT_TUNING(board.md:3),RUNBOOK_UPDATE(:4),VENDOR_TICKET(:5). changes: CHG-120 APPLIED notify-worker http.max_inflight=0 (round-02/changes.md:4) - possible BAD_CONFIG_ROLLOUT, no notify errors yet; CHG-121 payments no config. auth-svc db pool exhausted WARNs round-02/logs/auth-svc.log:1-69 (lines 1,3,15,22,23,25,44,65,69) -> DB_POOL_EXHAUSTED candidate, no board thread yet."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board Thread A opened DB_POOL_EXHAUSTED auth-svc + search-api, ongoing (round-03/board.md:3). changes: CHG-125 dashboards only. pool WARNs round-03/logs/auth-svc.log:7-63, round-03/logs/search-api.log:1-77. notify-worker still no errors (CHG-120 watch)."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board Thread B opened payments-svc CACHE_STAMPEDE ongoing (round-04/board.md:3) BUT logs show 429 upstream=fx-rates in payments-svc (round-04/logs/payments-svc.log:1-25, lines 1,3,7,25,31,45..79) and checkout-api (round-04/logs/checkout-api.log:9-62) -> likely UPSTREAM_RATE_LIMIT. changes CHG-133 APPLIED TLS ticket rotation hourly (round-04/changes.md:3, watch CERT). Pool WARNs continue auth-svc.log:7-81, search-api.log:4-83. notify-worker clean."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board Thread A mitigated (round-05/board.md:3) after CHG-143 APPLIED auth-svc mitigation (round-05/changes.md:4); no pool WARNs in auth/search R5 (filtered non-INFO=0). Thread B adds checkout-api, cause still CACHE_STAMPEDE on board (round-05/board.md:4) but logs 429 fx-rates: round-05/logs/checkout-api.log:21-65, round-05/logs/payments-svc.log:13-73. Follow-up OPEN CAPACITY_REVIEW (round-05/board.md:5). CHG-138 APPLIED TLS rotation hourly (round-05/changes.md:3). notify-worker clean."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board CLOSED ALERT_TUNING (round-06/board.md:3), OPEN CUSTOMER_COMMS (:4). CHG-147 APPLIED retry budget GET=1 (round-06/changes.md:3). 429s continue in checkout-api(6) & payments-svc(5); no pool WARNs; notify clean."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board empty. 429 fx-rates continue checkout-api (round-07/logs/checkout-api.log:11-25) & payments-svc (round-07/logs/payments-svc.log:1); no pool WARNs; notify clean."
+  },
+  {
+   "id": "n8",
+   "role": "note",
+   "body": "R8: board Thread A resolved (round-08/board.md:3); Thread B cause revised UPSTREAM_RATE_LIMIT (round-08/board.md:4), still ongoing; Thread C opened notify-worker ongoing, cause unknown (round-08/board.md:5). notify-worker ERROR config validation failed http.max_inflight=0 (round-08/logs/notify-worker.log:5) -> BAD_CONFIG_ROLLOUT via CHG-120 (round-02/changes.md:4). 429s continue checkout(:1,6) payments(:2). CHG-159 PROPOSED only."
+  },
+  {
+   "id": "n9",
+   "role": "note",
+   "body": "R9: Thread B mitigated (round-09/board.md:3); Thread C ongoing (round-09/board.md:4). CHG-164 APPLIED retry GET=1 (round-09/changes.md:3). notify-worker ERROR max_inflight=0 round-09/logs/notify-worker.log:3-67 (3,5,12..). 429 fx-rates checkout-api.log:34,55 payments-svc.log:34,42. auth/search clean. NEXT: advance to R10."
+  },
+  {
+   "id": "n10",
+   "role": "note",
+   "body": "R10: board CLOSED CAPACITY_REVIEW (round-10/board.md:3). CHG-171 APPLIED retry GET=1 (round-10/changes.md:3). 429 fx-rates checkout-api.log:6,11."
+  },
+  {
+   "id": "s30.act",
+   "role": "assistant",
+   "body": "[step 30] execute\nthought: Compact context and get specific R10 error lines for notify-worker, checkout, payments.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\nc['entries'].append({'id':'n10','role':'note','body':'R10: board CLOSED CAPACITY_REVIEW (round-10/board.md:3). CHG-171 APPLIED retry GET=1 (round-10/changes.md:3). 429 fx-rates checkout-api.log:6,11.'})\njson.dump(c,open('/task/workspace/context.json','w'))\nb='/task/fixtures/round-10/logs/'\nfor f in ['notify-worker.log','payments-svc.log','checkout-api.log','auth-svc.log','search-api.log']:\n  r=[i for i,l in enumerate(open(b+f),1) if ('ERROR' in l or 'pool' in l or 'max_inflight' in l)]\n  print(f,r[:12])"
+  },
+  {
+   "id": "s30.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nnotify-worker.log [16, 21, 27, 30, 50, 70, 72, 81, 82]\npayments-svc.log [56, 72]\ncheckout-api.log [6, 11]\nauth-svc.log []\nsearch-api.log []\n"
+  },
+  {
+   "id": "s30.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 30: revision 44 -> 45; entries 16 -> 10; body chars 6973 -> 3049; removed [s27.act, s27.obs, s27.rcpt, s28.act, s28.obs, s29.act, s29.obs]; added [n10]; rewritten []"
+  }
+ ]
+}

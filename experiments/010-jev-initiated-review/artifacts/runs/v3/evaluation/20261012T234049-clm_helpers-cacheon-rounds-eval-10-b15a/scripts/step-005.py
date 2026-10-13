@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty; slow-query WARNs in all 5 svcs (shipping,checkout,auth,inventory,search) = noise. round-01/changes.md:3 CHG-113 APPLIED build 6.58.8 shipping-svc sets retry.backoff_ms=0 (suspect BAD_CONFIG); :4 CHG-114 search-api no config.'},{'id':'n2','role':'note','body':'R2: board.md:3 followup OPEN DATA_BACKFILL, :4 OPEN POSTMORTEM_DRAFT. auth-svc.log DNS SERVFAIL host=geo.internal lines 4-15,37-72 (DNS_RESOLUTION auth-svc, not on board yet). Others clean. Log scan: grep ERROR|WARN|FATAL excluding slow. Next: advance.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

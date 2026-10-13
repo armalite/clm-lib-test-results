@@ -1,0 +1,19 @@
+--- rev-46
++++ rev-47
+@@ -60,6 +60,16 @@
+    "id": "s37.obs",
+    "role": "observation",
+    "body": "Stage 10 of 11 released.\nRound 10 of 11 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (4 lines)\n  round-10/logs/auth-svc.log (66 lines)\n  round-10/logs/checkout-api.log (65 lines)\n  round-10/logs/inventory-svc.log (60 lines)\n  round-10/logs/search-api.log (59 lines)\n  round-10/logs/shipping-svc.log (75 lines)"
++  },
++  {
++   "id": "s38.act",
++   "role": "assistant",
++   "body": "[step 38] execute\nthought: \ncode:\nprint(open('/task/fixtures/round-10/board.md').read())\nimport re\nfor s in ['shipping-svc','search-api','inventory-svc']:\n  L=open(f'/task/fixtures/round-10/logs/{s}.log').read().splitlines()\n  h=[i+1 for i,l in enumerate(L) if re.search('ERROR|429|config',l)]\n  print(s,len(h),h[:3],h[-3:]);\n  if h: print(L[h[0]-1][:200])"
++  },
++  {
++   "id": "s38.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 10\n\n- Thread C note: failing pods still restarting; investigation continues.\n- Follow-up CLOSED ALERT_TUNING.\n\nshipping-svc 13 [3, 7, 11] [68, 72, 74]\n{\"ts\":\"2026-09-14T17:09:31Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"6.58.8\"}\nsearch-api 2 [13, 31] [13, 31]\n{\"ts\":\"2026-09-14T17:17:16Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":18}\ninventory-svc 2 [36, 59] [36, 59]\n{\"ts\":\"2026-09-14T17:36:51Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":55}\n"
+   }
+  ]
+ }

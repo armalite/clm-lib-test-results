@@ -1,0 +1,77 @@
+--- rev-53
++++ rev-54
+@@ -4,7 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: 5 svcs shipping-svc, checkout-api, pricing-svc, inventory-svc, search-api; WARN slow query = noise. round-01/changes.md:4 CHG-113 APPLIED checkout-api feature.batch_size=0 -> R10 errors config validation failed batch_size=0 round-10/logs/checkout-api.log:1-7 (Thread C opened round-10/board.md:4 ongoing, cause unidentified; likely BAD_CONFIG_ROLLOUT)."
++   "body": "R1: 5 svcs shipping-svc, checkout-api, pricing-svc, inventory-svc, search-api; WARN slow query = noise. round-01/changes.md:4 CHG-113 APPLIED checkout-api feature.batch_size=0 -> errors config validation failed batch_size=0 round-10/logs/checkout-api.log:1-7, round-11/logs/checkout-api.log:2-7 (Thread C round-10/board.md:4; R11 still ongoing round-11/board.md:4; likely BAD_CONFIG_ROLLOUT)."
+   },
+   {
+    "id": "n2",
+@@ -19,62 +19,17 @@
+   {
+    "id": "n4",
+    "role": "note",
+-   "body": "Thread B DNS_RESOLUTION kms.internal (round-07/board.md:3) ongoing; services inventory-svc + shipping-svc (round-10/board.md:3). logs round-10/logs/inventory-svc.log:2-20, round-10/logs/shipping-svc.log:1-12."
++   "body": "Thread B DNS_RESOLUTION kms.internal (round-07/board.md:3); services inventory-svc + shipping-svc (round-10/board.md:3). R11: MITIGATED round-11/board.md:3. logs round-10/logs/inventory-svc.log:2-20, round-10/logs/shipping-svc.log:1-12."
+   },
+   {
+    "id": "n6",
+    "role": "note",
+-   "body": "Thread D MEMORY_LEAK false alarm round-09/board.md:3; exclude. R10 changes: CHG-174 PROPOSED only."
++   "body": "Thread D MEMORY_LEAK false alarm round-09/board.md:3; exclude. R10 changes: CHG-174 PROPOSED only. R11 no changes.md."
+   },
+   {
+    "id": "n5",
+    "role": "note",
+-   "body": "R10 done. Next: advance to round 11; print board+changes, grep ERROR/dns/batch excluding slow query."
+-  },
+-  {
+-   "id": "s40.act",
+-   "role": "assistant",
+-   "body": "[step 40] execute\nthought: \ncode:\nimport json\nE=[{'id':'n1','role':'note','body':'R1: 5 svcs shipping-svc, checkout-api, pricing-svc, inventory-svc, search-api; WARN slow query = noise. round-01/changes.md:4 CHG-113 APPLIED checkout-api feature.batch_size=0 -> R10 errors config validation failed batch_size=0 round-10/logs/checkout-api.log:1-7 (Thread C opened round-10/board.md:4 ongoing, cause unidentified; likely BAD_CONFIG_ROLLOUT).'},{'id':'n2','role':'note','body':'Follow-ups: VENDOR_TICKET CLOSED round-06/board.md:4. OPEN: POSTMORTEM_DRAFT round-02/board.md:4, CAPACITY_REVIEW round-04/board.md:4, DATA_BACKFILL round-08/board.md:4.'},{'id':'n3','role':'note','body':'Thread A UPSTREAM_RATE_LIMIT pricing-svc+search-api: round-03/board.md:3; round-06/changes.md:4 CHG-150; RESOLVED round-08/board.md:3.'},{'id':'n4','role':'note','body':'Thread B DNS_RESOLUTION kms.internal (round-07/board.md:3) ongoing; services inventory-svc + shipping-svc (round-10/board.md:3). logs round-10/logs/inventory-svc.log:2-20, round-10/logs/shipping-svc.log:1-12.'},{'id':'n6','role':'note','body':'Thread D MEMORY_LEAK false alarm round-09/board.md:3; exclude. R10 changes: CHG-174 PROPOSED only.'},{'id':'n5','role':'note','body':'R10 done. Next: advance to round 11; print board+changes, grep ERROR/dns/batch excluding slow query.'}]\njson.dump({'format':'clm-context/v1','entries':E},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s40.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s"
+-  },
+-  {
+-   "id": "s40.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 40: revision 48 -> 49; entries 15 -> 6; body chars 7514 -> 1065; removed [s36.act, s36.obs, s36.rcpt, s37.act, s37.obs, s38.act, s38.obs, s39.act, s39.obs]; added []; rewritten [n1, n2, n3, n4, n6, n5]"
+-  },
+-  {
+-   "id": "s41.act",
+-   "role": "assistant",
+-   "body": "[step 41] advance\nthought: "
+-  },
+-  {
+-   "id": "s41.obs",
+-   "role": "observation",
+-   "body": "Stage 11 of 12 released.\nRound 11 of 12 released. New files are under /task/fixtures/round-11/.\n\nNew files:\n  round-11/board.md (4 lines)\n  round-11/logs/checkout-api.log (69 lines)\n  round-11/logs/inventory-svc.log (72 lines)\n  round-11/logs/pricing-svc.log (74 lines)\n  round-11/logs/search-api.log (73 lines)\n  round-11/logs/shipping-svc.log (69 lines)"
+-  },
+-  {
+-   "id": "s42.act",
+-   "role": "assistant",
+-   "body": "[step 42] execute\nthought: \ncode:\nimport re\nprint(open('/task/fixtures/round-11/board.md').read())\nimport glob\nfor f in sorted(glob.glob('/task/fixtures/round-11/logs/*.log')):\n  for i,l in enumerate(open(f),1):\n    if 'slow query' in l: continue\n    if re.search(r'ERROR|dns|batch|resolv|config',l,re.I): print(f.split('/')[-1],i,l.strip()[:150])"
+-  },
+-  {
+-   "id": "s42.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n# Incident board: updates in round 11\n\n- Thread B status: mitigated (workaround in place; permanent fix pending).\n- Thread C note: failing pods still restarting; investigation continues.\n\ncheckout-api.log 2 {\"ts\":\"2026-09-14T18:01:51Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"feature.batch_size\",\"value\":\"0\",\"build\":\"4.3\ncheckout-api.log 7 {\"ts\":\"2026-09-14T18:06:11Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"feature.batch_size\",\"value\":\"0\",\"build\":\"4.3\ncheckout-api.log 30 {\"ts\":\"2026-09-14T18:24:28Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"feature.batch_size\",\"value\":\"0\",\"build\":\"4.3\ncheckout-api.log 36 {\"ts\":\"2026-09-14T18:27:05Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"feature.batch_size\",\"value\":\"0\",\"build\":\"4.3\ncheckout-api.log 42 {\"ts\":\"2026-09-14T18:30:13Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"feature.batch_size\",\"value\":\"0\",\"build\":\"4.3\ncheckout-api.log 47 {\"ts\":\"2026-09-14T18:33:13Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"feature.batch_size\",\"value\":\"0\",\"build\":\"4.3\ncheckout-api.log 63 {\"ts\":\"2026-09-14T18:49:42Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"feature.batch_size\",\"value\":\"0\",\"build\":\"4.3\ncheckout-api.log 64 {\"ts\":\"2026-09-14T18:50:30Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"feature.batch_size\",\"value\":\"0\",\"build\":\"4.3\ninventory-svc.log 68 {\"ts\":\"2026-09-14T18:56:15Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\ninventory-svc.log 70 {\"ts\":\"2026-09-14T18:58:41Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\nshipping-svc.log 35 {\"ts\":\"2026-09-14T18:35:27Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\nshipping-svc.log 41 {\"ts\":\"2026-09-14T18:37:04Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\n"
+-  },
+-  {
+-   "id": "s43.act",
+-   "role": "assistant",
+-   "body": "[step 43] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s43.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 52; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 11 (2 lines; files round-11/board.md; sha256 173e2af9dad5)\nEntries to review (9): n1, n2, n3, n4, n6, n5, s40.obs, s41.obs, s42.obs (4 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 52; update: round 11 board and change-log lines). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.46\n  n2: 0.15\n  n3: 0.09\n  n4: 0.89\n  n6: 0.09\n  n5: 0.20\n  s40.obs: 0.12\n  s41.obs: 0.17\n  s42.obs: 0.26\nCoverage: 9 of 9 entries answered."
++   "body": "R11 done. Next: advance to round 12; print board+changes, grep ERROR/dns/batch excluding slow query; then final."
+   }
+  ]
+ }

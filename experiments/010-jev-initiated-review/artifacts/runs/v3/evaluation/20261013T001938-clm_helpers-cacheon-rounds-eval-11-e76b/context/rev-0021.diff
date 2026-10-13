@@ -1,0 +1,19 @@
+--- rev-20
++++ rev-21
+@@ -30,6 +30,16 @@
+    "id": "s15.obs",
+    "role": "observation",
+    "body": "Stage 6 of 12 released.\nRound 6 of 12 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (4 lines)\n  round-06/changes.md (4 lines)\n  round-06/logs/checkout-api.log (67 lines)\n  round-06/logs/inventory-svc.log (86 lines)\n  round-06/logs/pricing-svc.log (75 lines)\n  round-06/logs/search-api.log (67 lines)\n  round-06/logs/shipping-svc.log (64 lines)"
++  },
++  {
++   "id": "s16.act",
++   "role": "assistant",
++   "body": "[step 16] execute\nthought: Scan round 6.\ncode:\nimport re,glob\nd='/task/fixtures/round-06/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(d+f),1):print(f,i,l.rstrip()[:200])\nfor f in sorted(glob.glob(d+'logs/*')):\n  hits=[(i,l) for i,l in enumerate(open(f),1) if re.search('ERROR|FATAL|CRIT|429|exhaust|expired|NXDOMAIN|lag|OOM|disk|batch|SERVFAIL',l,re.I)]\n  print(f.split('/')[-1],len(hits))\n  for i,l in hits[:2]+hits[-1:]:print(' ',i,l.rstrip()[:180])"
++  },
++  {
++   "id": "s16.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 2 \nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nboard.md 4 - Follow-up CLOSED VENDOR_TICKET.\nchanges.md 1 # Change log: round 06\nchanges.md 2 \nchanges.md 3 - CHG-147 APPLIED: dashboard panels for p99 latency added\nchanges.md 4 - CHG-150 APPLIED: mitigation for thread A deployed to pricing-svc\ncheckout-api.log 0\ninventory-svc.log 12\n  3 {\"ts\":\"2026-09-14T13:01:22Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\n  8 {\"ts\":\"2026-09-14T13:05:54Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\n  81 {\"ts\":\"2026-09-14T13:55:29Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\npricing-svc.log 0\nsearch-api.log 0\nshipping-svc.log 0\n"
+   }
+  ]
+ }

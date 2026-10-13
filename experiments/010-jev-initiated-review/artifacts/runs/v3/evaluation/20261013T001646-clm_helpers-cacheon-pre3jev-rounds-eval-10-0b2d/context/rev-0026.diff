@@ -1,0 +1,19 @@
+--- rev-25
++++ rev-26
+@@ -30,6 +30,16 @@
+    "id": "s20.obs",
+    "role": "observation",
+    "body": "Stage 6 of 11 released.\nRound 6 of 11 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (5 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/auth-svc.log (72 lines)\n  round-06/logs/checkout-api.log (76 lines)\n  round-06/logs/inventory-svc.log (79 lines)\n  round-06/logs/search-api.log (71 lines)\n  round-06/logs/shipping-svc.log (55 lines)"
++  },
++  {
++   "id": "s21.act",
++   "role": "assistant",
++   "body": "[step 21] execute\nthought: Inspect round 6 board, changes, and error lines.\ncode:\nimport glob\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-06/'+f),1):print(f,i,l.rstrip())\nfor p in sorted(glob.glob('/task/fixtures/round-06/logs/*.log')):\n  n=p.split('/')[-1]\n  hits=[(i,l.rstrip()) for i,l in enumerate(open(p),1) if 'ERROR' in l or 'error' in l.lower() and 'slow' not in l]\n  print(n,len(hits))\n  for i,l in hits[:4]:print(' ',i,l[:150])"
++  },
++  {
++   "id": "s21.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 2 \nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nboard.md 4 - Thread B root cause revised: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT); this supersedes the earlier suspicion of DB_POOL_EXHAUSTED.\nboard.md 5 - Follow-up OPEN ALERT_TUNING: tuning of noisy or late alerts.\nchanges.md 1 # Change log: round 06\nchanges.md 2 \nchanges.md 3 - CHG-150 APPLIED: mitigation for thread A deployed to auth-svc\nauth-svc.log 0\ncheckout-api.log 0\ninventory-svc.log 13\n  3 {\"ts\":\"2026-09-14T13:05:12Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":24}\n  4 {\"ts\":\"2026-09-14T13:05:13Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":39}\n  10 {\"ts\":\"2026-09-14T13:12:08Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":12}\n  25 {\"ts\":\"2026-09-14T13:24:06Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":23}\nsearch-api.log 13\n  6 {\"ts\":\"2026-09-14T13:04:34Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":42}\n  9 {\"ts\":\"2026-09-14T13:05:22Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":33}\n  12 {\"ts\":\"2026-09-14T13:09:05Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":35}\n  27 {\"ts\":\"2026-09-14T13:19:04Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":46}\nshipping-svc.log 0\n"
+   }
+  ]
+ }

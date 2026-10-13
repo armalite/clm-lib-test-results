@@ -1,0 +1,71 @@
+--- rev-17
++++ rev-18
+@@ -4,62 +4,22 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: board empty; routine WARN slow query noise. CHG-108 APPLIED (round-01/changes.md:3) TLS session ticket rotation hourly."
++   "body": "R1: board empty. CHG-108 APPLIED (round-01/changes.md:3) TLS session ticket rotation hourly."
+   },
+   {
+    "id": "n2",
+    "role": "note",
+-   "body": "R2: board empty. round-02/changes.md: CHG-117 log sampling; CHG-120 APPLIED search-api 8.48.0 http.max_inflight=-1 (line 4, suspicious BAD_CONFIG, no errors yet); CHG-121 shipping-svc no config. ledger-svc DNS SERVFAIL geo.internal round-02/logs/ledger-svc.log:3-81."
++   "body": "R2: CHG-120 APPLIED search-api 8.48.0 http.max_inflight=-1 (round-02/changes.md:4, suspicious BAD_CONFIG, no errors yet). ledger-svc DNS SERVFAIL geo.internal round-02/logs/ledger-svc.log:3-81."
+   },
+   {
+    "id": "n3",
+    "role": "note",
+-   "body": "R3: board round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc + inventory-svc ongoing; line 4 follow-up OPEN POSTMORTEM_DRAFT. SERVFAIL round-03/logs/inventory-svc.log:1-54, ledger-svc.log:14-67. Others clean. Next: advance to round 4."
++   "body": "R3: round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc + inventory-svc ongoing; :4 follow-up OPEN POSTMORTEM_DRAFT. SERVFAIL round-03/logs/inventory-svc.log:1-54, ledger-svc.log:14-67."
+   },
+   {
+-   "id": "s11.act",
+-   "role": "assistant",
+-   "body": "[step 11] execute\nthought: Compact context with rounds 1-3 findings.\ncode:\nimport json\nE=[('n1','R1: board empty; routine WARN slow query noise. CHG-108 APPLIED (round-01/changes.md:3) TLS session ticket rotation hourly.'),('n2','R2: board empty. round-02/changes.md: CHG-117 log sampling; CHG-120 APPLIED search-api 8.48.0 http.max_inflight=-1 (line 4, suspicious BAD_CONFIG, no errors yet); CHG-121 shipping-svc no config. ledger-svc DNS SERVFAIL geo.internal round-02/logs/ledger-svc.log:3-81.'),('n3','R3: board round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc + inventory-svc ongoing; line 4 follow-up OPEN POSTMORTEM_DRAFT. SERVFAIL round-03/logs/inventory-svc.log:1-54, ledger-svc.log:14-67. Others clean. Next: advance to round 4.')]\njson.dump({'format':'clm-context/v1','entries':[{'id':i,'role':'note','body':b} for i,b in E]},open('/task/workspace/context.json','w'))\nprint('ok')"
+-  },
+-  {
+-   "id": "s11.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s11.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 11: revision 12 -> 13; entries 11 -> 3; body chars 5447 -> 627; removed [s7.act, s7.obs, s7.rcpt, s8.act, s8.obs, s9.act, s9.obs, s10.act, s10.obs]; added [n3]; rewritten [n1, n2]"
+-  },
+-  {
+-   "id": "s12.act",
+-   "role": "assistant",
+-   "body": "[step 12] advance\nthought: "
+-  },
+-  {
+-   "id": "s12.obs",
+-   "role": "observation",
+-   "body": "Stage 4 of 10 released.\nRound 4 of 10 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (4 lines)\n  round-04/changes.md (3 lines)\n  round-04/logs/inventory-svc.log (74 lines)\n  round-04/logs/ledger-svc.log (62 lines)\n  round-04/logs/notify-worker.log (73 lines)\n  round-04/logs/search-api.log (56 lines)\n  round-04/logs/shipping-svc.log (63 lines)"
+-  },
+-  {
+-   "id": "s13.act",
+-   "role": "assistant",
+-   "body": "[step 13] execute\nthought: \ncode:\nimport re,os\nb='/task/fixtures/round-04/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor f in sorted(os.listdir(b+'logs')):\n  L=open(b+'logs/'+f).read().splitlines()\n  bad=[(i,l) for i,l in enumerate(L,1) if re.search('ERROR|FATAL|SERVFAIL|429|refused|timeout',l,re.I)]\n  print(f,len(bad))\n  for i,l in bad[:2]+bad[-1:]:print(' ',i,l[:160])"
+-  },
+-  {
+-   "id": "s13.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 04\nboard.md 2 \nboard.md 3 - Thread B opened: errors in shipping-svc. Suspected cause: database connection pool exhausted (DB_POOL_EXHAUSTED). Status: ongoing.\nboard.md 4 - Follow-up OPEN DATA_BACKFILL: backfill of records missed during the incident.\nchanges.md 1 # Change log: round 04\nchanges.md 2 \nchanges.md 3 - CHG-131 APPLIED: TLS session ticket rotation set to hourly\ninventory-svc.log 13\n  11 2026-09-14T11:09:04Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\n  17 2026-09-14T11:13:02Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\n  72 2026-09-14T11:58:52Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 7\n  5 2026-09-14T11:03:08Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\n  7 2026-09-14T11:07:16Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\n  52 2026-09-14T11:47:48Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nnotify-worker.log 0\nsearch-api.log 0\nshipping-svc.log 0\n"
+-  },
+-  {
+-   "id": "s14.act",
+-   "role": "assistant",
+-   "body": "[step 14] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s14.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 16; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 4 (3 lines; files round-04/board.md, round-04/changes.md; sha256 ab9127478ebe)\nEntries to review (6): n1, n2, n3, s11.obs, s12.obs, s13.obs (4 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 16; update: round 4 board and change-log lines). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.52\n  n2: 0.42\n  n3: 0.21\n  s11.obs: 0.13\n  s12.obs: 0.16\n  s13.obs: 0.25\nCoverage: 6 of 6 entries answered."
++   "id": "n4",
++   "role": "note",
++   "body": "R4: round-04/board.md:3 Thread B shipping-svc DB_POOL_EXHAUSTED ongoing (but shipping log shows no errors by ERROR grep; verify later, maybe false alarm); :4 OPEN DATA_BACKFILL. changes.md:3 CHG-131 APPLIED TLS rotation hourly. SERVFAIL continues round-04/logs/inventory-svc.log:11-72, ledger-svc.log:5-52. Next: advance to round 5."
+   }
+  ]
+ }

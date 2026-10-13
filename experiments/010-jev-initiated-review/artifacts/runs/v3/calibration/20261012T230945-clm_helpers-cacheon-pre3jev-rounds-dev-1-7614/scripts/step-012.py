@@ -1,0 +1,7 @@
+import json
+n1='Round 1: services auth-svc, checkout-api, notify-worker, payments-svc, search-api. Background WARN slow query noise (ignore). CHG-108 PROPOSED (HPA search tier, not applied).'
+n2='Round 2: board opens follow-ups ALERT_TUNING, RUNBOOK_UPDATE, VENDOR_TICKET (round-02/board.md:3-5). changes: CHG-116 APPLIED log sampling (noise); CHG-120 APPLIED build 8.56.0 to notify-worker sets http.max_inflight=0 (round-02/changes.md:4) -> possible BAD_CONFIG_ROLLOUT, watch notify-worker (no errors seen in r3); CHG-121 APPLIED payments-svc no config. auth-svc db pool exhausted round-02/logs/auth-svc.log:1,3,15,22.'
+n3='Round 3: board Thread A opened DB_POOL_EXHAUSTED in auth-svc, impact also search-api, ongoing (round-03/board.md:3). CHG-125 APPLIED dashboards (noise). Logs: auth-svc pool exhausted round-03/logs/auth-svc.log:7,12,13,15; search-api round-03/logs/search-api.log:1,14,30. Other services clean. Filter: skip slow query; keywords error|fail|429|expire|pool|lag|mem|disk|dns|cert|inflight. Next: advance round 4.'
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n1},{'id':'n2','role':'note','body':n2},{'id':'n3','role':'note','body':n3}]}
+json.dump(c,open('/task/workspace/context.json','w'))
+print('ok')

@@ -1,0 +1,55 @@
+--- rev-41
++++ rev-42
+@@ -32,49 +32,9 @@
+    "body": "Round06: round-06/board.md:3 Thread A mitigated; :4 OPEN ALERT_TUNING. changes.md:3 CHG-150 APPLIED mitigation search-api. 429 tax-provider now also checkout-api round-06/logs/checkout-api.log:21,30,49,50,60,74; ledger-svc.log:17,24,28,34,38,50,53,76. No cert errors r6. Round07 released."
+   },
+   {
+-   "id": "s29.act",
+-   "role": "assistant",
+-   "body": "[step 29] execute\nthought: \ncode:\nimport json,glob,re\nc=json.load(open('/task/workspace/context.json'))\nE=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4','n5')]\nE.append({'id':'n6','role':'note','body':'Round06: round-06/board.md:3 Thread A mitigated; :4 OPEN ALERT_TUNING. changes.md:3 CHG-150 APPLIED mitigation search-api. 429 tax-provider now also checkout-api round-06/logs/checkout-api.log:21,30,49,50,60,74; ledger-svc.log:17,24,28,34,38,50,53,76. No cert errors r6. Round07 released.'})\nc['entries']=E\njson.dump(c,open('/task/workspace/context.json','w'))\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-07/'+f).read().splitlines(),1):print(f,i,l[:200])\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n  L=open(f).read().splitlines()\n  h=[i+1 for i,l in enumerate(L) if re.search(r'certificate|429|ttl|stampede|lag|oom|disk|dns|pool|ERROR',l,re.I)]\n  print(f.split('/')[-1],h[:15])\n  if h: print(L[h[0]-1][:150])"
+-  },
+-  {
+-   "id": "s29.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 07\nboard.md 2 \nboard.md 3 - Thread B update: affected services now also include checkout-api; cause and status unchanged.\nchanges.md 1 # Change log: round 07\nchanges.md 2 \nchanges.md 3 - CHG-152 PROPOSED: move batch jobs to off-peak window (not applied)\ncheckout-api.log [4, 14, 15, 19, 25, 28, 30, 33, 41, 49]\n2026-09-14T14:02:04Z ERROR checkout-api upstream returned 429 upstream=tax-provider retry_after_s=23\ninventory-svc.log []\nledger-svc.log [13, 20, 34, 47, 62, 65, 76, 77]\n2026-09-14T14:14:04Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=25\npricing-svc.log []\nsearch-api.log []\n"
+-  },
+-  {
+-   "id": "s29.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 29: revision 36 -> 37; entries 12 -> 6; body chars 4273 -> 1581; removed [s26.act, s26.obs, s26.rcpt, s27.act, s27.obs, s28.act, s28.obs]; added [n6]; rewritten []"
+-  },
+-  {
+-   "id": "s30.act",
+-   "role": "assistant",
+-   "body": "[step 30] advance\nthought: "
+-  },
+-  {
+-   "id": "s30.obs",
+-   "role": "observation",
+-   "body": "Stage 8 of 10 released.\nRound 8 of 10 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (5 lines)\n  round-08/logs/checkout-api.log (78 lines)\n  round-08/logs/inventory-svc.log (68 lines)\n  round-08/logs/ledger-svc.log (89 lines)\n  round-08/logs/pricing-svc.log (85 lines)\n  round-08/logs/search-api.log (62 lines)"
+-  },
+-  {
+-   "id": "s31.act",
+-   "role": "assistant",
+-   "body": "[step 31] execute\nthought: \ncode:\nimport glob,re\nfor f in ['board.md']:\n  for i,l in enumerate(open('/task/fixtures/round-08/'+f).read().splitlines(),1):print(f,i,l[:200])\nfor f in sorted(glob.glob('/task/fixtures/round-08/logs/*.log')):\n  L=open(f).read().splitlines()\n  h=[i+1 for i,l in enumerate(L) if re.search(r'certificate|429|ttl|stampede|lag|oom|disk|dns|pool|ERROR',l,re.I)]\n  print(f.split('/')[-1],h[:12])\n  if h: print(L[h[0]-1][:150])"
+-  },
+-  {
+-   "id": "s31.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=2.1s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 08\nboard.md 2 \nboard.md 3 - Thread A status: resolved (no recurrence for two hours).\nboard.md 4 - Thread B root cause revised: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT); this supersedes the earlier suspicion of QUEUE_BACKLOG.\nboard.md 5 - Thread C opened: request failures on some pricing-svc pods; cause not yet identified. Status: ongoing.\ncheckout-api.log [26, 27, 37, 51, 60, 66]\n{\"ts\":\"2026-09-14T15:16:43Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":35}\ninventory-svc.log []\nledger-svc.log [9, 12, 21, 30, 35, 45, 48, 58, 62, 76]\n{\"ts\":\"2026-09-14T15:06:18Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":25}\npricing-svc.log [5, 17, 28, 38, 57, 60, 61, 68, 83]\n{\"ts\":\"2026-09-14T15:01:37Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"3.22.4\"}\nsearch-api.log []\n"
+-  },
+-  {
+-   "id": "s32.act",
+-   "role": "assistant",
+-   "body": "[step 32] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s32.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 40; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 8 (3 lines; files round-08/board.md; sha256 e890bf7155e1)\nEntries to review (9): n1, n2, n3, n4, n5, n6, s29.obs, s30.obs, s31.obs (4 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged."
++   "id": "n7",
++   "role": "note",
++   "body": "Round07: board.md:3 Thread B adds checkout-api. changes CHG-152 PROPOSED. 429 r7 checkout-api.log:4,14,15,19,25; ledger-svc.log:13,20,34,47,62. Round08: round-08/board.md:3 Thread A resolved; :4 Thread B cause UPSTREAM_RATE_LIMIT; :5 Thread C pricing-svc ongoing cause unknown. pricing-svc.log:5,17,28,38,57,60,61,68,83 config validation failed cache.ttl_s=-1 build 3.22.4 (=CHG-113, BAD_CONFIG_ROLLOUT). 429 r8 checkout-api.log:26,27,37,51,60,66; ledger-svc.log:9,12,21,30,35. Next: advance to round 9."
+   }
+  ]
+ }

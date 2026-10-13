@@ -1,0 +1,24 @@
+--- rev-53
++++ rev-54
+@@ -45,6 +45,21 @@
+    "id": "n9",
+    "role": "note",
+    "body": "R9: board Thread B mitigated (round-09/board.md:3); Thread C pods restarting, investigating (:4); Follow-up CLOSED RUNBOOK_UPDATE (:5). CHG-164 APPLIED retry budget (noise). Logs: pricing-svc config validation failed cache.ttl_s=-1 n=11 (round-09/logs/pricing-svc.log:10,12,16,26); checkout-api 429 (round-09/logs/checkout-api.log:10,66); ledger-svc 429 (round-09/logs/ledger-svc.log:29,66). Next: advance R10."
++  },
++  {
++   "id": "s41.act",
++   "role": "assistant",
++   "body": "[step 41] execute\nthought: Compact context and read round 10 board/changes plus key log hits.\ncode:\nimport json,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[x for x in c['entries'] if x['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))\nb='/task/fixtures/round-10/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nimport os\nfor f in sorted(os.listdir(b+'logs')):\n  hits=[(i,l.strip()[:110]) for i,l in enumerate(open(b+'logs/'+f),1) if re.search('ERROR|429|certificate|validation',l)]\n  print(f,len(hits),hits[:3])"
++  },
++  {
++   "id": "s41.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 10\nboard.md 2 \nchanges.md 1 # Change log: round 10\nchanges.md 2 \nchanges.md 3 - CHG-173 PROPOSED: move batch jobs to off-peak window (not applied)\ncheckout-api.log 2 [(56, '{\"ts\":\"2026-09-14T17:41:53Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"ta'), (70, '{\"ts\":\"2026-09-14T17:53:04Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"ta')]\ninventory-svc.log 0 []\nledger-svc.log 2 [(34, '{\"ts\":\"2026-09-14T17:26:25Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-'), (61, '{\"ts\":\"2026-09-14T17:49:34Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-')]\npricing-svc.log 9 [(1, '{\"ts\":\"2026-09-14T17:01:48Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"cache'), (4, '{\"ts\":\"2026-09-14T17:03:12Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"cache'), (5, '{\"ts\":\"2026-09-14T17:03:26Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"cache')]\nsearch-api.log 0 []\n"
++  },
++  {
++   "id": "s41.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 41: revision 52 -> 53; entries 16 -> 9; body chars 5440 -> 3381; removed [s38.act, s38.obs, s38.rcpt, s39.act, s39.obs, s40.act, s40.obs]; added []; rewritten []"
+   }
+  ]
+ }

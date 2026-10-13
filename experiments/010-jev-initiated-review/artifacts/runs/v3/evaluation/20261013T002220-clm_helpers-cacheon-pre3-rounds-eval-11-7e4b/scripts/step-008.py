@@ -1,0 +1,5 @@
+import json
+n1='Round1: board empty. changes: CHG-111 PROPOSED (not applied) round-01/changes.md:3; CHG-113 APPLIED round-01/changes.md:4 build 4.33.8 checkout-api sets feature.batch_size=0 (BAD_CONFIG_ROLLOUT candidate, no errors yet); CHG-114 APPLIED line5 inventory-svc. Baseline WARN slow query 200-450ms is noise.'
+n2='Round2: board round-02/board.md:3 Follow-up OPEN VENDOR_TICKET; :4 OPEN POSTMORTEM_DRAFT. changes CHG-116 APPLIED log sampling (irrelevant). pricing-svc 429 upstream=sms-gateway (UPSTREAM_RATE_LIMIT) round-02/logs/pricing-svc.log lines 4,6,12,21,34,37,53,54,67,68,72,73 (09:05-09:54). No other errors. Next: advance to round 3.'
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n1},{'id':'n2','role':'note','body':n2}]}
+json.dump(c,open('/task/workspace/context.json','w'))

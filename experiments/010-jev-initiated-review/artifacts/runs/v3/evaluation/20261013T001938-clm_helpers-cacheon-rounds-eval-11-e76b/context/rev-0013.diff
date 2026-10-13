@@ -1,0 +1,19 @@
+--- rev-12
++++ rev-13
+@@ -30,6 +30,16 @@
+    "id": "s9.obs",
+    "role": "observation",
+    "body": "Stage 4 of 12 released.\nRound 4 of 12 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (4 lines)\n  round-04/changes.md (3 lines)\n  round-04/logs/checkout-api.log (64 lines)\n  round-04/logs/inventory-svc.log (71 lines)\n  round-04/logs/pricing-svc.log (71 lines)\n  round-04/logs/search-api.log (87 lines)\n  round-04/logs/shipping-svc.log (75 lines)"
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Inspect round 4.\ncode:\nimport re,glob\nr='/task/fixtures/round-04/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(r+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob(r+'logs/*')):\n  hits=[(i,l.rstrip()) for i,l in enumerate(open(f),1) if re.search('ERROR|FATAL|CRIT|429|exhaust|expired|NXDOMAIN|lag|OOM|disk|batch',l)]\n  print(f.split('/')[-1],len(hits),hits[:1],hits[-1:] if hits else '')"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 04\nboard.md 2 \nboard.md 3 - Thread B opened: errors in inventory-svc. Suspected cause: an expired TLS certificate on a dependency (CERT_EXPIRED). Status: ongoing.\nboard.md 4 - Follow-up OPEN CAPACITY_REVIEW: capacity review of the affected tier.\nchanges.md 1 # Change log: round 04\nchanges.md 2 \nchanges.md 3 - CHG-131 APPLIED: TLS session ticket rotation set to hourly\ncheckout-api.log 0 [] \ninventory-svc.log 7 [(16, '2026-09-14T11:11:20Z ERROR inventory-svc dns lookup failed host=kms.internal err=SERVFAIL')] [(70, '2026-09-14T11:58:54Z ERROR inventory-svc dns lookup failed host=kms.internal err=SERVFAIL')]\npricing-svc.log 6 [(11, '2026-09-14T11:08:43Z ERROR pricing-svc upstream returned 429 upstream=sms-gateway retry_after_s=38')] [(58, '2026-09-14T11:41:36Z ERROR pricing-svc upstream returned 429 upstream=sms-gateway retry_after_s=28')]\nsearch-api.log 13 [(10, '2026-09-14T11:06:53Z ERROR search-api upstream returned 429 upstream=sms-gateway retry_after_s=16')] [(85, '2026-09-14T11:56:27Z INFO  search-api heartbeat uptime_s=69429')]\nshipping-svc.log 0 [] \n"
+   }
+  ]
+ }

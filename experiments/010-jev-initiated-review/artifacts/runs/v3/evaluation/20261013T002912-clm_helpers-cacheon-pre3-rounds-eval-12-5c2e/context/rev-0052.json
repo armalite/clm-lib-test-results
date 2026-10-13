@@ -1,0 +1,89 @@
+{
+ "number": 52,
+ "parent": 51,
+ "source": "runtime",
+ "step": 40,
+ "sha256": "05ec344998be04f0ff0e09dfa60be06b5bee9528c97aca07f66826ad5dec145a",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: CHG-110 APPLIED retry budget GETs=1 (round-01/changes.md:3); CHG-113 APPLIED pricing-svc 3.22.4 cache.ttl_s=-1 (round-01/changes.md:4) possible BAD_CONFIG_ROLLOUT; CHG-114 APPLIED ledger-svc 3.22.4 (round-01/changes.md:5). R1 logs only slow-query noise."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board: Follow-up OPEN CAPACITY_REVIEW (round-02/board.md:3). changes: CHG-115 APPLIED retry budget GETs=1 (round-02/changes.md:3). search-api ERROR tls handshake peer=sso.example.net certificate_expired lines 11,15,19,24,27,33,57 (round-02/logs/search-api.log) -> CERT_EXPIRED on search-api, not on board yet. Next: advance to round 3."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board Thread A CERT_EXPIRED search-api + inventory-svc ongoing (round-03/board.md:3); Follow-up OPEN RUNBOOK_UPDATE (:4), POSTMORTEM_DRAFT (:5). CHG-126 APPLIED TLS ticket rotation hourly (round-03/changes.md:3). R3 logs slow-query noise only."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board Thread B ledger-svc suspected QUEUE_BACKLOG ongoing (round-04/board.md:3). CHG-129 PROPOSED only (round-04/changes.md:3). Logs: inventory-svc certificate_expired peer=sso.example.net lines 3,15,26,35,55,56 (n=7); ledger-svc upstream returned 429? upstream=tax-provider retry_after_s lines 2,12,15,24,28,32 (n=12) -> likely UPSTREAM_RATE_LIMIT not queue; verify status code. pricing-svc output truncated: check pricing-svc errors in R4. Next: check R4 pricing-svc + ledger code, then advance."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board Follow-up OPEN CUSTOMER_COMMS (round-05/board.md:3). Logs: inventory-svc certificate_expired n=12 (round-05/logs/inventory-svc.log:10,16,19); search-api certificate_expired n=7 (round-05/logs/search-api.log:6,35,48); ledger-svc 429 tax-provider n=6 (round-05/logs/ledger-svc.log:7,35,39) confirmed UPSTREAM_RATE_LIMIT. pricing/checkout clean. Next: advance to R6."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board Thread A (CERT_EXPIRED) mitigated (round-06/board.md:3); Follow-up OPEN ALERT_TUNING (:4). CHG-150 APPLIED mitigation thread A search-api (round-06/changes.md:3). Logs: no cert errors; ledger-svc 429 tax-provider n=8 (round-06/logs/ledger-svc.log:17,24,28,34); checkout-api 429 tax-provider n=6 (round-06/logs/checkout-api.log:21,30,49,50) -> UPSTREAM_RATE_LIMIT spreads to checkout-api. Next: advance R7."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board Thread B adds checkout-api, cause/status unchanged (round-07/board.md:3) - board still says QUEUE_BACKLOG ongoing but logs show 429 tax-provider. CHG-152 PROPOSED only. Logs: checkout-api 429 n=10 (round-07/logs/checkout-api.log:4,14,15,19); ledger-svc 429 n=8 (round-07/logs/ledger-svc.log:13,20,34,47); others clean. Next: advance R8."
+  },
+  {
+   "id": "n8",
+   "role": "note",
+   "body": "R8: board Thread A CERT_EXPIRED resolved (round-08/board.md:3); Thread B cause revised UPSTREAM_RATE_LIMIT (round-08/board.md:4); Thread C pricing-svc failures ongoing cause unknown (round-08/board.md:5). Logs: pricing-svc config validation failed cache.ttl_s=-1 build 3.22.4 (round-08/logs/pricing-svc.log:5,17,28,38) -> BAD_CONFIG_ROLLOUT from CHG-113; checkout-api 429 (round-08/logs/checkout-api.log:26,27,37,51); ledger-svc 429 (round-08/logs/ledger-svc.log:9,12,21,30). Next: advance R9."
+  },
+  {
+   "id": "n9",
+   "role": "note",
+   "body": "R9: board Thread B mitigated (round-09/board.md:3); Thread C pods restarting, investigating (:4); Follow-up CLOSED RUNBOOK_UPDATE (:5). CHG-164 APPLIED retry budget (noise). Logs: pricing-svc config validation failed cache.ttl_s=-1 n=11 (round-09/logs/pricing-svc.log:10,12,16,26); checkout-api 429 (round-09/logs/checkout-api.log:10,66); ledger-svc 429 (round-09/logs/ledger-svc.log:29,66). Next: advance R10."
+  },
+  {
+   "id": "s38.act",
+   "role": "assistant",
+   "body": "[step 38] execute\nthought: Compact: add n9 note, drop s36/s37 entries.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[x for x in c['entries'] if x['id'].startswith('n')]\nc['entries'].append({'id':'n9','role':'note','body':'R9: board Thread B mitigated (round-09/board.md:3); Thread C pods restarting, investigating (:4); Follow-up CLOSED RUNBOOK_UPDATE (:5). CHG-164 APPLIED retry budget (noise). Logs: pricing-svc config validation failed cache.ttl_s=-1 n=11 (round-09/logs/pricing-svc.log:10,12,16,26); checkout-api 429 (round-09/logs/checkout-api.log:10,66); ledger-svc 429 (round-09/logs/ledger-svc.log:29,66). Next: advance R10.'})\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+  },
+  {
+   "id": "s38.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.0s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s38.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 38: revision 48 -> 49; entries 13 -> 9; body chars 5534 -> 3381; removed [s36.act, s36.obs, s36.rcpt, s37.act, s37.obs]; added [n9]; rewritten []"
+  },
+  {
+   "id": "s39.act",
+   "role": "assistant",
+   "body": "[step 39] advance\nthought: "
+  },
+  {
+   "id": "s39.obs",
+   "role": "observation",
+   "body": "Stage 10 of 10 released.\nRound 10 of 10 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (2 lines)\n  round-10/changes.md (3 lines)\n  round-10/logs/checkout-api.log (78 lines)\n  round-10/logs/inventory-svc.log (61 lines)\n  round-10/logs/ledger-svc.log (74 lines)\n  round-10/logs/pricing-svc.log (88 lines)\n  round-10/logs/search-api.log (61 lines)"
+  },
+  {
+   "id": "s40.act",
+   "role": "assistant",
+   "body": "[step 40] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+  },
+  {
+   "id": "s40.obs",
+   "role": "observation",
+   "body": "Context review (initiated-review/3; context revision 51; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 10 (1 lines; files round-10/board.md, round-10/changes.md; sha256 6f7823325bea)\nEntries to review (11): n1, n2, n3, n4, n5, n6, n7, n8, n9, s38.obs, s39.obs (3 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged."
+  }
+ ]
+}

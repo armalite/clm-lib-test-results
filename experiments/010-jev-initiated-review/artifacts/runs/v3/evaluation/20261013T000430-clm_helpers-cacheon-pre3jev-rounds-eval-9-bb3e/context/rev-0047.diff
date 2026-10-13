@@ -1,0 +1,19 @@
+--- rev-46
++++ rev-47
+@@ -55,6 +55,16 @@
+    "id": "s36.obs",
+    "role": "observation",
+    "body": "Stage 10 of 10 released.\nRound 10 of 10 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (2 lines)\n  round-10/changes.md (3 lines)\n  round-10/logs/inventory-svc.log (79 lines)\n  round-10/logs/ledger-svc.log (62 lines)\n  round-10/logs/notify-worker.log (72 lines)\n  round-10/logs/search-api.log (74 lines)\n  round-10/logs/shipping-svc.log (74 lines)"
++  },
++  {
++   "id": "s37.act",
++   "role": "assistant",
++   "body": "[step 37] execute\nthought: Read round 10 board, changes, and key log lines.\ncode:\nimport re\nprint(open('/task/fixtures/round-10/board.md').read())\nprint(open('/task/fixtures/round-10/changes.md').read())\nfor s in ['search-api','shipping-svc','notify-worker']:\n  L=open(f'/task/fixtures/round-10/logs/{s}.log').read().splitlines()\n  h=[i for i,l in enumerate(L,1) if re.search('max_inflight|disk|config',l)]\n  print(s,h[:12])\n  if h: print(L[h[-1]-1][:200])"
++  },
++  {
++   "id": "s37.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.1s\n--- stdout ---\n# Incident board: updates in round 10\n\n\n# Change log: round 10\n\n- CHG-174 APPLIED: retry budget for idempotent GETs set to 1\n\nsearch-api [1, 15, 21, 22, 31, 39, 41, 52, 63]\n{\"ts\":\"2026-09-14T17:48:40Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.48.0\"}\nshipping-svc [18, 50]\n{\"ts\":\"2026-09-14T17:40:10Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":92}\nnotify-worker [27, 70]\n{\"ts\":\"2026-09-14T17:54:49Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"used_pct\":94}\n"
+   }
+  ]
+ }

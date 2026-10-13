@@ -1,0 +1,19 @@
+--- rev-41
++++ rev-42
+@@ -55,6 +55,16 @@
+    "id": "s33.obs",
+    "role": "observation",
+    "body": "Stage 9 of 11 released.\nRound 9 of 11 released. New files are under /task/fixtures/round-09/.\n\nNew files:\n  round-09/board.md (5 lines)\n  round-09/logs/auth-svc.log (63 lines)\n  round-09/logs/checkout-api.log (70 lines)\n  round-09/logs/inventory-svc.log (68 lines)\n  round-09/logs/search-api.log (73 lines)\n  round-09/logs/shipping-svc.log (73 lines)"
++  },
++  {
++   "id": "s34.act",
++   "role": "assistant",
++   "body": "[step 34] execute\nthought: \ncode:\nimport re\nprint(open('/task/fixtures/round-09/board.md').read())\nfor s in ['auth-svc','checkout-api','inventory-svc','search-api','shipping-svc']:\n  L=open(f'/task/fixtures/round-09/logs/{s}.log').read().splitlines()\n  h=[i+1 for i,l in enumerate(L) if re.search(r'ERROR|429|SERVFAIL|FATAL|OOM',l)]\n  print(s,len(h),h[:3],h[-1:] if h else '', L[h[0]-1][:150] if h else '')"
++  },
++  {
++   "id": "s34.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 09\n\n- Thread C opened: request failures on some shipping-svc pods; cause not yet identified. Status: ongoing.\n- Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\n- Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\n\nauth-svc 0 []  \ncheckout-api 0 []  \ninventory-svc 2 [66, 67] [67] {\"ts\":\"2026-09-14T16:57:50Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":35}\nsearch-api 2 [12, 14] [14] {\"ts\":\"2026-09-14T16:11:08Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":20}\nshipping-svc 11 [15, 21, 24] [69] {\"ts\":\"2026-09-14T16:13:35Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"6.58.\n"
+   }
+  ]
+ }

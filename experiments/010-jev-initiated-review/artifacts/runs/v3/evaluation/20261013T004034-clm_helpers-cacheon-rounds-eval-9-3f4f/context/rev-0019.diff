@@ -1,0 +1,46 @@
+--- rev-18
++++ rev-19
+@@ -4,42 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: board empty; round-01/changes.md:3 CHG-108 APPLIED TLS session ticket rotation hourly. Routine filter: heartbeat|health ok|request ok|gc cycle|slow query. services: notify-worker shipping-svc ledger-svc inventory-svc search-api.\nR2: round-02/changes.md:4 CHG-120 APPLIED search-api 8.48.0 http.max_inflight=-1 (possible BAD_CONFIG, no errors yet). ledger-svc DNS SERVFAIL geo.internal round-02/logs/ledger-svc.log:3-81.\nR3: round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN POSTMORTEM_DRAFT. DNS errors round-03/logs/inventory-svc.log:1-54, ledger-svc.log:14-67. Others clean. Next: advance R4.\nR4: board.md:3 Thread B DB_POOL_EXHAUSTED shipping-svc ongoing (logs show only disk usage high on shipping-svc lines 9-47 and notify-worker lines 2-69, no db pool errors - board cause may be wrong, likely DISK_PRESSURE); board.md:4 OPEN DATA_BACKFILL. changes.md:3 CHG-131 APPLIED TLS rotation. DNS continues inventory-svc.log:11-72, ledger-svc.log:5-52. search-api clean. Next: advance R5."
+-  },
+-  {
+-   "id": "s11.act",
+-   "role": "assistant",
+-   "body": "[step 11] execute\nthought: Compact context with R4 findings.\ncode:\nimport json\nb=open('/task/workspace/context.json').read()\nd=json.load(open('/task/workspace/context.json'))\nn=[e for e in d['entries'] if e['id']=='n1'][0]['body']\nn+='\\nR4: board.md:3 Thread B DB_POOL_EXHAUSTED shipping-svc ongoing (logs show only disk usage high on shipping-svc lines 9-47 and notify-worker lines 2-69, no db pool errors - board cause may be wrong, likely DISK_PRESSURE); board.md:4 OPEN DATA_BACKFILL. changes.md:3 CHG-131 APPLIED TLS rotation. DNS continues inventory-svc.log:11-72, ledger-svc.log:5-52. search-api clean. Next: advance R5.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))\nprint('ok')"
+-  },
+-  {
+-   "id": "s11.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s11.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 11: revision 14 -> 15; entries 8 -> 1; body chars 5373 -> 1043; removed [s8.act, s8.obs, s8.rcpt, s9.act, s9.obs, s10.act, s10.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s12.act",
+-   "role": "assistant",
+-   "body": "[step 12] advance\nthought: "
+-  },
+-  {
+-   "id": "s12.obs",
+-   "role": "observation",
+-   "body": "Stage 5 of 10 released.\nRound 5 of 10 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (5 lines)\n  round-05/logs/inventory-svc.log (80 lines)\n  round-05/logs/ledger-svc.log (71 lines)\n  round-05/logs/notify-worker.log (67 lines)\n  round-05/logs/search-api.log (69 lines)\n  round-05/logs/shipping-svc.log (77 lines)"
+-  },
+-  {
+-   "id": "s13.act",
+-   "role": "assistant",
+-   "body": "[step 13] execute\nthought: Inspect round 5 board and non-routine log lines.\ncode:\nimport re,glob\nr='/task/fixtures/round-05/'\nfor i,l in enumerate(open(r+'board.md'),1):print('board',i,l.rstrip())\npat=re.compile(r'heartbeat|health ok|request ok|gc cycle|slow query',re.I)\nfor f in sorted(glob.glob(r+'logs/*.log')):\n  hits=[(i,l.rstrip()) for i,l in enumerate(open(f),1) if not pat.search(l)]\n  n=f.split('/')[-1]\n  print(n,len(hits),'first',hits[:2],'last',hits[-1:] if hits else '')\n  kinds={}\n  for i,l in hits:\n    k=re.sub(r'[0-9]+','#',l)[-60:];kinds.setdefault(k,[]).append(i)\n  for k,v in list(kinds.items())[:4]:print('  ',v[0],v[-1],len(v),k)"
+-  },
+-  {
+-   "id": "s13.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard 1 # Incident board: updates in round 05\nboard 2 \nboard 3 - Thread B update: affected services now also include notify-worker; cause and status unchanged.\nboard 4 - Thread D opened: an expired TLS certificate on a dependency alerts (CERT_EXPIRED) on shipping-svc. Status: ongoing.\nboard 5 - Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\ninventory-svc.log 11 first [(22, '2026-09-14T12:18:12Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL'), (32, '2026-09-14T12:25:39Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL')] last [(75, '2026-09-14T12:54:57Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL')]\n   22 75 11 ventory-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 7 first [(17, '2026-09-14T12:09:25Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL'), (21, '2026-09-14T12:13:07Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL')] last [(68, '2026-09-14T12:52:12Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL')]\n   17 68 7  ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nnotify-worker.log 11 first [(2, '2026-09-14T12:02:30Z WARN  notify-worker disk usage high path=/var/data used_pct=96'), (5, '2026-09-14T12:03:33Z WARN  notify-worker disk usage high path=/var/data used_pct=98')] last [(57, '2026-09-14T12:53:14Z WARN  notify-worker disk usage high path=/var/data used_pct=96')]\n   2 57 11 ARN  notify-worker disk usage high path=/var/data used_pct=#\nsearch-api.log 0 first [] last \nshipping-svc.log 22 first [(1, '2026-09-14T12:00:06Z ERROR shipping-svc tls handshake failed peer=bank-api reason=certificate_expired'), (4, '2026-09-14T12:02:49Z WARN  shipping-svc disk usage high path=/var/data used_pct=94')] last [(76, '2026-09-14T12:57:54Z WARN  shipping-svc disk usage high path=/var/data used_pct=94')]\n   1 65 12 ls handshake failed peer=bank-api reason=certificate_expired\n   4 76 10 WARN  shipping-svc disk usage high path=/var/data used_pct=#\n"
++   "body": "R1: board empty; round-01/changes.md:3 CHG-108 APPLIED TLS session ticket rotation hourly. Routine filter: heartbeat|health ok|request ok|gc cycle|slow query. services: notify-worker shipping-svc ledger-svc inventory-svc search-api.\nR2: round-02/changes.md:4 CHG-120 APPLIED search-api 8.48.0 http.max_inflight=-1 (possible BAD_CONFIG, no errors yet). ledger-svc DNS SERVFAIL geo.internal round-02/logs/ledger-svc.log:3-81.\nR3: round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN POSTMORTEM_DRAFT. DNS errors round-03/logs/inventory-svc.log:1-54, ledger-svc.log:14-67. Others clean. Next: advance R4.\nR4: board.md:3 Thread B DB_POOL_EXHAUSTED shipping-svc ongoing (logs show only disk usage high on shipping-svc lines 9-47 and notify-worker lines 2-69, no db pool errors - board cause may be wrong, likely DISK_PRESSURE); board.md:4 OPEN DATA_BACKFILL. changes.md:3 CHG-131 APPLIED TLS rotation. DNS continues inventory-svc.log:11-72, ledger-svc.log:5-52. search-api clean. Next: advance R5.\nR5: board.md:3 Thread B adds notify-worker (cause DB_POOL unchanged, logs show disk usage notify-worker.log:2-57 shipping-svc.log:4-76). board.md:4 Thread D CERT_EXPIRED shipping-svc ongoing, real: shipping-svc.log:1-65 tls handshake bank-api certificate_expired. board.md:5 OPEN VENDOR_TICKET. DNS continues inventory-svc.log:22-75 ledger-svc.log:17-68. search-api clean. Next: advance R6."
+   }
+  ]
+ }

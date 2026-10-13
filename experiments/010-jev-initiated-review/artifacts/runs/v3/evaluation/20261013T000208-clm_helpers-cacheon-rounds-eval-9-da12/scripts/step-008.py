@@ -1,0 +1,4 @@
+import sys;sys.path.insert(0,'/task/workspace')
+import cm
+cm.setnotes('NOTES: R1: board empty; round-01/changes.md:3 CHG-108 APPLIED TLS session ticket rotation hourly. Slow-query WARNs = noise. R2: board empty. round-02/changes.md:4 CHG-120 APPLIED search-api 8.48.0 sets http.max_inflight=-1 (suspect BAD_CONFIG; no search-api errors yet); CHG-121 shipping no config; CHG-117 log sampling. ledger-svc DNS SERVFAIL host=geo.internal round-02/logs/ledger-svc.log:3-81. R3: board round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN POSTMORTEM_DRAFT. inventory DNS errs round-03/logs/inventory-svc.log:1-19,26-41; ledger round-03/logs/ledger-svc.log:14-31. No changes.md r3. Filter used: lines not matching slow.query|INFO; also print changes.md if exists. Helper: cm.setnotes(text).')
+print('ok')

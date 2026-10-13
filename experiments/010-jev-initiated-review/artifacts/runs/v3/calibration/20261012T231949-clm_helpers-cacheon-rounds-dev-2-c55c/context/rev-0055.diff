@@ -1,0 +1,24 @@
+--- rev-54
++++ rev-55
+@@ -50,6 +50,21 @@
+    "id": "n10",
+    "role": "note",
+    "body": "R10: board Thread D closed false alarm (round-10/board.md:3) -> drop UPSTREAM_RATE_LIMIT; DATA_BACKFILL CLOSED (board.md:4). CHG-175 noise. Thread C search-api likely BAD_CONFIG CHG-120 (round-02/changes.md). Next: advance to R11. R10 search-api cfg max_inflight=-1 round-10/logs/search-api.log:1,4,7,8,20; CERT auth round-10/logs/auth-svc.log:10,17; shipping round-10/logs/shipping-svc.log:3,60."
++  },
++  {
++   "id": "s35.act",
++   "role": "assistant",
++   "body": "[step 35] execute\nthought: Read R11 board and key lines; compact context.\ncode:\nimport json,re\nprint(open('/task/fixtures/round-11/board.md').read())\nfor s in ['search-api','auth-svc','shipping-svc','checkout-api','inventory-svc']:\n  L=open(f'/task/fixtures/round-11/logs/{s}.log').read().splitlines()\n  h=[i+1 for i,l in enumerate(L) if re.search(r'max_inflight|429|cert|x509|SERVFAIL|restart|OOM',l,re.I)]\n  print(s,h[:12])\n  if h: print(L[h[0]-1][:200])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s35.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 11\n\n\nsearch-api [4, 5, 7, 13, 18, 24, 43, 44, 50, 55, 61]\n{\"ts\":\"2026-09-14T18:01:46Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"-1\",\"build\":\"8.59.8\"}\nauth-svc [4, 37]\n{\"ts\":\"2026-09-14T18:02:31Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\nshipping-svc [4, 43]\n{\"ts\":\"2026-09-14T18:03:20Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}\ncheckout-api []\ninventory-svc []\n"
++  },
++  {
++   "id": "s35.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 35: revision 53 -> 54; entries 15 -> 10; body chars 4692 -> 3590; removed [s33.act, s33.obs, s33.rcpt, s34.act, s34.obs]; added []; rewritten []"
+   }
+  ]
+ }

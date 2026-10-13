@@ -1,0 +1,3 @@
+import json
+n='R1: board empty. changes.md:3 CHG-113 APPLIED shipping-svc build 6.58.8 sets retry.backoff_ms=0 (suspicious BAD_CONFIG); :4 CHG-114 search-api no config. Logs routine.\nR2: board.md:3 FU OPEN DATA_BACKFILL; :4 FU OPEN POSTMORTEM_DRAFT. auth-svc.log:4-72 ERROR dns lookup failed host=geo.internal SERVFAIL (DNS_RESOLUTION, auth-svc), no board thread yet. Others quiet.\nTool: python /task/workspace/scan.py NN (prints md + non-info log lines).'
+json.dump({'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':n}]},open('/task/workspace/context.json','w'))

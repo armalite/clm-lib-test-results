@@ -1,0 +1,46 @@
+--- rev-30
++++ rev-31
+@@ -4,42 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: board empty. r1/changes.md:3 CHG-113 APPLIED pricing-svc 3.22.4 cache.ttl_s=-1 (suspicious); CHG-110/CHG-115(r2 changes.md:3) retry budget=1 noise. R2: board.md:3 Follow-up OPEN CAPACITY_REVIEW. search-api r2 CERT_EXPIRED peer=sso.example.net lines 11-57. R3: board.md:3 Thread A CERT_EXPIRED search-api+inventory-svc ongoing; board.md:4 OPEN RUNBOOK_UPDATE; :5 OPEN POSTMORTEM_DRAFT. changes.md:3 CHG-126 noise. r3 search-api.log:9-78, inventory-svc.log:1-75 cert errors. R4: board.md:3 Thread B ledger-svc suspected QUEUE_BACKLOG ongoing, BUT ledger logs show 429 upstream=tax-provider (UPSTREAM_RATE_LIMIT) r4 ledger-svc.log:2-86; certs continue r4 search-api.log:11-89, inventory-svc.log:3-62. changes CHG-129 PROPOSED noise. checkout/pricing clean. Filter noise: slow query|request ok|heartbeat|gc |health ok. R5: board.md:3 OPEN CUSTOMER_COMMS. certs continue r5 search-api.log:6-70, inventory-svc.log:10-73; ledger 429 r5 ledger-svc.log:7-61. checkout/pricing clean. R6: board.md:3 Thread A mitigated (CHG-150 APPLIED changes.md:3 search-api); board.md:4 OPEN ALERT_TUNING. r6 certs gone in search/inventory. 429 tax-provider now also checkout-api r6 checkout-api.log:21-74, ledger r6 ledger-svc.log:17-76. R7: board.md:3 Thread B services +checkout-api, cause/status unchanged (board still says QUEUE_BACKLOG; logs say UPSTREAM_RATE_LIMIT). changes CHG-152 PROPOSED noise. 429 r7 checkout-api.log:4-49, ledger-svc.log:13-77. others clean."
+-  },
+-  {
+-   "id": "s21.act",
+-   "role": "assistant",
+-   "body": "[step 21] execute\nthought: Compress r7 into note.\ncode:\nimport json\nn=json.load(open('/task/workspace/context.json'))['entries'][0]['body']\nn+=' R7: board.md:3 Thread B services +checkout-api, cause/status unchanged (board still says QUEUE_BACKLOG; logs say UPSTREAM_RATE_LIMIT). changes CHG-152 PROPOSED noise. 429 r7 checkout-api.log:4-49, ledger-svc.log:13-77. others clean.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s21.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s"
+-  },
+-  {
+-   "id": "s21.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 21: revision 26 -> 27; entries 8 -> 1; body chars 4336 -> 1450; removed [s18.act, s18.obs, s18.rcpt, s19.act, s19.obs, s20.act, s20.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s22.act",
+-   "role": "assistant",
+-   "body": "[step 22] advance\nthought: "
+-  },
+-  {
+-   "id": "s22.obs",
+-   "role": "observation",
+-   "body": "Stage 8 of 10 released.\nRound 8 of 10 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (5 lines)\n  round-08/logs/checkout-api.log (78 lines)\n  round-08/logs/inventory-svc.log (68 lines)\n  round-08/logs/ledger-svc.log (89 lines)\n  round-08/logs/pricing-svc.log (85 lines)\n  round-08/logs/search-api.log (62 lines)"
+-  },
+-  {
+-   "id": "s23.act",
+-   "role": "assistant",
+-   "body": "[step 23] execute\nthought: Inspect r8 board and logs filtered.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-08/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-08/logs/*.log')):\n    L=[(i+1,l.strip()) for i,l in enumerate(open(f)) if not re.search(r'slow query|request ok|heartbeat|gc |health ok',l)]\n    print(f.split('/')[-1],len(L))\n    if L: print(L[0],L[-1]);\n    for i,l in L[:3]: print(i,l[:160])"
+-  },
+-  {
+-   "id": "s23.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 08\n\n- Thread A status: resolved (no recurrence for two hours).\n- Thread B root cause revised: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT); this supersedes the earlier suspicion of QUEUE_BACKLOG.\n- Thread C opened: request failures on some pricing-svc pods; cause not yet identified. Status: ongoing.\n\ncheckout-api.log 6\n(26, '{\"ts\":\"2026-09-14T15:16:43Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":35}') (66, '{\"ts\":\"2026-09-14T15:49:18Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":20}')\n26 {\"ts\":\"2026-09-14T15:16:43Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":35}\n27 {\"ts\":\"2026-09-14T15:17:03Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":7}\n37 {\"ts\":\"2026-09-14T15:25:10Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":25}\ninventory-svc.log 0\nledger-svc.log 10\n(9, '{\"ts\":\"2026-09-14T15:06:18Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":25}') (76, '{\"ts\":\"2026-09-14T15:49:59Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":12}')\n9 {\"ts\":\"2026-09-14T15:06:18Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":25}\n12 {\"ts\":\"2026-09-14T15:08:54Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":15}\n21 {\"ts\":\"2026-09-14T15:15:29Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":41}\npricing-svc.log 9\n(5, '{\"ts\":\"2026-09-14T15:01:37Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"3.22.4\"}') (83, '{\"ts\":\"2026-09-14T15:54:25Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"3.22.4\"}')\n5 {\"ts\":\"2026-09-14T15:01:37Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"3.22.4\"}\n17 {\"ts\":\"2026-09-14T15:08:26Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"3.22.4\"}\n28 {\"ts\":\"2026-09-14T15:14:02Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"3.22.4\"}\nsearch-api.log 0\n"
++   "body": "R1: board empty. r1/changes.md:3 CHG-113 APPLIED pricing-svc 3.22.4 cache.ttl_s=-1 (suspicious); CHG-110/CHG-115(r2 changes.md:3) retry budget=1 noise. R2: board.md:3 Follow-up OPEN CAPACITY_REVIEW. search-api r2 CERT_EXPIRED peer=sso.example.net lines 11-57. R3: board.md:3 Thread A CERT_EXPIRED search-api+inventory-svc ongoing; board.md:4 OPEN RUNBOOK_UPDATE; :5 OPEN POSTMORTEM_DRAFT. changes.md:3 CHG-126 noise. r3 search-api.log:9-78, inventory-svc.log:1-75 cert errors. R4: board.md:3 Thread B ledger-svc suspected QUEUE_BACKLOG ongoing, BUT ledger logs show 429 upstream=tax-provider (UPSTREAM_RATE_LIMIT) r4 ledger-svc.log:2-86; certs continue r4 search-api.log:11-89, inventory-svc.log:3-62. changes CHG-129 PROPOSED noise. checkout/pricing clean. Filter noise: slow query|request ok|heartbeat|gc |health ok. R5: board.md:3 OPEN CUSTOMER_COMMS. certs continue r5 search-api.log:6-70, inventory-svc.log:10-73; ledger 429 r5 ledger-svc.log:7-61. checkout/pricing clean. R6: board.md:3 Thread A mitigated (CHG-150 APPLIED changes.md:3 search-api); board.md:4 OPEN ALERT_TUNING. r6 certs gone in search/inventory. 429 tax-provider now also checkout-api r6 checkout-api.log:21-74, ledger r6 ledger-svc.log:17-76. R7: board.md:3 Thread B services +checkout-api, cause/status unchanged (board still says QUEUE_BACKLOG; logs say UPSTREAM_RATE_LIMIT). changes CHG-152 PROPOSED noise. 429 r7 checkout-api.log:4-49, ledger-svc.log:13-77. others clean. R8: board.md:3 Thread A resolved; :4 Thread B cause revised UPSTREAM_RATE_LIMIT; :5 Thread C pricing-svc ongoing cause unknown. r8 pricing-svc.log:5-83 config validation failed cache.ttl_s=-1 build 3.22.4 (BAD_CONFIG_ROLLOUT from CHG-113 r1 changes.md:3). 429 r8 checkout-api.log:26-66, ledger-svc.log:9-76. search/inventory clean."
+   }
+  ]
+ }

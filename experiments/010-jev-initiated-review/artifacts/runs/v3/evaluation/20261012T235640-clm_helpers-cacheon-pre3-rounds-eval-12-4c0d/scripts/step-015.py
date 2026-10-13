@@ -1,0 +1,6 @@
+import json
+n1='Round01: board empty. logs only WARN slow query (noise). round-01/changes.md:3 CHG-110 APPLIED retry GETs=1; :4 CHG-113 APPLIED build 3.22.4 pricing-svc cache.ttl_s=-1 (suspicious BAD_CONFIG_ROLLOUT); :5 CHG-114 APPLIED 3.22.4 ledger-svc no config changes.'
+n2='Round02: round-02/board.md:3 Follow-up OPEN CAPACITY_REVIEW. round-02/changes.md:3 CHG-115 APPLIED retry GETs=1. Logs: search-api CERT_EXPIRED peer=sso.example.net round-02/logs/search-api.log:11,15,19,24,27,33,57.'
+n3='Round03: round-03/board.md:3 Thread A CERT_EXPIRED search-api + inventory-svc ongoing; :4 OPEN RUNBOOK_UPDATE; :5 OPEN POSTMORTEM_DRAFT. changes.md:3 CHG-126 APPLIED TLS ticket rotation hourly. Logs cert_expired peer=sso: round-03/logs/inventory-svc.log:1,8,36,56,60,65; search-api.log:9,14,33,36,40,41. others clean.'
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n1},{'id':'n2','role':'note','body':n2},{'id':'n3','role':'note','body':n3}]}
+json.dump(c,open('/task/workspace/context.json','w'))

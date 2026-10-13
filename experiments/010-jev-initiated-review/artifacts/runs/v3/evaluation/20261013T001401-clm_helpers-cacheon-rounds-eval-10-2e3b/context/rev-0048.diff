@@ -1,0 +1,19 @@
+--- rev-47
++++ rev-48
+@@ -30,6 +30,16 @@
+    "id": "s32.obs",
+    "role": "observation",
+    "body": "Stage 10 of 11 released.\nRound 10 of 11 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (4 lines)\n  round-10/logs/auth-svc.log (66 lines)\n  round-10/logs/checkout-api.log (65 lines)\n  round-10/logs/inventory-svc.log (60 lines)\n  round-10/logs/search-api.log (59 lines)\n  round-10/logs/shipping-svc.log (75 lines)"
++  },
++  {
++   "id": "s33.act",
++   "role": "assistant",
++   "body": "[step 33] execute\nthought: Read R10 board and error lines.\ncode:\nimport glob\nprint(open('/task/fixtures/round-10/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-10/logs/*.log')):\n  L=[i+1 for i,l in enumerate(open(f)) if 'ERROR' in l or 'error' in l.lower() and '429' in l]\n  print(f.split('/')[-1],len(L),L[:3],L[-3:])\n  for i,l in enumerate(open(f)):\n    if i+1 in L[:1]: print(l.strip()[:200])"
++  },
++  {
++   "id": "s33.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n# Incident board: updates in round 10\n\n- Thread C note: failing pods still restarting; investigation continues.\n- Follow-up CLOSED ALERT_TUNING.\n\nauth-svc.log 0 [] []\ncheckout-api.log 0 [] []\ninventory-svc.log 2 [36, 59] [36, 59]\n{\"ts\":\"2026-09-14T17:36:51Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":55}\nsearch-api.log 2 [13, 31] [13, 31]\n{\"ts\":\"2026-09-14T17:17:16Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":18}\nshipping-svc.log 13 [3, 7, 11] [68, 72, 74]\n{\"ts\":\"2026-09-14T17:09:31Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"6.58.8\"}\n"
+   }
+  ]
+ }

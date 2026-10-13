@@ -1,0 +1,54 @@
+{
+ "number": 13,
+ "parent": 12,
+ "source": "runtime",
+ "step": 10,
+ "sha256": "51a6d13f9d8886e7adeeea201ac94bd6fe9012ef0557e57d0512e21a01d00025",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Round1: board empty. r01 changes.md:3 CHG-112 APPLIED retry budget idempotent GETs=1. Services: notify-worker, shipping-svc, checkout-api, ledger-svc, inventory-svc. Log fmt: ts LEVEL svc msg k=v. Slow query baseline ~230-450ms (normal noise)."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "Round2: board empty. changes.md:3 CHG-118 APPLIED TLS ticket rotation hourly; changes.md:4 CHG-120 APPLIED build 5.26.1 shipping-svc sets db.pool_max=-4 (SUSPECT BAD_CONFIG_ROLLOUT); changes.md:5 CHG-121 APPLIED 5.26.1 inventory-svc no config. R2 logs checked checkout/inventory/ledger: only baseline slow queries. Still to check r02 notify-worker & shipping-svc logs (spill/s5.obs.txt lines after 30)."
+  },
+  {
+   "id": "s8.act",
+   "role": "assistant",
+   "body": "[step 8] execute\nthought: Compact context into notes.\ncode:\nimport json\nn1='Round1: board empty. r01 changes.md:3 CHG-112 APPLIED retry budget idempotent GETs=1. Services: notify-worker, shipping-svc, checkout-api, ledger-svc, inventory-svc. Log fmt: ts LEVEL svc msg k=v. Slow query baseline ~230-450ms (normal noise).'\nn2='Round2: board empty. changes.md:3 CHG-118 APPLIED TLS ticket rotation hourly; changes.md:4 CHG-120 APPLIED build 5.26.1 shipping-svc sets db.pool_max=-4 (SUSPECT BAD_CONFIG_ROLLOUT); changes.md:5 CHG-121 APPLIED 5.26.1 inventory-svc no config. R2 logs checked checkout/inventory/ledger: only baseline slow queries. Still to check r02 notify-worker & shipping-svc logs (spill/s5.obs.txt lines after 30).'\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n1},{'id':'n2','role':'note','body':n2}]}\njson.dump(c,open('/task/workspace/context.json','w'))\nt=open('/task/workspace/spill/s5.obs.txt').read().splitlines()\nfor l in t:\n  if l.startswith(('notify','shipping')) and 'slow query' not in l:print(l[:140])"
+  },
+  {
+   "id": "s8.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nnotify-worker.log 6 2026-09-14T09:03:00Z WARN  notify-worker db pool exhausted wait_ms=981 in_use=16/16\nnotify-worker.log 12 2026-09-14T09:08:23Z WARN  notify-worker db pool exhausted wait_ms=2910 in_use=20/20\nnotify-worker.log 14 2026-09-14T09:08:48Z WARN  notify-worker db pool exhausted wait_ms=1642 in_use=16/16\nnotify-worker.log 23 2026-09-14T09:13:35Z WARN  notify-worker db pool exhausted wait_ms=2310 in_use=20/20\nnotify-worker.log 30 2026-09-14T09:17:32Z WARN  notify-worker db pool exhausted wait_ms=881 in_use=16/16\nnotify-worker.log 34 2026-09-14T09:21:26Z WARN  notify-worker db pool exhausted wait_ms=1136 in_use=16/16\nnotify-worker.log 36 2026-09-14T09:23:12Z WARN  notify-worker db pool exhausted wait_ms=2744 in_use=20/20\nnotify-worker.log 53 2026-09-14T09:38:28Z WARN  notify-worker db pool exhausted wait_ms=1095 in_use=20/20\nnotify-worker.log 57 2026-09-14T09:43:17Z WARN  notify-worker db pool exhausted wait_ms=1249 in_use=20/20\nnotify-worker.log 59 2026-09-14T09:45:12Z WARN  notify-worker db pool exhausted wait_ms=1749 in_use=20/20\nnotify-worker.log 60 2026-09-14T09:45:52Z WARN  notify-worker db pool exhausted wait_ms=1641 in_use=10/10\nshipping-s\n"
+  },
+  {
+   "id": "s8.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 8: revision 9 -> 10; entries 12 -> 2; body chars 6223 -> 645; removed [s3.act, s3.obs, s3.rcpt, s4.act, s4.obs, s5.act, s5.obs, s6.act, s6.obs, s7.act, s7.obs]; added [n2]; rewritten [n1]"
+  },
+  {
+   "id": "s9.act",
+   "role": "assistant",
+   "body": "[step 9] execute\nthought: Check shipping-svc r02 non-slow lines.\ncode:\nt=open('/task/workspace/spill/s5.obs.txt').read().splitlines()\nfor l in t:\n  if l.startswith('shipping') and 'slow query' not in l:print(l[:130])"
+  },
+  {
+   "id": "s9.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nshipping-s\n"
+  },
+  {
+   "id": "s10.act",
+   "role": "assistant",
+   "body": "[step 10] execute\nthought: Spill file truncated for shipping; read shipping log r02 directly.\ncode:\nimport re\nfor i,l in enumerate(open('/task/fixtures/round-02/logs/shipping-svc.log'),1):\n  if 'slow query' not in l:print(i,l.strip()[:130])"
+  },
+  {
+   "id": "s10.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n1 2026-09-14T09:01:03Z INFO  shipping-svc request ok route=/v1/quote status=200 ms=28\n2 2026-09-14T09:02:03Z INFO  shipping-svc request ok route=/v1/quote status=200 ms=63\n4 2026-09-14T09:04:17Z INFO  shipping-svc gc cycle pause_ms=36\n5 2026-09-14T09:05:59Z INFO  shipping-svc health ok probe=readiness\n6 2026-09-14T09:08:23Z INFO  shipping-svc gc cycle pause_ms=3\n7 2026-09-14T09:10:48Z INFO  shipping-svc health ok probe=readiness\n8 2026-09-14T09:11:38Z INFO  shipping-svc request ok route=/v1/health status=200 ms=76\n9 2026-09-14T09:13:37Z INFO  shipping-svc heartbeat uptime_s=31521\n11 2026-09-14T09:14:02Z INFO  shipping-svc request ok route=/v1/health status=200 ms=35\n12 2026-09-14T09:14:39Z INFO  shipping-svc health ok probe=readiness\n13 2026-09-14T09:15:35Z INFO  shipping-svc health ok probe=readiness\n14 2026-09-14T09:18:01Z INFO  shipping-svc gc cycle pause_ms=11\n15 2026-09-14T09:18:05Z INFO  shipping-svc request ok route=/v1/health status=200 ms=32\n16 2026-09-14T09:19:55Z INFO  shipping-svc health ok probe=readiness\n18 2026-09-14T09:20:26Z INFO  shipping-svc gc cycle pause_ms=27\n20 2026-09-14T09:21:05Z INFO  shipping-svc gc cycle pause_ms=18\n21 2026-09-14T09:21:18Z INFO  shipping-svc request ok route=/v1/health status=200 ms=57\n22 2026-09-14T09:21:37Z INFO  shipping-svc gc cycle pause_ms=5\n24 2026-09-14T09:22:23Z INFO  shipping-svc request ok route=/v1/orders status=200 ms=26\n25 2026-09-14T09:22:27Z INFO  shipping-svc heartbeat uptime_s=88707\n26 2026-09-14T09:22:39Z INFO  shipping-svc gc cycle pause_ms=21\n27 2026-09-14T09:22:57Z INFO  shipping-svc health ok probe=readiness\n28 2026-09-14T09:23:34Z INFO  shipping-svc request ok route=/v1/items status=200 ms=52\n30 2026-09-14T09:25:06Z INFO  shipping-svc heartbeat uptime_s=8132\n31 2026-09-14T09:25:14Z INFO  shipping-svc heartbeat uptime_s=55384\n32 2026-09-14T09:26:25Z INFO  shipping-svc health ok probe=readiness\n33 2026-09-14T09:26:53Z INFO  shipping-svc health ok probe=readiness\n35 2026-09-14T09:28:04Z INFO  shipping-svc request ok route=/v1/health status=200 ms=64\n37 2026-09-14T09:30:01Z INFO  shipping-svc request ok route=/v1/quote status=200 ms=27\n38 2026-09-14T09:30:35Z INFO  shipping-svc gc cycle pause_ms=16\n39 2026-09-14T09:32:23Z INFO  shipping-svc gc cycle pause_ms=15\n40 2026-09-14T09:33:45Z INFO  shipping-svc request ok route=/v1/items status=200 ms=89\n41 2026-09-14T09:33:47Z INFO  shipping-svc request ok route=/v1/health status=200 ms=78\n42 2026-09-14T09:34:13Z INFO  shipping-svc heartbeat uptime_s=54742\n43 2026-09-14T09:36:32Z INFO  shipping-svc health ok probe=readiness\n44 2026-09-14T09:37:02Z INFO  shipping-svc health ok probe=readiness\n45 2026-09-14T09:37:25Z INFO  shipping-svc heartbeat uptime_s=69170\n46 2026-09-14T09:38:42Z INFO  shipping-svc request ok route=/v1/health status=200 ms=45\n47 2026-09-14T09:39:53Z INFO  shipping-svc health ok probe=readiness\n49 2026-09-14T09:43:08Z INFO  shipping-svc health ok probe=readiness\n51 2026-09-14T09:45:00Z INFO  shipping-svc gc cycle pause_ms=5\n52 2026-09-14T09:46:19Z INFO  shipping-svc gc cycle pause_ms=15\n53 2026-09-14T09:48:35Z INFO  shipping-svc heartbeat uptime_s=62169\n54 2026-09-14T09:48:55Z INFO  shipping-svc request ok route=/v1/items status=200 ms=9\n55 2026-09-14T09:49:27Z INFO  shipping-svc gc cycle pause_ms=15\n56 2026-09-14T09:50:29Z INFO  shipping-svc health ok probe=readiness\n57 2026-09-14T09:51:02Z INFO  shipping-svc heartbeat uptime_s=61380\n58 2026-09-14T09:52:06Z INFO  shipping-svc health ok probe=readiness\n59 2026-09-14T09:53:17Z INFO  shipping-svc heartbeat uptime_s=43216\n60 2026-09-14T09:55:34Z INFO  shipping-svc heartbeat uptime_s=22211\n61 2026-09-14T09:55:40Z INFO  shipping-svc gc cycle pause_ms=10\n62 2026-09-14T09:56:02Z INFO  shipping-svc request ok route=/v1/quote status=200 ms=75\n65 2026-09-14T09:58:35Z INFO  shipping-svc gc cycle pause_ms=32\n66 2026-09-14T09:59:55Z INFO  shipping-svc gc cycle pause_ms=14\n67 2026-09-14T09:59:57Z INFO  shipping-svc health ok probe=readiness\n"
+  }
+ ]
+}

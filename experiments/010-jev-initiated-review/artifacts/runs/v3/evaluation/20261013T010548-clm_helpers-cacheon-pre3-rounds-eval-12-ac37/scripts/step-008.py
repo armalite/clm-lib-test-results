@@ -1,0 +1,4 @@
+import json
+b='''R1: changes.md line3 CHG-110 APPLIED retry budget GETs=1; line4 CHG-113 APPLIED build 3.22.4 pricing-svc sets cache.ttl_s=-1 (possible BAD_CONFIG_ROLLOUT); line5 CHG-114 APPLIED 3.22.4 ledger-svc no config. Services: checkout-api, pricing-svc, ledger-svc, inventory-svc, search-api. R1 logs noise only (slow query WARN).
+R2: board.md:3 Follow-up OPEN CAPACITY_REVIEW. changes.md:3 CHG-115 APPLIED retry budget GETs=1. search-api.log lines 11,15,19,24,27,33,57 ERROR tls handshake failed peer=sso.example.net reason=certificate_expired (CERT_EXPIRED candidate, not on board yet).'''
+json.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':b}]},open('/task/workspace/context.json','w'))

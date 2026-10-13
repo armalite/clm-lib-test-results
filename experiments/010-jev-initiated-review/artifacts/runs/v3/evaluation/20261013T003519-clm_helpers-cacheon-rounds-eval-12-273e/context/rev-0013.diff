@@ -1,0 +1,19 @@
+--- rev-12
++++ rev-13
+@@ -40,6 +40,16 @@
+    "id": "s9.obs",
+    "role": "observation",
+    "body": "Stage 4 of 10 released.\nRound 4 of 10 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (3 lines)\n  round-04/changes.md (3 lines)\n  round-04/logs/checkout-api.log (74 lines)\n  round-04/logs/inventory-svc.log (70 lines)\n  round-04/logs/ledger-svc.log (88 lines)\n  round-04/logs/pricing-svc.log (63 lines)\n  round-04/logs/search-api.log (91 lines)"
++  },
++  {
++   "id": "s10.act",
++   "role": "assistant",
++   "body": "[step 10] execute\nthought: Scan round 4.\ncode:\nimport glob,re\nb='/task/fixtures/round-04/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob(b+'logs/*')):\n  n=f.split('/')[-1];c={}\n  for i,l in enumerate(open(f),1):\n    if re.search('ERROR|WARN|error|warn',l) and 'slow' not in l.lower():\n      k=re.sub(r'\\d+','#',l.strip())[-90:];c.setdefault(k,[]).append(i)\n  for k,v in c.items():print(n,v[0],v[-1],len(v),k)"
++  },
++  {
++   "id": "s10.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 04\nboard.md 2 \nboard.md 3 - Thread B opened: errors in ledger-svc. Suspected cause: message consumer lag growing (QUEUE_BACKLOG). Status: ongoing.\nchanges.md 1 # Change log: round 04\nchanges.md 2 \nchanges.md 3 - CHG-129 PROPOSED: move batch jobs to off-peak window (not applied)\ninventory-svc.log 3 62 7 Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nledger-svc.log 2 86 12 #-#-#T#:#:#Z ERROR ledger-svc upstream returned # upstream=tax-provider retry_after_s=#\nsearch-api.log 11 89 12 #:#Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\n"
+   }
+  ]
+ }

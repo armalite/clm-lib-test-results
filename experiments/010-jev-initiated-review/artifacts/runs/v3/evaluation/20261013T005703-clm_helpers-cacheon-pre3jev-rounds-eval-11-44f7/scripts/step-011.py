@@ -1,0 +1,4 @@
+import json
+n='R1: board empty; logs routine. changes r01: CHG-111 PROPOSED batch off-peak; CHG-113 APPLIED checkout-api build 4.33.8 sets feature.batch_size=0 (round-01/changes.md:4, suspect BAD_CONFIG, no errors seen yet); CHG-114 APPLIED inventory-svc 4.33.8 no config.\nR2: board: follow-ups OPEN VENDOR_TICKET, POSTMORTEM_DRAFT (round-02/board.md:3-4). changes: CHG-116 log sampling health 1%. pricing-svc ERROR 429 upstream=sms-gateway (round-02/logs/pricing-svc.log:4,6,12).\nR3: board Thread A opened UPSTREAM_RATE_LIMIT pricing-svc + search-api, ongoing (round-03/board.md:3). 429s pricing-svc.log:4,7-9; search-api.log:8. Other logs only slow-query WARNs. No changes.md r03.'
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]}
+json.dump(c,open('/task/workspace/context.json','w'))

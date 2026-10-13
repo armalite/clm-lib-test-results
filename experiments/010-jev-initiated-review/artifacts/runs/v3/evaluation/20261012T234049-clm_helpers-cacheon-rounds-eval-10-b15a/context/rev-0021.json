@@ -1,0 +1,69 @@
+{
+ "number": 21,
+ "parent": 20,
+ "source": "runtime",
+ "step": 16,
+ "sha256": "e1bd99c16a5e095493764d1608f064036dffda164bc657b6f7216cf0bfb79cc2",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty; slow-query WARNs in all 5 svcs = noise. round-01/changes.md:3 CHG-113 APPLIED build 6.58.8 shipping-svc sets retry.backoff_ms=0 (suspect BAD_CONFIG); :4 CHG-114 search-api no config."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 followup OPEN DATA_BACKFILL, :4 OPEN POSTMORTEM_DRAFT. auth-svc.log DNS SERVFAIL host=geo.internal lines 4-15,37-72."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread A DNS_RESOLUTION auth-svc+checkout-api ongoing; :4 Thread B search-api suspected DB_POOL (but logs show 429 upstream=fx-rates search-api.log:16-62 => likely UPSTREAM_RATE_LIMIT). DNS errs auth-svc.log:2-59, checkout-api.log:14-63. changes CHG-123 dashboards only. Scan: grep ERROR|WARN|FATAL|fail excluding slow. Next: advance."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board empty. DNS errs continue auth-svc.log:3-57, checkout-api.log:2-64; 429 fx-rates search-api.log:4-90. inventory/shipping clean. Next: advance."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board empty; CHG-140 log sampling only. DNS errs auth-svc.log:1-60, checkout-api.log:2-66; 429 fx-rates search-api.log:5-64. inv/ship clean. Next: advance."
+  },
+  {
+   "id": "s14.act",
+   "role": "assistant",
+   "body": "[step 14] execute\nthought: Compact with R5 note.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\ne=[x for x in c['entries'] if x['id'] in('n1','n2','n3','n4')]\ne.append({'id':'n5','role':'note','body':'R5: board empty; CHG-140 log sampling only. DNS errs auth-svc.log:1-60, checkout-api.log:2-66; 429 fx-rates search-api.log:5-64. inv/ship clean. Next: advance.'})\nc['entries']=e\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s14.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s"
+  },
+  {
+   "id": "s14.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 14: revision 17 -> 18; entries 11 -> 5; body chars 2918 -> 989; removed [s11.act, s11.obs, s11.rcpt, s12.act, s12.obs, s13.act, s13.obs]; added [n5]; rewritten []"
+  },
+  {
+   "id": "s15.act",
+   "role": "assistant",
+   "body": "[step 15] advance\nthought: "
+  },
+  {
+   "id": "s15.obs",
+   "role": "observation",
+   "body": "Stage 6 of 11 released.\nRound 6 of 11 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (5 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/auth-svc.log (72 lines)\n  round-06/logs/checkout-api.log (76 lines)\n  round-06/logs/inventory-svc.log (79 lines)\n  round-06/logs/search-api.log (71 lines)\n  round-06/logs/shipping-svc.log (55 lines)"
+  },
+  {
+   "id": "s16.act",
+   "role": "assistant",
+   "body": "[step 16] execute\nthought: Scan round 6.\ncode:\nimport re\nb='/task/fixtures/round-06/'\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\nimport os\nfor f in sorted(os.listdir(b+'logs')):\n  L=[(i+1,l.strip()) for i,l in enumerate(open(b+'logs/'+f)) if re.search('ERROR|WARN|FATAL|fail|429|SERVFAIL',l,re.I) and 'slow' not in l.lower()]\n  print(f,len(L),L[0][0] if L else '',L[-1][0] if L else '');[print(' ',x) for x in L[:2]]"
+  },
+  {
+   "id": "s16.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 06\n\n- Thread A status: mitigated (errors reduced after the applied change; monitoring).\n- Thread B root cause revised: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT); this supersedes the earlier suspicion of DB_POOL_EXHAUSTED.\n- Follow-up OPEN ALERT_TUNING: tuning of noisy or late alerts.\n\n# Change log: round 06\n\n- CHG-150 APPLIED: mitigation for thread A deployed to auth-svc\n\nauth-svc.log 0  \ncheckout-api.log 0  \ninventory-svc.log 13 3 69\n  (3, '{\"ts\":\"2026-09-14T13:05:12Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":24}')\n  (4, '{\"ts\":\"2026-09-14T13:05:13Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":39}')\nsearch-api.log 13 6 69\n  (6, '{\"ts\":\"2026-09-14T13:04:34Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":42}')\n  (9, '{\"ts\":\"2026-09-14T13:05:22Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":33}')\nshipping-svc.log 0  \n"
+  }
+ ]
+}

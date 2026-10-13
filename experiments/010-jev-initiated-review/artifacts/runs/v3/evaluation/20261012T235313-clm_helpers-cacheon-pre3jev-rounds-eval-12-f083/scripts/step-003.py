@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Round1 notes: board empty. All 5 services (checkout-api,pricing-svc,ledger-svc,inventory-svc,search-api) only WARN slow query ms 200-450 (noise, no ERRORs). changes.md round-01: line3 CHG-110 APPLIED retry budget GET=1; line4 CHG-113 APPLIED build 3.22.4 pricing-svc sets cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT); line5 CHG-114 APPLIED 3.22.4 ledger-svc no config. Next: advance to round 2. Grep logs for ERROR/non slow-query lines.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

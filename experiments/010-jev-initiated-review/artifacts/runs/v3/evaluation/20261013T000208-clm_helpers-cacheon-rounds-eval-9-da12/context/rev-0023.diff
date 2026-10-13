@@ -1,0 +1,19 @@
+--- rev-22
++++ rev-23
+@@ -30,6 +30,16 @@
+    "id": "s16.obs",
+    "role": "observation",
+    "body": "Stage 6 of 10 released.\nRound 6 of 10 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (4 lines)\n  round-06/changes.md (4 lines)\n  round-06/logs/inventory-svc.log (72 lines)\n  round-06/logs/ledger-svc.log (68 lines)\n  round-06/logs/notify-worker.log (80 lines)\n  round-06/logs/search-api.log (68 lines)\n  round-06/logs/shipping-svc.log (88 lines)"
++  },
++  {
++   "id": "s17.act",
++   "role": "assistant",
++   "body": "[step 17] execute\nthought: Inspect round 6 board, changes, and non-noise log lines.\ncode:\nimport re,glob\nb='/task/fixtures/round-06/'\nfor f in ['board.md','changes.md']:\n print('==',f);print(open(b+f).read())\nfor f in sorted(glob.glob(b+'logs/*.log')):\n L=[(i+1,l.strip()) for i,l in enumerate(open(f)) if not re.search('slow.query|INFO',l)]\n print('==',f.split('/')[-1],len(L))\n kinds={}\n for i,l in L:\n  k=re.sub(r'[0-9]+','N',l)[-70:]\n  kinds.setdefault(k,[]).append(i)\n for k,v in kinds.items(): print(v[0],v[-1],len(v),k)"
++  },
++  {
++   "id": "s17.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n== board.md\n# Incident board: updates in round 06\n\n- Thread A status: mitigated (errors reduced after the applied change; monitoring).\n- Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\n\n== changes.md\n# Change log: round 06\n\n- CHG-142 APPLIED: retry budget for idempotent GETs set to 1\n- CHG-150 APPLIED: mitigation for thread A deployed to ledger-svc\n\n== inventory-svc.log 0\n== ledger-svc.log 0\n== notify-worker.log 6\n12 78 6 NTN:N:NZ WARN  notify-worker disk usage high path=/var/data used_pct=N\n== search-api.log 0\n== shipping-svc.log 16\n1 86 9 ping-svc tls handshake failed peer=bank-api reason=certificate_expired\n13 70 7 -NTN:N:NZ WARN  shipping-svc disk usage high path=/var/data used_pct=N\n"
+   }
+  ]
+ }

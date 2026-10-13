@@ -1,0 +1,59 @@
+{
+ "number": 27,
+ "parent": 26,
+ "source": "runtime",
+ "step": 21,
+ "sha256": "58ad684da6fa50a1306acfc4fb00e698ec093db25d6b4c5c868b93ced00a9c4e",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Round1 summary: files board.md (empty), changes.md: CHG-108 APPLIED TLS session ticket rotation hourly (round-01/changes.md:3). Logs: notify-worker, shipping-svc, ledger-svc, inventory-svc, search-api. Only background WARN slow query ms~200-440 across all services; no incident yet. Log format: \"<ts> LEVEL  <svc> msg k=v\"."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "Round2: board empty. changes: CHG-117 APPLIED health log sampling 1% (r02/changes.md:3); CHG-120 APPLIED build 8.48.0 search-api sets http.max_inflight=-1 (round-02/changes.md:4) -> suspect BAD_CONFIG_ROLLOUT search-api (no errors yet); CHG-121 APPLIED shipping-svc no config (changes.md:5). ledger-svc DNS SERVFAIL host=geo.internal ERRORs throughout hour: round-02/logs/ledger-svc.log:3,22,27,34,35,41,48,52,59,71,77,81 -> DNS_RESOLUTION ledger-svc ongoing. Filter used: skip lines with INFO or slow query."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "Round3: board: Thread A opened DNS_RESOLUTION ledger-svc, impact also inventory-svc, ongoing (round-03/board.md:3). Follow-up OPEN POSTMORTEM_DRAFT (round-03/board.md:4). Logs: inventory-svc DNS SERVFAIL geo.internal round-03/logs/inventory-svc.log:1,10,11,16,19,26,28,34,41,54; ledger-svc round-03/logs/ledger-svc.log:14,17,25,31,64,67. No search-api errors yet."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "Round4: board: Thread B opened DB_POOL_EXHAUSTED shipping-svc ongoing (round-04/board.md:3); Follow-up OPEN DATA_BACKFILL (round-04/board.md:4). changes: CHG-131 APPLIED TLS ticket rotation (round-04/changes.md:3). Logs: DNS SERVFAIL geo.internal continues inventory-svc (round-04/logs/inventory-svc.log:11,17,19,28,31,40,43,54,59,62,63,67,72) and ledger-svc (round-04/logs/ledger-svc.log:5,7,16,21,23,27,52). notify-worker disk usage /var/data 91-98% WARN (round-04/logs/notify-worker.log:2,6,17,20,26,38,55,61,69); shipping-svc disk 92-98% WARN (round-04/logs/shipping-svc.log:9,11,24,30,32,42,47) - NO db pool errors in shipping logs; suspect DISK_PRESSURE rather than DB pool. search-api still no errors."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "Round5: released; raw filtered output in /task/workspace/spill/s18.obs.txt (not yet analysed). Next: read round-05/board.md and summarize spill."
+  },
+  {
+   "id": "s20.act",
+   "role": "assistant",
+   "body": "[step 20] execute\nthought: Compact context: drop step entries, keep notes; read round5 spill summary briefly.\ncode:\nimport json\ne=json.load(open('/task/workspace/context.json'))['entries']\nkeep=[x for x in e if x['id'] in('n1','n2','n3','n4')]\nkeep.append({'id':'n5','role':'note','body':'Round5: released; raw filtered output in /task/workspace/spill/s18.obs.txt (not yet analysed). Next: read round-05/board.md and summarize spill.'})\njson.dump({'format':'clm-context/v1','entries':keep},open('/task/workspace/context.json','w'))\nprint(open('/task/fixtures/round-05/board.md').read())\nimport collections\nc=collections.Counter()\nfor l in open('/task/workspace/spill/s18.obs.txt'):\n  p=l.split()\n  if len(p)>4: c[(p[0],' '.join(p[4:7]))]+=1\nfor k,v in c.most_common(15): print(k,v)"
+  },
+  {
+   "id": "s20.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 05\n\n- Thread B update: affected services now also include notify-worker; cause and status unchanged.\n- Thread D opened: an expired TLS certificate on a dependency alerts (CERT_EXPIRED) on shipping-svc. Status: ongoing.\n- Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\n\n('shipping-svc.log', 'shipping-svc tls handshake') 12\n('inventory-svc.log', 'inventory-svc dns lookup') 11\n('notify-worker.log', 'notify-worker disk usage') 11\n('shipping-svc.log', 'shipping-svc disk usage') 10\n('ledger-svc.log', 'ledger-svc dns lookup') 7\n('#', 'in round 05') 1\n('-', 'affected services now') 1\n('-', 'an expired TLS') 1\n('-', 'a ticket open') 1\n"
+  },
+  {
+   "id": "s20.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 20: revision 24 -> 25; entries 13 -> 5; body chars 4693 -> 2046; removed [s16.act, s16.obs, s16.rcpt, s17.act, s17.obs, s18.act, s18.obs, s19.act, s19.obs]; added [n5]; rewritten []"
+  },
+  {
+   "id": "s21.act",
+   "role": "assistant",
+   "body": "[step 21] execute\nthought: Get line numbers for round5 tls handshake errors in shipping-svc and check changes.md.\ncode:\nimport os\nr='/task/fixtures/round-05/'\nprint(os.listdir(r))\nif os.path.exists(r+'changes.md'):print(open(r+'changes.md').read())\nfor f in ['shipping-svc','notify-worker']:\n  L=[i for i,l in enumerate(open(r+'logs/'+f+'.log'),1) if ('tls' in l or 'disk' in l or 'pool' in l)]\n  print(f,L[:20])\n  ls=open(r+'logs/'+f+'.log').read().splitlines()\n  print(ls[L[0]-1] if L else '')"
+  },
+  {
+   "id": "s21.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.5s\n--- stdout ---\n['board.md', 'logs']\nshipping-svc [1, 4, 5, 7, 9, 11, 17, 18, 36, 37, 39, 42, 44, 50, 53, 55, 56, 60, 65, 68]\n2026-09-14T12:00:06Z ERROR shipping-svc tls handshake failed peer=bank-api reason=certificate_expired\nnotify-worker [2, 5, 6, 7, 10, 17, 19, 21, 45, 53, 57]\n2026-09-14T12:02:30Z WARN  notify-worker disk usage high path=/var/data used_pct=96\n"
+  }
+ ]
+}

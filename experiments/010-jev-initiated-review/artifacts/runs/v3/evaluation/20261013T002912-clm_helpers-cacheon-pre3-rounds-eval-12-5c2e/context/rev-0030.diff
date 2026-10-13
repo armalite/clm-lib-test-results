@@ -1,0 +1,19 @@
+--- rev-29
++++ rev-30
+@@ -50,6 +50,16 @@
+    "id": "s22.obs",
+    "role": "observation",
+    "body": "Stage 6 of 10 released.\nRound 6 of 10 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (4 lines)\n  round-06/changes.md (3 lines)\n  round-06/logs/checkout-api.log (77 lines)\n  round-06/logs/inventory-svc.log (63 lines)\n  round-06/logs/ledger-svc.log (76 lines)\n  round-06/logs/pricing-svc.log (57 lines)\n  round-06/logs/search-api.log (73 lines)"
++  },
++  {
++   "id": "s23.act",
++   "role": "assistant",
++   "body": "[step 23] execute\nthought: Inspect R6 board, changes and error lines.\ncode:\nimport re,glob\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-06/'+f),1):print(f,i,l.rstrip())\nfor p in sorted(glob.glob('/task/fixtures/round-06/logs/*')):\n  n=p.split('/')[-1];c={}\n  for i,l in enumerate(open(p),1):\n    if re.search(r'ERROR|WARN|error|429|expired|fail',l):\n      k=re.sub(r'\\d+','#',l[20:90]);c.setdefault(k,[]).append(i)\n  for k,v in c.items():print(n,len(v),v[:4],k)"
++  },
++  {
++   "id": "s23.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 2 \nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nboard.md 4 - Follow-up OPEN ALERT_TUNING: tuning of noisy or late alerts.\nchanges.md 1 # Change log: round 06\nchanges.md 2 \nchanges.md 3 - CHG-150 APPLIED: mitigation for thread A deployed to search-api\ncheckout-api.log 6 [4, 6, 10, 26]  WARN  checkout-api slow query ms=# table=items\n\ncheckout-api.log 6 [5, 15, 46, 56]  WARN  checkout-api slow query ms=# table=events\n\ncheckout-api.log 6 [21, 30, 49, 50]  ERROR checkout-api upstream returned # upstream=tax-provider retry_\ncheckout-api.log 4 [25, 31, 38, 76]  WARN  checkout-api slow query ms=# table=orders\n\ninventory-svc.log 3 [7, 33, 62]  WARN  inventory-svc slow query ms=# table=items\n\ninventory-svc.log 3 [10, 27, 48]  WARN  inventory-svc slow query ms=# table=orders\n\ninventory-svc.log 4 [47, 50, 60, 63]  WARN  inventory-svc slow query ms=# table=events\n\nledger-svc.log 7 [14, 22, 37, 41]  WARN  ledger-svc slow query ms=# table=events\n\nledger-svc.log 3 [15, 42, 54]  WARN  ledger-svc slow query ms=# table=orders\n\nledger-svc.log 8 [17, 24, 28, 34]  ERROR ledger-svc upstream returned # upstream=tax-provider retry_af\nledger-svc.log 1 [49]  WARN  ledger-svc slow query ms=# table=items\n\npricing-svc.log 2 [2, 17]  WARN  pricing-svc slow query ms=# table=events\n\npricing-svc.log 6 [8, 15, 26, 29]  WARN  pricing-svc slow query ms=# table=orders\n\npricing-svc.log 7 [24, 28, 40, 47]  WARN  pricing-svc slow query ms=# table=items\n\nsearch-api.log 6 [1, 6, 19, 27]  WARN  search-api slow query ms=# table=items\n\nsearch-api.log 8 [5, 10, 25, 36]  WARN  search-api slow query ms=# table=orders\n\nsearch-api.log 8 [9, 15, 18, 30]  WARN  search-api slow query ms=# table=events\n\n"
+   }
+  ]
+ }

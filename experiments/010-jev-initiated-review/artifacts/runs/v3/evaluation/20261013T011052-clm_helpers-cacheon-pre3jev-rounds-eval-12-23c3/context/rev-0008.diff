@@ -1,0 +1,59 @@
+--- rev-7
++++ rev-8
+@@ -4,52 +4,12 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Round1 summary: board.md empty. changes.md: line3 CHG-110 APPLIED retry budget GETs=1; line4 CHG-113 APPLIED build 3.22.4 to pricing-svc sets cache.ttl_s=-1 (suspicious BAD_CONFIG_ROLLOUT candidate); line5 CHG-114 APPLIED 3.22.4 to ledger-svc no config. Logs (checkout-api, pricing-svc, ledger-svc, inventory-svc, search-api): only background WARN slow query ms 200-450, no errors. Next: advance to round 2."
++   "body": "R1: board empty. changes.md:3 CHG-110 APPLIED retry budget GETs=1; :4 CHG-113 APPLIED build 3.22.4 pricing-svc sets cache.ttl_s=-1 (BAD_CONFIG_ROLLOUT candidate, no errors yet); :5 CHG-114 APPLIED 3.22.4 ledger-svc no config. Logs only background slow query WARNs."
+   },
+   {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] execute\nthought: Compact context: replace s1 entries with a summary note.\ncode:\nimport json\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Round1 summary: board.md empty. changes.md: line3 CHG-110 APPLIED retry budget GETs=1; line4 CHG-113 APPLIED build 3.22.4 to pricing-svc sets cache.ttl_s=-1 (suspicious BAD_CONFIG_ROLLOUT candidate); line5 CHG-114 APPLIED 3.22.4 to ledger-svc no config. Logs (checkout-api, pricing-svc, ledger-svc, inventory-svc, search-api): only background WARN slow query ms 200-450, no errors. Next: advance to round 2.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s"
+-  },
+-  {
+-   "id": "s3.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 3: revision 2 -> 3; entries 4 -> 1; body chars 6544 -> 407; removed [s1.act, s1.obs, s2.act, s2.obs]; added [n1]; rewritten []"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] advance\nthought: "
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 10 released.\nRound 2 of 10 released. New files are under /task/fixtures/round-02/.\n\nNew files:\n  round-02/board.md (3 lines)\n  round-02/changes.md (3 lines)\n  round-02/logs/checkout-api.log (65 lines)\n  round-02/logs/inventory-svc.log (74 lines)\n  round-02/logs/ledger-svc.log (61 lines)\n  round-02/logs/pricing-svc.log (68 lines)\n  round-02/logs/search-api.log (78 lines)"
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Inspect round 2 board, changes, and error lines.\ncode:\nimport glob,re\nb='/task/fixtures/round-02/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1): print(f,i,l.rstrip())\nfor f in sorted(glob.glob(b+'logs/*.log')):\n  for i,l in enumerate(open(f),1):\n    if not re.search(r'slow query',l) and re.search(r'ERROR|WARN|error|fail|429|timeout',l,re.I): print(f.split('/')[-1],i,l.rstrip()[:160])"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 02\nboard.md 2 \nboard.md 3 - Follow-up OPEN CAPACITY_REVIEW: capacity review of the affected tier.\nchanges.md 1 # Change log: round 02\nchanges.md 2 \nchanges.md 3 - CHG-115 APPLIED: retry budget for idempotent GETs set to 1\nsearch-api.log 11 2026-09-14T09:04:58Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 15 2026-09-14T09:07:31Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 19 2026-09-14T09:10:06Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 24 2026-09-14T09:16:59Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 27 2026-09-14T09:18:49Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 33 2026-09-14T09:23:22Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 57 2026-09-14T09:41:54Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\n"
+-  },
+-  {
+-   "id": "s6.act",
+-   "role": "assistant",
+-   "body": "[step 6] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s6.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 6; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 2 (2 lines; files round-02/board.md, round-02/changes.md; sha256 65fd60f85fd2)\nEntries to review (4): n1, s3.obs, s4.obs, s5.obs (4 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 6; update: round 2 board and change-log lines). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.62\n  s3.obs: 0.14\n  s4.obs: 0.18\n  s5.obs: 0.28\nCoverage: 4 of 4 entries answered."
++   "id": "n2",
++   "role": "note",
++   "body": "R2: board.md:3 Follow-up OPEN CAPACITY_REVIEW. changes.md:3 CHG-115 APPLIED retry budget GETs=1. search-api.log lines 11,15,19,24,27,33,57: ERROR tls handshake failed peer=sso.example.net reason=certificate_expired (CERT_EXPIRED candidate on search-api, not yet on board). Other logs clean. Next: advance to round 3."
+   }
+  ]
+ }

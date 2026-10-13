@@ -1,0 +1,19 @@
+--- rev-24
++++ rev-25
+@@ -55,6 +55,16 @@
+    "id": "s18.obs",
+    "role": "observation",
+    "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (3 lines)\n  round-07/logs/auth-svc.log (72 lines)\n  round-07/logs/checkout-api.log (77 lines)\n  round-07/logs/inventory-svc.log (66 lines)\n  round-07/logs/search-api.log (72 lines)\n  round-07/logs/shipping-svc.log (72 lines)"
++  },
++  {
++   "id": "s19.act",
++   "role": "assistant",
++   "body": "[step 19] execute\nthought: Scan round 7 board and errors.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-07/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n    ls=[i for i,l in enumerate(open(f),1) if re.search(r'ERROR|WARN|FATAL|fail|429',l) and 'slow' not in l]\n    print(f.split('/')[-1],len(ls),ls[:3],ls[-1:] if ls else '')\n    if ls: print(open(f).readlines()[ls[0]-1][:200])"
++  },
++  {
++   "id": "s19.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 07\n\n- Thread B update: affected services now also include inventory-svc; cause and status unchanged.\n\nauth-svc.log 0 [] \ncheckout-api.log 0 [] \ninventory-svc.log 7 [5, 11, 31] [66]\n{\"ts\":\"2026-09-14T14:03:49Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":7}\n\nsearch-api.log 9 [14, 24, 27] [70]\n{\"ts\":\"2026-09-14T14:09:05Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":25}\n\nshipping-svc.log 0 [] \n"
+   }
+  ]
+ }

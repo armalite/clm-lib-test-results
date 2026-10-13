@@ -1,0 +1,54 @@
+{
+ "number": 30,
+ "parent": 29,
+ "source": "runtime",
+ "step": 20,
+ "sha256": "370366b3c0a8bac4e3c7a6b4a3328a92935a8779bdd1e923a12c6160e1ac3777",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty; logs mostly INFO + benign slow query WARNs (230-440ms) in all 5 services (notify-worker,checkout-api,auth-svc,payments-svc,search-api)."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board follow-ups OPEN ALERT_TUNING(board.md:3),RUNBOOK_UPDATE(:4),VENDOR_TICKET(:5). changes: CHG-120 APPLIED notify-worker http.max_inflight=0 (round-02/changes.md:4) - possible BAD_CONFIG_ROLLOUT, no notify errors yet; CHG-121 payments no config. auth-svc db pool exhausted WARNs round-02/logs/auth-svc.log:1-69 (lines 1,3,15,22,23,25,44,65,69) -> DB_POOL_EXHAUSTED candidate, no board thread yet."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board Thread A opened DB_POOL_EXHAUSTED auth-svc + search-api, ongoing (round-03/board.md:3). changes: CHG-125 dashboards only. pool WARNs round-03/logs/auth-svc.log:7-63, round-03/logs/search-api.log:1-77. notify-worker still no errors (CHG-120 watch)."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board Thread B opened payments-svc CACHE_STAMPEDE ongoing (round-04/board.md:3) BUT logs show 429 upstream=fx-rates in payments-svc (round-04/logs/payments-svc.log:1-25, lines 1,3,7,25,31,45..79) and checkout-api (round-04/logs/checkout-api.log:9-62) -> likely UPSTREAM_RATE_LIMIT. changes CHG-133 APPLIED TLS ticket rotation hourly (round-04/changes.md:3, watch CERT). Pool WARNs continue auth-svc.log:7-81, search-api.log:4-83. notify-worker clean."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board Thread A mitigated (round-05/board.md:3) after CHG-143 APPLIED auth-svc mitigation (round-05/changes.md:4); no pool WARNs in auth/search R5 (filtered non-INFO=0). Thread B adds checkout-api, cause still CACHE_STAMPEDE on board (round-05/board.md:4) but logs 429 fx-rates: round-05/logs/checkout-api.log:21-65, round-05/logs/payments-svc.log:13-73. Follow-up OPEN CAPACITY_REVIEW (round-05/board.md:5). CHG-138 APPLIED TLS rotation hourly (round-05/changes.md:3). notify-worker clean."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board CLOSED ALERT_TUNING (round-06/board.md:3), OPEN CUSTOMER_COMMS (:4). CHG-147 APPLIED retry budget GET=1 (round-06/changes.md:3). 429s continue in checkout-api(6) & payments-svc(5); no pool WARNs; notify clean."
+  },
+  {
+   "id": "s20.act",
+   "role": "assistant",
+   "body": "[step 20] execute\nthought: Inspect R7 board and non-INFO logs; compact context.\ncode:\nimport json,glob\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))\nprint(open('/task/fixtures/round-07/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n  L=[(i+1,l.strip()[:110]) for i,l in enumerate(open(f)) if 'INFO' not in l]\n  print(f.split('/')[-1],len(L))\n  for x in L[:4]:print(x)"
+  },
+  {
+   "id": "s20.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 07\n\n\nauth-svc.log 21\n(4, '2026-09-14T14:03:25Z WARN  auth-svc slow query ms=245 table=items')\n(5, '2026-09-14T14:04:08Z WARN  auth-svc slow query ms=438 table=events')\n(7, '2026-09-14T14:05:22Z WARN  auth-svc slow query ms=331 table=events')\n(9, '2026-09-14T14:06:22Z WARN  auth-svc slow query ms=384 table=orders')\ncheckout-api.log 16\n(9, '2026-09-14T14:13:34Z WARN  checkout-api slow query ms=317 table=events')\n(11, '2026-09-14T14:16:04Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=46')\n(19, '2026-09-14T14:20:41Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=20')\n(25, '2026-09-14T14:28:53Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=24')\nnotify-worker.log 15\n(2, '2026-09-14T14:02:59Z WARN  notify-worker slow query ms=268 table=items')\n(7, '2026-09-14T14:06:11Z WARN  notify-worker slow query ms=200 table=orders')\n(9, '2026-09-14T14:07:31Z WARN  notify-worker slow query ms=414 table=events')\n(11, '2026-09-14T14:10:39Z WARN  notify-worker slow query ms=294 table=items')\npayments-svc.log 23\n(1, '2026-09-14T14:00:27Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=21')\n(3, '2026-09-14T14:00:51Z WARN  payments-svc slow query ms=226 table=items')\n(4, '2026-09-14T14:01:21Z WARN  payments-svc slow query ms=392 table=items')\n(6, '2026-09-14T14:02:54Z WARN  payments-svc slow query ms=283 table=orders')\nsearch-api.log 11\n(1, '2026-09-14T14:02:05Z WARN  search-api slow query ms=399 table=events')\n(3, '2026-09-14T14:04:55Z WARN  search-api slow query ms=394 table=items')\n(4, '2026-09-14T14:05:14Z WARN  search-api slow query ms=370 table=events')\n(5, '2026-09-14T14:08:55Z WARN  search-api slow query ms=344 table=orders')\n"
+  },
+  {
+   "id": "s20.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 20: revision 28 -> 29; entries 11 -> 6; body chars 3390 -> 1978; removed [s18.act, s18.obs, s18.rcpt, s19.act, s19.obs]; added []; rewritten []"
+  }
+ ]
+}

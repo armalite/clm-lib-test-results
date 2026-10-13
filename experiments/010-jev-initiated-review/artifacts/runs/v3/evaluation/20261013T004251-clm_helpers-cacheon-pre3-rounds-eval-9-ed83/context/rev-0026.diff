@@ -1,0 +1,19 @@
+--- rev-25
++++ rev-26
+@@ -30,6 +30,16 @@
+    "id": "s20.obs",
+    "role": "observation",
+    "body": "Stage 6 of 10 released.\nRound 6 of 10 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (4 lines)\n  round-06/changes.md (4 lines)\n  round-06/logs/inventory-svc.log (72 lines)\n  round-06/logs/ledger-svc.log (68 lines)\n  round-06/logs/notify-worker.log (80 lines)\n  round-06/logs/search-api.log (68 lines)\n  round-06/logs/shipping-svc.log (88 lines)"
++  },
++  {
++   "id": "s21.act",
++   "role": "assistant",
++   "body": "[step 21] execute\nthought: \ncode:\nimport re,glob\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-06/'+f),1):print(f,i,l.rstrip()[:200])\nfor f in sorted(glob.glob('/task/fixtures/round-06/logs/*')):\n  hits=[(i,l.rstrip()) for i,l in enumerate(open(f),1) if re.search('ERROR|WARN|429|fail|expired|OOM|lag|disk|pool|inflight',l,re.I) and 'slow query' not in l]\n  print(f.split('/')[-1],len(hits),[h[0] for h in hits][:40])\n  for h in hits[:2]:print('  ',h[0],h[1][:160])"
++  },
++  {
++   "id": "s21.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.1s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 2 \nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nboard.md 4 - Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\nchanges.md 1 # Change log: round 06\nchanges.md 2 \nchanges.md 3 - CHG-142 APPLIED: retry budget for idempotent GETs set to 1\nchanges.md 4 - CHG-150 APPLIED: mitigation for thread A deployed to ledger-svc\ninventory-svc.log 0 []\nledger-svc.log 0 []\nnotify-worker.log 6 [12, 14, 48, 52, 72, 78]\n   12 2026-09-14T13:07:07Z WARN  notify-worker disk usage high path=/var/data used_pct=95\n   14 2026-09-14T13:08:07Z WARN  notify-worker disk usage high path=/var/data used_pct=93\nsearch-api.log 0 []\nshipping-svc.log 16 [1, 13, 17, 22, 23, 26, 30, 40, 42, 48, 58, 65, 69, 70, 77, 86]\n   1 2026-09-14T13:00:09Z ERROR shipping-svc tls handshake failed peer=bank-api reason=certificate_expired\n   13 2026-09-14T13:04:49Z WARN  shipping-svc disk usage high path=/var/data used_pct=95\n"
+   }
+  ]
+ }

@@ -1,0 +1,3 @@
+import json
+n={'id':'n1','role':'note','body':'R1 notes: changes.md: CHG-110 APPLIED retry budget GETs=1 (line3); CHG-113 APPLIED build 3.22.4 pricing-svc sets cache.ttl_s=-1 (round-01/changes.md:4, suspicious BAD_CONFIG/CACHE); CHG-114 APPLIED 3.22.4 ledger-svc no config (line5). board empty. Logs r1 (checkout-api,pricing-svc,ledger-svc,inventory-svc,search-api): only baseline WARN slow query ms 200-450 noise, no errors. Next: advance.'}
+json.dump({'format':'clm-context/v1','entries':[n]},open('/task/workspace/context.json','w'))

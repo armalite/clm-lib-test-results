@@ -1,0 +1,4 @@
+import json
+n='Round1: services shipping-svc, checkout-api, auth-svc, inventory-svc, search-api. Noise: WARN slow query ms=200-450. round-01/changes.md: CHG-113 APPLIED build 6.58.8 shipping-svc sets retry.backoff_ms=0 (line ~3); CHG-114 APPLIED search-api no config changes. Round2: board.md follow-ups OPEN DATA_BACKFILL, POSTMORTEM_DRAFT (no incident threads yet). auth-svc.log lines 4-72: ERROR dns lookup failed host=geo.internal SERVFAIL (DNS_RESOLUTION candidate, auth-svc). Other round2 logs no errors. Next: advance to round 3.'
+json.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))
+for i,l in enumerate(open('/task/fixtures/round-01/changes.md'),1):print(i,l.strip())

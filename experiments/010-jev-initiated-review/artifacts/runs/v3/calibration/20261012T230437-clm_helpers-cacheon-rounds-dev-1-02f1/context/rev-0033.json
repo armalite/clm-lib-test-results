@@ -1,0 +1,69 @@
+{
+ "number": 33,
+ "parent": 32,
+ "source": "runtime",
+ "step": 22,
+ "sha256": "9464264fb3164a1ec77716df173a8bda116df59bf6187349db5686ddfa7e8da6",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty; logs mostly INFO + benign slow query WARNs (230-440ms) in all 5 services (notify-worker,checkout-api,auth-svc,payments-svc,search-api)."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board follow-ups OPEN ALERT_TUNING(board.md:3),RUNBOOK_UPDATE(:4),VENDOR_TICKET(:5). changes: CHG-120 APPLIED notify-worker http.max_inflight=0 (round-02/changes.md:4) - possible BAD_CONFIG_ROLLOUT, no notify errors yet; CHG-121 payments no config. auth-svc db pool exhausted WARNs round-02/logs/auth-svc.log:1-69 (lines 1,3,15,22,23,25,44,65,69) -> DB_POOL_EXHAUSTED candidate, no board thread yet."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board Thread A opened DB_POOL_EXHAUSTED auth-svc + search-api, ongoing (round-03/board.md:3). changes: CHG-125 dashboards only. pool WARNs round-03/logs/auth-svc.log:7-63, round-03/logs/search-api.log:1-77. notify-worker still no errors (CHG-120 watch)."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board Thread B opened payments-svc CACHE_STAMPEDE ongoing (round-04/board.md:3) BUT logs show 429 upstream=fx-rates in payments-svc (round-04/logs/payments-svc.log:1-25, lines 1,3,7,25,31,45..79) and checkout-api (round-04/logs/checkout-api.log:9-62) -> likely UPSTREAM_RATE_LIMIT. changes CHG-133 APPLIED TLS ticket rotation hourly (round-04/changes.md:3, watch CERT). Pool WARNs continue auth-svc.log:7-81, search-api.log:4-83. notify-worker clean."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board Thread A mitigated (round-05/board.md:3) after CHG-143 APPLIED auth-svc mitigation (round-05/changes.md:4); no pool WARNs in auth/search R5 (filtered non-INFO=0). Thread B adds checkout-api, cause still CACHE_STAMPEDE on board (round-05/board.md:4) but logs 429 fx-rates: round-05/logs/checkout-api.log:21-65, round-05/logs/payments-svc.log:13-73. Follow-up OPEN CAPACITY_REVIEW (round-05/board.md:5). CHG-138 APPLIED TLS rotation hourly (round-05/changes.md:3). notify-worker clean."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board CLOSED ALERT_TUNING (round-06/board.md:3), OPEN CUSTOMER_COMMS (:4). CHG-147 APPLIED retry budget GET=1 (round-06/changes.md:3). 429s continue in checkout-api(6) & payments-svc(5); no pool WARNs; notify clean."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board empty. 429 fx-rates continue checkout-api (round-07/logs/checkout-api.log:11-25) & payments-svc (round-07/logs/payments-svc.log:1); no pool WARNs; notify clean."
+  },
+  {
+   "id": "s21.act",
+   "role": "assistant",
+   "body": "[step 21] execute\nthought: Record R7 note, compact, check if R7 has changes.md and 429 line refs.\ncode:\nimport json,os,re\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\nc['entries'].append({'id':'n7','role':'note','body':'R7: board empty. 429 fx-rates continue checkout-api (round-07/logs/checkout-api.log:11-25) & payments-svc (round-07/logs/payments-svc.log:1); no pool WARNs; notify clean.'})\njson.dump(c,open('/task/workspace/context.json','w'))\nprint(os.path.exists('/task/fixtures/round-07/changes.md'))\nif os.path.exists('/task/fixtures/round-07/changes.md'):print(open('/task/fixtures/round-07/changes.md').read())"
+  },
+  {
+   "id": "s21.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nFalse\n"
+  },
+  {
+   "id": "s21.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 21: revision 30 -> 31; entries 9 -> 7; body chars 4503 -> 2148; removed [s20.act, s20.obs, s20.rcpt]; added [n7]; rewritten []"
+  },
+  {
+   "id": "s22.act",
+   "role": "assistant",
+   "body": "[step 22] advance\nthought: "
+  },
+  {
+   "id": "s22.obs",
+   "role": "observation",
+   "body": "Stage 8 of 10 released.\nRound 8 of 10 released. New files are under /task/fixtures/round-08/.\n\nNew files:\n  round-08/board.md (5 lines)\n  round-08/changes.md (3 lines)\n  round-08/logs/auth-svc.log (71 lines)\n  round-08/logs/checkout-api.log (65 lines)\n  round-08/logs/notify-worker.log (79 lines)\n  round-08/logs/payments-svc.log (87 lines)\n  round-08/logs/search-api.log (62 lines)"
+  }
+ ]
+}

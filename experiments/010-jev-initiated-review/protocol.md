@@ -469,3 +469,276 @@ CONTEXT EDITS NEED A REVIEW FIRST (this run):
 - **Projected evaluation cost:** about USD 18.9, which would have fitted.
 - **Spend:** USD 2.515987 (Anthropic only, 253 calls). The ledger is at USD 63.725281 of USD 91.209294.
 - **Analysis and v3 options:** in the README. Any v3 needs its own protocol revision and authorisation.
+
+---
+
+# Protocol v3: required pre-edit review with a runtime-supplied update (2026-10-13, session 7, written before any v3 code or paid call)
+
+_v1 and v2 (protocols, records and evidence above) are preserved unchanged. v3 runs carry phases `v3-smoke`, `v3-calibration` and `v3-evaluation`, are exported under `artifacts/runs/v3/…`, and are never pooled with v1 or v2._
+
+## Why v3: the v2 diagnosis
+
+The offline audit is in [`analysis/v2-review-audit.md`](analysis/v2-review-audit.md).
+
+- **Every review was labelled compaction:** in v2, all 48 started reviews were labelled `compaction`, so C skipped Jev at all 25 of its reviews.
+- **Most edits were not compaction:** exploratory classification puts 36 of the 48 authorised edits as incorporating newly released findings.
+- **Inputs were available:** the latest released round had board or change-log lines at 42 of 48 reviews, and candidate entries existed at all 48.
+
+**The mismatch:** Claude's self-reported label decided whether Jev ran, and Claude's labels did not track the content of its edits.
+
+## Question and hypothesis
+
+**When Claude initiates a context edit, does a Jev review of the current entries against the latest released task update, given before the edit, improve the outcome enough to justify its overhead?**
+
+**The hypothesis:** the advice helps Claude reconsider superseded assertions or plans when it edits, which would improve correctness or reduce rework, at a cost that the outcome justifies.
+
+**This is deliberately configured assistance,** not a test of voluntary tool use or of Claude's labelling. How it relates to the neighbouring experiments:
+- **009:** review at every incoming update (evidence-triggered).
+- **v3:** review at Claude's edit decisions (edit-triggered), with a runtime-supplied update.
+- **011 (planned):** checks the proposed replacement's content.
+
+## Conditions and contrasts (as v2)
+
+**Conditions:**
+- **A:** ordinary CLM, `clm_helpers:on`, with direct editing.
+- **B:** required pre-edit review without Jev, `clm_helpers+pre3:on`.
+- **C:** the same review with Jev, `clm_helpers+pre3-jev:on`.
+
+**Contrasts:**
+- **C vs A:** total practical effect.
+- **C vs B:** Jev's increment within the workflow.
+- **B vs A:** the workflow's own effect and overhead.
+
+## What changes from v2 (and nothing else)
+
+**The review action (B, C):** `{"action": "begin_review"}`.
+- **Optional labels:** `"purpose": "update" | "compaction"` and a short `"new_information"` are allowed, but are **recorded only**. They never decide whether Jev runs or what it receives, and a missing note is not an error.
+- **What remains rejected:** the review limit, and `new_information` over 2,000 characters.
+
+**The update (runtime-supplied, deterministic; `round-files/1` from 009):**
+- **Content:** the board and change-log lines of the **latest released round**, the current stage at the moment of the review.
+- **Formatting:** `board.md` lines, then `changes.md` lines, in file order, verbatim, each prefixed `round-NN/<file>:<line>:`.
+- **Processing:** blank and `#` heading lines are dropped. A payload over 4,000 characters is cut at a line boundary with a marker, recorded as truncated.
+- **Not used:** no logs, no summary, no hidden data.
+- **Before the first release:** the first update is round 1's payload (round 1 is released at the start). It is often only change-log lines.
+- **Repeated reviews within one round** use the same payload. **Each one calls Jev again and is paid for:** there is no caching and no skip heuristic, and the current entries may differ between reviews. Repeats are recorded (`round_review_index`).
+
+**Visibility is identical in A, B and C:**
+- **The release text** is unchanged: the historical text, as in v1 and v2.
+- **The review material does not quote the payload.** It names it: the round, the files, the line count and the SHA-256 prefix.
+- **Effect:** B and C see no evidence that A cannot read from the same files.
+
+**Jev applicability (C):** Jev is called **whenever** the payload is non-empty **and** at least one candidate entry exists, **whatever Claude's label**.
+- **Otherwise the review is recorded `not_applicable`,** with a reason: `empty_update` (the latest round released no board or change-log lines) or `no_candidates`.
+- **A review that flags nothing** is a valid result.
+
+**Unchanged from v2:**
+- the candidates (roles `note`, `observation` and `summary`, of the current revision, at most 60);
+- the Jev question `jev-review/1` and model `jev-1.13.0`;
+- the advice format;
+- one-use, body-bound authorisation, including consumption, replacement, expiry at the next release and invalidation;
+- the rejection of bypass attempts;
+- the recovery exemption, no-op handling, and host-side calls only.
+
+**Jev's job stays narrow:** whether this update requires reconsidering a current assertion or planned action in each entry. It is not a deletion, retention or relevance score, and nothing is automatic.
+
+## Prompts (new version; earlier texts unchanged)
+
+B and C get `INITIATED_REVIEW_V3_CLAUSE`, and C also gets `INITIATED_REVIEW_V3_JEV_CLAUSE`. The texts are recorded in the v3 pre-run record below, and the code is checked against them before any paid call.
+
+## Settings
+
+- **Config:** `configs/exp010v3.toml`, which is `configs/exp010v2.toml` with the v3 ceiling.
+- **The same for A, B and C:**
+  - `claude-opus-5-5`, effort low;
+  - an 8,000-token request budget, 4,096 output tokens, **90 calls** and 40 reviews;
+  - mode `clm_helpers`, with the same tools and files;
+  - the `blocks/1` layout, 5-minute caching and `run-tag/1` cold isolation;
+  - the scorer `rounds-score/1`.
+
+## Sequence
+
+1. **Offline:**
+   - **Focused tests:**
+     - a "compaction" label still gets Jev;
+     - C calls Jev at the edit point;
+     - B gets equivalent material without Jev;
+     - A keeps direct editing;
+     - explicit empty-input cases;
+     - no deleted or future information reaches Jev;
+     - advice comes before the accepted edit;
+     - failures and every attempt are recorded;
+     - historical configs and prompts are unchanged;
+     - v1, v2 and v3 export separately.
+   - **The full suite.**
+   - **A scripted plumbing check** through the real sandbox.
+2. **Live smoke** (labelled `v3-smoke`, excluded from all comparisons): one C run on `rounds-diag-1`, reserved development material that is never used in comparisons. No extra instruction is needed, because v3 C reviews before every edit. **It verifies:**
+   - a real Jev request;
+   - that it holds the intended current entries and the payload;
+   - that advice is in the request before the authorised edit;
+   - that the accepted edit governs the next request;
+   - accounting and evidence.
+
+   **If it fails:** a mechanical defect is fixed and recorded, and a conceptual problem stops the work.
+3. **Calibration:** `rounds-dev-1` and `rounds-dev-2` (**reused** development instances, labelled as such) × A, B, C = 6 runs. The rotation is block 0: A, B, C; block 1: B, C, A.
+4. **Gate:**
+   1. B and C use the review-before-edit workflow while work remains: every accepted edit is authorised, and reviews come before the last round.
+   2. C calls Jev at **every** review where the declared inputs exist: an applicable review that is not advised counts only if a recorded service error caused it.
+   3. There is no bypass, revision, accounting or evidence defect.
+   4. The projected 36-run evaluation (calibration mean cost per condition × 12 × 1.25, summed) fits the remaining authorisation, with headroom.
+
+   **Not required:** better results with Jev, agreement with it, positive flags, or imperfect control accuracy.
+5. **Evaluation (if the gate passes):** `rounds-eval-9..12` (seeds 7209–7212), checked again for prior use before registration and validated mechanically only. That is 4 instances × 3 repetitions × 3 conditions = **36 runs**.
+   - **Schedule:** block b uses order b mod 6 of the six permutations, so each condition takes each position 4 times.
+   - **Freeze:** settings, the source patch and the schedule are frozen before the first evaluation call.
+
+## Failure, invalid-run and stopping rules (unchanged)
+
+- every run is kept, and none is replaced or repeated;
+- `compare` halt statuses halt the evaluation;
+- a material behavioural defect stops it, and results from before and after a fix are never pooled;
+- no tuning and no stopping on results;
+- if the evaluation does not fit the budget, stop and report, without shrinking it.
+
+**If Jev advises but does not improve outcomes,** that is a completed experiment, not a reason to redesign.
+
+## Metrics (as v2, plus)
+
+- **Reviews:**
+  - applicable vs not-applicable reviews, by reason;
+  - repeated reviews per round.
+- **Jev:**
+  - candidate coverage (answered / scored);
+  - flags at the 0.5 reporting threshold;
+  - advice characters and residence.
+- **Relation to edits:** temporal association only.
+- **Structure:** all three contrasts, matched blocks and per-instance results.
+
+## Budget
+
+- **Authorised:** up to **USD 30 of additional total spend** for v3 (both providers, smoke, calibration, retries and evaluation). It replaces earlier unused allowances.
+- **The ceiling** is set to the settled spend at the start + 30.
+- **Live commands:** sequential only.
+
+## v3 pre-run record (2026-10-13, session 7, before any paid v3 call)
+
+- **Implementation** (clm-lib, opt-in, reusing v2's gate and authorisation unchanged):
+  - **The setting:** `[initiated_review] update_source` (default `stated`) and the conditions `+pre3` and `+pre3-jev`, with run ids `-pre3` and `-pre3jev`.
+  - **The v3 branch:** in `_Run._begin_review_v2` (`v3 = update_source == "latest-round"`), the latest round's payload comes from `update_review.build_payload` with `V3_PAYLOAD_MAX_CHARS` = 4,000. Applicability depends **only** on a non-empty payload and at least one candidate.
+  - **Labels:** recorded only.
+  - **Per review:** the payload, its SHA-256 and `round_review_index` are recorded.
+  - **Summary fields:** `reviews_applicable`, `reviews_not_applicable_by_reason`, `reviews_repeat_round` and `reviews_by_label`.
+  - **Export columns:** `ir_update_source` and four more.
+  - **Unchanged:** v1 and v2 paths.
+- **Prompt version `2026-10-13.4`.**
+
+  **B and C** (`INITIATED_REVIEW_V3_CLAUSE`):
+
+  ```
+CONTEXT EDITS NEED A REVIEW FIRST (this run):
+- Before you edit context.json, start a context review: reply {"action": "begin_review"}. You may
+  add "purpose" ("update" or "compaction") and a short "new_information" note; both are recorded
+  only.
+- The runtime replies with the context revision, the entries to review (your notes and
+  observations) and the update this review uses: the incident-board and change-log lines of the
+  latest released round. The review authorises one context.json edit in a later step, until you
+  make that edit, start another review, or the next round is released. You may also decide not
+  to edit.
+- An edit to context.json without a valid review is rejected and the previous context is kept;
+  other effects of that code are not undone. A review uses one model call. Exception: when the
+  runtime status says OVER LIMIT, edit context.json directly in that step; no review is needed.
+  ```
+
+  **C only** (`INITIATED_REVIEW_V3_JEV_CLAUSE`):
+
+  ```
+- In this run, each review also asks a fast classifier (Jev), for each listed entry, for the
+  probability that the latest round's board and change-log lines require reconsidering a current
+  assertion or planned action in it. The advice is probabilistic and can be wrong, and it never
+  edits your context. A low probability is not a reason to delete an entry, and a high one does
+  not mean the entry is wrong. You decide whether and how to edit.
+  ```
+
+- **Config:** `configs/exp010v3.toml`, which is `exp010v2.toml` with only the ceiling and the comments changed (the key `update_source = "stated"`, switched per run).
+- **Offline checks:**
+  - **Tests:** `tests/test_pre_edit_review_v3.py` (10 tests); all 66 Jev-related tests pass.
+  - **Mutation check:** making a "compaction" label skip Jev again makes the label test fail.
+- **Scripted plumbing check:** run `…225525-clm_helpers-cacheon-pre3jev-rounds-dev-1-62e2`, offline, with the real sandbox, a scripted model and a fake Jev. It is **excluded from results**.
+  - **The direct edit:** blocked.
+  - **A "compaction"-labelled review:** Jev called with round 1's payload.
+  - **An unlabelled review after a release:** Jev called with round 2's payload.
+  - **Both edits:** authorised.
+- **Budget:** ceiling set from USD 91.209294 to **USD 93.725281** (settled spend USD 63.725281, 0 pending, + 30).
+
+## v3 live smoke (2026-10-13; labelled `v3-smoke`, excluded from all comparisons)
+
+**Run:** `20261012T225935-clm_helpers-cacheon-pre3jev-rounds-diag-1-f4c4` (C on `rounds-diag-1`). It completed with strict success, at USD 0.541118: Anthropic 0.539728, TypeSafe 0.001394.
+
+**Every check passed:**
+- **Reviews:** 13, all labelled `compaction` by Claude, as in v2.
+- **Jev applicability:** 12 were applicable and **advised** by real Jev calls (`jev-1.13.0`, 12 attempts, no errors); 1 was not applicable (`empty_update`).
+- **Request contents:** every Jev request held exactly the latest-round `round-files/1` payload and the current-revision bodies of the candidates.
+- **Ordering:** the advice was in the request that decided each authorised edit.
+- **Edits:** all 13 accepted edits were authorised, and each governed the next request.
+- **Ledger:** 65 entries, all settled.
+
+**No defect was found,** so calibration proceeds.
+
+## v3 calibration and gate (2026-10-13)
+
+**Calibration:** comparison `20261012T230436`, 6/6 runs on the **reused** development instances `rounds-dev-1` and `rounds-dev-2`. Five were strict successes; A on dev-2 failed one check.
+
+**Gate: PASSED.**
+1. **The workflow was used while work remained:** B and C made 44 accepted edits, all authorised. There were 0 blocked, 0 unauthorised and 0 recovery-exempt edits, and the reviews came before the last round.
+2. **Jev was called at every applicable review:** C was advised at **19/19** applicable reviews (9 and 10), with 0 errors. Not-applicable reviews were all `empty_update`. Claude labelled almost every review "compaction", which no longer mattered.
+3. **No defect:**
+   - every Jev request equals the latest-round payload and the current-revision bodies (19/19);
+   - the advice is in the request of every authorised edit (19/19);
+   - the ledger is fully settled.
+4. **Affordable:** calibration mean costs per run were A 0.4386, B 0.4428 and C 0.4646. The projected evaluation is about USD 20.19 (× 12 × 1.25), against USD 26.77 remaining.
+
+**Spend so far (v3):** USD 3.233230.
+
+## v3 evaluation freeze (2026-10-13, before any evaluation call)
+
+- **Instances:** `rounds-eval-9`, `-10`, `-11` and `-12`.
+  - **Generation:** seeds 7209–7212 of `incident-rounds-gen/1`, scorer `rounds-score/1`. They were registered now (eval split 8 → 12) and appear in no earlier run, run selection or export.
+  - **Mechanical validation only:** 10, 11, 12 and 10 rounds; every round has a board and five logs; non-empty payloads at 10, 10, 12 and 10 rounds; 3 incidents each; a scripted offline run completes and scores.
+  - **Fixture SHA-256 prefixes:** `fd554cca03651b46`, `b3d63037d26759a6`, `e2f56bb83df77880`, `26cff5291bad400d`.
+- **Sample:** 4 instances × 3 repetitions × 3 conditions = **36 runs**, sequential. These are four task instances with repeated runs, not twelve independent designs.
+- **Order:** each condition takes each position 4 times.
+
+  | Rep | eval-9 | eval-10 | eval-11 | eval-12 |
+  | --- | --- | --- | --- | --- |
+  | 1 | A, B, C | B, C, A | C, A, B | C, B, A |
+  | 2 | A, C, B | B, A, C | A, B, C | B, C, A |
+  | 3 | C, A, B | C, B, A | A, C, B | B, A, C |
+
+- **Settings:**
+  - `configs/exp010v3.toml` (SHA-256 `446b8271…0f55`) and `configs/prices.toml` (`fb4521b7…85e4`);
+  - prompt version `2026-10-13.4`, with v3 clause prefixes `f877a72b8892e9f0` and `e236fcc220d5c16c`;
+  - Jev question `jev-review/1` (`f98789b3280d4a6d`) and model `jev-1.13.0`.
+- **Code:** HEAD `9ad46ec`, plus the uncommitted v3 changes and the instance registration. The freeze patch is SHA-256 `146a4af8…f746`, and the patch saved by `compare` is checked against it.
+- **Pre-run checks:** 204 tests passed (51 relevant tests rerun after the registration); ruff and mypy clean.
+- **Failure rules:** as declared in protocol v3.
+
+## v3 evaluation execution notes (2026-10-13)
+
+- **Comparison `20261012T232533`:** **36/36** runs completed in the frozen order, with no halt or missing cell. Nothing was invalid, replaced, repeated or excluded.
+- **Provenance:** the patch saved by `compare` is byte-identical to the frozen patch (SHA-256 `146a4af8…f746`).
+- **No deviations and no defects:**
+  - all 131 applicable C reviews were advised, by 131 successful Jev calls;
+  - 0 unauthorised, blocked or recovery-exempt accepted edits;
+  - 0 repairs and 0 API retries.
+- **Answers** were read only after all 36 runs, to classify failures and select traces.
+- **Results:**
+
+  | | A | B | C |
+  | --- | --- | --- | --- |
+  | Strict success | 10/12 | 12/12 | 12/12 |
+  | Mean cost (USD) | 0.348 | 0.457 | 0.448 |
+  | Mean elapsed (s) | 152 | 195 | 194 |
+
+  **C vs B** is about equal on every measure.
+- **Analysis:** in the README.
+- **Spend (v3):** USD 18.277976: smoke 0.541118, calibration 2.692112, evaluation 15.044746. The ledger is at USD 82.003257 of USD 93.725281.

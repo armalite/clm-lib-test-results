@@ -1,0 +1,39 @@
+{
+ "number": 20,
+ "parent": 19,
+ "source": "runtime",
+ "step": 15,
+ "sha256": "f33bf1246073082142b3ce1ba0f517d4ce1052e64682852eb9425f747ab884fe",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: changes.md:3 CHG-110 APPLIED retry budget GETs=1; :4 CHG-113 APPLIED build 3.22.4 pricing-svc sets cache.ttl_s=-1 (BAD_CONFIG_ROLLOUT candidate, no errors yet); :5 CHG-114 APPLIED 3.22.4 ledger-svc no config."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 Follow-up OPEN CAPACITY_REVIEW. changes.md:3 CHG-115 retry budget. search-api.log 11,15,19 certificate_expired peer=sso.example.net."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread A CERT_EXPIRED search-api + inventory-svc ongoing; :4 OPEN RUNBOOK_UPDATE; :5 OPEN POSTMORTEM_DRAFT. changes.md:3 CHG-126 TLS ticket rotation hourly. inventory-svc.log 1-75 & search-api.log 9-78 cert_expired errors. Open: CAPACITY_REVIEW,RUNBOOK_UPDATE,POSTMORTEM_DRAFT. Next: advance to round 4."
+  },
+  {
+   "id": "s15.act",
+   "role": "assistant",
+   "body": "[step 15] execute\nthought: Read spill compactly and compact context.\ncode:\nimport json,re\nb='/task/fixtures/round-04/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip()[:200])\nt=open('/task/workspace/spill/s13.obs.txt').read().splitlines()\nfrom collections import defaultdict\nd=defaultdict(list)\nfor l in t:\n  p=l.split(' ',2)\n  if len(p)<3 or not p[0].endswith('.log'):continue\n  m=re.search(r'(certificate_expired|429|exhaust\\w*|ttl\\S*|timeout|oom\\w*|disk\\S*|lag\\S*|stampede|miss\\w*|dns\\S*|NXDOMAIN)',p[2],re.I)\n  d[(p[0],m.group(1) if m else p[2][:40])].append(p[1])\nfor k,v in d.items():print(k,len(v),v[0],v[-1])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3')]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s15.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 04\nboard.md 2 \nboard.md 3 - Thread B opened: errors in ledger-svc. Suspected cause: message consumer lag growing (QUEUE_BACKLOG). Status: ongoing.\nchanges.md 1 # Change log: round 04\nchanges.md 2 \nchanges.md 3 - CHG-129 PROPOSED: move batch jobs to off-peak window (not applied)\n('checkout-api.log', '2026-09-14T11:07:08Z WARN  checkout-api ') 1 10 10\n('checkout-api.log', '2026-09-14T11:10:31Z WARN  checkout-api ') 1 15 15\n('checkout-api.log', '2026-09-14T11:10:47Z WARN  checkout-api ') 1 16 16\n('checkout-api.log', '2026-09-14T11:11:21Z WARN  checkout-api ') 1 17 17\n('checkout-api.log', '2026-09-14T11:11:41Z WARN  checkout-api ') 1 18 18\n('checkout-api.log', '2026-09-14T11:13:56Z WARN  checkout-api ') 1 21 21\n('checkout-api.log', '2026-09-14T11:14:05Z WARN  checkout-api ') 1 22 22\n('checkout-api.log', '2026-09-14T11:16:22Z WARN  checkout-api ') 1 25 25\n('checkout-api.log', '2026-09-14T11:20:38Z WARN  checkout-api ') 1 30 30\n('checkout-api.log', '2026-09-14T11:20:56Z WARN  checkout-api ') 1 31 31\n('checkout-api.log', '2026-09-14T11:22:12Z WARN  checkout-api ') 1 34 34\n('checkout-api.log', '2026-09-14T11:22:50Z WARN  checkout-api ') 1 36 36\n('checkout-api.log', '2026-09-14T11:25:21Z WARN  checkout-api ') 1 38 38\n('checkout-api.log', '2026-09-14T11:26:03Z WARN  checkout-api ') 1 40 40\n('checkout-api.log', '2026-09-14T11:27:51Z WARN  checkout-api ') 1 42 42\n('checkout-api.log', '2026-09-14T11:28:35Z WARN  checkout-api ') 1 44 44\n('checkout-api.log', '2026-09-14T11:30:06Z WARN  checkout-api ') 1 46 46\n('checkout-api.log', '2026-09-14T11:32:08Z WARN  checkout-api ') 1 48 48\n('checkout-api.log', '2026-09-14T11:37:34Z WARN  checkout-api ') 1 53 53\n('checkout-api.log', '2026-09-14T11:47:45Z WARN  checkout-api ') 1 61 61\n('checkout-api.log', '2026-09-14T11:49:21Z WARN  checkout-api ') 1 63 63\n('checkout-api.log', '2026-09-14T11:50:43Z WARN  checkout-api ') 1 64 64\n('checkout-api.log', '2026-09-14T11:56:09Z WARN  checkout-api ') 1 71 71\n('inventory-svc.log', '2026-09-14T11:02:42Z WARN  inventory-svc') 1 2 2\n('inventory-svc.log', 'certificate_expired') 7 3 62\n('inventory-svc.log', '2026-09-14T11:05:43Z WARN  inventory-svc') 1 6 6\n('inventory-svc.log', '2026-09-14T11:08:58Z WARN  inventory-svc') 1 12 12\n('inventory-svc.log', '2026-09-14T11:13:33Z WARN  inventory-svc') 1 20 20\n('inventory-svc.log', '2026-09-14T11:15:22Z WARN  inventory-svc') 1 23 23\n('inventory-svc.log', '2026-09-14T11:20:39Z WARN  inventory-svc') 1 27 27\n('inventory-svc.log', '2026-09-14T11:27:19Z WARN  inventory-svc') 1 34 34\n('inventory-svc.log', '2026-09-14T11:37:26Z WARN  inventory-svc') 1 42 42\n('inventory-svc.log', '2026-09-14T11:40:55Z WARN  inventory-svc') 1 46 46\n('inventory-svc.log', '2026-09-14T11:41:44Z WARN  inventory-svc') 1 47 47\n('inventory-svc.log', '2026-09-14T11:42:33Z WARN  inventory-svc') 1 48 48\n('inventory-svc.log', '2026-09-14T11:55:41Z WARN  inventory-svc') 1 60 60\n('inventory-svc.log', '2026-09-14T11:56:34Z WARN  inventory-svc') 1 65 65\n('inventory-svc.log', '2026-09-14T11:58:04Z WARN  inventory-svc') 1 66 66\n('ledger-svc.log', '429') 7 2 37\n('ledger-svc.log', '2026-09-14T11:09:44Z WARN  ledger-svc sl') 1 10 10\n('ledger-svc.log', '2026-09-14T11:12:49Z WARN  ledger-svc sl') 1 17 17\n('ledger-svc.log', '2026-09-14T11:16:20Z WARN  ledger-svc sl') 1 25 25\n('ledger-svc.log', '2026-09-14T11:27:05Z WARN  ledger-svc sl') 1 39 39\n('ledger-svc.log', '2026-09-14T11:29:22Z WARN  ledger-svc sl') 1 41 41\n('ledger-svc.log', '2026-09-14T11:33:13Z WARN  ledger-svc sl') 1 47 47\n('ledger-svc.log', '2026-09-14T11:36:14Z ERR') 1 53 53\n"
+  },
+  {
+   "id": "s15.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 15: revision 18 -> 19; entries 12 -> 3; body chars 3761 -> 677; removed [s11.act, s11.obs, s11.rcpt, s12.act, s12.obs, s13.act, s13.obs, s14.act, s14.obs]; added []; rewritten []"
+  }
+ ]
+}

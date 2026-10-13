@@ -1,0 +1,29 @@
+{
+ "number": 27,
+ "parent": 26,
+ "source": "runtime",
+ "step": 20,
+ "sha256": "58593abdc721b2767c83bfc0beebebb5fcf290a587f87ef94c5ef238e8deb7ba",
+ "entries": [
+  {
+   "id": "notes",
+   "role": "note",
+   "body": "R1: board empty. round-01/changes.md:4 CHG-113 APPLIED checkout-api build 4.33.8 sets feature.batch_size=0 (suspect BAD_CONFIG, no errors yet). CHG-114 inventory no config. CHG-111 PROPOSED. Logs WARN slow query noise only. Svcs: shipping-svc, checkout-api, pricing-svc, inventory-svc, search-api.\nR2: board.md:3 FU OPEN VENDOR_TICKET, :4 FU OPEN POSTMORTEM_DRAFT. changes CHG-116 log sampling (irrelevant). pricing-svc.log:4-73 ERROR 429 upstream=sms-gateway (UPSTREAM_RATE_LIMIT, no board thread yet). Scan regex: ERROR|FATAL|CRIT|429|exhaust|expired|NXDOMAIN|lag|OOM|disk|batch\nR3: board.md:3 Thread A UPSTREAM_RATE_LIMIT pricing-svc+search-api ongoing. pricing-svc.log:4-64 429 sms-gateway; search-api.log:8-79 429 sms-gateway. checkout/inventory/shipping clean.\nR4: board.md:3 Thread B inventory-svc suspected CERT_EXPIRED ongoing; but inventory-svc.log:16-70 ERROR dns lookup failed host=kms.internal SERVFAIL (actually DNS_RESOLUTION?). board.md:4 FU OPEN CAPACITY_REVIEW. changes CHG-131 TLS ticket rotation (irrelevant). pricing.log:11-58, search.log:10-79 still 429 sms-gateway. checkout/shipping clean.\nR5: board empty; CHG-137 dashboards (irrelevant). inventory-svc.log:20-67 DNS SERVFAIL kms.internal; pricing.log:1-73, search.log:6-77 429 sms-gateway. checkout/shipping clean.\nR6: board.md:3 Thread A mitigated; board.md:4 FU CLOSED VENDOR_TICKET. changes.md:4 CHG-150 APPLIED mitigation thread A pricing-svc. pricing/search 0 errors now. inventory-svc.log:3-81 DNS SERVFAIL kms.internal continues. checkout/shipping clean.\nR7: board.md:3 Thread B revised DNS_RESOLUTION (inventory-svc). board.md:4 Thread D MEMORY_LEAK pricing-svc ongoing. CHG-153 PROPOSED irrelevant. inventory-svc.log:1-65 DNS SERVFAIL continues. Mem lines pricing: 9 8-69"
+  },
+  {
+   "id": "s20.act",
+   "role": "assistant",
+   "body": "[step 20] execute\nthought: Check pricing-svc memory signals in R7, record notes, compress.\ncode:\nimport json,re\nd='/task/fixtures/round-07/logs/pricing-svc.log'\nh=[(i,l) for i,l in enumerate(open(d),1) if re.search(r'mem|heap|restart|rss',l,re.I)]\nprint(len(h),h[0][0] if h else '',h[-1][0] if h else '',h[0][1][:200] if h else '')\nc=json.load(open('/task/workspace/context.json'))\nb=c['entries'][0]['body']+\"\\nR7: board.md:3 Thread B revised DNS_RESOLUTION (inventory-svc). board.md:4 Thread D MEMORY_LEAK pricing-svc ongoing. CHG-153 PROPOSED irrelevant. inventory-svc.log:1-65 DNS SERVFAIL continues. Mem lines pricing: %d %s-%s\"%(len(h),h[0][0] if h else '',h[-1][0] if h else '')\nc={'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':b}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s20.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n9 8 69 {\"ts\":\"2026-09-14T14:09:51Z\",\"level\":\"WARN\",\"svc\":\"pricing-svc\",\"msg\":\"heap usage high\",\"rss_mb\":3165,\"gc_pause_ms\":1002}\n\n"
+  },
+  {
+   "id": "s20.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 20: revision 25 -> 26; entries 8 -> 1; body chars 3827 -> 1756; removed [s17.act, s17.obs, s17.rcpt, s18.act, s18.obs, s19.act, s19.obs]; added []; rewritten [notes]"
+  }
+ ]
+}

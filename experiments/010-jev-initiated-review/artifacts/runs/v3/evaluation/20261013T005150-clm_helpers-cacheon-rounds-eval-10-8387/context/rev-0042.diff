@@ -1,0 +1,19 @@
+--- rev-41
++++ rev-42
+@@ -30,6 +30,16 @@
+    "id": "s28.obs",
+    "role": "observation",
+    "body": "Stage 10 of 11 released.\nRound 10 of 11 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (4 lines)\n  round-10/logs/auth-svc.log (66 lines)\n  round-10/logs/checkout-api.log (65 lines)\n  round-10/logs/inventory-svc.log (60 lines)\n  round-10/logs/search-api.log (59 lines)\n  round-10/logs/shipping-svc.log (75 lines)"
++  },
++  {
++   "id": "s29.act",
++   "role": "assistant",
++   "body": "[step 29] execute\nthought: Inspect R10 board and error lines.\ncode:\nimport re,os\nb='/task/fixtures/round-10/'\nprint(open(b+'board.md').read())\nfor f in sorted(os.listdir(b+'logs')):\n  L=open(b+'logs/'+f).read().splitlines()\n  e=[(i+1,l) for i,l in enumerate(L) if re.search(r'ERR|error|fail|429',l,re.I)]\n  print(f,len(e),[x[0] for x in e][:3],[x[0] for x in e][-1:] , e[0][1][:150] if e else '')\nn=open('/task/workspace/notes.md').read()\nimport json\nopen('/task/workspace/notes.md','w').write(n)\n"
++  },
++  {
++   "id": "s29.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 10\n\n- Thread C note: failing pods still restarting; investigation continues.\n- Follow-up CLOSED ALERT_TUNING.\n\nauth-svc.log 1 [28] [28] {\"ts\":\"2026-09-14T17:27:35Z\",\"level\":\"INFO\",\"svc\":\"auth-svc\",\"msg\":\"heartbeat\",\"uptime_s\":42969}\ncheckout-api.log 0 [] [] \ninventory-svc.log 2 [36, 59] [59] {\"ts\":\"2026-09-14T17:36:51Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":55}\nsearch-api.log 2 [13, 31] [31] {\"ts\":\"2026-09-14T17:17:16Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":18}\nshipping-svc.log 13 [3, 7, 11] [74] {\"ts\":\"2026-09-14T17:09:31Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"config validation failed\",\"key\":\"retry.backoff_ms\",\"value\":\"0\",\"build\":\"6.58.\n"
+   }
+  ]
+ }

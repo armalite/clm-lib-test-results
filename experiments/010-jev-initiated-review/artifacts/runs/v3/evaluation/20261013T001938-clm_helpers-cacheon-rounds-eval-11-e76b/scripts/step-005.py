@@ -1,0 +1,4 @@
+import json
+n="R1: board empty. round-01/changes.md:4 CHG-113 APPLIED checkout-api build 4.33.8 sets feature.batch_size=0 (suspect BAD_CONFIG, no errors yet). CHG-114 inventory no config. CHG-111 PROPOSED. Logs WARN slow query noise only. Svcs: shipping-svc, checkout-api, pricing-svc, inventory-svc, search-api.\nR2: board.md:3 FU OPEN VENDOR_TICKET, :4 FU OPEN POSTMORTEM_DRAFT. changes CHG-116 log sampling (irrelevant). pricing-svc.log:4-73 ERROR 429 upstream=sms-gateway (UPSTREAM_RATE_LIMIT, no board thread yet). Scan regex: ERROR|FATAL|CRIT|429|exhaust|expired|NXDOMAIN|lag|OOM|disk|batch"
+c={"format":"clm-context/v1","entries":[{"id":"notes","role":"note","body":n}]}
+json.dump(c,open('/task/workspace/context.json','w'))

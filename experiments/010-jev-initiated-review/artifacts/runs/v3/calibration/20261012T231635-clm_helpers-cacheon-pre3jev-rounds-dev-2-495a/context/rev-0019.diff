@@ -1,0 +1,56 @@
+--- rev-18
++++ rev-19
+@@ -4,52 +4,7 @@
+   {
+    "id": "notes",
+    "role": "note",
+-   "body": "R1: changes.md:3 CHG-107 APPLIED retry budget GETs=1. inventory-svc DNS SERVFAIL rates.internal round-01/logs/inventory-svc.log:7-90. R2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG_ROLLOUT, watch search-api); :4 CHG-121 auth-svc no config. checkout-api DNS errors round-02/logs/checkout-api.log:8-59; inventory round-02/logs/inventory-svc.log:8-37. R3: board.md:3 Thread B auth-svc suspected DB_POOL_EXHAUSTED ongoing, BUT logs show TLS certificate_expired peer=sso.example.net round-03/logs/auth-svc.log:6-72 (likely CERT_EXPIRED). changes.md:3 CHG-126 PROPOSED (ignore). DNS continues round-03/logs/checkout-api.log:33-74, inventory-svc.log:3-50. search/shipping no errors r3. Context edits need begin_review first. Next: advance to round 4."
+-  },
+-  {
+-   "id": "s12.act",
+-   "role": "assistant",
+-   "body": "[step 12] execute\nthought: Compact context with round 3 facts.\ncode:\nimport json\nb='R1: changes.md:3 CHG-107 APPLIED retry budget GETs=1. inventory-svc DNS SERVFAIL rates.internal round-01/logs/inventory-svc.log:7-90. R2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG_ROLLOUT, watch search-api); :4 CHG-121 auth-svc no config. checkout-api DNS errors round-02/logs/checkout-api.log:8-59; inventory round-02/logs/inventory-svc.log:8-37. R3: board.md:3 Thread B auth-svc suspected DB_POOL_EXHAUSTED ongoing, BUT logs show TLS certificate_expired peer=sso.example.net round-03/logs/auth-svc.log:6-72 (likely CERT_EXPIRED). changes.md:3 CHG-126 PROPOSED (ignore). DNS continues round-03/logs/checkout-api.log:33-74, inventory-svc.log:3-50. search/shipping no errors r3. Context edits need begin_review first. Next: advance to round 4.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':b}]},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s12.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s"
+-  },
+-  {
+-   "id": "s12.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 12: revision 13 -> 14; entries 10 -> 1; body chars 5097 -> 852; removed [s8.act, s8.obs, s8.rcpt, s9.act, s9.obs, s10.act, s10.obs, s11.act, s11.obs]; added []; rewritten [notes]"
+-  },
+-  {
+-   "id": "s13.act",
+-   "role": "assistant",
+-   "body": "[step 13] advance\nthought: "
+-  },
+-  {
+-   "id": "s13.obs",
+-   "role": "observation",
+-   "body": "Stage 4 of 11 released.\nRound 4 of 11 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (2 lines)\n  round-04/logs/auth-svc.log (83 lines)\n  round-04/logs/checkout-api.log (77 lines)\n  round-04/logs/inventory-svc.log (81 lines)\n  round-04/logs/search-api.log (59 lines)\n  round-04/logs/shipping-svc.log (81 lines)"
+-  },
+-  {
+-   "id": "s14.act",
+-   "role": "assistant",
+-   "body": "[step 14] execute\nthought: Inspect round 4 board and error lines.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-04/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-04/logs/*.log')):\n    L=open(f).read().splitlines()\n    hits=[(i+1,l) for i,l in enumerate(L) if re.search(r'ERROR|WARN|error|fail|expired|429|pool|disk|memory|lag',l)]\n    print(f.split('/')[-1],len(hits))\n    for h in hits[:3]+hits[-1:]: print(' ',h[0],h[1][:150])"
+-  },
+-  {
+-   "id": "s14.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 04\n\n\nauth-svc.log 24\n  4 2026-09-14T11:02:46Z WARN  auth-svc slow query ms=396 table=orders\n  6 2026-09-14T11:04:19Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\n  8 2026-09-14T11:04:44Z ERROR auth-svc tls handshake failed peer=sso.example.net reason=certificate_expired\n  83 2026-09-14T11:59:49Z WARN  auth-svc slow query ms=316 table=events\ncheckout-api.log 27\n  1 2026-09-14T11:00:28Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\n  5 2026-09-14T11:02:29Z WARN  checkout-api slow query ms=248 table=orders\n  8 2026-09-14T11:06:39Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\n  73 2026-09-14T11:59:07Z WARN  checkout-api slow query ms=239 table=events\ninventory-svc.log 28\n  10 2026-09-14T11:11:03Z WARN  inventory-svc slow query ms=443 table=items\n  20 2026-09-14T11:21:00Z WARN  inventory-svc slow query ms=427 table=orders\n  27 2026-09-14T11:25:38Z WARN  inventory-svc slow query ms=416 table=items\n  75 2026-09-14T11:55:24Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\nsearch-api.log 7\n  4 2026-09-14T11:01:30Z WARN  search-api slow query ms=312 table=orders\n  6 2026-09-14T11:02:34Z WARN  search-api slow query ms=390 table=events\n  12 2026-09-14T11:09:13Z WARN  search-api slow query ms=206 table=items\n  38 2026-09-14T11:35:59Z INFO  search-api heartbeat uptime_s=37429\nshipping-svc.log 24\n  3 2026-09-14T11:04:31Z ERROR shipping-svc tls handshake failed peer=sso.example.net reason=certificate_expired\n  9 2026-09-14T11:10:28Z WARN  shipping-svc slow query ms=278 table=orders\n  11 2026-09-14T11:12:08Z WARN  shipping-svc slow query ms=423 table=items\n  80 2026-09-14T11:57:13Z WARN  shipping-svc slow query ms=305 table=orders\n"
+-  },
+-  {
+-   "id": "s15.act",
+-   "role": "assistant",
+-   "body": "[step 15] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s15.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 17; your label: compaction).\nUpdate for this review: none (round 4 released no incident-board or change-log lines).\nEntries to review (4): notes, s12.obs, s13.obs, s14.obs (4 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged.\nContext review advice: not applicable (round 4 released no incident-board or change-log lines)."
++   "body": "R1: changes.md:3 CHG-107 APPLIED retry budget GETs=1. inventory-svc DNS SERVFAIL rates.internal round-01/logs/inventory-svc.log:7-90. R2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG_ROLLOUT, watch search-api); :4 CHG-121 auth-svc no config. checkout-api DNS round-02/logs/checkout-api.log:8-59; inventory round-02/logs/inventory-svc.log:8-37. R3: board.md:3 Thread B auth-svc suspected DB_POOL_EXHAUSTED ongoing, BUT logs TLS certificate_expired peer=sso.example.net round-03/logs/auth-svc.log:6-72 (likely CERT_EXPIRED). changes.md:3 CHG-126 PROPOSED (ignore). R4: board empty, no changes. DNS continues round-04/logs/checkout-api.log:1-8, inventory-svc.log:75. Cert expired auth-svc round-04/logs/auth-svc.log:6-8 AND now shipping-svc round-04/logs/shipping-svc.log:3 (CERT_EXPIRED spreads to shipping). search-api only slow queries. Slow-query WARNs are noise. Context edits need begin_review first. Next: advance to round 5."
+   }
+  ]
+ }

@@ -1,0 +1,3 @@
+import json
+n='R1: board empty. r1/changes.md:3 CHG-113 APPLIED pricing-svc 3.22.4 cache.ttl_s=-1 (suspicious); CHG-110/CHG-115(r2 changes.md:3) retry budget=1 noise. R2: board.md:3 Follow-up OPEN CAPACITY_REVIEW. search-api r2 CERT_EXPIRED peer=sso.example.net lines 11-57. R3: board.md:3 Thread A CERT_EXPIRED search-api+inventory-svc ongoing; board.md:4 OPEN RUNBOOK_UPDATE; :5 OPEN POSTMORTEM_DRAFT. changes.md:3 CHG-126 TLS ticket rotation (noise). r3 search-api.log:9-78 cert errors, inventory-svc.log:1-75 cert errors. Others clean. Filter noise: slow query|request ok|heartbeat|gc |health ok.'
+json.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':n}]},open('/task/workspace/context.json','w'))

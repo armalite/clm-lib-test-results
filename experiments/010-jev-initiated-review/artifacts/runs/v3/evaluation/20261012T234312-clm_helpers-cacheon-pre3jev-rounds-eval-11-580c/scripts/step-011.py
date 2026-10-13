@@ -1,0 +1,5 @@
+import json
+p='/task/workspace/context.json'
+c=json.load(open(p))
+c['entries']=[{'id':'n1','role':'note','body':'R1: board empty; logs only WARN slow query (noise). CHG-111 PROPOSED; CHG-113 APPLIED round-01/changes.md:4 build 4.33.8 checkout-api feature.batch_size=0 (suspect BAD_CONFIG_ROLLOUT, no errors yet); CHG-114 APPLIED inventory-svc no config.'},{'id':'n2','role':'note','body':'R2: board round-02/board.md:3 OPEN VENDOR_TICKET, :4 OPEN POSTMORTEM_DRAFT. CHG-116 irrelevant. pricing-svc 429 upstream=sms-gateway round-02/logs/pricing-svc.log:4-73. Log filter: skip INFO and slow query.'},{'id':'n3','role':'note','body':'R3: round-03/board.md:3 Thread A UPSTREAM_RATE_LIMIT pricing-svc + search-api, ongoing. 429s round-03/logs/pricing-svc.log:4-64, round-03/logs/search-api.log:8-79. Others noise. Next: advance to R4.'}]
+json.dump(c,open(p,'w'))

@@ -1,0 +1,3 @@
+import json
+n={'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':'R1: changes.md:3 CHG-107 APPLIED retry budget GETs=1. inventory-svc DNS SERVFAIL rates.internal round-01/logs/inventory-svc.log:7-90. R2: board.md:3 Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing. changes.md:3 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG_ROLLOUT, watch search-api); :4 CHG-121 auth-svc no config. checkout-api DNS errors round-02/logs/checkout-api.log:8-59; inventory round-02/logs/inventory-svc.log:8-37. search/auth/shipping no errors r2 (slow query WARN = noise). Context edits need begin_review first.'}]}
+json.dump(n,open('/task/workspace/context.json','w'))

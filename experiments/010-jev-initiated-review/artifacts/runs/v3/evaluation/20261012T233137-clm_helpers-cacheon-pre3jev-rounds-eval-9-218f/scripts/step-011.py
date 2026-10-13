@@ -1,0 +1,4 @@
+import json
+E=[('n1','R1: board empty; routine WARN slow query noise. CHG-108 APPLIED (round-01/changes.md:3) TLS session ticket rotation hourly.'),('n2','R2: board empty. round-02/changes.md: CHG-117 log sampling; CHG-120 APPLIED search-api 8.48.0 http.max_inflight=-1 (line 4, suspicious BAD_CONFIG, no errors yet); CHG-121 shipping-svc no config. ledger-svc DNS SERVFAIL geo.internal round-02/logs/ledger-svc.log:3-81.'),('n3','R3: board round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc + inventory-svc ongoing; line 4 follow-up OPEN POSTMORTEM_DRAFT. SERVFAIL round-03/logs/inventory-svc.log:1-54, ledger-svc.log:14-67. Others clean. Next: advance to round 4.')]
+json.dump({'format':'clm-context/v1','entries':[{'id':i,'role':'note','body':b} for i,b in E]},open('/task/workspace/context.json','w'))
+print('ok')

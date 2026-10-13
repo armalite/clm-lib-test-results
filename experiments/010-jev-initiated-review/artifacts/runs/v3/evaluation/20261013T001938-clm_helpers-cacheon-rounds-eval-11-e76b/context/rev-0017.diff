@@ -1,0 +1,19 @@
+--- rev-16
++++ rev-17
+@@ -30,6 +30,16 @@
+    "id": "s12.obs",
+    "role": "observation",
+    "body": "Stage 5 of 12 released.\nRound 5 of 12 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (2 lines)\n  round-05/changes.md (3 lines)\n  round-05/logs/checkout-api.log (78 lines)\n  round-05/logs/inventory-svc.log (70 lines)\n  round-05/logs/pricing-svc.log (74 lines)\n  round-05/logs/search-api.log (77 lines)\n  round-05/logs/shipping-svc.log (69 lines)"
++  },
++  {
++   "id": "s13.act",
++   "role": "assistant",
++   "body": "[step 13] execute\nthought: Scan round 5.\ncode:\nimport re,glob\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-05/'+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*')):\n  hits=[(i,l.strip()) for i,l in enumerate(open(f),1) if re.search(r'ERROR|FATAL|CRIT|429|exhaust|expired|NXDOMAIN|SERVFAIL|lag|OOM|disk|batch',l,re.I)]\n  n=f.split('/')[-1]\n  if hits:print(n,len(hits),hits[0][0],hits[-1][0],hits[0][1][:160]);print('  last',hits[-1][1][:160])\n  else:print(n,'clean')"
++  },
++  {
++   "id": "s13.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 05\nboard.md 2 \nchanges.md 1 # Change log: round 05\nchanges.md 2 \nchanges.md 3 - CHG-137 APPLIED: dashboard panels for p99 latency added\ncheckout-api.log clean\ninventory-svc.log 7 20 67 {\"ts\":\"2026-09-14T12:14:21Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\n  last {\"ts\":\"2026-09-14T12:53:53Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\npricing-svc.log 12 1 73 {\"ts\":\"2026-09-14T12:00:49Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"sms-gateway\",\"retry_after_s\":47}\n  last {\"ts\":\"2026-09-14T12:59:17Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"sms-gateway\",\"retry_after_s\":15}\nsearch-api.log 13 6 77 {\"ts\":\"2026-09-14T12:04:21Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"sms-gateway\",\"retry_after_s\":21}\n  last {\"ts\":\"2026-09-14T12:58:03Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"sms-gateway\",\"retry_after_s\":44}\nshipping-svc.log clean\n"
+   }
+  ]
+ }

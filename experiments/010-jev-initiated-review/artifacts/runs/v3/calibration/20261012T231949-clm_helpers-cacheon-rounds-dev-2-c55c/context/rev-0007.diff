@@ -1,0 +1,29 @@
+--- rev-6
++++ rev-7
+@@ -4,22 +4,12 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: board empty. slow query WARNs noise. inventory-svc DNS SERVFAIL host=rates.internal round-01/logs/inventory-svc.log:7,20,50,54,57,62,65. round-01/changes.md: CHG-107 APPLIED retry budget idempotent GETs=1. R2 released; see s4 obs."
++   "body": "R1: board empty. slow query WARNs noise. inventory-svc DNS SERVFAIL host=rates.internal round-01/logs/inventory-svc.log:7,20,50,54,57,62,65. round-01/changes.md: CHG-107 APPLIED retry budget idempotent GETs=1."
+   },
+   {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] execute\nthought: Inspect round 2 board, changes, and notable log lines; compact context.\ncode:\nimport json,glob\nb='/task/fixtures/round-02/'\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\nfor p in sorted(glob.glob(b+'logs/*')):\n  for i,l in enumerate(open(p)):\n    if ('ERROR' in l or 'WARN' in l or 'error' in l) and 'slow query' not in l:print(p.split('/')[-1],i+1,l.strip()[:130])\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. slow query WARNs noise. inventory-svc DNS SERVFAIL host=rates.internal round-01/logs/inventory-svc.log:7,20,50,54,57,62,65. round-01/changes.md: CHG-107 APPLIED retry budget idempotent GETs=1. R2 released; see s4 obs.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 02\n\n- Thread A opened: DNS lookups failing for a dependency confirmed as the cause (code DNS_RESOLUTION) in inventory-svc; impact also on checkout-api. Status: ongoing.\n\n# Change log: round 02\n\n- CHG-120 APPLIED: build 8.59.8 rolled out to search-api; sets `http.max_inflight=-1`\n- CHG-121 APPLIED: build 8.59.8 rolled out to auth-svc; no config changes\n\ncheckout-api.log 8 2026-09-14T09:07:31Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\ncheckout-api.log 24 2026-09-14T09:17:52Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\ncheckout-api.log 29 2026-09-14T09:19:49Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\ncheckout-api.log 38 2026-09-14T09:29:53Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\ncheckout-api.log 46 2026-09-14T09:37:08Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\ncheckout-api.log 59 2026-09-14T09:50:17Z ERROR checkout-api dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 8 2026-09-14T09:05:23Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 12 2026-09-14T09:08:19Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 14 2026-09-14T09:08:24Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 19 2026-09-14T09:13:18Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 20 2026-09-14T09:13:55Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 37 2026-09-14T09:25:28Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 42 2026-09-14T09:29:38Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 53 2026-09-14T09:37:31Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 60 2026-09-14T09:45:37Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 70 2026-09-14T09:52:33Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\ninventory-svc.log 74 2026-09-14T09:53:54Z ERROR inventory-svc dns lookup failed host=rates.internal err=SERVFAIL\n"
+-  },
+-  {
+-   "id": "s4.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 6 -> 1; body chars 1553 -> 234; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added []; rewritten [n1]"
++   "id": "n2",
++   "role": "note",
++   "body": "R2: board Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing (round-02/board.md:3). checkout-api DNS SERVFAIL rates.internal round-02/logs/checkout-api.log:8,24,29; inventory round-02/logs/inventory-svc.log:8,12. round-02/changes.md: CHG-120 APPLIED search-api http.max_inflight=-1 (suspicious BAD_CONFIG, watch search-api); CHG-121 auth-svc no config. Next: advance to R3."
+   }
+  ]
+ }

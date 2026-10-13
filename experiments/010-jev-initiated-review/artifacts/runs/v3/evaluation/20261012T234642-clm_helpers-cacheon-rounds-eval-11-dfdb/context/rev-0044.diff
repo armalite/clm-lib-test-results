@@ -1,0 +1,25 @@
+--- rev-43
++++ rev-44
+@@ -47,19 +47,9 @@
+    "body": "R9: Thread D closed false alarm (round-09/board.md:3) -> drop MEMORY_LEAK. DNS kms.internal continues round-09/logs/inventory-svc.log:7,13,22,44,66,75,80 AND now shipping-svc too round-09/logs/shipping-svc.log:17,38,57,58,66,78 (add shipping to DNS incident). checkout/pricing/search clean. Next: advance to R10."
+   },
+   {
+-   "id": "s29.act",
+-   "role": "assistant",
+-   "body": "[step 29] execute\nthought: Inspect R10 board, changes, and error lines; prune context.\ncode:\nimport json,re,glob\nb='/task/fixtures/round-10/'\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\nfor f in sorted(glob.glob(b+'logs/*.log')):\n  hits=[(i,l.strip()[:110]) for i,l in enumerate(open(f),1) if re.search('ERROR|error|fail|429|heap|mem',l)]\n  print(f.split('/')[-1],len(hits));[print(i,l) for i,l in hits[:3]]\n  print('lines',[i for i,_ in hits])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s29.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 10\n\n- Thread B update: affected services now also include shipping-svc; cause and status unchanged.\n- Thread C opened: request failures on some checkout-api pods; cause not yet identified. Status: ongoing.\n\n# Change log: round 10\n\n- CHG-174 PROPOSED: move batch jobs to off-peak window (not applied)\n\ncheckout-api.log 10\n1 {\"ts\":\"2026-09-14T17:00:38Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"feat\n4 {\"ts\":\"2026-09-14T17:03:53Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"feat\n5 {\"ts\":\"2026-09-14T17:03:56Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"feat\nlines [1, 4, 5, 7, 11, 21, 24, 32, 44, 61]\ninventory-svc.log 13\n2 {\"ts\":\"2026-09-14T17:01:17Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.inter\n9 {\"ts\":\"2026-09-14T17:04:49Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.inter\n11 {\"ts\":\"2026-09-14T17:06:19Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.inter\nlines [2, 9, 11, 20, 22, 30, 37, 40, 42, 44, 64, 69, 75]\npricing-svc.log 0\nlines []\nsearch-api.log 0\nlines []\nshipping-svc.log 11\n1 {\"ts\":\"2026-09-14T17:01:04Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.intern\n7 {\"ts\":\"2026-09-14T17:02:41Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.intern\n8 {\"ts\":\"2026-09-14T17:02:55Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.intern\nlines [1, 7, 8, 12, 18, 21, 25, 33, 35, 48, 68]\n"
+-  },
+-  {
+-   "id": "s29.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 29: revision 41 -> 42; entries 14 -> 9; body chars 4159 -> 2915; removed [s27.act, s27.obs, s27.rcpt, s28.act, s28.obs]; added []; rewritten []"
++   "id": "n10",
++   "role": "note",
++   "body": "R10: Thread B adds shipping-svc (round-10/board.md:3). Thread C opened checkout-api request failures cause unknown ongoing (round-10/board.md:4). checkout config validation failed key feature.batch_size? round-10/logs/checkout-api.log:1,4,5,7,11,21,24,32,44,61 -> BAD_CONFIG_ROLLOUT from CHG-113 (round-01/changes.md:4). DNS continues inventory round-10/logs/inventory-svc.log:2,9,11,20,22 shipping round-10/logs/shipping-svc.log:1,7,8,12. CHG-174 PROPOSED noise. Next: advance to R11."
+   }
+  ]
+ }

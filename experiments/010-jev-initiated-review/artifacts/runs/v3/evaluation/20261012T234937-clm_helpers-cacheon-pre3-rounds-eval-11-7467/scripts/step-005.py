@@ -1,0 +1,4 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Round1: board empty. changes.md: CHG-111 PROPOSED batch off-peak (not applied); CHG-113 APPLIED build 4.33.8 to checkout-api sets feature.batch_size=0 (round-01/changes.md line ~4, suspicious BAD_CONFIG); CHG-114 APPLIED 4.33.8 inventory-svc no config. Logs: services checkout-api, inventory-svc, pricing-svc, search-api, shipping-svc; only WARN slow query lines (noise), no ERRORs. Next: advance.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))
+for i,l in enumerate(open('/task/fixtures/round-01/changes.md'),1):print(i,l.strip())

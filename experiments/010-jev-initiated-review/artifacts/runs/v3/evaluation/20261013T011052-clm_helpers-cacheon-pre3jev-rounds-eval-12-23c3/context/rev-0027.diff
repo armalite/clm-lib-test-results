@@ -1,0 +1,55 @@
+--- rev-26
++++ rev-27
+@@ -22,49 +22,9 @@
+    "body": "R4: board.md:3 Thread B ledger-svc QUEUE_BACKLOG ongoing (suspected). changes.md:3 CHG-129 PROPOSED only. ledger-svc.log 429s lines 2-37 (7x) -> maybe UPSTREAM_RATE_LIMIT not queue; ERR line 53. inventory-svc cert_expired lines 3-62. checkout-api many WARNs (unclassified). Next: inspect ledger/checkout round4 then advance to round 5."
+   },
+   {
+-   "id": "s17.act",
+-   "role": "assistant",
+-   "body": "[step 17] execute\nthought: Compact: add R4 note, drop s15/s16 entries.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3')]\nc['entries'].append({'id':'n4','role':'note','body':'R4: board.md:3 Thread B ledger-svc QUEUE_BACKLOG ongoing (suspected). changes.md:3 CHG-129 PROPOSED only. ledger-svc.log 429s lines 2-37 (7x) -> maybe UPSTREAM_RATE_LIMIT not queue; ERR line 53. inventory-svc cert_expired lines 3-62. checkout-api many WARNs (unclassified). Next: inspect ledger/checkout round4 then advance to round 5.'})\njson.dump(c,open('/task/workspace/context.json','w'))\nimport re\nfor f in ['ledger-svc','checkout-api']:\n  L=open('/task/fixtures/round-04/logs/%s.log'%f).read().splitlines()\n  for i in [1,9,52]:\n    if i<len(L):print(f,i+1,L[i][:160])"
+-  },
+-  {
+-   "id": "s17.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nledger-svc 2 2026-09-14T11:03:12Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=8\nledger-svc 10 2026-09-14T11:09:44Z WARN  ledger-svc slow query ms=426 table=events\nledger-svc 53 2026-09-14T11:36:14Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=22\ncheckout-api 2 2026-09-14T11:02:00Z INFO  checkout-api request ok route=/v1/items status=200 ms=56\ncheckout-api 10 2026-09-14T11:07:08Z WARN  checkout-api slow query ms=207 table=orders\ncheckout-api 53 2026-09-14T11:37:34Z WARN  checkout-api slow query ms=404 table=events\n"
+-  },
+-  {
+-   "id": "s17.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 17: revision 21 -> 22; entries 8 -> 4; body chars 6358 -> 1012; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs]; added [n4]; rewritten []"
+-  },
+-  {
+-   "id": "s18.act",
+-   "role": "assistant",
+-   "body": "[step 18] advance\nthought: "
+-  },
+-  {
+-   "id": "s18.obs",
+-   "role": "observation",
+-   "body": "Stage 5 of 10 released.\nRound 5 of 10 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (3 lines)\n  round-05/logs/checkout-api.log (66 lines)\n  round-05/logs/inventory-svc.log (85 lines)\n  round-05/logs/ledger-svc.log (67 lines)\n  round-05/logs/pricing-svc.log (74 lines)\n  round-05/logs/search-api.log (78 lines)"
+-  },
+-  {
+-   "id": "s19.act",
+-   "role": "assistant",
+-   "body": "[step 19] execute\nthought: Inspect round 5 board and grep key errors.\ncode:\nimport re\nb='/task/fixtures/round-05/'\nprint(open(b+'board.md').read())\nfor f in ['checkout-api','inventory-svc','ledger-svc','pricing-svc','search-api']:\n  L=open(b+'logs/%s.log'%f).read().splitlines()\n  e=[(i+1,l[:110]) for i,l in enumerate(L) if 'ERROR' in l or 'error' in l.lower()]\n  print(f,len(e),e[:3])"
+-  },
+-  {
+-   "id": "s19.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 05\n\n- Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\n\ncheckout-api 0 []\ninventory-svc 12 [(10, '2026-09-14T12:04:31Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired'), (16, '2026-09-14T12:07:40Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired'), (19, '2026-09-14T12:10:17Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired')]\nledger-svc 6 [(7, '2026-09-14T12:04:39Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=12'), (35, '2026-09-14T12:32:22Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=30'), (39, '2026-09-14T12:34:18Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=14')]\npricing-svc 0 []\nsearch-api 7 [(6, '2026-09-14T12:04:30Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired'), (35, '2026-09-14T12:26:02Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired'), (48, '2026-09-14T12:33:24Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired')]\n"
+-  },
+-  {
+-   "id": "s20.act",
+-   "role": "assistant",
+-   "body": "[step 20] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s20.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 25; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 5 (1 lines; files round-05/board.md; sha256 20ad1dd46f40)\nEntries to review (7): n1, n2, n3, n4, s17.obs, s18.obs, s19.obs (4 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 25; update: round 5 board and change-log lines). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.11\n  n2: 0.49\n  n3: 0.20\n  n4: 0.16\n  s17.obs: 0.13\n  s18.obs: 0.16\n  s19.obs: 0.16\nCoverage: 7 of 7 entries answered."
++   "id": "n5",
++   "role": "note",
++   "body": "R5: board.md:3 OPEN CUSTOMER_COMMS. No changes.md. ledger-svc.log 429 tax-provider lines 7,35,39 (6 errs). inventory-svc cert_expired 12 errs (10,16,19..); search-api cert_expired 7 errs (6,35,48). checkout/pricing no errors. Open follow-ups: CAPACITY_REVIEW,RUNBOOK_UPDATE,POSTMORTEM_DRAFT,CUSTOMER_COMMS. Next: advance to round 6."
+   }
+  ]
+ }

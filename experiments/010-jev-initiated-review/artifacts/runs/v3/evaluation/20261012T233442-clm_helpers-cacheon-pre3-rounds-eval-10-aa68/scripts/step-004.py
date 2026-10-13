@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Round1 summary: board empty. changes.md:3 CHG-113 APPLIED build 6.58.8 shipping-svc sets retry.backoff_ms=0 (suspect BAD_CONFIG later); changes.md:4 CHG-114 APPLIED search-api no config. Logs (auth,checkout,inventory,search,shipping): only baseline WARN slow query ms 200-450 noise; no errors. Next: advance.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

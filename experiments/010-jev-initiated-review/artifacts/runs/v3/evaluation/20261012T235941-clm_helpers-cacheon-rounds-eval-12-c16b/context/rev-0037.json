@@ -1,0 +1,89 @@
+{
+ "number": 37,
+ "parent": 36,
+ "source": "runtime",
+ "step": 28,
+ "sha256": "4381f6be28f2dff5f8adf6e08213ab8a2079b8cd6814eaba0e05c0f74b4388b8",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. changes.md:3 CHG-110 APPLIED retry budget=1; :4 CHG-113 APPLIED pricing-svc build 3.22.4 sets cache.ttl_s=-1 (suspicious BAD_CONFIG); :5 CHG-114 ledger-svc no config. Noise regex: heartbeat|health ok|gc cycle|slow query|request ok. Services: checkout-api pricing-svc ledger-svc inventory-svc search-api."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board.md:3 OPEN CAPACITY_REVIEW. search-api.log:11-57 cert_expired peer=sso.example.net."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board.md:3 Thread A CERT_EXPIRED search-api+inventory-svc ongoing. :4 OPEN RUNBOOK_UPDATE, :5 OPEN POSTMORTEM_DRAFT. inventory-svc.log:1-75, search-api.log:9-78 cert errors."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board.md:3 Thread B ledger-svc suspected QUEUE_BACKLOG ongoing, BUT logs show ledger-svc.log:2-86 429 upstream=tax-provider (real UPSTREAM_RATE_LIMIT). changes CHG-129 PROPOSED (noise). Cert errors continue inventory-svc.log:3-62, search-api.log:11-89. Next: advance to R5."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board.md:3 OPEN CUSTOMER_COMMS. Cert errors inventory-svc.log:10-73, search-api.log:6-70. ledger 429 tax-provider ledger-svc.log:7-61. checkout/pricing quiet. Next: advance to R6."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board.md:3 Thread A mitigated; :4 OPEN ALERT_TUNING. changes.md:3 CHG-150 APPLIED mitigation search-api. No cert errors in logs. 429 tax-provider now also checkout-api.log:21-74 (6 lines) + ledger-svc.log:17-76. Next: advance to R7."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board.md:3 Thread B services now also checkout-api, cause/status unchanged. changes CHG-152 PROPOSED (noise). 429 tax-provider checkout-api.log:4-49, ledger-svc.log:13-77. Next: advance to R8."
+  },
+  {
+   "id": "n8",
+   "role": "note",
+   "body": "R8: board.md:3 Thread A resolved; :4 Thread B cause revised UPSTREAM_RATE_LIMIT; :5 Thread C pricing-svc ongoing cause unknown. Logs: pricing-svc.log:5-83 config validation failed cache.ttl_s=-1 build 3.22.4 (BAD_CONFIG_ROLLOUT, cite round-01/changes.md:4). 429 tax-provider checkout-api.log:26-66, ledger-svc.log:9-76. No cert errors. Next: advance to R9."
+  },
+  {
+   "id": "n9",
+   "role": "note",
+   "body": "R9: board.md:3 Thread B mitigated; :4 Thread C pods restarting; :5 CLOSED RUNBOOK_UPDATE. CHG-164 APPLIED retry budget (noise). 429 checkout-api.log:10-66, ledger-svc.log:29-66. pricing-svc.log:10-69 config validation failed ttl -1. No cert. Next: advance to R10."
+  },
+  {
+   "id": "s26.act",
+   "role": "assistant",
+   "body": "[step 26] execute\nthought: Save R9 note, compact.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nE=[e for e in c['entries'] if e['id'].startswith('n')]\nE.append({'id':'n9','role':'note','body':'R9: board.md:3 Thread B mitigated; :4 Thread C pods restarting; :5 CLOSED RUNBOOK_UPDATE. CHG-164 APPLIED retry budget (noise). 429 checkout-api.log:10-66, ledger-svc.log:29-66. pricing-svc.log:10-69 config validation failed ttl -1. No cert. Next: advance to R10.'})\njson.dump({'format':'clm-context/v1','entries':E},open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s26.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s"
+  },
+  {
+   "id": "s26.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 26: revision 33 -> 34; entries 15 -> 9; body chars 5110 -> 2100; removed [s23.act, s23.obs, s23.rcpt, s24.act, s24.obs, s25.act, s25.obs]; added [n9]; rewritten []"
+  },
+  {
+   "id": "s27.act",
+   "role": "assistant",
+   "body": "[step 27] advance\nthought: "
+  },
+  {
+   "id": "s27.obs",
+   "role": "observation",
+   "body": "Stage 10 of 10 released.\nRound 10 of 10 released. New files are under /task/fixtures/round-10/.\n\nNew files:\n  round-10/board.md (2 lines)\n  round-10/changes.md (3 lines)\n  round-10/logs/checkout-api.log (78 lines)\n  round-10/logs/inventory-svc.log (61 lines)\n  round-10/logs/ledger-svc.log (74 lines)\n  round-10/logs/pricing-svc.log (88 lines)\n  round-10/logs/search-api.log (61 lines)"
+  },
+  {
+   "id": "s28.act",
+   "role": "assistant",
+   "body": "[step 28] execute\nthought: Inspect round 10.\ncode:\nimport re\nb='/task/fixtures/round-10/'\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\nfor s in ['checkout-api','inventory-svc','ledger-svc','pricing-svc','search-api']:\n  L=open(b+'logs/'+s+'.log').read().splitlines()\n  h=[i+1 for i,l in enumerate(L) if not re.search('heartbeat|health ok|gc cycle|slow query|request ok',l)]\n  print(s,len(h),h[:3],h[-1:] if h else '', L[h[0]-1][:150] if h else '')"
+  },
+  {
+   "id": "s28.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 10\n\n\n# Change log: round 10\n\n- CHG-173 PROPOSED: move batch jobs to off-peak window (not applied)\n\ncheckout-api 2 [56, 70] [70] {\"ts\":\"2026-09-14T17:41:53Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":16}\ninventory-svc 0 []  \nledger-svc 2 [34, 61] [61] {\"ts\":\"2026-09-14T17:26:25Z\",\"level\":\"ERROR\",\"svc\":\"ledger-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":44}\npricing-svc 9 [1, 4, 5] [86] {\"ts\":\"2026-09-14T17:01:48Z\",\"level\":\"ERROR\",\"svc\":\"pricing-svc\",\"msg\":\"config validation failed\",\"key\":\"cache.ttl_s\",\"value\":\"-1\",\"build\":\"3.22.4\"}\nsearch-api 0 []  \n"
+  }
+ ]
+}

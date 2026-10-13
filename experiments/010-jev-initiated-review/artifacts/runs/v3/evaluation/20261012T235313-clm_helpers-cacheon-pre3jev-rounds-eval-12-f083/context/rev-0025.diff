@@ -1,0 +1,56 @@
+--- rev-24
++++ rev-25
+@@ -4,52 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Round1: board empty. round-01/changes.md:3 CHG-110 APPLIED retry GET=1; :4 CHG-113 APPLIED 3.22.4 pricing-svc cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT, no errors yet); :5 CHG-114 APPLIED ledger-svc no config. Round2: board follow-up OPEN CAPACITY_REVIEW; CHG-115 APPLIED retry. r2: search-api CERT_EXPIRED peer=sso.example.net round-02/logs/search-api.log:11,15,19,24,27,33,57. Round3: round-03/board.md:3 Thread A CERT_EXPIRED search-api + inventory-svc ongoing; :4 OPEN RUNBOOK_UPDATE; :5 OPEN POSTMORTEM_DRAFT; changes.md:3 CHG-126 APPLIED TLS ticket rotation hourly (irrelevant). r3 logs cert errors: inventory-svc.log:1,8,36,56,60,65,72,75; search-api.log:9,14,33,36,40-50,63,78. Open follow-ups: CAPACITY_REVIEW,RUNBOOK_UPDATE,POSTMORTEM_DRAFT. Next: advance round 4; grep non-INFO/non-slow-query + board/changes."
+-  },
+-  {
+-   "id": "s15.act",
+-   "role": "assistant",
+-   "body": "[step 15] execute\nthought: \ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nb=\"Round1: board empty. round-01/changes.md:3 CHG-110 APPLIED retry GET=1; :4 CHG-113 APPLIED 3.22.4 pricing-svc cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT, no errors yet); :5 CHG-114 APPLIED ledger-svc no config. Round2: board follow-up OPEN CAPACITY_REVIEW; CHG-115 APPLIED retry. r2: search-api CERT_EXPIRED peer=sso.example.net round-02/logs/search-api.log:11,15,19,24,27,33,57. Round3: round-03/board.md:3 Thread A CERT_EXPIRED search-api + inventory-svc ongoing; :4 OPEN RUNBOOK_UPDATE; :5 OPEN POSTMORTEM_DRAFT; changes.md:3 CHG-126 APPLIED TLS ticket rotation hourly (irrelevant). r3 logs cert errors: inventory-svc.log:1,8,36,56,60,65,72,75; search-api.log:9,14,33,36,40-50,63,78. Open follow-ups: CAPACITY_REVIEW,RUNBOOK_UPDATE,POSTMORTEM_DRAFT. Next: advance round 4; grep non-INFO/non-slow-query + board/changes.\"\nc['entries']=[{'id':'n1','role':'note','body':b}]\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+-  },
+-  {
+-   "id": "s15.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+-  },
+-  {
+-   "id": "s15.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 15: revision 19 -> 20; entries 10 -> 1; body chars 6600 -> 821; removed [s11.act, s11.obs, s11.rcpt, s12.act, s12.obs, s13.act, s13.obs, s14.act, s14.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s16.act",
+-   "role": "assistant",
+-   "body": "[step 16] advance\nthought: "
+-  },
+-  {
+-   "id": "s16.obs",
+-   "role": "observation",
+-   "body": "Stage 4 of 10 released.\nRound 4 of 10 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (3 lines)\n  round-04/changes.md (3 lines)\n  round-04/logs/checkout-api.log (74 lines)\n  round-04/logs/inventory-svc.log (70 lines)\n  round-04/logs/ledger-svc.log (88 lines)\n  round-04/logs/pricing-svc.log (63 lines)\n  round-04/logs/search-api.log (91 lines)"
+-  },
+-  {
+-   "id": "s17.act",
+-   "role": "assistant",
+-   "body": "[step 17] execute\nthought: \ncode:\nimport re,glob\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-04/'+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob('/task/fixtures/round-04/logs/*.log')):\n  for i,l in enumerate(open(f),1):\n    if re.search(r'ERROR|WARN|error|fail|429|cert|expired',l,re.I) and 'slow' not in l:print(f.split('/')[-1],i,l.rstrip()[:150])"
+-  },
+-  {
+-   "id": "s17.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 04\nboard.md 2 \nboard.md 3 - Thread B opened: errors in ledger-svc. Suspected cause: message consumer lag growing (QUEUE_BACKLOG). Status: ongoing.\nchanges.md 1 # Change log: round 04\nchanges.md 2 \nchanges.md 3 - CHG-129 PROPOSED: move batch jobs to off-peak window (not applied)\ninventory-svc.log 3 2026-09-14T11:02:49Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ninventory-svc.log 15 2026-09-14T11:10:15Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ninventory-svc.log 26 2026-09-14T11:19:30Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ninventory-svc.log 35 2026-09-14T11:28:00Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ninventory-svc.log 55 2026-09-14T11:48:35Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ninventory-svc.log 56 2026-09-14T11:48:59Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ninventory-svc.log 62 2026-09-14T11:56:13Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\nledger-svc.log 2 2026-09-14T11:03:12Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=8\nledger-svc.log 12 2026-09-14T11:10:35Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=19\nledger-svc.log 15 2026-09-14T11:10:54Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=56\nledger-svc.log 24 2026-09-14T11:15:49Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=47\nledger-svc.log 28 2026-09-14T11:17:13Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=13\nledger-svc.log 32 2026-09-14T11:21:24Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=34\nledger-svc.log 37 2026-09-14T11:24:54Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=12\nledger-svc.log 53 2026-09-14T11:36:14Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=22\nledger-svc.log 59 2026-09-14T11:42:41Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=59\nledger-svc.log 63 2026-09-14T11:46:10Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=18\nledger-svc.log 75 2026-09-14T11:49:04Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=25\nledger-svc.log 86 2026-09-14T11:59:25Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=27\nsearch-api.log 11 2026-09-14T11:07:54Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 12 2026-09-14T11:09:08Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 17 2026-09-14T11:11:21Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 19 2026-09-14T11:14:50Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 31 2026-09-14T11:21:14Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 44 2026-09-14T11:25:41Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 51 2026-09-14T11:30:34Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 59 2026-09-14T11:34:33Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 71 2026-09-14T11:48:44Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 81 2026-09-14T11:54:52Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 87 2026-09-14T11:57:13Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 89 2026-09-14T11:58:43Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\n"
+-  },
+-  {
+-   "id": "s18.act",
+-   "role": "assistant",
+-   "body": "[step 18] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s18.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 23; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 4 (2 lines; files round-04/board.md, round-04/changes.md; sha256 59515d6d44b1)\nEntries to review (4): n1, s15.obs, s16.obs, s17.obs (4 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 23; update: round 4 board and change-log lines). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.35\n  s15.obs: 0.16\n  s16.obs: 0.19\n  s17.obs: 0.27\nCoverage: 4 of 4 entries answered."
++   "body": "Round1: board empty. round-01/changes.md:3 CHG-110 APPLIED retry GET=1; :4 CHG-113 APPLIED 3.22.4 pricing-svc cache.ttl_s=-1 (suspect BAD_CONFIG_ROLLOUT, no errors yet); :5 CHG-114 APPLIED ledger-svc no config. Round2: board follow-up OPEN CAPACITY_REVIEW; CHG-115 APPLIED retry. r2: search-api CERT_EXPIRED peer=sso.example.net round-02/logs/search-api.log:11,15,19,24,27,33,57. Round3: round-03/board.md:3 Thread A CERT_EXPIRED search-api + inventory-svc ongoing; :4 OPEN RUNBOOK_UPDATE; :5 OPEN POSTMORTEM_DRAFT; changes.md:3 CHG-126 APPLIED TLS ticket rotation hourly (irrelevant). r3 logs cert errors: inventory-svc.log:1,8,36,56,60,65,72,75; search-api.log:9,14,33,36,40-50,63,78. Open follow-ups: CAPACITY_REVIEW,RUNBOOK_UPDATE,POSTMORTEM_DRAFT. Next: advance round 4; grep non-INFO/non-slow-query + board/changes. Round4: round-04/board.md:3 Thread B ledger-svc QUEUE_BACKLOG ongoing (board suspect); but logs show 429 upstream=tax-provider ledger-svc.log:2,12,15,24,28,32,37,53,59,63,75,86 -> likely UPSTREAM_RATE_LIMIT. changes.md:3 CHG-129 PROPOSED (ignore). r4 cert errors continue inventory-svc.log:3,15,26,35,55,56,62; search-api.log:11,12,17,19,31,44,51,59,71,81,87,89. Next: advance round 5."
+   }
+  ]
+ }

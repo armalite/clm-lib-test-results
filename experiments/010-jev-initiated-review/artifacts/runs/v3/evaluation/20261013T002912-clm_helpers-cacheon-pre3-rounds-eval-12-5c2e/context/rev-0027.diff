@@ -1,0 +1,55 @@
+--- rev-26
++++ rev-27
+@@ -22,49 +22,9 @@
+    "body": "R4: board Thread B ledger-svc suspected QUEUE_BACKLOG ongoing (round-04/board.md:3). CHG-129 PROPOSED only (round-04/changes.md:3). Logs: inventory-svc certificate_expired peer=sso.example.net lines 3,15,26,35,55,56 (n=7); ledger-svc upstream returned 429? upstream=tax-provider retry_after_s lines 2,12,15,24,28,32 (n=12) -> likely UPSTREAM_RATE_LIMIT not queue; verify status code. pricing-svc output truncated: check pricing-svc errors in R4. Next: check R4 pricing-svc + ledger code, then advance."
+   },
+   {
+-   "id": "s17.act",
+-   "role": "assistant",
+-   "body": "[step 17] execute\nthought: Compact context: digest R4 into short note, drop raw entries.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\ne=[x for x in c['entries'] if x['id'] in('n1','n2','n3')]\ne.append({'id':'n4','role':'note','body':'R4: board Thread B ledger-svc suspected QUEUE_BACKLOG ongoing (round-04/board.md:3). CHG-129 PROPOSED only (round-04/changes.md:3). Logs: inventory-svc certificate_expired peer=sso.example.net lines 3,15,26,35,55,56 (n=7); ledger-svc upstream returned 429? upstream=tax-provider retry_after_s lines 2,12,15,24,28,32 (n=12) -> likely UPSTREAM_RATE_LIMIT not queue; verify status code. pricing-svc output truncated: check pricing-svc errors in R4. Next: check R4 pricing-svc + ledger code, then advance.'})\nc['entries']=e\njson.dump(c,open('/task/workspace/context.json','w'))\nimport re\nfor i,l in enumerate(open('/task/fixtures/round-04/logs/ledger-svc.log'),1):\n  if i in(2,12):print(i,l.strip()[:160])\nfor i,l in enumerate(open('/task/fixtures/round-04/logs/pricing-svc.log'),1):\n  if re.search('ERROR|WARN|fail|miss|evict',l,re.I) and 'slow query' not in l:print('p',i,l.strip()[:140])"
+-  },
+-  {
+-   "id": "s17.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n2 2026-09-14T11:03:12Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=8\n12 2026-09-14T11:10:35Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=19\n"
+-  },
+-  {
+-   "id": "s17.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 17: revision 21 -> 22; entries 9 -> 4; body chars 7927 -> 1344; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs]; added []; rewritten [n4]"
+-  },
+-  {
+-   "id": "s18.act",
+-   "role": "assistant",
+-   "body": "[step 18] advance\nthought: "
+-  },
+-  {
+-   "id": "s18.obs",
+-   "role": "observation",
+-   "body": "Stage 5 of 10 released.\nRound 5 of 10 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (3 lines)\n  round-05/logs/checkout-api.log (66 lines)\n  round-05/logs/inventory-svc.log (85 lines)\n  round-05/logs/ledger-svc.log (67 lines)\n  round-05/logs/pricing-svc.log (74 lines)\n  round-05/logs/search-api.log (78 lines)"
+-  },
+-  {
+-   "id": "s19.act",
+-   "role": "assistant",
+-   "body": "[step 19] execute\nthought: Inspect R5 board and errors.\ncode:\nimport re,glob\nprint(open('/task/fixtures/round-05/board.md').read())\nfor f in sorted(glob.glob('/task/fixtures/round-05/logs/*.log')):\n  n=0\n  for i,l in enumerate(open(f),1):\n    if re.search('ERROR|WARN',l) and 'slow query' not in l:\n      n+=1\n      if n<=3:print(f.split('/')[-1],i,l.strip()[:130])\n  print(f.split('/')[-1],'n=',n)"
+-  },
+-  {
+-   "id": "s19.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 05\n\n- Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\n\ncheckout-api.log n= 0\ninventory-svc.log 10 2026-09-14T12:04:31Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ninventory-svc.log 16 2026-09-14T12:07:40Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ninventory-svc.log 19 2026-09-14T12:10:17Z ERROR inventory-svc tls handshake failed peer=sso.example.net reason=certificate_expired\ninventory-svc.log n= 12\nledger-svc.log 7 2026-09-14T12:04:39Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=12\nledger-svc.log 35 2026-09-14T12:32:22Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=30\nledger-svc.log 39 2026-09-14T12:34:18Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=14\nledger-svc.log n= 6\npricing-svc.log n= 0\nsearch-api.log 6 2026-09-14T12:04:30Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 35 2026-09-14T12:26:02Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log 48 2026-09-14T12:33:24Z ERROR search-api tls handshake failed peer=sso.example.net reason=certificate_expired\nsearch-api.log n= 7\n"
+-  },
+-  {
+-   "id": "s20.act",
+-   "role": "assistant",
+-   "body": "[step 20] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s20.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 25; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 5 (1 lines; files round-05/board.md; sha256 20ad1dd46f40)\nEntries to review (7): n1, n2, n3, n4, s17.obs, s18.obs, s19.obs (4 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged."
++   "id": "n5",
++   "role": "note",
++   "body": "R5: board Follow-up OPEN CUSTOMER_COMMS (round-05/board.md:3). Logs: inventory-svc certificate_expired n=12 (round-05/logs/inventory-svc.log:10,16,19); search-api certificate_expired n=7 (round-05/logs/search-api.log:6,35,48); ledger-svc 429 tax-provider n=6 (round-05/logs/ledger-svc.log:7,35,39) confirmed UPSTREAM_RATE_LIMIT. pricing/checkout clean. Next: advance to R6."
+   }
+  ]
+ }

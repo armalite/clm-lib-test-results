@@ -1,0 +1,24 @@
+--- rev-2
++++ rev-3
+@@ -5,6 +5,21 @@
+    "id": "notes",
+    "role": "note",
+    "body": "R1: board empty. changes.md:3 CHG-113 APPLIED shipping-svc build 6.58.8 sets retry.backoff_ms=0 (suspicious BAD_CONFIG); :4 CHG-114 search-api no config. Logs: only routine slow query WARNs in all services (shipping,checkout,auth,inventory,search). No incident yet."
++  },
++  {
++   "id": "s2.act",
++   "role": "assistant",
++   "body": "[step 2] execute\nthought: Compact context: replace round1 output with notes, and write helper.\ncode:\nimport json\nn='R1: board empty. changes.md:3 CHG-113 APPLIED shipping-svc build 6.58.8 sets retry.backoff_ms=0 (suspicious BAD_CONFIG); :4 CHG-114 search-api no config. Logs: only routine slow query WARNs in all services (shipping,checkout,auth,inventory,search). No incident yet.'\njson.dump({'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':n}]},open('/task/workspace/context.json','w'))\nopen('/task/workspace/scan.py','w').write('''import os,sys\nr=sys.argv[1];b='/task/fixtures/round-'+r\nfor x in sorted(os.listdir(b)):\n  p=b+'/'+x\n  if x.endswith('.md'):\n    for i,l in enumerate(open(p),1):\n      if l.strip():print(x,i,l.rstrip()[:200])\nfor x in sorted(os.listdir(b+'/logs')):\n  for i,l in enumerate(open(b+'/logs/'+x),1):\n    if 'slow query' in l or ' INFO' in l or 'level=info' in l.lower():continue\n    print(x,i,l.rstrip()[:160])\n''')"
++  },
++  {
++   "id": "s2.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.0s"
++  },
++  {
++   "id": "s2.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 1; body chars 5898 -> 265; removed [s1.act, s1.obs]; added [notes]; rewritten []"
+   }
+  ]
+ }

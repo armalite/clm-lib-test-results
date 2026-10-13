@@ -1,0 +1,19 @@
+--- rev-27
++++ rev-28
+@@ -55,6 +55,16 @@
+    "id": "s19.obs",
+    "role": "observation",
+    "body": "Stage 7 of 12 released.\nRound 7 of 12 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/changes.md (3 lines)\n  round-07/logs/checkout-api.log (73 lines)\n  round-07/logs/inventory-svc.log (73 lines)\n  round-07/logs/pricing-svc.log (72 lines)\n  round-07/logs/search-api.log (68 lines)\n  round-07/logs/shipping-svc.log (58 lines)"
++  },
++  {
++   "id": "s20.act",
++   "role": "assistant",
++   "body": "[step 20] execute\nthought: Inspect R7 board, changes, and error lines.\ncode:\nimport re,glob\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open('/task/fixtures/round-07/'+f),1):print(f,i,l.rstrip())\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n  hits=[(i,l.strip()[:150]) for i,l in enumerate(open(f),1) if re.search('ERROR|FATAL|429|fail|SERVFAIL|cert|expired',l,re.I)]\n  print(f.split('/')[-1],len(hits))\n  for h in hits[:4]:print(' ',h)\n  print('  lines',[h[0] for h in hits])"
++  },
++  {
++   "id": "s20.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.5s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 07\nboard.md 2 \nboard.md 3 - Thread B root cause revised: DNS lookups failing for a dependency (DNS_RESOLUTION); this supersedes the earlier suspicion of CERT_EXPIRED.\nboard.md 4 - Thread D opened: process memory growing until restarts alerts (MEMORY_LEAK) on pricing-svc. Status: ongoing.\nchanges.md 1 # Change log: round 07\nchanges.md 2 \nchanges.md 3 - CHG-153 PROPOSED: move batch jobs to off-peak window (not applied)\ncheckout-api.log 0\n  lines []\ninventory-svc.log 7\n  (1, '{\"ts\":\"2026-09-14T14:00:03Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}')\n  (3, '{\"ts\":\"2026-09-14T14:01:20Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}')\n  (21, '{\"ts\":\"2026-09-14T14:21:38Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}')\n  (29, '{\"ts\":\"2026-09-14T14:25:00Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}')\n  lines [1, 3, 21, 29, 31, 59, 65]\npricing-svc.log 0\n  lines []\nsearch-api.log 0\n  lines []\nshipping-svc.log 0\n  lines []\n"
+   }
+  ]
+ }

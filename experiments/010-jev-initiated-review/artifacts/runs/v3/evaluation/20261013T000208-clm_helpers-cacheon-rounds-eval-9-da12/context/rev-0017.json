@@ -1,0 +1,49 @@
+{
+ "number": 17,
+ "parent": 16,
+ "source": "runtime",
+ "step": 13,
+ "sha256": "380794de798f29de822a09f651dbf146b2d298e2db16f8c83ac8760e551066e2",
+ "entries": [
+  {
+   "id": "notes",
+   "role": "note",
+   "body": "NOTES: R1: board empty; round-01/changes.md:3 CHG-108 APPLIED TLS ticket rotation. Slow-query WARNs = noise. R2: round-02/changes.md:4 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG; no search-api errors yet). ledger DNS SERVFAIL geo.internal round-02/logs/ledger-svc.log:3-81. R3: round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc+inventory-svc ongoing; board.md:4 OPEN POSTMORTEM_DRAFT. inventory DNS round-03/logs/inventory-svc.log:1-19. R4: round-04/board.md:3 Thread B shipping-svc DB_POOL_EXHAUSTED ongoing (no db errors in logs though; only disk WARNs shipping round-04/logs/shipping-svc.log:9-47 and notify-worker round-04/logs/notify-worker.log:2-69 used_pct 91-98 -> suspect DISK_PRESSURE). board.md:4 OPEN DATA_BACKFILL. DNS continues round-04/logs/inventory-svc.log:11-72, ledger-svc.log:5-52. changes CHG-131 TLS rotation (noise). Filter: lines not matching slow.query|INFO, print board/changes. Helper: cm.setnotes(text)."
+  },
+  {
+   "id": "s11.act",
+   "role": "assistant",
+   "body": "[step 11] execute\nthought: Compact notes with round 4.\ncode:\nimport sys;sys.path.insert(0,'/task/workspace')\nimport cm\ncm.setnotes('NOTES: R1: board empty; round-01/changes.md:3 CHG-108 APPLIED TLS ticket rotation. Slow-query WARNs = noise. R2: round-02/changes.md:4 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG; no search-api errors yet). ledger DNS SERVFAIL geo.internal round-02/logs/ledger-svc.log:3-81. R3: round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc+inventory-svc ongoing; board.md:4 OPEN POSTMORTEM_DRAFT. inventory DNS round-03/logs/inventory-svc.log:1-19. R4: round-04/board.md:3 Thread B shipping-svc DB_POOL_EXHAUSTED ongoing (no db errors in logs though; only disk WARNs shipping round-04/logs/shipping-svc.log:9-47 and notify-worker round-04/logs/notify-worker.log:2-69 used_pct 91-98 -> suspect DISK_PRESSURE). board.md:4 OPEN DATA_BACKFILL. DNS continues round-04/logs/inventory-svc.log:11-72, ledger-svc.log:5-52. changes CHG-131 TLS rotation (noise). Filter: lines not matching slow.query|INFO, print board/changes. Helper: cm.setnotes(text).')\nprint('ok')"
+  },
+  {
+   "id": "s11.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s11.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 11: revision 13 -> 14; entries 8 -> 1; body chars 6967 -> 961; removed [s8.act, s8.obs, s8.rcpt, s9.act, s9.obs, s10.act, s10.obs]; added []; rewritten [notes]"
+  },
+  {
+   "id": "s12.act",
+   "role": "assistant",
+   "body": "[step 12] advance\nthought: "
+  },
+  {
+   "id": "s12.obs",
+   "role": "observation",
+   "body": "Stage 5 of 10 released.\nRound 5 of 10 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (5 lines)\n  round-05/logs/inventory-svc.log (80 lines)\n  round-05/logs/ledger-svc.log (71 lines)\n  round-05/logs/notify-worker.log (67 lines)\n  round-05/logs/search-api.log (69 lines)\n  round-05/logs/shipping-svc.log (77 lines)"
+  },
+  {
+   "id": "s13.act",
+   "role": "assistant",
+   "body": "[step 13] execute\nthought: Inspect round 5 with filter.\ncode:\nimport re,glob\nb='/task/fixtures/round-05/'\nprint(open(b+'board.md').read())\nfor f in sorted(glob.glob(b+'logs/*.log')):\n  n=0\n  for i,l in enumerate(open(f),1):\n    if not re.search(r'slow.query|INFO',l):\n      n+=1\n      if n<=4: print(f.split('/')[-1],i,l.strip()[:150])\n  print(f.split('/')[-1],'count',n)"
+  },
+  {
+   "id": "s13.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 05\n\n- Thread B update: affected services now also include notify-worker; cause and status unchanged.\n- Thread D opened: an expired TLS certificate on a dependency alerts (CERT_EXPIRED) on shipping-svc. Status: ongoing.\n- Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\n\ninventory-svc.log 22 2026-09-14T12:18:12Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc.log 32 2026-09-14T12:25:39Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc.log 33 2026-09-14T12:25:58Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc.log 35 2026-09-14T12:26:55Z ERROR inventory-svc dns lookup failed host=geo.internal err=SERVFAIL\ninventory-svc.log count 11\nledger-svc.log 17 2026-09-14T12:09:25Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 21 2026-09-14T12:13:07Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 30 2026-09-14T12:21:41Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 35 2026-09-14T12:24:13Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log count 7\nnotify-worker.log 2 2026-09-14T12:02:30Z WARN  notify-worker disk usage high path=/var/data used_pct=96\nnotify-worker.log 5 2026-09-14T12:03:33Z WARN  notify-worker disk usage high path=/var/data used_pct=98\nnotify-worker.log 6 2026-09-14T12:05:53Z WARN  notify-worker disk usage high path=/var/data used_pct=98\nnotify-worker.log 7 2026-09-14T12:05:55Z WARN  notify-worker disk usage high path=/var/data used_pct=93\nnotify-worker.log count 11\nsearch-api.log count 0\nshipping-svc.log 1 2026-09-14T12:00:06Z ERROR shipping-svc tls handshake failed peer=bank-api reason=certificate_expired\nshipping-svc.log 4 2026-09-14T12:02:49Z WARN  shipping-svc disk usage high path=/var/data used_pct=94\nshipping-svc.log 5 2026-09-14T12:03:59Z WARN  shipping-svc disk usage high path=/var/data used_pct=92\nshipping-svc.log 7 2026-09-14T12:06:04Z ERROR shipping-svc tls handshake failed peer=bank-api reason=certificate_expired\nshipping-svc.log count 22\n"
+  }
+ ]
+}

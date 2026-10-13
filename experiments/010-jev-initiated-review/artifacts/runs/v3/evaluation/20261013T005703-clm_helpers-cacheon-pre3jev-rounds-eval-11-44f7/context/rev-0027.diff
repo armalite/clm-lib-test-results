@@ -1,0 +1,19 @@
+--- rev-26
++++ rev-27
+@@ -35,6 +35,16 @@
+    "id": "s20.obs",
+    "role": "observation",
+    "body": "Stage 6 of 12 released.\nRound 6 of 12 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (4 lines)\n  round-06/changes.md (4 lines)\n  round-06/logs/checkout-api.log (67 lines)\n  round-06/logs/inventory-svc.log (86 lines)\n  round-06/logs/pricing-svc.log (75 lines)\n  round-06/logs/search-api.log (67 lines)\n  round-06/logs/shipping-svc.log (64 lines)"
++  },
++  {
++   "id": "s21.act",
++   "role": "assistant",
++   "body": "[step 21] execute\nthought: Inspect round 6 board, changes, and error lines compactly.\ncode:\nimport re,glob\nb='/task/fixtures/round-06/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip()[:200])\nfor p in sorted(glob.glob(b+'logs/*.log')):\n  n=p.split('/')[-1];ids=[];s={}\n  for i,l in enumerate(open(p),1):\n    if re.search(r'ERROR|FATAL|CRIT',l):\n      ids.append(i);k=re.sub(r'\\d','',l)[40:120];s.setdefault(k,(i,l.strip()[:170]))\n  print(n,len(ids),ids[:25])\n  for v in list(s.values())[:3]:print('  ',v)"
++  },
++  {
++   "id": "s21.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.0s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 2 \nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nboard.md 4 - Follow-up CLOSED VENDOR_TICKET.\nchanges.md 1 # Change log: round 06\nchanges.md 2 \nchanges.md 3 - CHG-147 APPLIED: dashboard panels for p99 latency added\nchanges.md 4 - CHG-150 APPLIED: mitigation for thread A deployed to pricing-svc\ncheckout-api.log 0 []\ninventory-svc.log 12 [3, 8, 11, 19, 26, 31, 33, 34, 39, 59, 75, 81]\n   (3, '{\"ts\":\"2026-09-14T13:01:22Z\",\"level\":\"ERROR\",\"svc\":\"inventory-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}')\npricing-svc.log 0 []\nsearch-api.log 0 []\nshipping-svc.log 0 []\n"
+   }
+  ]
+ }

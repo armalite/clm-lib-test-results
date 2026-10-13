@@ -1,0 +1,19 @@
+--- rev-18
++++ rev-19
+@@ -30,6 +30,16 @@
+    "id": "s13.obs",
+    "role": "observation",
+    "body": "Stage 5 of 11 released.\nRound 5 of 11 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (2 lines)\n  round-05/changes.md (3 lines)\n  round-05/logs/auth-svc.log (66 lines)\n  round-05/logs/checkout-api.log (68 lines)\n  round-05/logs/inventory-svc.log (75 lines)\n  round-05/logs/search-api.log (66 lines)\n  round-05/logs/shipping-svc.log (74 lines)"
++  },
++  {
++   "id": "s14.act",
++   "role": "assistant",
++   "body": "[step 14] execute\nthought: Inspect round 5.\ncode:\nimport re\nb='/task/fixtures/round-05/'\nprint(open(b+'board.md').read());print(open(b+'changes.md').read())\nfor s in ['auth-svc','checkout-api','inventory-svc','search-api','shipping-svc']:\n  L=open(b+'logs/'+s+'.log').read().splitlines()\n  bad=[(i+1,l) for i,l in enumerate(L) if re.search(r'ERROR|WARN|error|warn|fail|429',l)]\n  print(s,len(bad),bad[0][0] if bad else '',bad[-1][0] if bad else '')\n  for i,l in bad[:2]: print(' ',i,l[:160])"
++  },
++  {
++   "id": "s14.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 05\n\n\n# Change log: round 05\n\n- CHG-140 APPLIED: log sampling for /v1/health reduced to 1%\n\nauth-svc 17 1 63\n  1 2026-09-14T12:00:59Z ERROR auth-svc dns lookup failed host=geo.internal err=SERVFAIL\n  2 2026-09-14T12:01:52Z WARN  auth-svc slow query ms=290 table=orders\ncheckout-api 26 2 68\n  2 2026-09-14T12:00:36Z ERROR checkout-api dns lookup failed host=geo.internal err=SERVFAIL\n  4 2026-09-14T12:02:30Z WARN  checkout-api slow query ms=375 table=events\ninventory-svc 23 3 74\n  3 2026-09-14T12:02:23Z WARN  inventory-svc slow query ms=323 table=events\n  7 2026-09-14T12:05:04Z WARN  inventory-svc slow query ms=384 table=orders\nsearch-api 19 1 65\n  1 2026-09-14T12:01:32Z WARN  search-api slow query ms=250 table=orders\n  5 2026-09-14T12:08:21Z ERROR search-api upstream returned 429 upstream=fx-rates retry_after_s=41\nshipping-svc 15 3 74\n  3 2026-09-14T12:01:32Z WARN  shipping-svc slow query ms=371 table=events\n  5 2026-09-14T12:04:23Z WARN  shipping-svc slow query ms=323 table=orders\n"
+   }
+  ]
+ }

@@ -1,0 +1,4 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. slow query WARNs noise. inventory-svc DNS SERVFAIL host=rates.internal round-01/logs/inventory-svc.log:7,20,50,54,57,62,65. round-01/changes.md: CHG-107 APPLIED retry budget idempotent GETs=1.'},{'id':'n2','role':'note','body':'R2: board Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing (round-02/board.md:3). checkout-api DNS SERVFAIL rates.internal round-02/logs/checkout-api.log:8,24,29; inventory round-02/logs/inventory-svc.log:8,12. round-02/changes.md: CHG-120 APPLIED search-api http.max_inflight=-1 (suspicious BAD_CONFIG, watch search-api); CHG-121 auth-svc no config. Next: advance to R3.'}]}
+json.dump(c,open('/task/workspace/context.json','w'))
+print(open('/task/fixtures/round-02/changes.md').read().splitlines()[:5])

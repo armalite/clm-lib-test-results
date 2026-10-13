@@ -1,0 +1,59 @@
+--- rev-7
++++ rev-8
+@@ -4,52 +4,12 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Round1: board empty. Logs notify-worker,shipping-svc,ledger-svc,inventory-svc,search-api: only routine WARN slow query (200-450ms), no errors. Baseline noise. changes.md content printed in step 3 obs."
++   "body": "R1: board empty; logs only routine WARN slow query noise. CHG-108 APPLIED (round-01/changes.md:3) TLS session ticket rotation hourly."
+   },
+   {
+-   "id": "s3.act",
+-   "role": "assistant",
+-   "body": "[step 3] execute\nthought: Compact context: summarize round 1 findings.\ncode:\nimport json\nb=open('/task/fixtures/round-01/changes.md').read()\nprint(b[:1500])\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Round1: board empty. Logs notify-worker,shipping-svc,ledger-svc,inventory-svc,search-api: only routine WARN slow query (200-450ms), no errors. Baseline noise. changes.md content printed in step 3 obs.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s3.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Change log: round 01\n\n- CHG-108 APPLIED: TLS session ticket rotation set to hourly\n\n"
+-  },
+-  {
+-   "id": "s3.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 3: revision 2 -> 3; entries 4 -> 1; body chars 5793 -> 200; removed [s1.act, s1.obs, s2.act, s2.obs]; added [n1]; rewritten []"
+-  },
+-  {
+-   "id": "s4.act",
+-   "role": "assistant",
+-   "body": "[step 4] advance\nthought: "
+-  },
+-  {
+-   "id": "s4.obs",
+-   "role": "observation",
+-   "body": "Stage 2 of 10 released.\nRound 2 of 10 released. New files are under /task/fixtures/round-02/.\n\nNew files:\n  round-02/board.md (2 lines)\n  round-02/changes.md (5 lines)\n  round-02/logs/inventory-svc.log (68 lines)\n  round-02/logs/ledger-svc.log (89 lines)\n  round-02/logs/notify-worker.log (74 lines)\n  round-02/logs/search-api.log (70 lines)\n  round-02/logs/shipping-svc.log (59 lines)"
+-  },
+-  {
+-   "id": "s5.act",
+-   "role": "assistant",
+-   "body": "[step 5] execute\nthought: Inspect round 2 board, changes, and errors in logs.\ncode:\nimport glob,re\nfor f in ['board.md','changes.md']:\n    print(f);print(open('/task/fixtures/round-02/'+f).read())\nfor p in sorted(glob.glob('/task/fixtures/round-02/logs/*.log')):\n    for i,l in enumerate(open(p),1):\n        if re.search(r'ERROR|FATAL|CRIT|429|timeout|exhaust|expired|OOM|disk|lag|NXDOMAIN',l,re.I):\n            print(p.split('/')[-1],i,l.strip()[:160])"
+-  },
+-  {
+-   "id": "s5.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md\n# Incident board: updates in round 02\n\n\nchanges.md\n# Change log: round 02\n\n- CHG-117 APPLIED: log sampling for /v1/health reduced to 1%\n- CHG-120 APPLIED: build 8.48.0 rolled out to search-api; sets `http.max_inflight=-1`\n- CHG-121 APPLIED: build 8.48.0 rolled out to shipping-svc; no config changes\n\nledger-svc.log 3 2026-09-14T09:02:55Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 22 2026-09-14T09:13:33Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 27 2026-09-14T09:16:11Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 34 2026-09-14T09:23:08Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 35 2026-09-14T09:23:15Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 41 2026-09-14T09:25:52Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 48 2026-09-14T09:29:40Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 52 2026-09-14T09:31:31Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 59 2026-09-14T09:38:22Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 71 2026-09-14T09:48:00Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 77 2026-09-14T09:51:31Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nledger-svc.log 81 2026-09-14T09:54:29Z ERROR ledger-svc dns lookup failed host=geo.internal err=SERVFAIL\nsearch-api.log 8 2026-09-14T09:09:37Z WARN  search-api slow query ms=429 table=orders\n"
+-  },
+-  {
+-   "id": "s6.act",
+-   "role": "assistant",
+-   "body": "[step 6] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s6.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 6; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 2 (3 lines; files round-02/board.md, round-02/changes.md; sha256 a0dd0eb9071e)\nEntries to review (4): n1, s3.obs, s4.obs, s5.obs (4 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 6; update: round 2 board and change-log lines). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.36\n  s3.obs: 0.10\n  s4.obs: 0.17\n  s5.obs: 0.20\nCoverage: 4 of 4 entries answered."
++   "id": "n2",
++   "role": "note",
++   "body": "R2: board empty. changes round-02/changes.md: CHG-117 log sampling health 1%; CHG-120 APPLIED build 8.48.0 search-api sets http.max_inflight=-1 (line 4, suspicious BAD_CONFIG); CHG-121 shipping-svc 8.48.0 no config. ledger-svc DNS SERVFAIL host=geo.internal round-02/logs/ledger-svc.log:3,22,27,34,35,41,48,52,59,71,77,81 (09:02-09:54) -> DNS_RESOLUTION candidate. search-api no errors yet."
+   }
+  ]
+ }

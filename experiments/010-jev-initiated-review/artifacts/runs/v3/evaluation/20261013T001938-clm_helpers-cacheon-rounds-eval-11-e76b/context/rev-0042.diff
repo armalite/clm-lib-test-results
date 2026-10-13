@@ -1,0 +1,19 @@
+--- rev-41
++++ rev-42
+@@ -30,6 +30,16 @@
+    "id": "s30.obs",
+    "role": "observation",
+    "body": "Stage 11 of 12 released.\nRound 11 of 12 released. New files are under /task/fixtures/round-11/.\n\nNew files:\n  round-11/board.md (4 lines)\n  round-11/logs/checkout-api.log (69 lines)\n  round-11/logs/inventory-svc.log (72 lines)\n  round-11/logs/pricing-svc.log (74 lines)\n  round-11/logs/search-api.log (73 lines)\n  round-11/logs/shipping-svc.log (69 lines)"
++  },
++  {
++   "id": "s31.act",
++   "role": "assistant",
++   "body": "[step 31] execute\nthought: Scan round 11.\ncode:\nimport re,glob\nd='/task/fixtures/round-11/'\nprint(open(d+'board.md').read())\nfor f in sorted(glob.glob(d+'logs/*')):\n    L=[(i+1,l) for i,l in enumerate(open(f)) if re.search(r'ERROR|FATAL|CRIT|429|exhaust|expired|NXDOMAIN|SERVFAIL|lag|OOM|disk|batch|heap',l)]\n    print(f.split('/')[-1],len(L),L[0][0] if L else '',L[-1][0] if L else '',L[0][1][:160] if L else '')"
++  },
++  {
++   "id": "s31.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 11\n\n- Thread B status: mitigated (workaround in place; permanent fix pending).\n- Thread C note: failing pods still restarting; investigation continues.\n\ncheckout-api.log 8 2 64 {\"ts\":\"2026-09-14T18:01:51Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"feature.batch_size\",\"value\":\"0\",\"build\":\"4.33.8\"}\n\ninventory-svc.log 3 47 70 {\"ts\":\"2026-09-14T18:34:48Z\",\"level\":\"INFO\",\"svc\":\"inventory-svc\",\"msg\":\"heartbeat\",\"uptime_s\":84294}\n\npricing-svc.log 0   \nsearch-api.log 0   \nshipping-svc.log 2 35 41 {\"ts\":\"2026-09-14T18:35:27Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\n\n"
+   }
+  ]
+ }

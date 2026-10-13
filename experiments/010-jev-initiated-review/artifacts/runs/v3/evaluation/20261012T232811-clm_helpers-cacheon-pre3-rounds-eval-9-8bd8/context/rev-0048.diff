@@ -1,0 +1,35 @@
+--- rev-47
++++ rev-48
+@@ -37,29 +37,9 @@
+    "body": "Round7: board: Thread B cause revised DISK_PRESSURE (shipping-svc, notify-worker) (round-07/board.md:3); Thread D (CERT shipping) closed false alarm (round-07/board.md:4); Follow-up CLOSED POSTMORTEM_DRAFT (round-07/board.md:5). changes: CHG-149 PROPOSED only. Logs: no DNS errors; search-api no errors; notify-worker disk round-07/logs/notify-worker.log:2,6,8,12,19,25,28,30; shipping-svc disk round-07/logs/shipping-svc.log:18,22,23,25,27,33,41,47. Open followups: DATA_BACKFILL, VENDOR_TICKET, RUNBOOK_UPDATE. Next: advance to round 8."
+   },
+   {
+-   "id": "s35.act",
+-   "role": "assistant",
+-   "body": "[step 35] execute\nthought: Read round 8 board/changes and errors, then compact context.\ncode:\nimport json,re\nb=open('/task/fixtures/round-08/board.md').read().splitlines()\nc=open('/task/fixtures/round-08/changes.md').read().splitlines()\nout=[]\nfor i,l in enumerate(b,1):out.append(f'board:{i}:{l}')\nfor i,l in enumerate(c,1):out.append(f'chg:{i}:{l}')\nimport os\nfor f in sorted(os.listdir('/task/fixtures/round-08/logs')):\n  L=[i for i,l in enumerate(open('/task/fixtures/round-08/logs/'+f),1) if 'INFO' not in l and 'slow query' not in l]\n  ex=[l.strip()[:110] for i,l in enumerate(open('/task/fixtures/round-08/logs/'+f),1) if i in L[:1]]\n  out.append(f'{f}:{L} ex:{ex}')\ns='\\n'.join(out);print(s)\ne=json.load(open('/task/workspace/context.json'))['entries']\nkeep=[x for x in e if x['id'].startswith('n')]\njson.dump({'format':'clm-context/v1','entries':keep},open('/task/workspace/context.json','w'))"
+-  },
+-  {
+-   "id": "s35.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard:1:# Incident board: updates in round 08\nboard:2:\nboard:3:- Thread A status: resolved (no recurrence for two hours).\nboard:4:- Thread B status: mitigated (workaround in place; permanent fix pending).\nboard:5:- Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\nboard:6:- Follow-up CLOSED VENDOR_TICKET.\nchg:1:# Change log: round 08\nchg:2:\nchg:3:- CHG-159 APPLIED: retry budget for idempotent GETs set to 1\ninventory-svc.log:[] ex:[]\nledger-svc.log:[] ex:[]\nnotify-worker.log:[17, 58] ex:['{\"ts\":\"2026-09-14T15:12:17Z\",\"level\":\"WARN\",\"svc\":\"notify-worker\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"']\nsearch-api.log:[9, 19, 22, 59, 61, 68, 75] ex:['{\"ts\":\"2026-09-14T15:04:29Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"config validation failed\",\"key\":\"http.m']\nshipping-svc.log:[14, 28] ex:['{\"ts\":\"2026-09-14T15:07:29Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"disk usage high\",\"path\":\"/var/data\",\"u']\n"
+-  },
+-  {
+-   "id": "s35.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 35: revision 44 -> 45; entries 14 -> 7; body chars 5789 -> 3609; removed [s32.act, s32.obs, s32.rcpt, s33.act, s33.obs, s34.act, s34.obs]; added []; rewritten []"
+-  },
+-  {
+-   "id": "s36.act",
+-   "role": "assistant",
+-   "body": "[step 36] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s36.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 46; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 8 (5 lines; files round-08/board.md, round-08/changes.md; sha256 075e38719d2e)\nEntries to review (8): n1, n2, n3, n4, n5, n6, n7, s35.obs (2 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged."
++   "id": "n8",
++   "role": "note",
++   "body": "Round8: board: Thread A resolved (round-08/board.md:3); Thread B mitigated (round-08/board.md:4); Thread C opened search-api failures cause unknown ongoing (round-08/board.md:5); Follow-up CLOSED VENDOR_TICKET (round-08/board.md:6). changes: CHG-159 APPLIED retry budget (round-08/changes.md:3). Log format now JSON. search-api ERROR config validation failed key=http.max_inflight round-08/logs/search-api.log:9,19,22,59,61,68,75 -> BAD_CONFIG_ROLLOUT from CHG-120 (round-02/changes.md:4). disk WARN notify-worker:17,58 shipping-svc:14,28. Open followups: DATA_BACKFILL, RUNBOOK_UPDATE. Next: advance to round 9."
+   }
+  ]
+ }

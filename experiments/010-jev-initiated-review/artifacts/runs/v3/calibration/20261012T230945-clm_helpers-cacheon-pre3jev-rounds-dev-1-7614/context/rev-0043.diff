@@ -1,0 +1,42 @@
+--- rev-42
++++ rev-43
+@@ -19,37 +19,12 @@
+   {
+    "id": "n4",
+    "role": "note",
+-   "body": "Thread B board says CACHE_STAMPEDE payments-svc (round-04/board.md:3), +checkout-api (round-05/board.md:4), ongoing. Logs show 429 upstream=fx-rates -> real cause UPSTREAM_RATE_LIMIT: round-04/logs/payments-svc.log:1,3,7,25; checkout-api.log:9,19,50,53; round-05/logs/checkout-api.log:21,23,30,38; round-06/logs/checkout-api.log:19,30,56,73; payments-svc.log:3,10,11,16; round-07/logs/checkout-api.log:11,19,25; payments-svc.log:1,7,13 (still ongoing r7). CHG-133/138 TLS noise. r7 board empty. Next: advance round 8."
++   "body": "Thread B UPSTREAM_RATE_LIMIT (board confirmed round-08/board.md:4) payments-svc+checkout-api ongoing. refs: round-04/logs/payments-svc.log:1,3; round-05/changes? none; round-08/logs/checkout-api.log:1,6,20,29; payments-svc.log:2,24,25,34; round-04/board.md:3, round-05/board.md:4."
+   },
+   {
+    "id": "n5",
+    "role": "note",
+-   "body": "Round 8 released; findings from spill/s30.obs.txt to be noted next step."
+-  },
+-  {
+-   "id": "s32.act",
+-   "role": "assistant",
+-   "body": "[step 32] execute\nthought: Compact context and read spilled round-8 observation.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in ('n1','n2','n3','n4')]\nc['entries'].append({'id':'n5','role':'note','body':'Round 8 released; findings from spill/s30.obs.txt to be noted next step.'})\njson.dump(c,open('/task/workspace/context.json','w'))\nprint(open('/task/workspace/spill/s30.obs.txt').read()[:2700])"
+-  },
+-  {
+-   "id": "s32.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nexit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 08\nboard.md 2 \nboard.md 3 - Thread A status: resolved (no recurrence for two hours).\nboard.md 4 - Thread B root cause revised: an upstream provider rejecting requests with 429 (UPSTREAM_RATE_LIMIT); this supersedes the earlier suspicion of CACHE_STAMPEDE.\nboard.md 5 - Thread C opened: request failures on some notify-worker pods; cause not yet identified. Status: ongoing.\nchanges.md 1 # Change log: round 08\nchanges.md 2 \nchanges.md 3 - CHG-159 PROPOSED: move batch jobs to off-peak window (not applied)\nauth-svc.log hits 0\ncheckout-api.log 1 {\"ts\":\"2026-09-14T15:00:24Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":39}\ncheckout-api.log 6 {\"ts\":\"2026-09-14T15:07:31Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":27}\ncheckout-api.log 20 {\"ts\":\"2026-09-14T15:15:24Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":43}\ncheckout-api.log 29 {\"ts\":\"2026-09-14T15:25:11Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":46}\ncheckout-api.log hits 9\nnotify-worker.log 5 {\"ts\":\"2026-09-14T15:02:40Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.56.0\"}\nnotify-worker.log 45 {\"ts\":\"2026-09-14T15:35:56Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.56.0\"}\nnotify-worker.log 50 {\"ts\":\"2026-09-14T15:38:32Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.56.0\"}\nnotify-worker.log 58 {\"ts\":\"2026-09-14T15:43:42Z\",\"level\":\"ERROR\",\"svc\":\"notify-worker\",\"msg\":\"config validation failed\",\"key\":\"http.max_inflight\",\"value\":\"0\",\"build\":\"8.56.0\"}\nnotify-worker.log hits 6\npayments-svc.log 2 {\"ts\":\"2026-09-14T15:02:33Z\",\"level\":\"ERROR\",\"svc\":\"payments-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":51}\npayments-svc.log 24 {\"ts\":\"2026-09-14T15:19:59Z\",\"level\":\"ERROR\",\"svc\":\"payments-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":30}\npayments-svc.log 25 {\"ts\":\"2026-09-14T15:20:46Z\",\"level\":\"ERROR\",\"svc\":\"payments-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":33}\npayments-svc.log 34 {\"ts\":\"2026-09-14T15:27:26Z\",\"level\":\"ERROR\",\"svc\":\"payments-svc\",\"msg\":\"upstream returned 429\",\"upstream\":\"fx-rates\",\"retry_after_s\":9}\npayments-svc.log hits 13\nsearch-api.log hits 0\n\n"
+-  },
+-  {
+-   "id": "s32.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 32: revision 39 -> 40; entries 13 -> 5; body chars 5375 -> 1469; removed [s28.act, s28.obs, s28.rcpt, s29.act, s29.obs, s30.act, s30.obs, s31.act, s31.obs]; added [n5]; rewritten []"
+-  },
+-  {
+-   "id": "s33.act",
+-   "role": "assistant",
+-   "body": "[step 33] begin_review {\"action\": \"begin_review\", \"purpose\": \"compaction\"}\nthought: "
+-  },
+-  {
+-   "id": "s33.obs",
+-   "role": "observation",
+-   "body": "Context review (initiated-review/3; context revision 41; your label: compaction).\nUpdate for this review (runtime-supplied, round-files/1): the incident-board and change-log lines released in round 8 (4 lines; files round-08/board.md, round-08/changes.md; sha256 c39c24123275)\nEntries to review (6): n1, n2, n3, n4, n5, s32.obs (2 runtime step or receipt entries not listed)\nThis review authorises one context.json edit in a later step, until you make that edit, start another review, or the next round is released. You may also decide not to edit. Your context is unchanged.\nContext review advice (jev-review/1; Jev jev-1.13.0; revision 41; update: round 8 board and change-log lines). Probability that the update requires reconsidering a current assertion or planned action in each entry. Advisory only: your context is unchanged.\n  n1: 0.56\n  n2: 0.67\n  n3: 0.27\n  n4: 0.88\n  n5: 0.19\n  s32.obs: 0.61\nCoverage: 6 of 6 entries answered."
++   "body": "Round 8: Thread A RESOLVED (round-08/board.md:3). Thread C opened notify-worker ongoing (round-08/board.md:5); real cause BAD_CONFIG_ROLLOUT from CHG-120 (round-02/changes.md:4): round-08/logs/notify-worker.log:5,45,50,58. CHG-159 PROPOSED. Next: advance round 9."
+   }
+  ]
+ }

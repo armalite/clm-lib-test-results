@@ -1,0 +1,19 @@
+--- rev-20
++++ rev-21
+@@ -45,6 +45,16 @@
+    "id": "s16.obs",
+    "role": "observation",
+    "body": "Stage 5 of 10 released.\nRound 5 of 10 released. New files are under /task/fixtures/round-05/.\n\nNew files:\n  round-05/board.md (5 lines)\n  round-05/logs/inventory-svc.log (80 lines)\n  round-05/logs/ledger-svc.log (71 lines)\n  round-05/logs/notify-worker.log (67 lines)\n  round-05/logs/search-api.log (69 lines)\n  round-05/logs/shipping-svc.log (77 lines)"
++  },
++  {
++   "id": "s17.act",
++   "role": "assistant",
++   "body": "[step 17] execute\nthought: Inspect round 5 board and error lines.\ncode:\nimport re,glob\nb='/task/fixtures/round-05/'\nprint(open(b+'board.md').read())\nfor f in sorted(glob.glob(b+'logs/*')):\n  L=open(f).read().splitlines()\n  hits=[(i+1,l) for i,l in enumerate(L) if re.search(r'ERROR|WARN|error|fail|SERVFAIL|429|pool|timeout|mem|disk|lag',l,re.I)]\n  print(f.split('/')[-1],len(hits))\n  for i,l in hits[:3]+hits[-1:]: print(i,l[:160])"
++  },
++  {
++   "id": "s17.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n# Incident board: updates in round 05\n\n- Thread B update: affected services now also include notify-worker; cause and status unchanged.\n- Thread D opened: an expired TLS certificate on a dependency alerts (CERT_EXPIRED) on shipping-svc. Status: ongoing.\n- Follow-up OPEN VENDOR_TICKET: a ticket open with an external vendor.\n\ninventory-svc.log 26\n5 2026-09-14T12:04:59Z WARN  inventory-svc slow query ms=366 table=items\n9 2026-09-14T12:09:21Z WARN  inventory-svc slow query ms=415 table=events\n16 2026-09-14T12:13:11Z WARN  inventory-svc slow query ms=245 table=events\n77 2026-09-14T12:55:41Z WARN  inventory-svc slow query ms=409 table=orders\nledger-svc.log 14\n4 2026-09-14T12:03:16Z WARN  ledger-svc slow query ms=317 table=items\n5 2026-09-14T12:04:34Z WARN  ledger-svc slow query ms=357 table=items\n7 2026-09-14T12:04:35Z WARN  ledger-svc slow query ms=312 table=events\n71 2026-09-14T12:56:15Z WARN  ledger-svc slow query ms=328 table=items\nnotify-worker.log 22\n1 2026-09-14T12:00:39Z WARN  notify-worker slow query ms=209 table=events\n2 2026-09-14T12:02:30Z WARN  notify-worker disk usage high path=/var/data used_pct=96\n3 2026-09-14T12:02:57Z WARN  notify-worker slow query ms=308 table=events\n64 2026-09-14T12:56:18Z WARN  notify-worker slow query ms=312 table=events\nsearch-api.log 19\n1 2026-09-14T12:00:10Z WARN  search-api slow query ms=321 table=events\n4 2026-09-14T12:03:48Z WARN  search-api slow query ms=275 table=events\n9 2026-09-14T12:11:04Z WARN  search-api slow query ms=363 table=orders\n64 2026-09-14T12:56:05Z WARN  search-api slow query ms=203 table=items\nshipping-svc.log 34\n1 2026-09-14T12:00:06Z ERROR shipping-svc tls handshake failed peer=bank-api reason=certificate_expired\n4 2026-09-14T12:02:49Z WARN  shipping-svc disk usage high path=/var/data used_pct=94\n5 2026-09-14T12:03:59Z WARN  shipping-svc disk usage high path=/var/data used_pct=92\n76 2026-09-14T12:57:54Z WARN  shipping-svc disk usage high path=/var/data used_pct=94\n"
+   }
+  ]
+ }

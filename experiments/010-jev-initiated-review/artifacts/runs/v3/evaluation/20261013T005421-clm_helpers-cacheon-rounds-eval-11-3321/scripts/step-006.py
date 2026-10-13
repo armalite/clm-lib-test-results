@@ -1,0 +1,4 @@
+import json
+n='R1: board empty. round-01/changes.md:3 CHG-113 APPLIED checkout-api 4.33.8 sets feature.batch_size=0 (suspicious BAD_CONFIG); :4 CHG-114 inventory-svc no config; CHG-111 PROPOSED. Logs: background slow query WARNs = noise in all 5 svcs (checkout-api,inventory-svc,pricing-svc,search-api,shipping-svc).\nR2: board.md:3 follow-up OPEN VENDOR_TICKET; :4 OPEN POSTMORTEM_DRAFT. changes.md:3 CHG-116 log sampling (irrelevant). pricing-svc.log:4-73 ERROR 429 upstream=sms-gateway (UPSTREAM_RATE_LIMIT, pricing-svc). Filter used: skip lines with slow query/INFO.'
+c={'format':'clm-context/v1','entries':[{'id':'notes','role':'note','body':n}]}
+json.dump(c,open('/task/workspace/context.json','w'))

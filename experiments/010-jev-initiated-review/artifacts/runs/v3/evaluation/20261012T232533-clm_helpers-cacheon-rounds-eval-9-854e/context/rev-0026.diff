@@ -1,0 +1,46 @@
+--- rev-25
++++ rev-26
+@@ -4,42 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "R1: board empty; round-01/changes.md:3 CHG-108 APPLIED TLS session ticket rotation. Slow-query WARNs = noise everywhere.\nR2: board empty. round-02/changes.md:4 CHG-120 APPLIED search-api 8.48.0 sets http.max_inflight=-1 (possible BAD_CONFIG later); :5 CHG-121 shipping no cfg. ledger-svc DNS SERVFAIL host=geo.internal round-02/logs/ledger-svc.log:3-81.\nR3: board round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc+inventory-svc ongoing; :4 follow-up OPEN POSTMORTEM_DRAFT. DNS errs round-03/logs/inventory-svc.log:1-19, ledger-svc.log:14-31. no changes.md r3. search-api still no errors.\nR4: board round-04/board.md:3 Thread B DB_POOL_EXHAUSTED shipping-svc ongoing; :4 follow-up OPEN DATA_BACKFILL. changes.md:3 CHG-131 APPLIED TLS ticket hourly. DNS errs continue round-04/logs/inventory-svc.log:11-28, ledger-svc.log:5-27. disk WARNs 91-98% on notify-worker & shipping-svc (no errors yet; maybe noise). search-api 0 errs.\nR4 shipping-svc log: no pool/error lines, only disk WARN 92-98% (round-04/logs/shipping-svc.log:9-47). Board DB_POOL claim unconfirmed.\nR5: board round-05/board.md:3 Thread B +notify-worker; :4 Thread D CERT_EXPIRED shipping-svc ongoing (logs confirm tls certificate_expired peer=bank-api shipping-svc.log:1-65, n=12); :5 follow-up OPEN VENDOR_TICKET. DNS errs continue inventory-svc.log:22-75, ledger-svc.log:17-68. disk WARN 92-98% notify-worker/shipping-svc still no errors. search-api 0."
+-  },
+-  {
+-   "id": "s17.act",
+-   "role": "assistant",
+-   "body": "[step 17] execute\nthought: Record R5 findings in note, compress context, check cert error lines.\ncode:\nimport json,re\nL=[(i,l.strip()[:110]) for i,l in enumerate(open('/task/fixtures/round-05/logs/shipping-svc.log'),1) if 'tls' in l or 'cert' in l]\nprint(len(L),L[0][0],L[-1][0])\nc=json.load(open('/task/workspace/context.json'))\ne=c['entries'][0]\ne['body']+='\\nR5: board round-05/board.md:3 Thread B +notify-worker; :4 Thread D CERT_EXPIRED shipping-svc ongoing (logs confirm tls certificate_expired peer=bank-api shipping-svc.log:%d-%d, n=%d); :5 follow-up OPEN VENDOR_TICKET. DNS errs continue inventory-svc.log:22-75, ledger-svc.log:17-68. disk WARN 92-98%% notify-worker/shipping-svc still no errors. search-api 0.'%(L[0][0],L[-1][0],len(L))\nc['entries']=[e]\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+-  },
+-  {
+-   "id": "s17.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=3.0s\n--- stdout ---\n12 1 65\nok\n"
+-  },
+-  {
+-   "id": "s17.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 17: revision 21 -> 22; entries 8 -> 1; body chars 4994 -> 1421; removed [s14.act, s14.obs, s14.rcpt, s15.act, s15.obs, s16.act, s16.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s18.act",
+-   "role": "assistant",
+-   "body": "[step 18] advance\nthought: "
+-  },
+-  {
+-   "id": "s18.obs",
+-   "role": "observation",
+-   "body": "Stage 6 of 10 released.\nRound 6 of 10 released. New files are under /task/fixtures/round-06/.\n\nNew files:\n  round-06/board.md (4 lines)\n  round-06/changes.md (4 lines)\n  round-06/logs/inventory-svc.log (72 lines)\n  round-06/logs/ledger-svc.log (68 lines)\n  round-06/logs/notify-worker.log (80 lines)\n  round-06/logs/search-api.log (68 lines)\n  round-06/logs/shipping-svc.log (88 lines)"
+-  },
+-  {
+-   "id": "s19.act",
+-   "role": "assistant",
+-   "body": "[step 19] execute\nthought: Inspect round 6 board, changes, and error summaries.\ncode:\nimport re,collections\nb='/task/fixtures/round-06/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip()[:200])\nfor s in ['inventory-svc','ledger-svc','notify-worker','search-api','shipping-svc']:\n  c=collections.Counter();first={}\n  for i,l in enumerate(open(b+'logs/'+s+'.log'),1):\n    if 'slow' in l.lower():continue\n    k=re.sub(r'\\d+','N',l.strip())[20:90]\n    if 'ERR' in l or 'WARN' in l or 'error' in l.lower():\n      c[k]+=1;first.setdefault(k,[i,i]);first[k][1]=i\n  for k,v in c.most_common(4):print(s,v,first[k],k)"
+-  },
+-  {
+-   "id": "s19.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 2 \nboard.md 3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nboard.md 4 - Follow-up OPEN RUNBOOK_UPDATE: updating the runbook.\nchanges.md 1 # Change log: round 06\nchanges.md 2 \nchanges.md 3 - CHG-142 APPLIED: retry budget for idempotent GETs set to 1\nchanges.md 4 - CHG-150 APPLIED: mitigation for thread A deployed to ledger-svc\nnotify-worker 6 [12, 78] otify-worker disk usage high path=/var/data used_pct=N\nshipping-svc 9 [1, 86] hipping-svc tls handshake failed peer=bank-api reason=certificate_expi\nshipping-svc 7 [13, 70] hipping-svc disk usage high path=/var/data used_pct=N\n"
++   "body": "R1: board empty; round-01/changes.md:3 CHG-108 APPLIED TLS session ticket rotation. Slow-query WARNs = noise everywhere.\nR2: board empty. round-02/changes.md:4 CHG-120 APPLIED search-api 8.48.0 sets http.max_inflight=-1 (possible BAD_CONFIG later); :5 CHG-121 shipping no cfg. ledger-svc DNS SERVFAIL host=geo.internal round-02/logs/ledger-svc.log:3-81.\nR3: board round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc+inventory-svc ongoing; :4 follow-up OPEN POSTMORTEM_DRAFT. DNS errs round-03/logs/inventory-svc.log:1-19, ledger-svc.log:14-31. no changes.md r3. search-api still no errors.\nR4: board round-04/board.md:3 Thread B DB_POOL_EXHAUSTED shipping-svc ongoing; :4 follow-up OPEN DATA_BACKFILL. changes.md:3 CHG-131 APPLIED TLS ticket hourly. DNS errs continue round-04/logs/inventory-svc.log:11-28, ledger-svc.log:5-27. disk WARNs 91-98% on notify-worker & shipping-svc (no errors yet; maybe noise). search-api 0 errs.\nR4 shipping-svc log: no pool/error lines, only disk WARN 92-98% (round-04/logs/shipping-svc.log:9-47). Board DB_POOL claim unconfirmed.\nR5: board round-05/board.md:3 Thread B +notify-worker; :4 Thread D CERT_EXPIRED shipping-svc ongoing (logs confirm tls certificate_expired peer=bank-api shipping-svc.log:1-65, n=12); :5 follow-up OPEN VENDOR_TICKET. DNS errs continue inventory-svc.log:22-75, ledger-svc.log:17-68. disk WARN 92-98% notify-worker/shipping-svc still no errors. search-api 0.\nR6: board round-06/board.md:3 Thread A mitigated; :4 follow-up OPEN RUNBOOK_UPDATE. changes.md:4 CHG-150 APPLIED mitigation A ledger-svc; :3 CHG-142 retry budget. DNS errs gone in r6 (inventory/ledger no errs). cert errs continue shipping-svc.log:1-86 n=9. disk WARN notify-worker:12-78, shipping:13-70 no errors. search-api 0."
+   }
+  ]
+ }

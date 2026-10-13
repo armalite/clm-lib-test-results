@@ -1,0 +1,44 @@
+{
+ "number": 23,
+ "parent": 22,
+ "source": "runtime",
+ "step": 17,
+ "sha256": "efc3fa1c6c51c92f8c084faa7b24b22781a25f8a3ea496d525c8742a4347c866",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: CHG-110 APPLIED retry budget GETs=1 (round-01/changes.md:3); CHG-113 APPLIED pricing-svc 3.22.4 cache.ttl_s=-1 (round-01/changes.md:4) possible BAD_CONFIG_ROLLOUT; CHG-114 APPLIED ledger-svc 3.22.4 (round-01/changes.md:5). R1 logs only slow-query noise."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board: Follow-up OPEN CAPACITY_REVIEW (round-02/board.md:3). changes: CHG-115 APPLIED retry budget GETs=1 (round-02/changes.md:3). search-api ERROR tls handshake peer=sso.example.net certificate_expired lines 11,15,19,24,27,33,57 (round-02/logs/search-api.log) -> CERT_EXPIRED on search-api, not on board yet. Next: advance to round 3."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board Thread A CERT_EXPIRED search-api + inventory-svc ongoing (round-03/board.md:3); Follow-up OPEN RUNBOOK_UPDATE (:4), POSTMORTEM_DRAFT (:5). CHG-126 APPLIED TLS ticket rotation hourly (round-03/changes.md:3). R3 logs slow-query noise only."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board Thread B ledger-svc suspected QUEUE_BACKLOG ongoing (round-04/board.md:3). CHG-129 PROPOSED only (round-04/changes.md:3). Logs: inventory-svc certificate_expired peer=sso.example.net lines 3,15,26,35,55,56 (n=7); ledger-svc upstream returned 429? upstream=tax-provider retry_after_s lines 2,12,15,24,28,32 (n=12) -> likely UPSTREAM_RATE_LIMIT not queue; verify status code. pricing-svc output truncated: check pricing-svc errors in R4. Next: check R4 pricing-svc + ledger code, then advance."
+  },
+  {
+   "id": "s17.act",
+   "role": "assistant",
+   "body": "[step 17] execute\nthought: Compact context: digest R4 into short note, drop raw entries.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\ne=[x for x in c['entries'] if x['id'] in('n1','n2','n3')]\ne.append({'id':'n4','role':'note','body':'R4: board Thread B ledger-svc suspected QUEUE_BACKLOG ongoing (round-04/board.md:3). CHG-129 PROPOSED only (round-04/changes.md:3). Logs: inventory-svc certificate_expired peer=sso.example.net lines 3,15,26,35,55,56 (n=7); ledger-svc upstream returned 429? upstream=tax-provider retry_after_s lines 2,12,15,24,28,32 (n=12) -> likely UPSTREAM_RATE_LIMIT not queue; verify status code. pricing-svc output truncated: check pricing-svc errors in R4. Next: check R4 pricing-svc + ledger code, then advance.'})\nc['entries']=e\njson.dump(c,open('/task/workspace/context.json','w'))\nimport re\nfor i,l in enumerate(open('/task/fixtures/round-04/logs/ledger-svc.log'),1):\n  if i in(2,12):print(i,l.strip()[:160])\nfor i,l in enumerate(open('/task/fixtures/round-04/logs/pricing-svc.log'),1):\n  if re.search('ERROR|WARN|fail|miss|evict',l,re.I) and 'slow query' not in l:print('p',i,l.strip()[:140])"
+  },
+  {
+   "id": "s17.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n2 2026-09-14T11:03:12Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=8\n12 2026-09-14T11:10:35Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=19\n"
+  },
+  {
+   "id": "s17.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 17: revision 21 -> 22; entries 9 -> 4; body chars 7927 -> 1344; removed [s15.act, s15.obs, s15.rcpt, s16.act, s16.obs]; added []; rewritten [n4]"
+  }
+ ]
+}

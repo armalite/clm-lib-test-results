@@ -1,0 +1,24 @@
+--- rev-47
++++ rev-48
+@@ -50,6 +50,21 @@
+    "id": "n10",
+    "role": "note",
+    "body": "R10: Thread B adds shipping-svc (round-10/board.md:3). Thread C opened checkout-api request failures cause unknown ongoing (round-10/board.md:4). checkout config validation failed key feature.batch_size? round-10/logs/checkout-api.log:1,4,5,7,11,21,24,32,44,61 -> BAD_CONFIG_ROLLOUT from CHG-113 (round-01/changes.md:4). DNS continues inventory round-10/logs/inventory-svc.log:2,9,11,20,22 shipping round-10/logs/shipping-svc.log:1,7,8,12. CHG-174 PROPOSED noise. Next: advance to R11."
++  },
++  {
++   "id": "s32.act",
++   "role": "assistant",
++   "body": "[step 32] execute\nthought: Inspect R11 board and key log lines; prune context.\ncode:\nimport json,re\nR='/task/fixtures/round-11/'\nprint(open(R+'board.md').read())\nfor s in ['checkout-api','inventory-svc','shipping-svc','pricing-svc','search-api']:\n  L=open(R+'logs/'+s+'.log').readlines()\n  h=[i+1 for i,l in enumerate(L) if re.search('ERROR|error|fail|429',l) and 'slow' not in l]\n  print(s,h[:12],L[h[0]-1][:160] if h else '')\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s32.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n# Incident board: updates in round 11\n\n- Thread B status: mitigated (workaround in place; permanent fix pending).\n- Thread C note: failing pods still restarting; investigation continues.\n\ncheckout-api [2, 7, 30, 36, 42, 47, 63, 64] {\"ts\":\"2026-09-14T18:01:51Z\",\"level\":\"ERROR\",\"svc\":\"checkout-api\",\"msg\":\"config validation failed\",\"key\":\"feature.batch_size\",\"value\":\"0\",\"build\":\"4.33.8\"}\n\ninventory-svc [47, 68, 70] {\"ts\":\"2026-09-14T18:34:48Z\",\"level\":\"INFO\",\"svc\":\"inventory-svc\",\"msg\":\"heartbeat\",\"uptime_s\":84294}\n\nshipping-svc [35, 41] {\"ts\":\"2026-09-14T18:35:27Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"dns lookup failed\",\"host\":\"kms.internal\",\"err\":\"SERVFAIL\"}\n\npricing-svc [] \nsearch-api [] \n"
++  },
++  {
++   "id": "s32.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 32: revision 46 -> 47; entries 15 -> 10; body chars 5045 -> 3400; removed [s30.act, s30.obs, s30.rcpt, s31.act, s31.obs]; added []; rewritten []"
+   }
+  ]
+ }

@@ -1,0 +1,25 @@
+--- rev-25
++++ rev-26
+@@ -27,19 +27,9 @@
+    "body": "R5: board Thread A mitigated (round-05/board.md:3) after CHG-143 APPLIED auth-svc mitigation (round-05/changes.md:4); no pool WARNs in auth/search R5 (filtered non-INFO=0). Thread B adds checkout-api, cause still CACHE_STAMPEDE on board (round-05/board.md:4) but logs 429 fx-rates: round-05/logs/checkout-api.log:21-65, round-05/logs/payments-svc.log:13-73. Follow-up OPEN CAPACITY_REVIEW (round-05/board.md:5). CHG-138 APPLIED TLS rotation hourly (round-05/changes.md:3). notify-worker clean."
+   },
+   {
+-   "id": "s17.act",
+-   "role": "assistant",
+-   "body": "[step 17] execute\nthought: Compact context and read spill summary concisely.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'] in('n1','n2','n3','n4','n5')]\njson.dump(c,open('/task/workspace/context.json','w'))\ns=open('/task/workspace/spill/s16.obs.txt').read().splitlines()\nfor l in s:\n  if l.startswith(('board','changes')):print(l[:200])\nfrom collections import Counter\nk=Counter()\nfor l in s:\n  if not l.startswith(('board','changes')):\n    p=l.split(' ',2)\n    if len(p)>2:\n      m=p[2]\n      tag='429' if '429' in m else 'pool' if 'pool' in m else 'slow' if 'slow' in m else m[:90]\n      k[(p[0],tag)]+=1\n      if tag not in('429','pool','slow'):print(p[0],p[1],m[:120])\nprint(k)"
+-  },
+-  {
+-   "id": "s17.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 06\nboard.md 2 \nboard.md 3 - Follow-up CLOSED ALERT_TUNING.\nboard.md 4 - Follow-up OPEN CUSTOMER_COMMS: customer communication about the impact.\nchanges.md 1 # Change log: round 06\nchanges.md 2 \nchanges.md 3 - CHG-147 APPLIED: retry budget for idempotent GETs set to 1\n--- stdout ---\npayments-svc.log 31 2026-09-\n[stdout truncated: 8869 bytes produced, first 6000 chars shown]\nCounter({('checkout-api.log', 'slow'): 17, ('notify-worker.log', 'slow'): 15, ('auth-svc.log', 'slow'): 12, ('checkout-api.log', '429'): 6, ('payments-svc.log', '429'): 5, ('payments-svc.log', 'slow'): 5, ('---', '---'): 1, ('payments-svc.log', '2026-09-'): 1, ('[stdout', '8869 bytes produced, first 6000 chars shown]'): 1})\n"
+-  },
+-  {
+-   "id": "s17.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 17: revision 23 -> 24; entries 12 -> 5; body chars 3635 -> 1759; removed [s14.act, s14.obs, s14.rcpt, s15.act, s15.obs, s16.act, s16.obs]; added []; rewritten []"
++   "id": "n6",
++   "role": "note",
++   "body": "R6: board CLOSED ALERT_TUNING (round-06/board.md:3), OPEN CUSTOMER_COMMS (:4). CHG-147 APPLIED retry budget GET=1 (round-06/changes.md:3). 429s continue in checkout-api(6) & payments-svc(5); no pool WARNs; notify clean."
+   }
+  ]
+ }

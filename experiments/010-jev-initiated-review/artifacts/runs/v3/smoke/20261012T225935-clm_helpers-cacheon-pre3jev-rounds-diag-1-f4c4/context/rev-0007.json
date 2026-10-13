@@ -1,0 +1,49 @@
+{
+ "number": 7,
+ "parent": 6,
+ "source": "spill",
+ "step": 6,
+ "sha256": "e7c50f921dd893315c11ea59ce99d79c68ce1abf83d7f9088437d1c644faa40a",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Round1: board empty. changes.md:3 CHG-112 APPLIED retry budget idempotent GETs=1. Services: notify-worker, shipping-svc, checkout-api, ledger-svc, inventory-svc. Log fmt: ts LEVEL svc msg k=v. R1 logs look normal (slow queries baseline ~230-450ms). No incidents yet."
+  },
+  {
+   "id": "s3.act",
+   "role": "assistant",
+   "body": "[step 3] execute\nthought: Compact context: replace s1.obs with a note.\ncode:\nimport json\nc={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'Round1: board empty. changes.md:3 CHG-112 APPLIED retry budget idempotent GETs=1. Services: notify-worker, shipping-svc, checkout-api, ledger-svc, inventory-svc. Log fmt: ts LEVEL svc msg k=v. R1 logs look normal (slow queries baseline ~230-450ms). No incidents yet.'}]}\njson.dump(c,open('/task/workspace/context.json','w'))\nprint('ok')"
+  },
+  {
+   "id": "s3.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s3.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 3: revision 2 -> 3; entries 4 -> 1; body chars 7051 -> 266; removed [s1.act, s1.obs, s2.act, s2.obs]; added [n1]; rewritten []"
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] advance\nthought: "
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "Stage 2 of 12 released.\nRound 2 of 12 released. New files are under /task/fixtures/round-02/.\n\nNew files:\n  round-02/board.md (2 lines)\n  round-02/changes.md (5 lines)\n  round-02/logs/checkout-api.log (62 lines)\n  round-02/logs/inventory-svc.log (73 lines)\n  round-02/logs/ledger-svc.log (78 lines)\n  round-02/logs/notify-worker.log (72 lines)\n  round-02/logs/shipping-svc.log (67 lines)"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] execute\nthought: \ncode:\nimport re\nb='/task/fixtures/round-02/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nimport os\nfor f in sorted(os.listdir(b+'logs')):\n  for i,l in enumerate(open(b+'logs/'+f),1):\n    if re.search('WARN|ERROR|FATAL|429|timeout|exhaust|expired|lag|disk|OOM',l,re.I):print(f,i,l.rstrip()[:150])"
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "[runtime: observation of 6105 chars moved to /task/workspace/spill/s5.obs.txt because the request exceeded the hard limit]"
+  }
+ ]
+}

@@ -1,0 +1,3 @@
+import json
+c={"format":"clm-context/v1","entries":[{"id":"notes","role":"note","body":"R1: board empty. changes.md:4 CHG-113 APPLIED checkout-api build 4.33.8 sets feature.batch_size=0 (suspect BAD_CONFIG). :5 CHG-114 inventory no config. CHG-111 PROPOSED. Logs only WARN slow query noise (all svcs: shipping, checkout-api, pricing, inventory, search-api). No errors."}]}
+json.dump(c,open('/task/workspace/context.json','w'))

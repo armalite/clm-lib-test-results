@@ -1,0 +1,4 @@
+import json
+b='R1: board empty; round-01/changes.md:3 CHG-108 APPLIED TLS session ticket rotation hourly. Routine filter: heartbeat|health ok|request ok|gc cycle|slow query. services: notify-worker shipping-svc ledger-svc inventory-svc search-api.\nR2: round-02/changes.md:4 CHG-120 APPLIED search-api 8.48.0 http.max_inflight=-1 (possible BAD_CONFIG, no errors yet). ledger-svc DNS SERVFAIL geo.internal round-02/logs/ledger-svc.log:3-81.\nR3: round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc+inventory-svc ongoing; board.md:4 follow-up OPEN POSTMORTEM_DRAFT. DNS errors round-03/logs/inventory-svc.log:1-54, ledger-svc.log:14-67. Others clean. Next: advance R4.'
+json.dump({'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':b}]},open('/task/workspace/context.json','w'))
+print('ok')

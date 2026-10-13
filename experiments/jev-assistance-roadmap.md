@@ -29,7 +29,7 @@ These are different interventions. Results from one say nothing directly about t
 | --- | --- | --- | --- |
 | [008](008-jev-context-review/README.md) | model-controlled | an optional Jev tool Claude may call | Complete: the tool was never used (evidence about optional-tool availability) |
 | [009](009-jev-update-review/README.md) | model-controlled | automatically at every incoming update, before Claude's next turn | Complete: no cost, time or established correctness benefit in 24 evaluation runs |
-| [010](010-jev-initiated-review/README.md) | model-controlled | when **Claude** starts a context review (v1: optional; v2: required before every edit) | Both versions stopped at their calibration gates: v1 had no reviews; v2 had every edit reviewed, but all reviews declared "compaction", so Jev was never applicable |
+| [010](010-jev-initiated-review/README.md) | model-controlled | at **Claude's** context-edit decisions (v1 optional; v2 required, Claude-labelled; v3 required, runtime-supplied update) | **v3 complete (36 runs):** Jev added nothing measurable over the review alone; the review workflow costs about 30% more than ordinary CLM. v1 and v2 stopped at their gates |
 | [011](011-jev-edit-check/protocol.md) | model-controlled | on a proposed context rewrite, before acceptance | Planned (design open) |
 | W2 workload | a workload, not a strategy | changing requirements that interact | Planned (not implemented) |
 | 012 | runtime policy beside CLM | automatic screening of incoming tool results | Planned: the first proposed screening experiment |
@@ -175,3 +175,25 @@ On this workload, optional steps that cost Claude a turn are not adopted, and th
 **Recommendation (the decision is the maintainer's):**
 - **A 010 v3 is possible:** a required pre-edit review whose update source is the evidence released since the previous review, supplied by the runtime. It would test advice at Claude's edit decisions without depending on Claude's classification. It would need its own protocol and authorisation.
 - **The stronger next step is still 011's component diagnostic:** it targets the observed failures (omissions and miscitations) and can be checked cheaply before any agent run.
+
+## Note after 010 v3's evaluation (2026-10-13)
+
+**010 v3** made the review's update runtime-supplied, the latest released round's board and change-log lines, so Jev ran at every applicable review (131/131).
+- **The evaluation:** 4 fresh instances × 3 repetitions × 3 conditions.
+- **Jev's increment over the same review workflow without it was nil:** cost −2%, time −1 s, identical correctness.
+- **The workflow's overhead is large:** the required review cost about 30% more and took about 28% longer than ordinary CLM.
+- **Correctness:** its 12/12 vs 10/12 strict success is not established. A's two misses were adjacent-line citation errors.
+
+See [010](010-jev-initiated-review/README.md).
+
+**What the programme has now shown on the incident-rounds workload:**
+- **Jev runs when the runtime supplies the update mechanically** (009, 010 v3).
+- **It does not run when Claude must choose or label** (008, 010 v1, 010 v2).
+- **Where it ran, its per-entry affected-entry advice did not measurably change outcomes,** either at incoming updates (009) or at Claude's edit decisions (010 v3).
+
+**The failures across experiments** are omissions and miscitations, not stale facts, which is the error this advice targets.
+
+**Recommendation (the decision is the maintainer's):**
+- **011's component diagnostic** (TypeSafe only): a different judgment, aimed at omissions in proposed rewrites.
+- **Or a workload with real staleness risk (W2)**, before more agent runs of the affected-entry question.
+- **Comparing strategies:** separate results establish each strategy only against its own control. 009 and 010 v3 used different controls, presentations and instances, so they are not directly comparable.

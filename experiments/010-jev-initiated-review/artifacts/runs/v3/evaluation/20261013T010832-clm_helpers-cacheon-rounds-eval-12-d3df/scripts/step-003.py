@@ -1,0 +1,3 @@
+import json
+c={'format':'clm-context/v1','entries':[{'id':'n1','role':'note','body':'R1: board empty. changes.md:3 CHG-113 APPLIED pricing-svc build 3.22.4 sets cache.ttl_s=-1 (suspicious BAD_CONFIG/CACHE); changes.md:4 CHG-114 ledger no config; CHG-110 retry budget=1. Logs r1: only background slow-query WARNs (noise) in all 5 svcs (checkout-api,pricing-svc,ledger-svc,inventory-svc,search-api). No incidents yet. Plan: advance, grep non-noise lines (exclude slow query/request ok/heartbeat/gc).'}]}
+json.dump(c,open('/task/workspace/context.json','w'))

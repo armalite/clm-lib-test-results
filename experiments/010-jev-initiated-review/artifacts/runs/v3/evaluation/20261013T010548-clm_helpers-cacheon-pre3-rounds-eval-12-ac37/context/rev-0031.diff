@@ -1,0 +1,24 @@
+--- rev-30
++++ rev-31
+@@ -5,6 +5,21 @@
+    "id": "n1",
+    "role": "note",
+    "body": "R1: changes.md:3 CHG-110 APPLIED retry budget; changes.md:4 CHG-113 APPLIED build 3.22.4 pricing-svc sets cache.ttl_s=-1 (possible BAD_CONFIG_ROLLOUT); changes.md:5 CHG-114 APPLIED 3.22.4 ledger-svc no config. Services: checkout-api, pricing-svc, ledger-svc, inventory-svc, search-api. R1 logs noise only.\nR2: board.md:3 OPEN CAPACITY_REVIEW. changes.md:3 CHG-115 APPLIED retry budget. search-api.log 11-57 cert_expired peer=sso.example.net.\nR3: board.md:3 Thread A CERT_EXPIRED search-api + inventory-svc ongoing. board.md:4 OPEN RUNBOOK_UPDATE; board.md:5 OPEN POSTMORTEM_DRAFT. Errors: inventory-svc.log:1-75, search-api.log:9-78 cert_expired.\nR4: board.md:3 Thread B ledger-svc QUEUE_BACKLOG ongoing (suspected). changes.md:3 CHG-129 PROPOSED (ignore). Logs: ledger-svc.log:2 429 upstream=tax-provider (UPSTREAM_RATE_LIMIT? check vs queue); cert_expired inventory-svc.log:3, search-api.log:89.\nR5: board.md:3 OPEN CUSTOMER_COMMS. cert_expired continues inventory-svc.log:10, search-api.log:6; ledger-svc.log:7 429 tax-provider. No changes.md.\nR6 raw:\nboard.md:1 # Incident board: updates in round 06\nboard.md:2 \nboard.md:3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nboard.md:4 - Follow-up OPEN ALERT_TUNING: tuning of noisy or late alerts.\nchanges.md:1 # Change log: round 06\nchanges.md:2 \nchanges.md:3 - CHG-150 APPLIED: mitigation for thread A deployed to search-api\ncheckout-api.log: 6 hits lines 21-74 ex: 2026-09-14T13:16:37Z ERROR checkout-api upstream returned 429 upstream=tax-provider retry_after_s=58\nledger-svc.log: 8 hits lines 17-76 ex: 2026-09-14T13:13:31Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=18"
++  },
++  {
++   "id": "s24.act",
++   "role": "assistant",
++   "body": "[step 24] execute\nthought: \ncode:\nimport json,re\nb='/task/fixtures/round-06/'\nout=[]\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):out.append(f'{f}:{i} {l.rstrip()[:200]}')\nimport os\nfor f in sorted(os.listdir(b+'logs')):\n  hits=[i for i,l in enumerate(open(b+'logs/'+f),1) if re.search(r'ERROR|error|429|expired|lag|fail',l)]\n  if hits:\n    ex=open(b+'logs/'+f).readlines()[hits[0]-1].rstrip()[:140]\n    out.append(f'{f}: {len(hits)} hits lines {hits[0]}-{hits[-1]} ex: {ex}')\ns='\\n'.join(out);print(s)\nc=json.load(open('/task/workspace/context.json'))\nn1=[e for e in c['entries'] if e['id']=='n1'][0]\nn1['body']=n1['body'].replace('Next: advance to round 6.','R6 raw:\\n'+s)\njson.dump({'format':'clm-context/v1','entries':[n1]},open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s24.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md:1 # Incident board: updates in round 06\nboard.md:2 \nboard.md:3 - Thread A status: mitigated (errors reduced after the applied change; monitoring).\nboard.md:4 - Follow-up OPEN ALERT_TUNING: tuning of noisy or late alerts.\nchanges.md:1 # Change log: round 06\nchanges.md:2 \nchanges.md:3 - CHG-150 APPLIED: mitigation for thread A deployed to search-api\ncheckout-api.log: 6 hits lines 21-74 ex: 2026-09-14T13:16:37Z ERROR checkout-api upstream returned 429 upstream=tax-provider retry_after_s=58\nledger-svc.log: 8 hits lines 17-76 ex: 2026-09-14T13:13:31Z ERROR ledger-svc upstream returned 429 upstream=tax-provider retry_after_s=18\n"
++  },
++  {
++   "id": "s24.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 24: revision 29 -> 30; entries 10 -> 1; body chars 4109 -> 1693; removed [s20.act, s20.obs, s20.rcpt, s21.act, s21.obs, s22.act, s22.obs, s23.act, s23.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

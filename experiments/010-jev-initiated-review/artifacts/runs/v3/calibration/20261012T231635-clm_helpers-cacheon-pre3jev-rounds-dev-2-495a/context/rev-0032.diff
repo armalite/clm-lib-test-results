@@ -1,0 +1,19 @@
+--- rev-31
++++ rev-32
+@@ -30,6 +30,16 @@
+    "id": "s25.obs",
+    "role": "observation",
+    "body": "Stage 7 of 11 released.\nRound 7 of 11 released. New files are under /task/fixtures/round-07/.\n\nNew files:\n  round-07/board.md (4 lines)\n  round-07/logs/auth-svc.log (66 lines)\n  round-07/logs/checkout-api.log (72 lines)\n  round-07/logs/inventory-svc.log (59 lines)\n  round-07/logs/search-api.log (69 lines)\n  round-07/logs/shipping-svc.log (67 lines)"
++  },
++  {
++   "id": "s26.act",
++   "role": "assistant",
++   "body": "[step 26] execute\nthought: \ncode:\nimport re\nb=open('/task/fixtures/round-07/board.md').read().splitlines()\nfor i,l in enumerate(b,1):print(i,l)\nimport glob\nfor f in sorted(glob.glob('/task/fixtures/round-07/logs/*.log')):\n  L=open(f).read().splitlines();h=[(i,l) for i,l in enumerate(L,1) if re.search('ERROR|FATAL|expired|SERVFAIL|429|refused|OOM|disk|max_inflight',l,re.I)]\n  print(f.split('/')[-1],len(h),h[:1],h[-1:] if h else '')"
++  },
++  {
++   "id": "s26.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n1 # Incident board: updates in round 07\n2 \n3 - Thread B root cause revised: an expired TLS certificate on a dependency (CERT_EXPIRED); this supersedes the earlier suspicion of DB_POOL_EXHAUSTED.\n4 - Thread D opened: an upstream provider rejecting requests with 429 alerts (UPSTREAM_RATE_LIMIT) on search-api. Status: ongoing.\nauth-svc.log 10 [(1, '{\"ts\":\"2026-09-14T14:00:33Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}')] [(64, '{\"ts\":\"2026-09-14T14:54:28Z\",\"level\":\"ERROR\",\"svc\":\"auth-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}')]\ncheckout-api.log 0 [] \ninventory-svc.log 0 [] \nsearch-api.log 9 [(4, '{\"ts\":\"2026-09-14T14:04:44Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":16}')] [(69, '{\"ts\":\"2026-09-14T14:58:43Z\",\"level\":\"WARN\",\"svc\":\"search-api\",\"msg\":\"slow query\",\"ms\":429,\"table\":\"orders\"}')]\nshipping-svc.log 13 [(6, '{\"ts\":\"2026-09-14T14:04:04Z\",\"level\":\"WARN\",\"svc\":\"shipping-svc\",\"msg\":\"slow query\",\"ms\":429,\"table\":\"orders\"}')] [(66, '{\"ts\":\"2026-09-14T14:57:09Z\",\"level\":\"ERROR\",\"svc\":\"shipping-svc\",\"msg\":\"tls handshake failed\",\"peer\":\"sso.example.net\",\"reason\":\"certificate_expired\"}')]\n"
+   }
+  ]
+ }

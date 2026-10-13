@@ -1,0 +1,19 @@
+--- rev-16
++++ rev-17
+@@ -40,6 +40,16 @@
+    "id": "s13.obs",
+    "role": "observation",
+    "body": "Stage 4 of 10 released.\nRound 4 of 10 released. New files are under /task/fixtures/round-04/.\n\nNew files:\n  round-04/board.md (3 lines)\n  round-04/changes.md (3 lines)\n  round-04/logs/auth-svc.log (81 lines)\n  round-04/logs/checkout-api.log (77 lines)\n  round-04/logs/notify-worker.log (55 lines)\n  round-04/logs/payments-svc.log (82 lines)\n  round-04/logs/search-api.log (91 lines)"
++  },
++  {
++   "id": "s14.act",
++   "role": "assistant",
++   "body": "[step 14] execute\nthought: Inspect round 4.\ncode:\nimport re,glob\nb='/task/fixtures/round-04/'\nfor f in ['board.md','changes.md']:\n  for i,l in enumerate(open(b+f),1):print(f,i,l.rstrip())\nk=re.compile(r'error|fail|429|expire|pool|lag|mem|disk|dns|cert|inflight',re.I)\nfor f in sorted(glob.glob(b+'logs/*.log')):\n  n=0\n  for i,l in enumerate(open(f),1):\n    if 'slow query' in l:continue\n    if k.search(l):\n      n+=1\n      if n<=4:print(f.split('/')[-1],i,l.rstrip()[:160])\n  print(f.split('/')[-1],'hits',n)"
++  },
++  {
++   "id": "s14.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\nboard.md 1 # Incident board: updates in round 04\nboard.md 2 \nboard.md 3 - Thread B opened: errors in payments-svc. Suspected cause: cache miss storm after mass expiry (CACHE_STAMPEDE). Status: ongoing.\nchanges.md 1 # Change log: round 04\nchanges.md 2 \nchanges.md 3 - CHG-133 APPLIED: TLS session ticket rotation set to hourly\nauth-svc.log 7 2026-09-14T11:04:33Z WARN  auth-svc db pool exhausted wait_ms=2352 in_use=20/20\nauth-svc.log 9 2026-09-14T11:05:41Z WARN  auth-svc db pool exhausted wait_ms=1649 in_use=20/20\nauth-svc.log 19 2026-09-14T11:16:18Z WARN  auth-svc db pool exhausted wait_ms=2819 in_use=12/12\nauth-svc.log 26 2026-09-14T11:20:53Z WARN  auth-svc db pool exhausted wait_ms=2473 in_use=16/16\nauth-svc.log hits 12\ncheckout-api.log 9 2026-09-14T11:05:37Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=49\ncheckout-api.log 19 2026-09-14T11:10:31Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=46\ncheckout-api.log 50 2026-09-14T11:37:14Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=37\ncheckout-api.log 53 2026-09-14T11:40:37Z ERROR checkout-api upstream returned 429 upstream=fx-rates retry_after_s=53\ncheckout-api.log hits 6\nnotify-worker.log hits 0\npayments-svc.log 1 2026-09-14T11:00:33Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=29\npayments-svc.log 3 2026-09-14T11:01:36Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=55\npayments-svc.log 7 2026-09-14T11:05:08Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=39\npayments-svc.log 25 2026-09-14T11:17:57Z ERROR payments-svc upstream returned 429 upstream=fx-rates retry_after_s=51\npayments-svc.log hits 12\nsearch-api.log 4 2026-09-14T11:03:15Z WARN  search-api db pool exhausted wait_ms=1135 in_use=16/16\nsearch-api.log 11 2026-09-14T11:08:41Z WARN  search-api db pool exhausted wait_ms=2611 in_use=20/20\nsearch-api.log 13 2026-09-14T11:09:19Z WARN  search-api db pool exhausted wait_ms=2677 in_use=20/20\nsearch-api.log 14 2026-09-14T11:09:39Z WARN  search-api db pool exhausted wait_ms=998 in_use=12/12\nsearch-api.log hits 12\n"
+   }
+  ]
+ }

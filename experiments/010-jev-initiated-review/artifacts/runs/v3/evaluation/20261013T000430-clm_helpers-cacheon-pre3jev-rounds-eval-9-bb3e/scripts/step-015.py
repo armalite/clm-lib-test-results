@@ -1,0 +1,6 @@
+import json
+E=[('n1','Round1: services notify-worker, shipping-svc, ledger-svc, inventory-svc, search-api. Baseline WARN slow query ms 200-450 = noise. round-01/changes.md:3 CHG-108 APPLIED TLS session ticket rotation hourly.'),('n2','Round2: round-02/changes.md:4 CHG-120 APPLIED build 8.48.0 to search-api sets http.max_inflight=-1 (suspect BAD_CONFIG_ROLLOUT, no search-api errors yet). ledger-svc DNS SERVFAIL geo.internal round-02/logs/ledger-svc.log:3,22,27.'),('n3','Round3: round-03/board.md:3 Thread A DNS_RESOLUTION ledger-svc+inventory-svc ongoing; :4 follow-up OPEN POSTMORTEM_DRAFT. SERVFAIL round-03/logs/inventory-svc.log:1,10,11; ledger-svc.log:14,17,25.'),('n4','Round4: round-04/board.md:3 Thread B shipping-svc suspected DB_POOL_EXHAUSTED ongoing (no ERROR lines in shipping log yet - verify, maybe false alarm); :4 OPEN DATA_BACKFILL. changes.md:3 CHG-131 TLS rotation hourly. DNS SERVFAIL continues round-04/logs/inventory-svc.log:11-72, ledger-svc.log:5-52. No search-api errors. Next: check shipping-svc log round4 non-ERROR (WARN pool?), then advance.')]
+json.dump({'format':'clm-context/v1','entries':[{'id':i,'role':'note','body':b} for i,b in E]},open('/task/workspace/context.json','w'))
+import re
+for i,l in enumerate(open('/task/fixtures/round-04/logs/shipping-svc.log'),1):
+  if 'INFO' not in l and 'slow query' not in l: print(i,l.strip()[:140])

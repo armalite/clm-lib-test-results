@@ -1,0 +1,59 @@
+{
+ "number": 32,
+ "parent": 31,
+ "source": "runtime",
+ "step": 21,
+ "sha256": "411a572b2b56a9e68cf6a38ecc6c62ac3abcdf3641f2bd9bdef17559933bd83b",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "R1: board empty. slow query WARNs noise. inventory-svc DNS SERVFAIL host=rates.internal round-01/logs/inventory-svc.log:7,20,50,54,57,62,65. round-01/changes.md: CHG-107 APPLIED retry budget idempotent GETs=1."
+  },
+  {
+   "id": "n2",
+   "role": "note",
+   "body": "R2: board Thread A DNS_RESOLUTION inventory-svc+checkout-api ongoing (round-02/board.md:3). checkout-api DNS SERVFAIL rates.internal round-02/logs/checkout-api.log:8,24,29; inventory round-02/logs/inventory-svc.log:8,12. round-02/changes.md: CHG-120 APPLIED search-api http.max_inflight=-1 (suspicious BAD_CONFIG, watch search-api); CHG-121 auth-svc no config. Next: advance to R3."
+  },
+  {
+   "id": "n3",
+   "role": "note",
+   "body": "R3: board Thread B auth-svc DB_POOL_EXHAUSTED ongoing (round-03/board.md:3) BUT logs show CERT_EXPIRED peer=sso.example.net round-03/logs/auth-svc.log:6,9,15,21,25,26,33,48,64,72 (board likely wrong). DNS continues checkout round-03/logs/checkout-api.log:33,74; inventory round-03/logs/inventory-svc.log:3,50. CHG-126 PROPOSED (ignore). Next: advance to R4."
+  },
+  {
+   "id": "n4",
+   "role": "note",
+   "body": "R4: board empty. CERT_EXPIRED sso.example.net now auth-svc round-04/logs/auth-svc.log:6,8,16,39,77 AND shipping-svc round-04/logs/shipping-svc.log:3,20,27,66. DNS continues checkout round-04/logs/checkout-api.log:1,71; inventory round-04/logs/inventory-svc.log:32,75. search-api no errors yet. No changes.md. Next: advance to R5."
+  },
+  {
+   "id": "n5",
+   "role": "note",
+   "body": "R5: board Thread A mitigated (round-05/board.md:3) via CHG-143 APPLIED inventory-svc (round-05/changes.md:3); no DNS errors in checkout/inventory R5. Thread B adds shipping-svc (round-05/board.md:4). Follow-ups OPEN VENDOR_TICKET (board.md:5), ALERT_TUNING (board.md:6). CERT_EXPIRED continues auth round-05/logs/auth-svc.log:2,8,14,22; shipping round-05/logs/shipping-svc.log:9,11,34,36. search-api still clean. Next: advance to R6."
+  },
+  {
+   "id": "n6",
+   "role": "note",
+   "body": "R6: board adds Follow-up OPEN RUNBOOK_UPDATE (round-06/board.md:3). CHG-144 APPLIED log sampling (noise). CERT_EXPIRED continues auth round-06/logs/auth-svc.log:4,10,14,19; shipping round-06/logs/shipping-svc.log:1,18,21,36. No DNS, search-api clean. Next: advance to R7."
+  },
+  {
+   "id": "n7",
+   "role": "note",
+   "body": "R7: board Thread B cause revised CERT_EXPIRED (round-07/board.md:3). Thread D UPSTREAM_RATE_LIMIT search-api ongoing (round-07/board.md:4). search-api upstream errors round-07/logs/search-api.log:4,5,20,22,25 (verify 429 vs max_inflight CHG-120). CERT continues auth round-07/logs/auth-svc.log:1,16,24; shipping round-07/logs/shipping-svc.log:10,11,23."
+  },
+  {
+   "id": "s21.act",
+   "role": "assistant",
+   "body": "[step 21] execute\nthought: Save R7 note, compact, check search-api upstream msg details vs CHG-120.\ncode:\nimport json\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if e['id'].startswith('n')]\nc['entries'].append({'id':'n7','role':'note','body':'R7: board Thread B cause revised CERT_EXPIRED (round-07/board.md:3). Thread D UPSTREAM_RATE_LIMIT search-api ongoing (round-07/board.md:4). search-api upstream errors round-07/logs/search-api.log:4,5,20,22,25 (verify 429 vs max_inflight CHG-120). CERT continues auth round-07/logs/auth-svc.log:1,16,24; shipping round-07/logs/shipping-svc.log:10,11,23.'})\njson.dump(c,open('/task/workspace/context.json','w'))\nL=open('/task/fixtures/round-07/logs/search-api.log').read().splitlines()\nfor i in (4,5,20):print(i,L[i-1][:300])\nimport os;print(os.listdir('/task/fixtures/round-07'))"
+  },
+  {
+   "id": "s21.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n4 {\"ts\":\"2026-09-14T14:04:44Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":16}\n5 {\"ts\":\"2026-09-14T14:04:48Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":51}\n20 {\"ts\":\"2026-09-14T14:19:20Z\",\"level\":\"ERROR\",\"svc\":\"search-api\",\"msg\":\"upstream returned 429\",\"upstream\":\"tax-provider\",\"retry_after_s\":6}\n['board.md', 'logs']\n"
+  },
+  {
+   "id": "s21.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 21: revision 30 -> 31; entries 9 -> 7; body chars 3540 -> 2332; removed [s20.act, s20.obs, s20.rcpt]; added [n7]; rewritten []"
+  }
+ ]
+}
