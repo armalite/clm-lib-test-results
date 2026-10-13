@@ -1,0 +1,137 @@
+{
+ "case_id": "c27",
+ "request": {
+  "state": {
+   "task": "Production incident investigation across several services; evidence arrives in hourly rounds (logs, incident-board updates that list only what changed, and change records; APPLIED changes took effect, PROPOSED did not). The final answer must list every real incident with its current cause, all affected services, current status and path:line evidence for the current cause and status (citing the earlier change record when the cause traces back to one), plus the follow-up items still open. The agent keeps working notes in its context.",
+   "current_context": [
+    {
+     "id": "n1",
+     "role": "note",
+     "body": "R1: services notify-worker, shipping-svc, ledger-svc, inventory-svc, search-api. WARN slow query = noise. round-01/changes.md:3 CHG-108 TLS rotation."
+    },
+    {
+     "id": "n2",
+     "role": "note",
+     "body": "R2: round-02/changes.md:4 CHG-120 APPLIED search-api http.max_inflight=-1 (suspect BAD_CONFIG; no search-api errors thru R7). ledger DNS SERVFAIL round-02/logs/ledger-svc.log:3,22,27."
+    },
+    {
+     "id": "n3",
+     "role": "note",
+     "body": "Thread A DNS_RESOLUTION ledger+inventory round-03/board.md:3; mitigated round-06/board.md:3, CHG-150 round-06/changes.md:4. No DNS errs R6-R7."
+    },
+    {
+     "id": "n4",
+     "role": "note",
+     "body": "Thread B DISK_PRESSURE shipping+notify-worker (revised round-07/board.md:3; added notify round-05/board.md:3). Ongoing: disk WARN round-07/logs/shipping-svc.log:18-25,65,80; notify-worker.log:2-12,54-56."
+    },
+    {
+     "id": "n5",
+     "role": "note",
+     "body": "Thread D CERT_EXPIRED closed false alarm round-07/board.md:4. Follow-ups OPEN: DATA_BACKFILL r04 board:4, VENDOR_TICKET r05 board:5, RUNBOOK_UPDATE r06 board:4. POSTMORTEM_DRAFT CLOSED round-07/board.md:5. R7 changes: CHG-149 PROPOSED only. Next: advance to R8."
+    }
+   ],
+   "update": "round-08/board.md:3: - Thread A status: resolved (no recurrence for two hours).\nround-08/board.md:4: - Thread B status: mitigated (workaround in place; permanent fix pending).\nround-08/board.md:5: - Thread C opened: request failures on some search-api pods; cause not yet identified. Status: ongoing.\nround-08/board.md:6: - Follow-up CLOSED VENDOR_TICKET.\nround-08/changes.md:3: - CHG-159 APPLIED: retry budget for idempotent GETs set to 1",
+   "proposed_context": [
+    {
+     "id": "n1",
+     "role": "note",
+     "body": "R1: services notify-worker, shipping-svc, ledger-svc, inventory-svc, search-api. round-01/changes.md:3 CHG-108 TLS rotation."
+    },
+    {
+     "id": "n2",
+     "role": "note",
+     "body": "ledger DNS SERVFAIL round-02/logs/ledger-svc.log:3,22,27. CHG-120 APPLIED search-api http.max_inflight=-1 round-02/changes.md:4. R8: Thread C opened search-api failures round-08/board.md:5 ongoing; logs config validation failed http.max_inflight=-1 round-08/logs/search-api.log:9,19,22,59,61,68,75 => BAD_CONFIG_ROLLOUT likely. R8 CHG-159 APPLIED retry budget (unrelated)."
+    },
+    {
+     "id": "n3",
+     "role": "note",
+     "body": "Thread A DNS_RESOLUTION ledger+inventory round-03/board.md:3; mitigated round-06/board.md:3 CHG-150 round-06/changes.md:4; RESOLVED round-08/board.md:3."
+    },
+    {
+     "id": "n4",
+     "role": "note",
+     "body": "Thread B DISK_PRESSURE shipping+notify-worker (round-07/board.md:3, round-05/board.md:3). MITIGATED round-08/board.md:4. disk WARN still round-08/logs/shipping-svc.log:14,28 notify-worker.log:17,58."
+    },
+    {
+     "id": "n5",
+     "role": "note",
+     "body": "Thread D CERT_EXPIRED false alarm round-07/board.md:4. OPEN: DATA_BACKFILL r04 board:4, RUNBOOK_UPDATE r06 board:4. CLOSED: POSTMORTEM_DRAFT r07, VENDOR_TICKET round-08/board.md:6. Next: advance to R9."
+    }
+   ]
+  },
+  "model": "jev-1.13.0",
+  "questions": {
+   "lost": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the proposed context drop, or mark as finished, an obligation, requirement, exception, open question or unresolved item that the current context still treats as active, when neither the current context nor the update says it is finished, superseded or no longer needed?",
+     "scope": "Compare state.current_context (the working context before the rewrite) with state.proposed_context (the replacement). state.task is the task the context serves and state.update is already released information that may justify changes (empty if none)."
+    },
+    "criteria": {
+     "true": "Yes if an item that is still active in the current context is missing from the proposed context, or is now described as done, closed, answered or no longer applicable, and neither the current context nor the update supports that. This includes losing an exception or condition attached to a requirement that is kept.",
+     "false": "No if every active item is still present, possibly paraphrased, shortened or merged; if removed items were superseded, completed, duplicated or closed according to the current context or the update; or if historical information is kept as history. A shorter context is not by itself a loss."
+    }
+   },
+   "changed": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the proposed context state a value, number, limit, condition, status or relationship differently from the current context, without the update or the current context supporting the change?",
+     "scope": "Compare state.current_context (the working context before the rewrite) with state.proposed_context (the replacement). state.task is the task the context serves and state.update is already released information that may justify changes (empty if none)."
+    },
+    "criteria": {
+     "true": "Yes if a value, threshold, amount, date, percentage, status, scope or which-applies-to-what relationship differs from the current context and the update does not justify the new version.",
+     "false": "No if values, conditions and statuses mean the same (wording may differ), or if every difference is justified by the update or by the current context itself."
+    }
+   },
+   "evidence": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the proposed context remove the evidence reference supporting a claim it keeps, or attach a kept claim to a different reference than the current context did?",
+     "scope": "Compare state.current_context (the working context before the rewrite) with state.proposed_context (the replacement). state.task is the task the context serves and state.update is already released information that may justify changes (empty if none)."
+    },
+    "criteria": {
+     "true": "Yes if a claim that remains in the proposed context had a source reference (file:line, document section, ticket, dashboard, link or citation) in the current context and that reference is now missing, or the claim now cites a different reference without the update supporting it.",
+     "false": "No if kept claims keep their references (possibly reformatted or merged), if a claim and its reference were removed together, or if a reference changed in a way the update supports."
+    }
+   }
+  }
+ },
+ "attempts": [
+  {
+   "charged_usd": 9.3e-05
+  }
+ ],
+ "response": {
+  "model": "jev-1.13.0",
+  "answers": {
+   "lost": {
+    "type": "noul",
+    "noul": 0.19
+   },
+   "changed": {
+    "type": "noul",
+    "noul": 0.41
+   },
+   "evidence": {
+    "type": "noul",
+    "noul": 0.58
+   }
+  },
+  "usage": {
+   "input_tokens": 2206,
+   "output_tokens": 54
+  }
+ },
+ "model": "jev-1.13.0",
+ "latency_s": 0.2083,
+ "usage": {
+  "input_tokens": 2206,
+  "output_tokens": 54
+ },
+ "answers": {
+  "lost": 0.19,
+  "changed": 0.41,
+  "evidence": 0.58
+ },
+ "charged_usd": 9.3e-05
+}

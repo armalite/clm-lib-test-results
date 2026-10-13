@@ -30,7 +30,7 @@ These are different interventions. Results from one say nothing directly about t
 | [008](008-jev-context-review/README.md) | model-controlled | an optional Jev tool Claude may call | Complete: the tool was never used (evidence about optional-tool availability) |
 | [009](009-jev-update-review/README.md) | model-controlled | automatically at every incoming update, before Claude's next turn | Complete: no cost, time or established correctness benefit in 24 evaluation runs |
 | [010](010-jev-initiated-review/README.md) | model-controlled | at **Claude's** context-edit decisions (v1 optional; v2 required, Claude-labelled; v3 required, runtime-supplied update) | **v3 complete (36 runs):** Jev added nothing measurable over the review alone; the review workflow costs about 30% more than ordinary CLM. v1 and v2 stopped at their gates |
-| [011](011-jev-edit-check/protocol.md) | model-controlled | on a proposed context rewrite, before acceptance | Planned (design open) |
+| [011](011-jev-edit-check/README.md) | model-controlled (checking) | on a proposed context rewrite | **Component diagnostic complete; gate failed** (16/16 harmful detected, 3/16 false flags against a limit of 2). No agent integration |
 | W2 workload | a workload, not a strategy | changing requirements that interact | Planned (not implemented) |
 | 012 | runtime policy beside CLM | automatic screening of incoming tool results | Planned: the first proposed screening experiment |
 | 013 | model-controlled | Claude-directed screening of tool results | Planned |
@@ -62,7 +62,7 @@ These are different interventions. Results from one say nothing directly about t
 - **Confounds:**
   - the check opportunity is itself an intervention;
   - false alarms can cause churn.
-- **Readiness gate:** a fresh labelled component diagnostic for the new judgment must show useful separation first. **Status: planned.**
+- **Readiness gate:** a fresh labelled component diagnostic for the new judgment must show useful separation first. **Status: the component diagnostic ran (2026-10-13) and its gate failed; see the note below.**
 
 ### W2: Changing-requirements workload (a workload extension, not a new strategy)
 
@@ -197,3 +197,12 @@ See [010](010-jev-initiated-review/README.md).
 - **011's component diagnostic** (TypeSafe only): a different judgment, aimed at omissions in proposed rewrites.
 - **Or a workload with real staleness risk (W2)**, before more agent runs of the affected-entry question.
 - **Comparing strategies:** separate results establish each strategy only against its own control. 009 and 010 v3 used different controls, presentations and instances, so they are not directly comparable.
+
+## Note after 011's component diagnostic (2026-10-13)
+
+**011's diagnostic** asked Jev three narrow questions (`lost`, `changed`, `evidence`) about proposed context rewrites, on 36 author-labelled frozen cases. No agent runs were made.
+- **The result:** **16/16** harmful rewrites detected, but **3/16** acceptable ones flagged, failing the predeclared limit of 2. The deterministic checks managed 7/16 with the same 3 false flags.
+- **What it shows:** this is the first Jev judgment in the programme that clearly beats simple checks on its own task, including semantic losses (exceptions, conditions, swapped citations, "not done" → "done") that leave references and numbers intact.
+- **Why the gate failed:** two of the false flags were real edits whose new content came from tool output the checker never saw.
+- **Next step:** this is not a basis for an agent pilot. If pursued, a **diagnostic v2** would include the tool observations since the last revision in the checker's input, with **fresh** labelled cases, followed only then by a W2-workload pilot (A ordinary CLM / B confirm step / C confirm step + Jev).
+- **Unchanged:** 012 and 013 remain planned.
