@@ -33,7 +33,7 @@ These are different interventions. Results from one say nothing directly about t
 | [011](011-jev-edit-check/README.md) | model-controlled (checking) | on a proposed context rewrite | **v1 diagnostic: gate failed. v2 diagnostic: gate passed.** **Development pilot on W2** (2 instances × 3 conditions): all 6 runs strict success; no harmful edit occurred; Jev flagged 4/9 proposals, all acceptable; checking cost +58% (C vs A), almost all Claude-side |
 | W2 workload | a workload, not a strategy | changing requirements that interact | **Implemented** (`export-gen/1`, 2 development instances); used by the 011 development pilot |
 | [012](012-jev-result-screening/README.md) | runtime policy beside CLM | automatic screening of incoming (search) results | **v1** (local files): component gate passed; pilot never exercised screening. **v2** (document service): screening exercised in 12/12 searches; 4/4 correct; no needed passage omitted; Claude fetched most omitted passages back, so B cost +10%. No evaluation |
-| 013 | model-controlled | Claude-directed screening of tool results | Planned |
+| 013 | model-controlled | Claude-directed screening of tool results | **Not recommended**: see the [programme review](jev-programme-review.md#does-013-add-a-distinct-question). Not implemented |
 
 ### 010: Claude-initiated context review
 
@@ -106,7 +106,7 @@ These are different interventions. Results from one say nothing directly about t
   - the quality of Claude's question;
   - tool-use differences;
   - the extra turns per screening.
-- **Readiness gate:** 012's findings, plus a passage-level diagnostic for the question type. **Status: planned**, distinct from 012.
+- **Readiness gate:** 012's findings, plus a passage-level diagnostic for the question type. **Status: not recommended** (2026-10-13): on the available workloads it would be either an unused optional tool or a required overhead, and a fair control can make the same selection itself. See the [programme review](jev-programme-review.md#does-013-add-a-distinct-question).
 
 ## Order and gating
 
@@ -284,4 +284,12 @@ See [010](010-jev-initiated-review/README.md).
 **What it means:** on this workload, Jev's screening is safe but not useful. Disclosing omissions invites the agent to check them, which cancels the input saving. These are 2 development instances, not an evaluation.
 
 **Next (the maintainer's decision):** do not scale 012 up. A screening test would only be informative on a workload whose search results are much larger and noisier than these. Across 008–012, no Jev integration has shown a measurable benefit over ordinary CLM, so a programme-level review is recommended before further integration work. **013 remains planned.**
+
+## Programme review (2026-10-13)
+
+[`jev-programme-review.md`](jev-programme-review.md) summarises 008–012 phase by phase. Components, development pilots and evaluations are kept separate there.
+
+**The conclusion:** there is **no demonstrated agent benefit in the tested settings**, although several Jev components were accurate on labelled examples.
+
+**The 013 decision:** 013 is not recommended. The review recommends **stopping the agent-integration programme here** and writing up the results.
 
