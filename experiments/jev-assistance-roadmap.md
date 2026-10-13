@@ -319,3 +319,9 @@ See [010](010-jev-initiated-review/README.md).
 - **Cost:** B cost 19–32% more than A.
 - **Decision:** following the frozen rules, B's instruction was not strengthened, and no evaluation was run.
 - **The pattern again:** this repeats the programme's earlier finding. Given Jev's judgments, Claude treats them as advice to read, and still makes the decision itself.
+
+**Update (2026-10-14, R1 proposal):** the pilot's B instruction let callers pass their own edits, so delegation was never actually configured.
+- **What the pilot shows:** non-delegation under that instruction. It is not evidence that answer-driven helpers cannot help.
+- **The proposal:** [014's revision-delegation.md](014-jev-helper-primitives/revision-delegation.md) proposes development revision R1, a contract in which the helper reads the register and Jev's judgments govern its keep/amend/retire decisions, with labelled fallbacks and overrides.
+- **What would test it:** a single smoke on `w3-smoke-1` (about USD 0.25–0.40).
+- **Status:** not authorised.
