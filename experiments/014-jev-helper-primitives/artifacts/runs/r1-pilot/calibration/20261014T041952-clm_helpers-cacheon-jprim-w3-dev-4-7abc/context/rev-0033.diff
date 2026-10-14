@@ -1,0 +1,24 @@
+--- rev-32
++++ rev-33
+@@ -80,6 +80,21 @@
+    "id": "reg.S6.2",
+    "role": "note",
+    "body": "HISTORY [S6.2] note: For information: the web interface now shows 50 records per page. This does not change exports."
++  },
++  {
++   "id": "s21.act",
++   "role": "assistant",
++   "body": "[step 21] execute\nthought: Check core for exported_by and confidential_count, and compact context.\ncode:\nimport sys;sys.path.insert(0,'/task/workspace')\nprint(open('/task/workspace/exporter/core.py').read())\nimport regmaint\nc=regmaint.load();c['entries']=[e for e in c['entries'] if not e['id'].startswith(('s17.','s18.','s19.','s20.'))]\nfor e in c['entries']:\n  if e['id']=='n1':e['body']='Stages1-6 done: core.py implements S1-S6 (residency removed). Helper regmaint.py: regmaint.update(N) per stage; override(eid,body,reason).'\nregmaint.save(c)"
++  },
++  {
++   "id": "s21.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.1s\n--- stdout ---\nimport json\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get(\"role\")\n    out = []\n    for r in sorted(records, key=lambda r: r[\"id\"]):\n        if role == \"viewer\":\n            if r.get(\"owner\") != user.get(\"name\"):\n                continue\n        elif role != \"admin\" and r.get(\"project\") not in user.get(\"projects\", []) and r.get(\"owner\") != user.get(\"name\"):\n            continue\n        st = r.get(\"status\")\n        if st != \"active\" and not (st == \"archived\" and params.get(\"include_archived\") is True and role == \"admin\"):\n            continue\n        s = params.get(\"since\")\n        if s is not None and (r.get(\"updated\") or r[\"created\"]) < s:\n            continue\n        if r.get(\"confidential\") is True and not (role == \"admin\" and params.get(\"purpose\") in (\"audit\", \"regulator\")):\n            continue\n        out.append(r)\n    m = params.get(\"max_records\")\n    if m is not None:\n        out = out[:min(m, 20)]\n    recs = [{\"id\": r[\"id\"], \"title\": r[\"title\"].strip(), \"owner\": r[\"owner\"], \"amount\": r[\"amount\"]} for r in out]\n    res = {\"records\": recs, \"exported_by\": user.get(\"name\")}\n    if role == \"admin\" and params.get(\"purpose\") == \"regulator\":\n        res[\"confidential_count\"] = sum(1 for r in out if r.get(\"confidential\") is True)\n    return json.dumps(res)\n\n"
++  },
++  {
++   "id": "s21.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 21: revision 31 -> 32; entries 26 -> 16; body chars 9974 -> 4164; removed [s17.act, s17.obs, s17.rcpt, s18.act, s18.obs, s19.act, s19.obs, s19.rcpt, s20.act, s20.obs]; added []; rewritten [n1]"
+   }
+  ]
+ }

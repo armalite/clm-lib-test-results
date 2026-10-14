@@ -1,0 +1,34 @@
+{
+ "number": 19,
+ "parent": 18,
+ "source": "runtime",
+ "step": 13,
+ "sha256": "1a0e1d7248554ed7b9034050f35f13523d27a80c2338108d7421fba5326d1127",
+ "entries": [
+  {
+   "id": "register",
+   "role": "summary",
+   "body": "HISTORY [S1.1] Format was CSV via csv.writer default dialect, lineterminator \\n; header id,title,owner,amount; rows ascending id; no records -> header only.\nCURRENT [S1.2, S4.2, S5.2] Scope: role 'admin' any project; viewer only records with owner==user['name'] any project (S5.2); others (non-viewer) records with project in user['projects'] OR owner==user['name'] (S4.2); others silently skipped.\nCURRENT [S1.3, S5.1] Status: only 'active'; archived too only if role admin and params.get('include_archived') is True (S5.1); non-admin never archived.\nHISTORY [S1.4] since compared created only.\nCURRENT [S1.4, S3.2] params 'since' YYYY-MM-DD: only records whose updated (if present) else created >= since.\nCURRENT [S1.5] Title stripped of leading/trailing whitespace.\nCURRENT [S1.0] API export_records(records,user,params)->str; record keys id,title,owner,project,status,amount(str keep exact),confidential,created,region,optional updated; don't modify input; ignore unknown params.\nHISTORY [S1.6] Decision: date filter introduced for monthly reconciliation runs.\nHISTORY [S2.1] viewer used to raise PermissionError; replaced by S5.2.\nCURRENT [S2.2, S4.1] confidential True never exported, except role admin and purpose 'audit' or 'regulator' (S4.1); other rules still apply.\nCURRENT [S2.3, S5.3] params max_records int>=1: only first N (asc id) after all other rules; N>20 treated as 20 (S5.3).\nCURRENT [S2.4] Obligation: if format changes from CSV, every export in new format includes top-level 'exported_by'=user['name'].\nCURRENT [S2.5] Obligation: if confidential records exported for purpose other than 'audit', export includes top-level 'confidential_count' = number of confidential records in it.\nCURRENT [S2.6] region 'eu' exported only if 'eu' in user['regions'] (admins too).\nCURRENT [S3.1, S1.1, S1.5, S2.4] Format: json.dumps object {'records':[{id int,title stripped,owner,amount str exact}] asc id, 'exported_by': user['name']}; no records -> empty list.\nCURRENT [S2.5] confidential_count added when confidential exported and purpose!='audit' (implemented).\nHISTORY [S3.3] Note: web UI shows owner display names; exports keep stored owner.\nHISTORY [S4.3] Decision: move to JSON made for new reporting API.\nNOTE: regulator purpose exports with confidential include confidential_count (purpose!='audit')."
+  },
+  {
+   "id": "prog",
+   "role": "note",
+   "body": "Stages 1-5 implemented in exporter/core.py (JSON output)."
+  },
+  {
+   "id": "s13.act",
+   "role": "assistant",
+   "body": "[step 13] execute\nthought: Implement S5 changes, update register, prune.\ncode:\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"    if user.get('role') == 'viewer':\\n        raise PermissionError('viewer')\\n\",\"    viewer = user.get('role') == 'viewer'\\n\")\ns=s.replace(\"inc = params.get('include_archived') is True\",\"inc = admin and params.get('include_archived') is True\")\ns=s.replace(\"        if not admin and r.get('project')\",\"        if viewer:\\n            if r.get('owner') != user.get('name'):\\n                continue\\n        elif not admin and r.get('project')\")\ns=s.replace(\"        out = out[:mx]\",\"        out = out[:min(mx, 20)]\")\nopen(p,'w').write(s)\nimport subprocess,sys,json\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])\nc=json.load(open('/task/workspace/context.json'))\nreg=c['entries'][0]\nb=reg['body']\nb=b.replace(\"CURRENT [S1.2, S4.2] Scope: role 'admin' any project; others (non-viewer)\",\"CURRENT [S1.2, S4.2, S5.2] Scope: role 'admin' any project; viewer only records with owner==user['name'] any project (S5.2); others (non-viewer)\")\nb=b.replace(\"CURRENT [S1.3] Status: only 'active' unless params.get('include_archived') is True -> archived too.\",\"CURRENT [S1.3, S5.1] Status: only 'active'; archived too only if role admin and params.get('include_archived') is True (S5.1); non-admin never archived.\")\nb=b.replace(\"CURRENT [S2.1] role 'viewer' -> raise PermissionError, nothing exported.\",\"HISTORY [S2.1] viewer used to raise PermissionError; replaced by S5.2.\")\nb=b.replace(\"CURRENT [S2.3] params max_records int>=1: only first N (asc id) after all other rules.\",\"CURRENT [S2.3, S5.3] params max_records int>=1: only first N (asc id) after all other rules; N>20 treated as 20 (S5.3).\")\nreg['body']=b\nc['entries']=[reg,{'id':'prog','role':'note','body':'Stages 1-5 implemented in exporter/core.py (JSON output).'}]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s13.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s13.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 13: revision 17 -> 18; entries 9 -> 2; body chars 6959 -> 2374; removed [s10.act, s10.obs, s10.rcpt, s11.act, s11.obs, s12.act, s12.obs]; added []; rewritten [register, prog]"
+  }
+ ]
+}

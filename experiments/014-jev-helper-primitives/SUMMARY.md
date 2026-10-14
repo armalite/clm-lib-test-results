@@ -15,4 +15,9 @@
   - **The selections:** at the notices they matched the truth (7 of 7, no misses). There was one false hit at stage 2, and replaced rules were kept as overridden amendments.
   - **The verdict:** the frozen counterfactual test was unsupported, because the helper's requests are sequential, so **R1 is not demonstrated under its frozen criteria.** A post-hoc last-request diagnostic shows answer-dependent selection at all three notices.
   - **The outcome:** 42/42 code checks, register harm 0, USD 0.275.
+- **R1 matched development pilot** (2 fresh instances × A/B, frozen protocol, unchanged R1 instruction, shared 12k budget):
+  - **Delegation was used:** in both B runs, Claude's helper executed keep, amend or retire branches on Jev's answers. Last-response replays were substantive at 2 and 4 notice stages.
+  - **Correctness:** all runs were fully correct, with no register harm.
+  - **Cost:** B cost 61–98% more (means: A USD 0.293, B USD 0.528) and took 45–78 s longer, mainly because its registers grew 1.7–3.5 times larger.
+  - **The conclusion:** no benefit in this pilot, so no larger evaluation is justified.
 

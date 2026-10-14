@@ -1,0 +1,39 @@
+import csv, io
+
+
+def export_records(records, user, params):
+    params = params or {}
+    viewer = user.get('role') == 'viewer'
+    out = []
+    admin = user.get('role') == 'admin'
+    projs = user.get('projects') or []
+    regs = user.get('regions') or []
+    inc = admin and params.get('include_archived') is True
+    since = params.get('since')
+    audit = admin and params.get('purpose') in ('audit', 'regulator')
+    for r in records:
+        if viewer:
+            if r.get('owner') != user.get('name'):
+                continue
+        elif not admin and r.get('project') not in projs and r.get('owner') != user.get('name'):
+            continue
+        st = r.get('status')
+        if not (st == 'active' or (inc and st == 'archived')):
+            continue
+        if since and (r.get('updated') or r.get('created', '')) < since:
+            continue
+        if r.get('confidential') is True and not audit:
+            continue
+        out.append(r)
+    out.sort(key=lambda r: r['id'])
+    mx = params.get('max_records')
+    if isinstance(mx, int) and not isinstance(mx, bool) and mx >= 1:
+        out = out[:min(mx, 20)]
+    import json
+    obj = {'records': [{'id': r['id'], 'title': str(r['title']).strip(), 'owner': r['owner'], 'amount': r['amount'], 'project': r.get('project')} for r in out]}
+    if not admin:
+        obj['exported_by'] = user.get('name')
+    cc = sum(1 for r in out if r.get('confidential') is True)
+    if cc and params.get('purpose') != 'audit':
+        obj['confidential_count'] = cc
+    return json.dumps(obj)

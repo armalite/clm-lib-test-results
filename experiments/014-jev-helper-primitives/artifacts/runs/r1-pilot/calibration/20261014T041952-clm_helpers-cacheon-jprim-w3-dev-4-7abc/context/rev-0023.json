@@ -1,0 +1,109 @@
+{
+ "number": 23,
+ "parent": 22,
+ "source": "model_edit",
+ "step": 15,
+ "sha256": "62307fcc628936cf31389c05f704fffa2e00ab1f88650bc18943cb0eaaabc634",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stages1-4 done: exporter/core.py implements S1-S4 (JSON+exported_by; owner scope S4.2; regulator purpose S4.1 adds confidential_count per S2.5). Helper /task/workspace/regmaint.py: regmaint.update(N) per stage; override(eid,body,reason)."
+  },
+  {
+   "id": "reg.S1.1",
+   "role": "note",
+   "body": "HISTORY [S1.1] Format: return CSV text. The first row is the header id,title,owner,amount; then one row per exported record, in ascending id order, with those four fields. Produce it with Python's csv.writer (default dialect) and lineterminator='\\n'. With no exported records, return the header row alone (ending in '\\n'). (replaced by S3.1)"
+  },
+  {
+   "id": "reg.S1.2",
+   "role": "note",
+   "body": "CURRENT [S1.2, S4.2, S5.2] Scope: a user whose role is 'admin' may export records of any project. Any other role exports only records whose 'project' is in user['projects']; other records are left out without an error. AMENDED by S4.2: Users whose role is neither 'admin' nor 'viewer' may now also export the records they own (record 'owner' equal to user['name']), even outside their projects. AMENDED by S5.2: Viewers no longer receive an error: a viewer now exports only the records they own (record 'owner' equal to user['name']), in any project; every other rule still applies to those records."
+  },
+  {
+   "id": "reg.S1.3",
+   "role": "note",
+   "body": "CURRENT [S1.3, S5.1] Status: only records with status 'active' are exported, unless params.get('include_archived') is True; then records with status 'archived' are exported too. AMENDED by S5.1: include_archived is now honoured only when user['role'] is 'admin'; for every other role, archived records are never exported."
+  },
+  {
+   "id": "reg.S1.4",
+   "role": "note",
+   "body": "CURRENT [S1.4, S3.2] Date filter: params may contain 'since', a date string 'YYYY-MM-DD'. When it is present, only records whose 'created' date is on or after that date are exported. AMENDED by S3.2: The date filter now uses a record's 'updated' date when the record has one, and its 'created' date otherwise."
+  },
+  {
+   "id": "reg.S1.5",
+   "role": "note",
+   "body": "CURRENT [S1.5] Titles: export each record's title with leading and trailing whitespace removed."
+  },
+  {
+   "id": "reg.S1.6",
+   "role": "note",
+   "body": "HISTORY [S1.6] note: Decision record: the date filter was introduced for the monthly reconciliation runs."
+  },
+  {
+   "id": "reg.S2.1",
+   "role": "note",
+   "body": "HISTORY [S2.1] Viewers: if user['role'] is 'viewer', raise PermissionError; nothing is exported. (replaced by S5.2)"
+  },
+  {
+   "id": "reg.S2.2",
+   "role": "note",
+   "body": "CURRENT [S2.2, S4.1] Confidential records: a record whose 'confidential' is True is never exported, with one exception: it is exported when user['role'] is 'admin' and params.get('purpose') == 'audit'. Every other rule still applies to it. AMENDED by S4.1: Confidential records may now also be exported when user['role'] is 'admin' and params.get('purpose') == 'regulator'."
+  },
+  {
+   "id": "reg.S2.3",
+   "role": "note",
+   "body": "CURRENT [S2.3, S5.3] Record limit: params may contain 'max_records', an int of at least 1. Export only the first max_records records, in ascending id order, that remain after every other rule. AMENDED by S5.3: A max_records value above 20 is treated as 20."
+  },
+  {
+   "id": "reg.S2.4",
+   "role": "note",
+   "body": "CURRENT [S2.4, S3.1] Compliance obligation (nothing to do while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must include a top-level field \"exported_by\" equal to user['name']. It stays in force unless a later stage withdraws or changes it. AMENDED by S3.1: Exports are now JSON text (json.dumps) of an object whose key \"records\" lists one object per exported record, in ascending id order, with exactly the keys \"id\" (int), \"title\", \"owner\" and \"amount\" (str, exactly as given). The hidden tests parse the JSON and compare values, not spacing or key order."
+  },
+  {
+   "id": "reg.S2.5",
+   "role": "note",
+   "body": "CURRENT [S2.5, S4.1] Audit-trail obligation (nothing to do today): if confidential records are ever exported for a purpose other than 'audit', every such export must include a top-level field \"confidential_count\" giving the number of confidential records it contains. AMENDED by S4.1: Confidential records may now also be exported when user['role'] is 'admin' and params.get('purpose') == 'regulator'."
+  },
+  {
+   "id": "reg.S2.6",
+   "role": "note",
+   "body": "CURRENT [S2.6] Residency: a record whose 'region' is 'eu' is exported only when 'eu' is in user['regions']; this applies to admins too."
+  },
+  {
+   "id": "reg.S3.3",
+   "role": "note",
+   "body": "HISTORY [S3.3] note: For information: the web interface will show record owners by display name; exports keep the stored 'owner' value."
+  },
+  {
+   "id": "reg.S4.3",
+   "role": "note",
+   "body": "HISTORY [S4.3] note: Decision record: the move to JSON was made for the new reporting API."
+  },
+  {
+   "id": "s13.act",
+   "role": "assistant",
+   "body": "[step 13] execute\nthought: Compact context after stage 4 implementation.\ncode:\nimport sys;sys.path.insert(0,'/task/workspace')\nimport regmaint\nc=regmaint.load();c['entries']=[e for e in c['entries'] if not e['id'].startswith(('s9.','s10.','s11.','s12.'))]\nfor e in c['entries']:\n  if e['id']=='n1':e['body']='Stages1-4 done: exporter/core.py implements S1-S4 (JSON+exported_by; owner scope S4.2; regulator purpose S4.1 adds confidential_count per S2.5). Helper /task/workspace/regmaint.py: regmaint.update(N) per stage; override(eid,body,reason).'\nregmaint.save(c);print('ok')"
+  },
+  {
+   "id": "s13.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.8s\n--- stdout ---\nok\n"
+  },
+  {
+   "id": "s13.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 13: revision 19 -> 20; entries 25 -> 15; body chars 9109 -> 3678; removed [s9.act, s9.obs, s9.rcpt, s10.act, s10.obs, s11.act, s11.obs, s11.rcpt, s12.act, s12.obs]; added []; rewritten [n1]"
+  },
+  {
+   "id": "s14.act",
+   "role": "assistant",
+   "body": "[step 14] advance\nthought: "
+  },
+  {
+   "id": "s14.obs",
+   "role": "observation",
+   "body": "Stage 5 of 7 released.\n# Stage 5 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S5.1] include_archived is now honoured only when user['role'] is 'admin'; for every other role, archived records are never exported.\n- [S5.2] Viewers no longer receive an error: a viewer now exports only the records they own (record 'owner' equal to user['name']), in any project; every other rule still applies to those records.\n- [S5.3] A max_records value above 20 is treated as 20.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (42 lines)\n  stage-5/REQUIREMENTS.md (11 lines)"
+  }
+ ]
+}

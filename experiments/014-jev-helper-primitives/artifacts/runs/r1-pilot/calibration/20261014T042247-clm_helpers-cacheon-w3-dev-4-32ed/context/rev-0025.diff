@@ -1,0 +1,19 @@
+--- rev-24
++++ rev-25
+@@ -35,6 +35,16 @@
+    "id": "s17.obs",
+    "role": "observation",
+    "body": "Stage 7 of 7 released.\n# Stage 7 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S7.1] Each exported JSON record now also has the key \"project\" (the record's project).\n- [S7.2] The \"exported_by\" field is no longer required when user['role'] is 'admin'; admin exports omit it.\n\n## Notes\n\n- [S7.3] Decision record: the residency restriction was lifted after the regional data agreement was signed.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-7/REQUIREMENTS.md (14 lines)"
++  },
++  {
++   "id": "s18.act",
++   "role": "assistant",
++   "body": "[step 18] execute\nthought: View core.py to implement S7.1, S7.2.\ncode:\nprint(open('/task/workspace/exporter/core.py').read())"
++  },
++  {
++   "id": "s18.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.8s\n--- stdout ---\nimport csv, io\n\n\ndef export_records(records, user, params):\n    params = params or {}\n    viewer = user.get('role') == 'viewer'\n    out = []\n    admin = user.get('role') == 'admin'\n    projs = user.get('projects') or []\n    regs = user.get('regions') or []\n    inc = admin and params.get('include_archived') is True\n    since = params.get('since')\n    audit = admin and params.get('purpose') in ('audit', 'regulator')\n    for r in records:\n        if viewer:\n            if r.get('owner') != user.get('name'):\n                continue\n        elif not admin and r.get('project') not in projs and r.get('owner') != user.get('name'):\n            continue\n        st = r.get('status')\n        if not (st == 'active' or (inc and st == 'archived')):\n            continue\n        if since and (r.get('updated') or r.get('created', '')) < since:\n            continue\n        if r.get('confidential') is True and not audit:\n            continue\n        out.append(r)\n    out.sort(key=lambda r: r['id'])\n    mx = params.get('max_records')\n    if isinstance(mx, int) and not isinstance(mx, bool) and mx >= 1:\n        out = out[:min(mx, 20)]\n    import json\n    obj = {'records': [{'id': r['id'], 'title': str(r['title']).strip(), 'owner': r['owner'], 'amount': r['amount']} for r in out], 'exported_by': user.get('name')}\n    cc = sum(1 for r in out if r.get('confidential') is True)\n    if cc and params.get('purpose') != 'audit':\n        obj['confidential_count'] = cc\n    return json.dumps(obj)\n\n"
+   }
+  ]
+ }

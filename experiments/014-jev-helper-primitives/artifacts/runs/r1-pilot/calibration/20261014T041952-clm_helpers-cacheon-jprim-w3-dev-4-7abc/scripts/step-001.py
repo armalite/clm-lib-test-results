@@ -1,0 +1,2 @@
+import subprocess
+print(subprocess.run('ls -R /task/fixtures /task/workspace; cat /task/fixtures/stage-1/REQUIREMENTS.md; cat /task/workspace/exporter/*.py',shell=True,capture_output=True,text=True).stdout[:5000])

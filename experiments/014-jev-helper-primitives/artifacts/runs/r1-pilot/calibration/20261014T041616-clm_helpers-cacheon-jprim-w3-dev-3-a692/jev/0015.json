@@ -1,0 +1,303 @@
+{
+ "attempt": 0,
+ "request": {
+  "state": {
+   "background": "New change item: include_archived is now honoured only when user['role'] is 'admin'; for every other role, archived records are never exported.",
+   "items": [
+    {
+     "key": "reg.S1.2",
+     "text": "CURRENT [S1.2] Viewers: if user['role'] is 'viewer', raise PermissionError; nothing is exported."
+    },
+    {
+     "key": "reg.S1.3",
+     "text": "CURRENT [S1.3] Scope: a user whose role is 'admin' may export records of any project. Any other role exports only records whose 'project' is in user['projects']; other records are left out without an error.\nCURRENT [S3.2] amends the above: where they conflict, this wins: Users whose role is neither 'admin' nor 'viewer' may now also export the records they own (record 'owner' equal to user['name']), even outside their projects."
+    },
+    {
+     "key": "reg.S1.4",
+     "text": "CURRENT [S1.4] Status: only records with status 'active' are exported, unless params.get('include_archived') is True; then records with status 'archived' are exported too."
+    },
+    {
+     "key": "reg.S1.5",
+     "text": "CURRENT [S1.5] Confidential records: a record whose 'confidential' is True is never exported, with one exception: it is exported when user['role'] is 'admin' and params.get('purpose') == 'audit'. Every other rule still applies to it."
+    },
+    {
+     "key": "reg.S2.1",
+     "text": "CURRENT [S2.1] Date filter: params may contain 'since', a date string 'YYYY-MM-DD'. When it is present, only records whose 'created' date is on or after that date are exported."
+    },
+    {
+     "key": "reg.S2.2",
+     "text": "CURRENT [S2.2] Residency: a record whose 'region' is 'eu' is exported only when 'eu' is in user['regions']; this applies to admins too."
+    },
+    {
+     "key": "reg.S2.3",
+     "text": "CURRENT [S2.3] Record limit: params may contain 'max_records', an int of at least 1. Export only the first max_records records, in ascending id order, that remain after every other rule."
+    },
+    {
+     "key": "reg.S2.4",
+     "text": "CURRENT [S2.4] Compliance obligation (nothing to do while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must include a top-level field \"exported_by\" equal to user['name']. It stays in force unless a later stage withdraws or changes it."
+    },
+    {
+     "key": "reg.S2.5",
+     "text": "CURRENT [S2.5] Titles: export each record's title with leading and trailing whitespace removed."
+    },
+    {
+     "key": "reg.S2.6",
+     "text": "CURRENT [S2.6] Audit-trail obligation (nothing to do today): if confidential records are ever exported for a purpose other than 'audit', every such export must include a top-level field \"confidential_count\" giving the number of confidential records it contains. Visible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation."
+    },
+    {
+     "key": "reg.S3.1",
+     "text": "CURRENT [S3.1] Exports are now JSON text (json.dumps) of an object whose key \"records\" lists one object per exported record, in ascending id order, with exactly the keys \"id\" (int), \"title\", \"owner\" and \"amount\" (str, exactly as given). The hidden tests parse the JSON and compare values, not spacing or key order."
+    },
+    {
+     "key": "reg.S3.2",
+     "text": "CURRENT [S3.2] Users whose role is neither 'admin' nor 'viewer' may now also export the records they own (record 'owner' equal to user['name']), even outside their projects."
+    },
+    {
+     "key": "reg.S3.3",
+     "text": "CURRENT [S3.3] For information: storage for archived projects moves to a cheaper tier next quarter. This does not change what exports contain. Visible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation."
+    }
+   ]
+  },
+  "model": "jev-1.13.0",
+  "questions": {
+   "i0": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?",
+     "item_key": "reg.S1.2",
+     "item": "CURRENT [S1.2] Viewers: if user['role'] is 'viewer', raise PermissionError; nothing is exported.",
+     "scope": "state.background is shared information supplied by the agent's own code (it may be empty), and state.items are the items it asks about. Judge only the item in instructions.item, against instructions.question. Answer the question as asked; do not judge anything else."
+    },
+    "criteria": {
+     "true": "Yes if, for this item, the answer to the question is yes.",
+     "false": "No if, for this item, the answer to the question is no."
+    }
+   },
+   "i1": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?",
+     "item_key": "reg.S1.3",
+     "item": "CURRENT [S1.3] Scope: a user whose role is 'admin' may export records of any project. Any other role exports only records whose 'project' is in user['projects']; other records are left out without an error.\nCURRENT [S3.2] amends the above: where they conflict, this wins: Users whose role is neither 'admin' nor 'viewer' may now also export the records they own (record 'owner' equal to user['name']), even outside their projects.",
+     "scope": "state.background is shared information supplied by the agent's own code (it may be empty), and state.items are the items it asks about. Judge only the item in instructions.item, against instructions.question. Answer the question as asked; do not judge anything else."
+    },
+    "criteria": {
+     "true": "Yes if, for this item, the answer to the question is yes.",
+     "false": "No if, for this item, the answer to the question is no."
+    }
+   },
+   "i2": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?",
+     "item_key": "reg.S1.4",
+     "item": "CURRENT [S1.4] Status: only records with status 'active' are exported, unless params.get('include_archived') is True; then records with status 'archived' are exported too.",
+     "scope": "state.background is shared information supplied by the agent's own code (it may be empty), and state.items are the items it asks about. Judge only the item in instructions.item, against instructions.question. Answer the question as asked; do not judge anything else."
+    },
+    "criteria": {
+     "true": "Yes if, for this item, the answer to the question is yes.",
+     "false": "No if, for this item, the answer to the question is no."
+    }
+   },
+   "i3": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?",
+     "item_key": "reg.S1.5",
+     "item": "CURRENT [S1.5] Confidential records: a record whose 'confidential' is True is never exported, with one exception: it is exported when user['role'] is 'admin' and params.get('purpose') == 'audit'. Every other rule still applies to it.",
+     "scope": "state.background is shared information supplied by the agent's own code (it may be empty), and state.items are the items it asks about. Judge only the item in instructions.item, against instructions.question. Answer the question as asked; do not judge anything else."
+    },
+    "criteria": {
+     "true": "Yes if, for this item, the answer to the question is yes.",
+     "false": "No if, for this item, the answer to the question is no."
+    }
+   },
+   "i4": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?",
+     "item_key": "reg.S2.1",
+     "item": "CURRENT [S2.1] Date filter: params may contain 'since', a date string 'YYYY-MM-DD'. When it is present, only records whose 'created' date is on or after that date are exported.",
+     "scope": "state.background is shared information supplied by the agent's own code (it may be empty), and state.items are the items it asks about. Judge only the item in instructions.item, against instructions.question. Answer the question as asked; do not judge anything else."
+    },
+    "criteria": {
+     "true": "Yes if, for this item, the answer to the question is yes.",
+     "false": "No if, for this item, the answer to the question is no."
+    }
+   },
+   "i5": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?",
+     "item_key": "reg.S2.2",
+     "item": "CURRENT [S2.2] Residency: a record whose 'region' is 'eu' is exported only when 'eu' is in user['regions']; this applies to admins too.",
+     "scope": "state.background is shared information supplied by the agent's own code (it may be empty), and state.items are the items it asks about. Judge only the item in instructions.item, against instructions.question. Answer the question as asked; do not judge anything else."
+    },
+    "criteria": {
+     "true": "Yes if, for this item, the answer to the question is yes.",
+     "false": "No if, for this item, the answer to the question is no."
+    }
+   },
+   "i6": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?",
+     "item_key": "reg.S2.3",
+     "item": "CURRENT [S2.3] Record limit: params may contain 'max_records', an int of at least 1. Export only the first max_records records, in ascending id order, that remain after every other rule.",
+     "scope": "state.background is shared information supplied by the agent's own code (it may be empty), and state.items are the items it asks about. Judge only the item in instructions.item, against instructions.question. Answer the question as asked; do not judge anything else."
+    },
+    "criteria": {
+     "true": "Yes if, for this item, the answer to the question is yes.",
+     "false": "No if, for this item, the answer to the question is no."
+    }
+   },
+   "i7": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?",
+     "item_key": "reg.S2.4",
+     "item": "CURRENT [S2.4] Compliance obligation (nothing to do while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must include a top-level field \"exported_by\" equal to user['name']. It stays in force unless a later stage withdraws or changes it.",
+     "scope": "state.background is shared information supplied by the agent's own code (it may be empty), and state.items are the items it asks about. Judge only the item in instructions.item, against instructions.question. Answer the question as asked; do not judge anything else."
+    },
+    "criteria": {
+     "true": "Yes if, for this item, the answer to the question is yes.",
+     "false": "No if, for this item, the answer to the question is no."
+    }
+   },
+   "i8": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?",
+     "item_key": "reg.S2.5",
+     "item": "CURRENT [S2.5] Titles: export each record's title with leading and trailing whitespace removed.",
+     "scope": "state.background is shared information supplied by the agent's own code (it may be empty), and state.items are the items it asks about. Judge only the item in instructions.item, against instructions.question. Answer the question as asked; do not judge anything else."
+    },
+    "criteria": {
+     "true": "Yes if, for this item, the answer to the question is yes.",
+     "false": "No if, for this item, the answer to the question is no."
+    }
+   },
+   "i9": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?",
+     "item_key": "reg.S2.6",
+     "item": "CURRENT [S2.6] Audit-trail obligation (nothing to do today): if confidential records are ever exported for a purpose other than 'audit', every such export must include a top-level field \"confidential_count\" giving the number of confidential records it contains. Visible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.",
+     "scope": "state.background is shared information supplied by the agent's own code (it may be empty), and state.items are the items it asks about. Judge only the item in instructions.item, against instructions.question. Answer the question as asked; do not judge anything else."
+    },
+    "criteria": {
+     "true": "Yes if, for this item, the answer to the question is yes.",
+     "false": "No if, for this item, the answer to the question is no."
+    }
+   },
+   "i10": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?",
+     "item_key": "reg.S3.1",
+     "item": "CURRENT [S3.1] Exports are now JSON text (json.dumps) of an object whose key \"records\" lists one object per exported record, in ascending id order, with exactly the keys \"id\" (int), \"title\", \"owner\" and \"amount\" (str, exactly as given). The hidden tests parse the JSON and compare values, not spacing or key order.",
+     "scope": "state.background is shared information supplied by the agent's own code (it may be empty), and state.items are the items it asks about. Judge only the item in instructions.item, against instructions.question. Answer the question as asked; do not judge anything else."
+    },
+    "criteria": {
+     "true": "Yes if, for this item, the answer to the question is yes.",
+     "false": "No if, for this item, the answer to the question is no."
+    }
+   },
+   "i11": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?",
+     "item_key": "reg.S3.2",
+     "item": "CURRENT [S3.2] Users whose role is neither 'admin' nor 'viewer' may now also export the records they own (record 'owner' equal to user['name']), even outside their projects.",
+     "scope": "state.background is shared information supplied by the agent's own code (it may be empty), and state.items are the items it asks about. Judge only the item in instructions.item, against instructions.question. Answer the question as asked; do not judge anything else."
+    },
+    "criteria": {
+     "true": "Yes if, for this item, the answer to the question is yes.",
+     "false": "No if, for this item, the answer to the question is no."
+    }
+   },
+   "i12": {
+    "type": "noul",
+    "instructions": {
+     "question": "Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?",
+     "item_key": "reg.S3.3",
+     "item": "CURRENT [S3.3] For information: storage for archived projects moves to a cheaper tier next quarter. This does not change what exports contain. Visible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.",
+     "scope": "state.background is shared information supplied by the agent's own code (it may be empty), and state.items are the items it asks about. Judge only the item in instructions.item, against instructions.question. Answer the question as asked; do not judge anything else."
+    },
+    "criteria": {
+     "true": "Yes if, for this item, the answer to the question is yes.",
+     "false": "No if, for this item, the answer to the question is no."
+    }
+   }
+  }
+ },
+ "model_requested": "jev-1.13.0",
+ "response": {
+  "model": "jev-1.13.0",
+  "answers": {
+   "i0": {
+    "type": "noul",
+    "noul": 0.11
+   },
+   "i1": {
+    "type": "noul",
+    "noul": 0.1
+   },
+   "i2": {
+    "type": "noul",
+    "noul": 0.21
+   },
+   "i3": {
+    "type": "noul",
+    "noul": 0.11
+   },
+   "i4": {
+    "type": "noul",
+    "noul": 0.08
+   },
+   "i5": {
+    "type": "noul",
+    "noul": 0.09
+   },
+   "i6": {
+    "type": "noul",
+    "noul": 0.08
+   },
+   "i7": {
+    "type": "noul",
+    "noul": 0.08
+   },
+   "i8": {
+    "type": "noul",
+    "noul": 0.08
+   },
+   "i9": {
+    "type": "noul",
+    "noul": 0.1
+   },
+   "i10": {
+    "type": "noul",
+    "noul": 0.1
+   },
+   "i11": {
+    "type": "noul",
+    "noul": 0.12
+   },
+   "i12": {
+    "type": "noul",
+    "noul": 0.11
+   }
+  },
+  "usage": {
+   "input_tokens": 4144,
+   "output_tokens": 228
+  }
+ },
+ "model": "jev-1.13.0",
+ "latency_s": 0.2513,
+ "usage": {
+  "input_tokens": 4144,
+  "output_tokens": 228
+ },
+ "cost_usd": 0.00017405
+}

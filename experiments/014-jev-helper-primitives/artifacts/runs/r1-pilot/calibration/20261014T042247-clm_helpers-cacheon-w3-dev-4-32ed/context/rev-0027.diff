@@ -1,0 +1,24 @@
+--- rev-26
++++ rev-27
+@@ -10,6 +10,21 @@
+    "id": "prog",
+    "role": "note",
+    "body": "Stages 1-7 implemented in exporter/core.py."
++  },
++  {
++   "id": "s19.act",
++   "role": "assistant",
++   "body": "[step 19] execute\nthought: Implement S7.1/S7.2, test, update register.\ncode:\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"'amount': r['amount']} for r in out], 'exported_by': user.get('name')}\",\"'amount': r['amount'], 'project': r.get('project')} for r in out]}\\n    if not admin:\\n        obj['exported_by'] = user.get('name')\")\nopen(p,'w').write(s)\nimport subprocess,sys,json\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-800:])\nc=json.load(open('/task/workspace/context.json'))\nreg=c['entries'][0]\nb=reg['body']\nb=b.replace(\"CURRENT [S2.4] Obligation: if format changes from CSV, every export in new format includes top-level 'exported_by'=user['name'].\",\"CURRENT [S2.4, S7.2] Obligation: non-CSV exports include top-level 'exported_by'=user['name'], except role admin exports omit it (S7.2).\\nHISTORY [S2.4] exported_by was required for all users incl admin.\")\nb=b.replace(\"CURRENT [S3.1, S1.1, S1.5, S2.4] Format: json.dumps object {'records':[{id int,title stripped,owner,amount str exact}] asc id, 'exported_by': user['name']}; no records -> empty list.\",\"CURRENT [S3.1, S1.1, S1.5, S2.4, S7.1, S7.2] Format: json.dumps object {'records':[{id int,title stripped,owner,amount str exact,project (S7.1)}] asc id, 'exported_by': user['name'] (omitted for admin, S7.2)}; no records -> empty list.\\nHISTORY [S3.1] records lacked project key.\")\nb+=\"\\nHISTORY [S7.3] Decision: residency restriction lifted after regional data agreement signed.\"\nreg['body']=b\nc['entries']=[reg,{'id':'prog','role':'note','body':'Stages 1-7 implemented in exporter/core.py.'}]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s19.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n\n"
++  },
++  {
++   "id": "s19.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 19: revision 25 -> 26; entries 9 -> 2; body chars 6613 -> 2751; removed [s16.act, s16.obs, s16.rcpt, s17.act, s17.obs, s18.act, s18.obs]; added []; rewritten [register, prog]"
+   }
+  ]
+ }

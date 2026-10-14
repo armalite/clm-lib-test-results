@@ -1,0 +1,1 @@
+import re;s=open('reghelper.py').read();i=s.find('def override');print(s[i:i+1200])

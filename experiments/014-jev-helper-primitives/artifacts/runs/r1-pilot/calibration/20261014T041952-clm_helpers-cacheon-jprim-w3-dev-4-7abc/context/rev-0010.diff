@@ -1,0 +1,24 @@
+--- rev-9
++++ rev-10
+@@ -65,6 +65,21 @@
+    "id": "reg.S2.6",
+    "role": "note",
+    "body": "CURRENT [S2.6] Residency: a record whose 'region' is 'eu' is exported only when 'eu' is in user['regions']; this applies to admins too."
++  },
++  {
++   "id": "s6.act",
++   "role": "assistant",
++   "body": "[step 6] execute\nthought: Implement stage 2 rules in core.py, run tests, and compact context.\ncode:\nimport sys,subprocess;sys.path.insert(0,'/task/workspace')\nsrc='''import csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get(\"role\")\n    if role == \"viewer\":\n        raise PermissionError(\"viewer\")\n    out = []\n    for r in sorted(records, key=lambda r: r[\"id\"]):\n        if role != \"admin\" and r.get(\"project\") not in user.get(\"projects\", []):\n            continue\n        st = r.get(\"status\")\n        if st != \"active\" and not (st == \"archived\" and params.get(\"include_archived\") is True):\n            continue\n        s = params.get(\"since\")\n        if s is not None and r[\"created\"] < s:\n            continue\n        if r.get(\"confidential\") is True and not (role == \"admin\" and params.get(\"purpose\") == \"audit\"):\n            continue\n        if r.get(\"region\") == \"eu\" and \"eu\" not in (user.get(\"regions\") or []):\n            continue\n        out.append(r)\n    m = params.get(\"max_records\")\n    if m is not None:\n        out = out[:m]\n    buf = io.StringIO()\n    w = csv.writer(buf, lineterminator=\"\\\\n\")\n    w.writerow([\"id\", \"title\", \"owner\", \"amount\"])\n    for r in out:\n        w.writerow([r[\"id\"], r[\"title\"].strip(), r[\"owner\"], r[\"amount\"]])\n    return buf.getvalue()\n'''\nopen('/task/workspace/exporter/core.py','w').write(src)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nimport regmaint\nc=regmaint.load();c['entries']=[e for e in c['entries'] if not e['id'].startswith(('s3.','s4.','s5.'))]\nfor e in c['entries']:\n  if e['id']=='n1':e['body']='Stage1+2 done: exporter/core.py implements S1.*,S2.* (S2.4/S2.5 dormant). Helper /task/workspace/regmaint.py: regmaint.update(N) per stage; override(eid,body,reason).'\nregmaint.save(c)"
++  },
++  {
++   "id": "s6.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n\n"
++  },
++  {
++   "id": "s6.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 6: revision 8 -> 9; entries 21 -> 13; body chars 5698 -> 2445; removed [s3.act, s3.obs, s3.rcpt, s4.act, s4.obs, s5.act, s5.obs, s5.rcpt]; added []; rewritten [n1]"
+   }
+  ]
+ }

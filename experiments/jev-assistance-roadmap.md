@@ -332,3 +332,9 @@ See [010](010-jev-initiated-review/README.md).
 - **A post-hoc diagnostic** (last request only) shows answer-dependent selection at all three notices.
 - **Next:** no comparison has been run or authorised.
 
+**Update (2026-10-14, R1 matched pilot):** 2 fresh W3 instances × A/B, frozen protocol, unchanged R1 instruction, USD 1.64.
+- **Delegation occurred:** B's own helpers executed answer-driven keep, amend or retire branches. Last-response replays were substantive at 2 and 4 notice stages.
+- **Correctness:** all runs were fully correct in both conditions.
+- **Cost:** B cost 61–98% more (larger registers, more calls, helper setup).
+- **The conclusion:** no practical advantage observed, so no larger evaluation is proposed.
+

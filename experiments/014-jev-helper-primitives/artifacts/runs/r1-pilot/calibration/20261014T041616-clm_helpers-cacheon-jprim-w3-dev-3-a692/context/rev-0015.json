@@ -1,0 +1,124 @@
+{
+ "number": 15,
+ "parent": 14,
+ "source": "model_edit",
+ "step": 11,
+ "sha256": "5f0ef535ec393df4299e5264172f8e94f304f5b51dc80035b0450094f8a9d2c6",
+ "entries": [
+  {
+   "id": "s1.act",
+   "role": "assistant",
+   "body": "[step1] read stage 1"
+  },
+  {
+   "id": "s1.obs",
+   "role": "observation",
+   "body": "Stage1 read; exporter/core.py implements S1.1-S1.5. reghelper.update(stage) maintains register."
+  },
+  {
+   "id": "reg.S1.1",
+   "role": "note",
+   "body": "HISTORY (replaced by S3.1) [S1.1] Format: return CSV text. The first row is the header id,title,owner,amount; then one row per exported record, in ascending id order, with those four fields. Produce it with Python's csv.writer (default dialect) and lineterminator='\\n'. With no exported records, return the header row alone (ending in '\\n')."
+  },
+  {
+   "id": "reg.S1.2",
+   "role": "note",
+   "body": "CURRENT [S1.2] Viewers: if user['role'] is 'viewer', raise PermissionError; nothing is exported."
+  },
+  {
+   "id": "reg.S1.3",
+   "role": "note",
+   "body": "CURRENT [S1.3] Scope: a user whose role is 'admin' may export records of any project. Any other role exports only records whose 'project' is in user['projects']; other records are left out without an error.\nCURRENT [S3.2] amends the above: where they conflict, this wins: Users whose role is neither 'admin' nor 'viewer' may now also export the records they own (record 'owner' equal to user['name']), even outside their projects."
+  },
+  {
+   "id": "reg.S1.4",
+   "role": "note",
+   "body": "CURRENT [S1.4] Status: only records with status 'active' are exported, unless params.get('include_archived') is True; then records with status 'archived' are exported too."
+  },
+  {
+   "id": "reg.S1.5",
+   "role": "note",
+   "body": "CURRENT [S1.5] Confidential records: a record whose 'confidential' is True is never exported, with one exception: it is exported when user['role'] is 'admin' and params.get('purpose') == 'audit'. Every other rule still applies to it."
+  },
+  {
+   "id": "reg.S1.6",
+   "role": "note",
+   "body": "HISTORY [S1.6] Decision record: CSV was chosen for the first release because the finance team imports exports into spreadsheets. Visible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation."
+  },
+  {
+   "id": "s2.act",
+   "role": "assistant",
+   "body": "[step2] implemented core.py (S1.1-S1.5), wrote reghelper.py, ran update(1); tests OK."
+  },
+  {
+   "id": "s2.obs",
+   "role": "observation",
+   "body": "10 tests OK."
+  },
+  {
+   "id": "s5.note",
+   "role": "note",
+   "body": "core.py implements S1-S3 (JSON with exported_by per S2.4). reghelper.update(stage) Jev-based; override(ids,reason)."
+  },
+  {
+   "id": "reg.S2.1",
+   "role": "note",
+   "body": "CURRENT [S2.1] Date filter: params may contain 'since', a date string 'YYYY-MM-DD'. When it is present, only records whose 'created' date is on or after that date are exported."
+  },
+  {
+   "id": "reg.S2.2",
+   "role": "note",
+   "body": "CURRENT [S2.2] Residency: a record whose 'region' is 'eu' is exported only when 'eu' is in user['regions']; this applies to admins too."
+  },
+  {
+   "id": "reg.S2.3",
+   "role": "note",
+   "body": "CURRENT [S2.3] Record limit: params may contain 'max_records', an int of at least 1. Export only the first max_records records, in ascending id order, that remain after every other rule."
+  },
+  {
+   "id": "reg.S2.4",
+   "role": "note",
+   "body": "CURRENT [S2.4] Compliance obligation (nothing to do while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must include a top-level field \"exported_by\" equal to user['name']. It stays in force unless a later stage withdraws or changes it."
+  },
+  {
+   "id": "reg.S2.5",
+   "role": "note",
+   "body": "CURRENT [S2.5] Titles: export each record's title with leading and trailing whitespace removed."
+  },
+  {
+   "id": "reg.S2.6",
+   "role": "note",
+   "body": "CURRENT [S2.6] Audit-trail obligation (nothing to do today): if confidential records are ever exported for a purpose other than 'audit', every such export must include a top-level field \"confidential_count\" giving the number of confidential records it contains. Visible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation."
+  },
+  {
+   "id": "s7.obs",
+   "role": "observation",
+   "body": "Stage 3 released: S3.1 JSON format {records:[id,title,owner,amount]}; S3.2 non-admin may export own records; S3.3 note."
+  },
+  {
+   "id": "reg.S3.1",
+   "role": "note",
+   "body": "CURRENT [S3.1] Exports are now JSON text (json.dumps) of an object whose key \"records\" lists one object per exported record, in ascending id order, with exactly the keys \"id\" (int), \"title\", \"owner\" and \"amount\" (str, exactly as given). The hidden tests parse the JSON and compare values, not spacing or key order."
+  },
+  {
+   "id": "reg.S3.2",
+   "role": "note",
+   "body": "CURRENT [S3.2] Users whose role is neither 'admin' nor 'viewer' may now also export the records they own (record 'owner' equal to user['name']), even outside their projects."
+  },
+  {
+   "id": "reg.S3.3",
+   "role": "note",
+   "body": "CURRENT [S3.3] For information: storage for archived projects moves to a cheaper tier next quarter. This does not change what exports contain. Visible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation."
+  },
+  {
+   "id": "s9.act",
+   "role": "assistant",
+   "body": "[step9] implemented S3 in core (JSON+exported_by, owner scope), ran update(3); tests OK."
+  },
+  {
+   "id": "s9.obs",
+   "role": "observation",
+   "body": "Jev: S3.1->S1.1 retired (0.98); S3.2->S1.3 amended (0.94); S3.1 also wrongly amended S2.4 (0.85). 4 tests OK."
+  }
+ ]
+}

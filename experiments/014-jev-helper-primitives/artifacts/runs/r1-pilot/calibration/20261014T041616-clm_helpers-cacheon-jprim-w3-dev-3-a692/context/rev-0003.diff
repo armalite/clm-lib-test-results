@@ -1,0 +1,24 @@
+--- rev-2
++++ rev-3
+@@ -40,6 +40,21 @@
+    "id": "reg.S1.6",
+    "role": "note",
+    "body": "HISTORY [S1.6] Decision record: CSV was chosen for the first release because the finance team imports exports into spreadsheets. Visible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation."
++  },
++  {
++   "id": "s2.act",
++   "role": "assistant",
++   "body": "[step 2] execute\nthought: Implement stage 1, write register helper, run it, trim context.\ncode:\nimport os,subprocess,sys\nos.makedirs('exporter',exist_ok=True)\nopen('exporter/core.py','w').write('''import csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer')\n    out = []\n    for r in sorted(records, key=lambda r: r['id']):\n        if role != 'admin' and r['project'] not in user.get('projects', []):\n            continue\n        if r['status'] != 'active' and not (r['status'] == 'archived' and params.get('include_archived') is True):\n            continue\n        if r['confidential'] is True and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        out.append(r)\n    buf = io.StringIO()\n    w = csv.writer(buf, lineterminator='\\\\n')\n    w.writerow(['id', 'title', 'owner', 'amount'])\n    for r in out:\n        w.writerow([r['id'], r['title'], r['owner'], r['amount']])\n    return buf.getvalue()\n''')\nopen('reghelper.py','w').write(r'''import json, re, clm_jev\nCTX='/task/workspace/context.json'\ndef parse(stage):\n    t=open(f'/task/fixtures/stage-{stage}/REQUIREMENTS.md').read()\n    items=[]\n    for m in re.finditer(r'^- \\[(S\\d+\\.\\d+)\\]\\s*(.+?)(?=^- \\[|^#|\\Z)', t, re.S|re.M):\n        items.append((m.group(1),' '.join(m.group(2).split())))\n    return items\ndef update(stage, replace_thr=0.7, amend_thr=0.5, notes=None):\n    notes=notes or {}\n    d=json.load(open(CTX)); E=d['entries']\n    for iid,txt in parse(stage):\n        isnote=bool(re.match(r'(Decision record|Note|Information)',txt))\n        if isnote:\n            E.append({'id':'reg.'+iid,'role':'note','body':f'HISTORY [{iid}] {txt}'}); continue\n        cur=[e for e in E if e['id'].startswith('reg.') and e['body'].startswith('CURRENT')]\n        if cur:\n            items={e['id']:e['body'] for e in cur}\n            bg='New change item: '+txt+(' Context: '+notes[iid] if iid in notes else '')\n            r1=clm_jev.judge('Does the new change item completely replace this existing requirement, so nothing of the existing one remains in force?',items,background=bg)\n            r2=clm_jev.judge('Does the new change item conflict with or modify some part of this existing requirement?',items,background=bg)\n            if r1.get('status')!='ok' or r2.get('status')!='ok':\n                print('FALLBACK:',iid,'jev error')\n            else:\n                for e in cur:\n                    p1=r1['answers'].get(e['id']) or 0; p2=r2['answers'].get(e['id']) or 0\n                    if p1>=replace_thr:\n                        e['body']='HISTORY (replaced by '+iid+') '+e['body'][8:]\n                    elif p2>=amend_thr:\n                        e['body']=e['body']+f'\\nCURRENT [{iid}] amends the above: where they conflict, this wins: '+txt\n                    print(iid,e['id'],round(p1,2),round(p2,2))\n        E.append({'id':'reg.'+iid,'role':'note','body':f'CURRENT [{iid}] {txt}'})\n    json.dump(d,open(CTX,'w'),indent=0)\n''')\nimport json\nd=json.load(open('context.json'))\nfor e in d['entries']:\n    if e['id']=='s1.obs': e['body']='Stage1 read; exporter/core.py implements S1.1-S1.5. reghelper.update(stage) maintains register.'\n    if e['id']=='s1.act': e['body']='[step1] read stage 1'\njson.dump(d,open('context.json','w'))\nimport reghelper; reghelper.update(1)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],capture_output=True,text=True);print(r.stderr[-800:])"
++  },
++  {
++   "id": "s2.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=5.0s\n--- stdout ---\nS1.2 reg.S1.1 0.5 0.67\nS1.3 reg.S1.1 0.15 0.55\nS1.3 reg.S1.2 0.28 0.6\nS1.4 reg.S1.1 0.1 0.46\nS1.4 reg.S1.2 0.12 0.21\nS1.4 reg.S1.3 0.09 0.15\nS1.5 reg.S1.1 0.1 0.63\nS1.5 reg.S1.2 0.11 0.35\nS1.5 reg.S1.3 0.1 0.27\nS1.5 reg.S1.4 0.08 0.37\n..........\n----------------------------------------------------------------------\nRan 10 tests in 0.001s\n\nOK\n\n"
++  },
++  {
++   "id": "s2.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 8; body chars 5792 -> 2423; removed []; added [reg.S1.1, reg.S1.2, reg.S1.3, reg.S1.4, reg.S1.5, reg.S1.6]; rewritten [s1.act, s1.obs]"
+   }
+  ]
+ }

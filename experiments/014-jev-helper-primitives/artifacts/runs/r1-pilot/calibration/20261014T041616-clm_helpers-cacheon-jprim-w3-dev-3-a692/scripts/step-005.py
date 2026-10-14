@@ -1,0 +1,1 @@
+print(open('reghelper.py').read()[:3000]);print('----');print(open('exporter/core.py').read())

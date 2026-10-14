@@ -1,0 +1,24 @@
+--- rev-14
++++ rev-15
+@@ -70,6 +70,21 @@
+    "id": "reg.S3.3",
+    "role": "note",
+    "body": "HISTORY [S3.3] note: For information: the web interface will show record owners by display name; exports keep the stored 'owner' value."
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Implement JSON format with exported_by (S2.4 now active), updated date filter; compact context.\ncode:\nimport sys,subprocess;sys.path.insert(0,'/task/workspace')\np='/task/workspace/exporter/core.py';s=open(p).read()\ns=s.replace('import csv, io','import json')\ns=s.replace('r[\"created\"] < s','(r.get(\"updated\") or r[\"created\"]) < s')\ni=s.index('    buf = io.StringIO()')\ns=s[:i]+'''    recs = [{\"id\": r[\"id\"], \"title\": r[\"title\"].strip(), \"owner\": r[\"owner\"], \"amount\": r[\"amount\"]} for r in out]\n    return json.dumps({\"records\": recs, \"exported_by\": user.get(\"name\")})\n'''\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nimport regmaint\nc=regmaint.load();c['entries']=[e for e in c['entries'] if not e['id'].startswith(('s6.','s7.','s8.'))]\nfor e in c['entries']:\n  if e['id']=='n1':e['body']='Stages1-3 done: exporter/core.py implements S1-S3 (JSON + exported_by; S2.5 dormant). Helper /task/workspace/regmaint.py: regmaint.update(N) per stage; override(eid,body,reason).'\nregmaint.save(c)"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.001s\n\nOK\n\n"
++  },
++  {
++   "id": "s9.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 9: revision 13 -> 14; entries 22 -> 14; body chars 9977 -> 3067; removed [s6.act, s6.obs, s6.rcpt, s7.act, s7.obs, s8.act, s8.obs, s8.rcpt]; added []; rewritten [n1]"
+   }
+  ]
+ }

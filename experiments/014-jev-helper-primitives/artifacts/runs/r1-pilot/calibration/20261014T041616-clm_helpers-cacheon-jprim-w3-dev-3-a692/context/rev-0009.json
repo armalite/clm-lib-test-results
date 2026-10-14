@@ -1,0 +1,114 @@
+{
+ "number": 9,
+ "parent": 8,
+ "source": "runtime",
+ "step": 6,
+ "sha256": "92a30b6c682922cc131cdfad59c6ecf7ec22d913ed98b6a1f29550980676ef67",
+ "entries": [
+  {
+   "id": "s1.act",
+   "role": "assistant",
+   "body": "[step1] read stage 1"
+  },
+  {
+   "id": "s1.obs",
+   "role": "observation",
+   "body": "Stage1 read; exporter/core.py implements S1.1-S1.5. reghelper.update(stage) maintains register."
+  },
+  {
+   "id": "reg.S1.1",
+   "role": "note",
+   "body": "CURRENT [S1.1] Format: return CSV text. The first row is the header id,title,owner,amount; then one row per exported record, in ascending id order, with those four fields. Produce it with Python's csv.writer (default dialect) and lineterminator='\\n'. With no exported records, return the header row alone (ending in '\\n')."
+  },
+  {
+   "id": "reg.S1.2",
+   "role": "note",
+   "body": "CURRENT [S1.2] Viewers: if user['role'] is 'viewer', raise PermissionError; nothing is exported."
+  },
+  {
+   "id": "reg.S1.3",
+   "role": "note",
+   "body": "CURRENT [S1.3] Scope: a user whose role is 'admin' may export records of any project. Any other role exports only records whose 'project' is in user['projects']; other records are left out without an error."
+  },
+  {
+   "id": "reg.S1.4",
+   "role": "note",
+   "body": "CURRENT [S1.4] Status: only records with status 'active' are exported, unless params.get('include_archived') is True; then records with status 'archived' are exported too."
+  },
+  {
+   "id": "reg.S1.5",
+   "role": "note",
+   "body": "CURRENT [S1.5] Confidential records: a record whose 'confidential' is True is never exported, with one exception: it is exported when user['role'] is 'admin' and params.get('purpose') == 'audit'. Every other rule still applies to it."
+  },
+  {
+   "id": "reg.S1.6",
+   "role": "note",
+   "body": "HISTORY [S1.6] Decision record: CSV was chosen for the first release because the finance team imports exports into spreadsheets. Visible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation."
+  },
+  {
+   "id": "s2.act",
+   "role": "assistant",
+   "body": "[step2] implemented core.py (S1.1-S1.5), wrote reghelper.py, ran update(1); tests OK."
+  },
+  {
+   "id": "s2.obs",
+   "role": "observation",
+   "body": "10 tests OK."
+  },
+  {
+   "id": "s2.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 2: revision 1 -> 2; entries 2 -> 8; body chars 5792 -> 2423; removed []; added [reg.S1.1, reg.S1.2, reg.S1.3, reg.S1.4, reg.S1.5, reg.S1.6]; rewritten [s1.act, s1.obs]"
+  },
+  {
+   "id": "s5.note",
+   "role": "note",
+   "body": "core.py implements S1.1-S2.6 (S2.4/S2.6 latent obligations: JSON format would need exported_by; non-audit confidential export would need confidential_count). reghelper.update(stage) uses Jev for stage>=3; override(ids,reason) prints OVERRIDE."
+  },
+  {
+   "id": "reg.S2.1",
+   "role": "note",
+   "body": "CURRENT [S2.1] Date filter: params may contain 'since', a date string 'YYYY-MM-DD'. When it is present, only records whose 'created' date is on or after that date are exported."
+  },
+  {
+   "id": "reg.S2.2",
+   "role": "note",
+   "body": "CURRENT [S2.2] Residency: a record whose 'region' is 'eu' is exported only when 'eu' is in user['regions']; this applies to admins too."
+  },
+  {
+   "id": "reg.S2.3",
+   "role": "note",
+   "body": "CURRENT [S2.3] Record limit: params may contain 'max_records', an int of at least 1. Export only the first max_records records, in ascending id order, that remain after every other rule."
+  },
+  {
+   "id": "reg.S2.4",
+   "role": "note",
+   "body": "CURRENT [S2.4] Compliance obligation (nothing to do while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must include a top-level field \"exported_by\" equal to user['name']. It stays in force unless a later stage withdraws or changes it."
+  },
+  {
+   "id": "reg.S2.5",
+   "role": "note",
+   "body": "CURRENT [S2.5] Titles: export each record's title with leading and trailing whitespace removed."
+  },
+  {
+   "id": "reg.S2.6",
+   "role": "note",
+   "body": "CURRENT [S2.6] Audit-trail obligation (nothing to do today): if confidential records are ever exported for a purpose other than 'audit', every such export must include a top-level field \"confidential_count\" giving the number of confidential records it contains. Visible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation."
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Implement stage 2 in core, run update(2), run tests, compact context.\ncode:\nimport json,subprocess,sys\ncore='''import csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer')\n    since = params.get('since')\n    out = []\n    for r in sorted(records, key=lambda r: r['id']):\n        if role != 'admin' and r.get('project') not in user.get('projects', []):\n            continue\n        if r.get('status') != 'active' and not (r.get('status') == 'archived' and params.get('include_archived') is True):\n            continue\n        if r.get('confidential') is True and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        if since is not None and str(r.get('created',''))[:10] < since:\n            continue\n        if r.get('region') == 'eu' and 'eu' not in user.get('regions', []):\n            continue\n        out.append(r)\n    mx = params.get('max_records')\n    if mx is not None:\n        out = out[:mx]\n    buf = io.StringIO()\n    w = csv.writer(buf, lineterminator='\\\\n')\n    w.writerow(['id', 'title', 'owner', 'amount'])\n    for r in out:\n        w.writerow([r['id'], str(r['title']).strip(), r['owner'], r['amount']])\n    return buf.getvalue()\n'''\nopen('exporter/core.py','w').write(core)\nd=json.load(open('context.json'))\nd['entries']=[e for e in d['entries'] if e['id'] not in ('s3.act','s3.obs','s3.rcpt','s4.act','s4.obs','s5.act','s5.obs')]\nd['entries'].append({'id':'s5.note','role':'note','body':'core.py implements S1.1-S2.6 (S2.4/S2.6 latent obligations: JSON format would need exported_by; non-audit confidential export would need confidential_count). reghelper.update(stage) uses Jev for stage>=3; override(ids,reason) prints OVERRIDE.'})\njson.dump(d,open('context.json','w'))\nimport reghelper;reghelper.update(2)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n\n"
+  },
+  {
+   "id": "s6.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 6: revision 7 -> 8; entries 18 -> 18; body chars 8203 -> 3372; removed [s3.act, s3.obs, s3.rcpt, s4.act, s4.obs, s5.act, s5.obs]; added [s5.note, reg.S2.1, reg.S2.2, reg.S2.3, reg.S2.4, reg.S2.5, reg.S2.6]; rewritten []"
+  }
+ ]
+}

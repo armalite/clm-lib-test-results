@@ -1,0 +1,24 @@
+--- rev-16
++++ rev-17
+@@ -10,6 +10,21 @@
+    "id": "progress",
+    "role": "note",
+    "body": "Stages 1-5 implemented in exporter/core.py."
++  },
++  {
++   "id": "s12.act",
++   "role": "assistant",
++   "body": "[step 12] execute\nthought: Apply stage 5, test, update register and prune.\ncode:\nimport json,subprocess,sys\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"    if role == 'viewer':\\n        raise PermissionError('viewer')\\n\",\"\")\ns=s.replace(\"        if role != 'admin' and r.get('project')\",\"        if role == 'viewer':\\n            if r.get('owner') != user.get('name'):\\n                continue\\n        elif role != 'admin' and r.get('project')\")\ns=s.replace(\"params.get('purpose') == 'audit')\",\"params.get('purpose') in ('audit', 'legal'))\")\ns=s.replace(\"    return json.dumps(doc)\",\"    if params.get('purpose') == 'legal' and role == 'admin':\\n        doc['confidential_count'] = sum(1 for r in out if r.get('confidential') is True)\\n    return json.dumps(doc)\")\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])\nc=json.load(open('/task/workspace/context.json'))\nreg=c['entries'][0]['body']\nreg=reg.replace(\"CURRENT [S1.2] role viewer -> raise PermissionError.\",\"HISTORY [S1.2] viewer used to raise PermissionError - replaced by S5.2.\\nCURRENT [S5.2] viewer: no error; exports only records with owner==user['name'], any project; all other rules apply.\")\nreg=reg.replace(\"CURRENT [S1.5] confidential True never exported except role admin and params purpose=='audit'; other rules still apply.\",\"CURRENT [S1.5, S5.1] confidential True never exported except role admin and params purpose in ('audit','legal'); other rules still apply.\")\nreg=reg.replace(\"number of confidential records in it.\",\"number of confidential records in it. Triggered by S5.1 (legal): admin+purpose legal exports include confidential_count.\")\nreg+=\"\\nHISTORY [S5.3] Decision: move to JSON made for new reporting API.\"\nc['entries']=[{'id':'register','role':'summary','body':reg},{'id':'progress','role':'note','body':'Stages 1-5 implemented in exporter/core.py.'}]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s12.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.001s\n\nOK\n\n"
++  },
++  {
++   "id": "s12.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 12: revision 15 -> 16; entries 9 -> 2; body chars 8638 -> 2157; removed [s9.act, s9.obs, s9.rcpt, s10.act, s10.obs, s11.act, s11.obs]; added []; rewritten [register, progress]"
+   }
+  ]
+ }

@@ -1,0 +1,1 @@
+print(open('reghelper.py').read()[:3500]);print(open('/task/fixtures/current-tests/test_stage.py').read()[:1500])

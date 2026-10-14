@@ -1,6 +1,6 @@
 # 014 – Model-authored context-management helpers with Jev semantic primitives
 
-**Status: prompted live capability demonstration DONE (2026-10-13), one run.** The capability (`jev-primitive/1`) works end to end with a real Claude model and real Jev. **The use was instructed (configured use), not spontaneous adoption, and nothing here measures a benefit.** **Comparison phase (W3): the development smoke and the four-run pilot are DONE.** No B run made a register change that depended on Jev's answers, so the mechanism was not exercised; B cost 18.5–32% more than A, with equal correctness (dev-1's +18.5% appeared elsewhere as +18% or +19% by rounding). The evaluation was not run (not authorised). See [the comparison-phase results](#comparison-phase-w3-development-pilot-results) and [protocol-comparison.md](protocol-comparison.md). **Development revision R1 (one configured delegation smoke): DONE.** The contract held: Claude's helper read the register, asked Jev, and its threshold on the answers chose the amendments. But the frozen counterfactual test was unsupported at the change notices, so **R1 is not demonstrated under its frozen criteria**. A post-hoc diagnostic shows answer-dependent selection at all three notices. See [R1 results](#development-revision-r1-configured-delegation-smoke-results), [protocol-r1.md](protocol-r1.md) and [revision-delegation.md](revision-delegation.md).
+**Status: prompted live capability demonstration DONE (2026-10-13), one run.** The capability (`jev-primitive/1`) works end to end with a real Claude model and real Jev. **The use was instructed (configured use), not spontaneous adoption, and nothing here measures a benefit.** **Comparison phase (W3): the development smoke and the four-run pilot are DONE.** No B run made a register change that depended on Jev's answers, so the mechanism was not exercised; B cost 18.5–32% more than A, with equal correctness (dev-1's +18.5% appeared elsewhere as +18% or +19% by rounding). The evaluation was not run (not authorised). See [the comparison-phase results](#comparison-phase-w3-development-pilot-results) and [protocol-comparison.md](protocol-comparison.md). **Development revision R1 (one configured delegation smoke): DONE.** The contract held: Claude's helper read the register, asked Jev, and its threshold on the answers chose the amendments. But the frozen counterfactual test was unsupported at the change notices, so **R1 is not demonstrated under its frozen criteria**. A post-hoc diagnostic shows answer-dependent selection at all three notices. See [R1 results](#development-revision-r1-configured-delegation-smoke-results), [protocol-r1.md](protocol-r1.md) and [revision-delegation.md](revision-delegation.md). **R1 matched development pilot (2 × A/B): DONE.** Delegation was used in both B runs, and every run was fully correct. But B cost 61–98% more than ordinary CLM. See [the pilot results](#r1-matched-development-pilot-results) and [protocol-r1-pilot.md](protocol-r1-pilot.md).
 
 ## Result: prompted live capability demonstration
 
@@ -260,6 +260,124 @@ Each call followed the order execution start → Jev request and answer → exec
   - whether it costs more or less than ordinary CLM.
 
   **No benefit is claimed, and no comparison was run.**
+
+## R1 matched development pilot (results)
+
+**What this is:** a separate phase.
+- **Protocol:** [protocol-r1-pilot.md](protocol-r1-pilot.md), frozen before the first paid call.
+- **Evidence:** [`artifacts/runs/r1-pilot/…`](artifacts/runs/r1-pilot/), with replays in [analysis/replay-r1-pilot/](analysis/replay-r1-pilot/) and the analysis in [analysis/r1_pilot.py](analysis/r1_pilot.py).
+- **The conditions:**
+  - **A:** ordinary CLM with helpers and the register objective.
+  - **B:** the same, plus the **unchanged** R1 instruction and the Jev primitive. B writes its own helper in each run.
+- **The instances:** fresh seeds of the two development schedules (`w3-dev-3`, seed 8503; `w3-dev-4`, seed 8504).
+- **The order:** dev-3 A → B, dev-4 B → A.
+- **The budget:** a shared 12,000-token request budget. This tests register maintenance through CLM context edits under that budget, not compaction under tight pressure.
+
+**Did genuine Jev-assisted delegation occur, and did it help in this pilot?**
+- **Delegation occurred.** In both B runs, Claude's own helper read the register, asked Jev about every current entry, and executed keep, amend or retire branches on the answers. Replay confirms that changing the last Jev answer of an execution changes the selected edit, at 2 notice stages in one run and 4 in the other.
+- **It did not help.** Both conditions were fully correct, and B cost 61–98% more and took 45–78 s longer, mostly because its registers were 1.7–3.5 times larger.
+
+### Per-run table (descriptive; n = 2 per condition)
+
+| | dev-3 A | dev-3 B | dev-4 B | dev-4 A | **Mean A** | **Mean B** |
+| --- | --- | --- | --- | --- | --- | --- |
+| Code (hidden checks; snapshot failures) | 64/64 (0) | 64/64 (0) | 64/64 (0) | 64/64 (0) | 64/64 | 64/64 |
+| Register harm / history errors / incomplete (all stages) | 0/0/0 | 0/0/0 | 0/0/0 | 0/0/0 | 0 | 0 |
+| Cost, USD (TypeSafe) | 0.303 (0) | 0.599 (0.0056) | 0.457 (0.0018) | 0.283 (0) | **0.293** | **0.528** |
+| of which helper setup step | — | 0.052 | 0.060 | — | — | 0.056 |
+| Elapsed | 131 s | 209 s | 164 s | 119 s | 125 s | 186 s |
+| Main-model calls (repairs, retries) | 20 (0, 0) | 26 (0, 0) | 24 (0, 0) | 20 (0, 0) | 20 | 25 |
+| Executions / accepted edits | 13 / 8 | 19 / 13 | 17 / 13 | 13 / 8 | 13 / 8 | 18 / 13 |
+| Output tokens | 7,789 | 10,602 | 8,955 | 6,938 | 7,364 | 9,778 |
+| Cache reads / writes (thousands of tokens) | 63.0 / 25.1 | 109.3 / 69.3 | 94.1 / 49.0 | 61.2 / 24.6 | 62.1 / 24.9 | 101.7 / 59.1 |
+| Uncached input | 2,279 | 3,424 | 3,047 | 2,279 | 2,279 | 3,236 |
+| Peak request (estimated tokens); pressure / spill / recovery | 6,014; 0/0/0 | 9,673; **3**/0/0 | 7,805; 0/0/0 | 5,389; 0/0/0 | | |
+| Register at stage 7: CURRENT / HISTORY lines; characters | 12 / 8; 2,356 | 31 / 7; 8,211 | 8 / 8; 4,372 | 11 / 11; 2,590 | 2,473 chars | 6,292 chars |
+| Helper module (revisions) | none | `reghelper.py` (2) | `regmaint.py` (0) | none | | |
+| Jev requests (invalid) / items / latency | — | 36 (4) / 386 / 7.9 s | 20 (0) / 108 / 4.7 s | — | | |
+| `FALLBACK:` / `OVERRIDE:` | — | 2 / 3 | 0 / 0 | — | | |
+| Rereads of earlier stage files | 0 | 0 | 0 | 0 | | |
+
+**B minus A:**
+- **dev-3:** +USD 0.296 (+97.7%), +78 s, +6 calls, +2,813 output tokens, +44.1k cache-write tokens.
+- **dev-4:** +USD 0.174 (+61.3%), +45 s, +4 calls, +2,017 output tokens, +24.3k cache-write tokens.
+
+### 1. Was the configured mechanism used?
+
+**Yes, in both B runs.**
+- **The recorded replay** reproduced every Jev-using execution: 6 in dev-3, 5 in dev-4.
+- **The primary intervention,** substituting only the last Jev response of an execution:
+
+  | Run | Notice stages `substantive` | Other notice stages |
+  | --- | --- | --- |
+  | dev-3 B | **3 and 6** (inverted) | 4, 5, 7: the last request's changed answers did not change the selection |
+  | dev-4 B | **4, 5, 6 and 7** (inverted) | 3: no dependence; under permutation the last request had one item, so its answer was unchanged (`substitution_identical`) |
+
+- **What this establishes:** dependence of the decisions taken from the *last* request only. It does not establish that every earlier edit in the execution depended on Jev.
+- **Full-execution substitutions,** reported as supporting evidence: mostly `unsupported_counterfactual`, because both helpers ask sequentially. dev-3 B was `substantive` under inversion at stages 4–6.
+- **Withheld answers** changed the register at every stage. That measures fallback only.
+
+**Code review:**
+- **dev-3's `reghelper.update`:** asks two questions per new item, "completely replace?" (≥ 0.7 → HISTORY) and "conflict or modify?" (≥ 0.5 → append an amendment). It always adds the new item as CURRENT.
+- **dev-4's `regmaint.update`:** asks "modify, replace, override or withdraw?" in chunks of 20 (> 0.5 → hit), then "completely replace?" for the hits (> 0.75 → HISTORY, otherwise amend).
+- **The callers** passed only the stage, plus status-note and transcript edits. Two audit flags were benign: an id mentioned in Claude's status note (dev-3), and a print that inspected entries (dev-4).
+- **Overrides and fallbacks:**
+  - **dev-3 B, 3 overrides by Claude:**
+    - it removed spurious amendment lines at stage 1;
+    - it restored the `exported_by` obligation, which its helper had treated as changed by the JSON item, an activation;
+    - after its helper's stage-7 request exceeded 20 items (rejected as `invalid`, and logged as 2 `FALLBACK:`), it retired the withdrawn residency entries itself.
+  - **dev-4 B:** none.
+
+  These are corrections outside delegated selection, and are reported separately.
+
+### 2. Were its edits correct?
+
+- **Code:** all four runs passed every hidden check and every stage snapshot.
+- **Register** (`register-checks/1`): no harm, history error or incomplete item at any assessed stage in any run, so there were no transient errors to report.
+- **Jev's judgments against the truth** (after the run, evaluator-only; at 0.5):
+
+  | Run | "Modify" questions | "Replace" questions |
+  | --- | --- | --- |
+  | dev-3 B | 12 true positives, **6 false positives**, 0 false negatives | 2 true positives, 1 false positive |
+  | dev-4 B | 12 true positives, 1 false positive, 0 false negatives | 3 true positives, 0 false positives |
+
+  The false positives are mostly shared terminology and obligation activations.
+- **Quality issues the scorer accepts by design** (hand reading):
+  - **dev-3 B:** writes every amendment twice (under the base rule and as a standalone CURRENT item), labels information items CURRENT, glues stage-file footer text onto items, and doubles "(withdrawn by S7.2)".
+  - **dev-4 B:** attaches the JSON format, the `project` key and the residency withdrawal to the `exported_by` obligation entry, so the current format rule exists only inside that entry. It also gives the scope rule a false "AMENDED by S5.2".
+  - **A's registers:** compact (about 2,400 characters) and organised by topic.
+
+### 3. Did the approach improve task performance or efficiency?
+
+**No.** Correctness was equal at ceiling, and B was more expensive and slower in both pairs.
+
+**Where the overhead came from (observed):**
+- **Larger registers:** verbatim item text, duplicated amendments and HISTORY copies (stage 7: 8.2k and 4.4k characters, against 2.4k and 2.6k for A). This drives the cache writes (2–2.8×) and cache reads (1.5–1.7×).
+- **More steps and calls:** +4 to +6 calls and +4 to +6 executions (override steps, inspection prints).
+- **Helper setup:** USD 0.05–0.06, 9–13% of B's cost.
+- **Jev latency:** 4.7–7.9 s per run. The Jev cost itself was negligible (USD 0.002–0.006).
+- **Context pressure:** dev-3 B entered pressure 3 times under the shared 12,000 budget (peak about 9,700 tokens); A never did. No spill or recovery was needed.
+
+**Savings observed:** none. **No input saving is credited:** Claude received the update and its context before calling the helper in every step.
+
+### One concrete context update (observed; dev-4 B, stage 5, step 15)
+
+1. **The new requirements:**
+   - S5.1 (`include_archived` honoured only for admins);
+   - S5.2 (viewers export only their own records, replacing the viewer error);
+   - S5.3 (`max_records` above 20 treated as 20).
+2. **The Jev judgments and the executed branches:**
+   - **S5.2:** for "modify…?", the viewer rule `reg.S2.1` 0.97 and the scope rule `reg.S1.2` 0.80. For "completely replace?", `reg.S2.1` 0.83 → **retired to HISTORY "(replaced by S5.2)"**, which is correct. `reg.S1.2` scored 0.16 → amended, which is a false positive: the scope rule is unaffected.
+   - **S5.3:** for "modify…?", `reg.S2.3` (the record limit) 0.95. For "completely replace?", 0.09 → **amended**, which is correct.
+3. **The accepted context:** revision 23 (4 entries rewritten). The step-16 request used revision 24, which is revision 23 plus the runtime's step entries.
+4. **The counterfactual,** with the last response inverted (S5.3's replacement score 0.09 → 0.91; every earlier answer as recorded): the same helper **retired** the record-limit rule to HISTORY instead of amending it. That would have been an incorrect retirement. Only this decision is tested by the intervention.
+
+### Limitations, and whether a larger evaluation is justified
+
+- **Scale:** two instances, one run per cell, one model at effort low, on a workload where ordinary CLM is already correct.
+- **The instruction:** the R1 instruction was used unchanged. A different helper design might produce smaller registers, but tuning it would be a new development step.
+- **What the scorer misses:** the register scorer accepts redundant or misplaced amendments, so it would not show B's quality problems.
+- **Is a larger evaluation justified? No.** The configured approach was used and correct here, but cost substantially more in both pairs, with no accuracy headroom to gain. A larger evaluation would most likely measure that overhead with more precision.
 
 ## Why a new experiment
 

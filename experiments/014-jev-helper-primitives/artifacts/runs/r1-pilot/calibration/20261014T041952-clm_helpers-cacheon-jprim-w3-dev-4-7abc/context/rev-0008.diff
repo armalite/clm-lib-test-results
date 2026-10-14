@@ -1,0 +1,24 @@
+--- rev-7
++++ rev-8
+@@ -90,6 +90,21 @@
+    "id": "reg.S2.6",
+    "role": "note",
+    "body": "CURRENT [S2.6] Residency: a record whose 'region' is 'eu' is exported only when 'eu' is in user['regions']; this applies to admins too."
++  },
++  {
++   "id": "s5.act",
++   "role": "assistant",
++   "body": "[step 5] execute\nthought: Run register helper for stage 2 and view core.py.\ncode:\nimport sys;sys.path.insert(0,'/task/workspace')\nimport regmaint\nregmaint.update(2)\nprint(open('/task/workspace/exporter/core.py').read())"
++  },
++  {
++   "id": "s5.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.8s\n--- stdout ---\nimport csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    out = []\n    for r in sorted(records, key=lambda r: r[\"id\"]):\n        if user.get(\"role\") != \"admin\" and r[\"project\"] not in user.get(\"projects\", []):\n            continue\n        if r[\"status\"] != \"active\" and not (r[\"status\"] == \"archived\" and params.get(\"include_archived\") is True):\n            continue\n        s = params.get(\"since\")\n        if s is not None and r[\"created\"] < s:\n            continue\n        out.append(r)\n    buf = io.StringIO()\n    w = csv.writer(buf, lineterminator=\"\\n\")\n    w.writerow([\"id\", \"title\", \"owner\", \"amount\"])\n    for r in out:\n        w.writerow([r[\"id\"], r[\"title\"].strip(), r[\"owner\"], r[\"amount\"]])\n    return buf.getvalue()\n\n"
++  },
++  {
++   "id": "s5.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 5: revision 6 -> 7; entries 12 -> 18; body chars 3285 -> 4489; removed []; added [reg.S2.1, reg.S2.2, reg.S2.3, reg.S2.4, reg.S2.5, reg.S2.6]; rewritten []"
+   }
+  ]
+ }

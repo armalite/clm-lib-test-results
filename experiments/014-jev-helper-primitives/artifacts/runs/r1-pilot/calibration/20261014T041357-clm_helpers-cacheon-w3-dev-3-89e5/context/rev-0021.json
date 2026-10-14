@@ -1,0 +1,34 @@
+{
+ "number": 21,
+ "parent": 20,
+ "source": "runtime",
+ "step": 15,
+ "sha256": "69a47edfbd2bcfa208dc5a21ae00510db035113390e00fc2641ef568f20c3137",
+ "entries": [
+  {
+   "id": "register",
+   "role": "summary",
+   "body": "REGISTER\nHISTORY [S1.1] Format was CSV (header id,title,owner,amount) - replaced by S3.1.\nCURRENT [S1.1, S3.1] Output: json.dumps object, key 'records' = list ascending id, each exactly keys id(int),title,owner,amount(str as given); no records -> empty list.\nHISTORY [S1.2] viewer used to raise PermissionError - replaced by S5.2.\nCURRENT [S5.2] viewer: no error; exports only records with owner==user['name'], any project; all other rules apply.\nCURRENT [S1.3, S3.2] admin: any project; others (non-viewer) only records with project in user projects OR owner==user['name'] (others silently skipped).\nCURRENT [S1.4, S4.1] only status active; archived also exported only when params include_archived is True AND role admin; non-admin never get archived.\nCURRENT [S1.5, S5.1] confidential True never exported except role admin and params purpose in ('audit','legal'); other rules still apply.\nCURRENT [API] export_records(records,user,params)->str; dont modify input; ignore unknown params; amount kept as given.\nHISTORY [S1.6] Decision: CSV chosen because finance imports into spreadsheets.\nCURRENT [S2.1] params 'since' YYYY-MM-DD: only records with created >= since.\nCURRENT [S2.2, S4.2] region 'eu' exported only if 'eu' in user['regions'] (admins too); region compare case-insensitive in records and user regions.\nCURRENT [S2.3, S6.2] params max_records int>=1: first N by ascending id after all other rules; values above 30 treated as 30.\nCURRENT [S2.4, S6.1] Obligation (now triggered by S3.1, applies): if format changes from CSV, every export in new format must include top-level 'exported_by'=user['name'], EXCEPT role admin: omit exported_by (S6.1).\nCURRENT [S2.5, S4.3] title stripped of leading/trailing whitespace and every internal whitespace run replaced by single space.\nCURRENT [S2.6] Obligation: if confidential records ever exported for purpose other than 'audit', export must include top-level 'confidential_count' = number of confidential records in it. Triggered by S5.1 (legal): admin+purpose legal exports include confidential_count.\nHISTORY [S3.3] Note: archived storage moves to cheaper tier; no export change.\nHISTORY [S5.3] Decision: move to JSON made for new reporting API.\nHISTORY [S6.3] Note: web UI shows 50 records/page; no export change."
+  },
+  {
+   "id": "progress",
+   "role": "note",
+   "body": "Stages 1-6 exported_by done in core.py; max_records cap check pending (see step output)."
+  },
+  {
+   "id": "s15.act",
+   "role": "assistant",
+   "body": "[step 15] execute\nthought: Apply stage 6, test, update register, prune.\ncode:\nimport json,subprocess,sys\np='/task/workspace/exporter/core.py'\ns=open(p).read()\nL=s.split('\\n')\nprint(L[25:30])\ns=s.replace(\"    doc = {'records': recs, 'exported_by': user.get('name')}\",\"    doc = {'records': recs}\\n    if role != 'admin':\\n        doc['exported_by'] = user.get('name')\")\nopen(p,'w').write(s)\nc=json.load(open('/task/workspace/context.json'))\nreg=c['entries'][0]['body']\nreg=reg.replace(\"CURRENT [S2.3] params max_records int>=1: first N by ascending id after all other rules.\",\"CURRENT [S2.3, S6.2] params max_records int>=1: first N by ascending id after all other rules; values above 30 treated as 30.\")\nreg=reg.replace(\"must include top-level 'exported_by'=user['name'].\",\"must include top-level 'exported_by'=user['name'], EXCEPT role admin: omit exported_by (S6.1).\")\nreg=reg.replace(\"CURRENT [S2.4]\",\"CURRENT [S2.4, S6.1]\")\nreg+=\"\\nHISTORY [S6.3] Note: web UI shows 50 records/page; no export change.\"\nc['entries']=[{'id':'register','role':'summary','body':reg},{'id':'progress','role':'note','body':'Stages 1-6 exported_by done in core.py; max_records cap check pending (see step output).'}]\njson.dump(c,open('/task/workspace/context.json','w'))"
+  },
+  {
+   "id": "s15.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.2s\n--- stdout ---\n[\"    mx = params.get('max_records')\", '    if isinstance(mx, int) and mx >= 1:', '        out = out[:mx]', '    recs = []', '    for r in out:']\n"
+  },
+  {
+   "id": "s15.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 15: revision 19 -> 20; entries 9 -> 2; body chars 6059 -> 2358; removed [s12.act, s12.obs, s12.rcpt, s13.act, s13.obs, s14.act, s14.obs]; added []; rewritten [register, progress]"
+  }
+ ]
+}

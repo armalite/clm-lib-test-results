@@ -1,0 +1,24 @@
+--- rev-23
++++ rev-24
+@@ -100,6 +100,21 @@
+    "id": "s14.obs",
+    "role": "observation",
+    "body": "Stage 5 of 7 released.\n# Stage 5 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S5.1] include_archived is now honoured only when user['role'] is 'admin'; for every other role, archived records are never exported.\n- [S5.2] Viewers no longer receive an error: a viewer now exports only the records they own (record 'owner' equal to user['name']), in any project; every other rule still applies to those records.\n- [S5.3] A max_records value above 20 is treated as 20.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (42 lines)\n  stage-5/REQUIREMENTS.md (11 lines)"
++  },
++  {
++   "id": "s15.act",
++   "role": "assistant",
++   "body": "[step 15] execute\nthought: Run helper for stage 5.\ncode:\nimport sys;sys.path.insert(0,'/task/workspace')\nimport regmaint\nregmaint.update(5)\nimport json;c=regmaint.load()\nfor e in c['entries']:\n  if e['id'].startswith('reg.'):print(e['id'],e['body'][:160])"
++  },
++  {
++   "id": "s15.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=3.8s\n--- stdout ---\nS5.1 affects ['reg.S1.3']\nS5.2 affects ['reg.S1.2', 'reg.S2.1']\nS5.3 affects ['reg.S2.3']\nreg.S1.1 HISTORY [S1.1] Format: return CSV text. The first row is the header id,title,owner,amount; then one row per exported record, in ascending id order, with those f\nreg.S1.2 CURRENT [S1.2, S4.2, S5.2] Scope: a user whose role is 'admin' may export records of any project. Any other role exports only records whose 'project' is in user\nreg.S1.3 CURRENT [S1.3, S5.1] Status: only records with status 'active' are exported, unless params.get('include_archived') is True; then records with status 'archived' \nreg.S1.4 CURRENT [S1.4, S3.2] Date filter: params may contain 'since', a date string 'YYYY-MM-DD'. When it is present, only records whose 'created' date is on or after t\nreg.S1.5 CURRENT [S1.5] Titles: export each record's title with leading and trailing whitespace removed.\nreg.S1.6 HISTORY [S1.6] note: Decision record: the date filter was introduced for the monthly reconciliation runs.\nreg.S2.1 HISTORY [S2.1] Viewers: if user['role'] is 'viewer', raise PermissionError; nothing is exported. (replaced by S5.2)\nreg.S2.2 CURRENT [S2.2, S4.1] Confidential records: a record whose 'confidential' is True is never exported, with one exception: it is exported when user['role'] is 'adm\nreg.S2.3 CURRENT [S2.3, S5.3] Record limit: params may contain 'max_records', an int of at least 1. Export only the first max_records records, in ascending id order, tha\nreg.S2.4 CURRENT [S2.4, S3.1] Compliance obligation (nothing to do while the format is CSV): if a later stage changes the export format from CSV, every export in the new\nreg.S2.5 CURRENT [S2.5, S4.1] Audit-trail obligation (nothing to do today): if confidential records are ever exported for a purpose other than 'audit', every such export\nreg.S2.6 CURRENT [S2.6] Residency: a record whose 'region' is 'eu' is exported only when 'eu' is in user['regions']; this applies to admins too.\nreg.S3.3 HISTORY [S3.3] note: For information: the web interface will show record owners by display name; exports keep the stored 'owner' value.\nreg.S4.3 HISTORY [S4.3] note: Decision record: the move to JSON was made for the new reporting API.\n"
++  },
++  {
++   "id": "s15.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 15: revision 22 -> 23; entries 20 -> 20; body chars 5590 -> 6040; removed []; added []; rewritten [reg.S1.2, reg.S1.3, reg.S2.1, reg.S2.3]"
+   }
+  ]
+ }

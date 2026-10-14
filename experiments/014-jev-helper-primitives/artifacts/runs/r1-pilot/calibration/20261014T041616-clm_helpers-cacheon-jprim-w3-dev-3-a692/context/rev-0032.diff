@@ -1,0 +1,24 @@
+--- rev-31
++++ rev-32
+@@ -130,6 +130,21 @@
+    "id": "reg.S6.3",
+    "role": "note",
+    "body": "CURRENT [S6.3] For information: the web interface now shows 50 records per page. This does not change exports. Visible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation."
++  },
++  {
++   "id": "s21.act",
++   "role": "assistant",
++   "body": "[step 21] execute\nthought: Implement S6 in core.py, test, and compact context.\ncode:\nimport json,subprocess,sys\np='exporter/core.py';s=open(p).read()\ns=s.replace(\"    return json.dumps(res)\",\"    if role == 'admin':\\n        res.pop('exported_by', None)\\n    return json.dumps(res)\",1)\ni=s.find(\"    mx = params.get('max_records')\")\nprint(s[i:i+300])\nopen(p,'w').write(s)\nd=json.load(open('context.json'))\nd['entries']=[e for e in d['entries'] if e['id'] not in {'s18.act','s18.obs','s18.rcpt','s19.act','s20.act','s20.obs','s20.rcpt'}]\nfor e in d['entries']:\n    if e['id']=='st.note':e['body']='Status: stages 1-6 released; reghelper.update ran for 6. core.py implements S1-S5 + S6.1 (admin omits exported_by). S6.2 cap 30 pending check. Next: verify tests, advance to 7, run reghelper.update(7).'\n    if e['id']=='s19.obs':e['body']='Stage 6 released: S6.1 admin omits exported_by; S6.2 max_records>30 treated as 30; S6.3 note web shows 50/page.'\njson.dump(d,open('context.json','w'))"
++  },
++  {
++   "id": "s21.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.5s\n--- stdout ---\n    mx = params.get('max_records')\n    if mx is not None:\n        out = out[:mx]\n    res = {'exported_by': user.get('name'), 'records': [{'id': int(r['id']), 'title': ' '.join(str(r['title']).split()), 'owner': r['owner'], 'amount': r['amount']} for r in out]}\n    if role == 'admin' and params.get('\n"
++  },
++  {
++   "id": "s21.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 21: revision 30 -> 31; entries 33 -> 26; body chars 12767 -> 7726; removed [s18.act, s18.obs, s18.rcpt, s19.act, s20.act, s20.obs, s20.rcpt]; added []; rewritten [st.note, s19.obs]"
+   }
+  ]
+ }

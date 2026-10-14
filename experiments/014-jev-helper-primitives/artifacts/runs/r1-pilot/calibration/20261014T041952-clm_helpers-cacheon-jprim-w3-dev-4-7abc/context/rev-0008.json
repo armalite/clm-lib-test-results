@@ -1,0 +1,114 @@
+{
+ "number": 8,
+ "parent": 7,
+ "source": "runtime",
+ "step": 5,
+ "sha256": "32a59f24985001888a5303ffec0c07195e4f70b636891142bec1f7c35b750a32",
+ "entries": [
+  {
+   "id": "n1",
+   "role": "note",
+   "body": "Stage1 done: exporter/core.py implements S1.1-S1.5. Helper /task/workspace/regmaint.py: regmaint.update(N) per stage; override(eid,body,reason)."
+  },
+  {
+   "id": "reg.S1.1",
+   "role": "note",
+   "body": "CURRENT [S1.1] Format: return CSV text. The first row is the header id,title,owner,amount; then one row per exported record, in ascending id order, with those four fields. Produce it with Python's csv.writer (default dialect) and lineterminator='\\n'. With no exported records, return the header row alone (ending in '\\n')."
+  },
+  {
+   "id": "reg.S1.2",
+   "role": "note",
+   "body": "CURRENT [S1.2] Scope: a user whose role is 'admin' may export records of any project. Any other role exports only records whose 'project' is in user['projects']; other records are left out without an error."
+  },
+  {
+   "id": "reg.S1.3",
+   "role": "note",
+   "body": "CURRENT [S1.3] Status: only records with status 'active' are exported, unless params.get('include_archived') is True; then records with status 'archived' are exported too."
+  },
+  {
+   "id": "reg.S1.4",
+   "role": "note",
+   "body": "CURRENT [S1.4] Date filter: params may contain 'since', a date string 'YYYY-MM-DD'. When it is present, only records whose 'created' date is on or after that date are exported."
+  },
+  {
+   "id": "reg.S1.5",
+   "role": "note",
+   "body": "CURRENT [S1.5] Titles: export each record's title with leading and trailing whitespace removed."
+  },
+  {
+   "id": "reg.S1.6",
+   "role": "note",
+   "body": "HISTORY [S1.6] note: Decision record: the date filter was introduced for the monthly reconciliation runs."
+  },
+  {
+   "id": "s3.act",
+   "role": "assistant",
+   "body": "[step 3] execute\nthought: Compact context by removing step action/obs, then advance.\ncode:\nimport sys;sys.path.insert(0,'/task/workspace')\nimport regmaint\nc=regmaint.load();c['entries']=[e for e in c['entries'] if not e['id'].startswith('s2.')];regmaint.save(c);print(len(c['entries']))"
+  },
+  {
+   "id": "s3.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.8s\n--- stdout ---\n7\n"
+  },
+  {
+   "id": "s3.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 3: revision 3 -> 4; entries 10 -> 7; body chars 5562 -> 1219; removed [s2.act, s2.obs, s2.rcpt]; added []; rewritten []"
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] advance\nthought: "
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "Stage 2 of 7 released.\n# Stage 2 of 7: further initial requirements\n\n## Requirements\n\n- [S2.1] Viewers: if user['role'] is 'viewer', raise PermissionError; nothing is exported.\n- [S2.2] Confidential records: a record whose 'confidential' is True is never exported, with one exception: it is exported when user['role'] is 'admin' and params.get('purpose') == 'audit'. Every other rule still applies to it.\n- [S2.3] Record limit: params may contain 'max_records', an int of at least 1. Export only the first max_records records, in ascending id order, that remain after every other rule.\n- [S2.4] Compliance obligation (nothing to do while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must include a top-level field \"exported_by\" equal to user['name']. It stays in force unless a later stage withdraws or changes it.\n- [S2.5] Audit-trail obligation (nothing to do today): if confidential records are ever exported for a purpose other than 'audit', every such export must include a top-level field \"confidential_count\" giving the number of confidential records it contains.\n- [S2.6] Residency: a record whose 'region' is 'eu' is exported only when 'eu' is in user['regions']; this applies to admins too.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (44 lines)\n  stage-2/REQUIREMENTS.md (12 lines)"
+  },
+  {
+   "id": "reg.S2.1",
+   "role": "note",
+   "body": "CURRENT [S2.1] Viewers: if user['role'] is 'viewer', raise PermissionError; nothing is exported."
+  },
+  {
+   "id": "reg.S2.2",
+   "role": "note",
+   "body": "CURRENT [S2.2] Confidential records: a record whose 'confidential' is True is never exported, with one exception: it is exported when user['role'] is 'admin' and params.get('purpose') == 'audit'. Every other rule still applies to it."
+  },
+  {
+   "id": "reg.S2.3",
+   "role": "note",
+   "body": "CURRENT [S2.3] Record limit: params may contain 'max_records', an int of at least 1. Export only the first max_records records, in ascending id order, that remain after every other rule."
+  },
+  {
+   "id": "reg.S2.4",
+   "role": "note",
+   "body": "CURRENT [S2.4] Compliance obligation (nothing to do while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must include a top-level field \"exported_by\" equal to user['name']. It stays in force unless a later stage withdraws or changes it."
+  },
+  {
+   "id": "reg.S2.5",
+   "role": "note",
+   "body": "CURRENT [S2.5] Audit-trail obligation (nothing to do today): if confidential records are ever exported for a purpose other than 'audit', every such export must include a top-level field \"confidential_count\" giving the number of confidential records it contains."
+  },
+  {
+   "id": "reg.S2.6",
+   "role": "note",
+   "body": "CURRENT [S2.6] Residency: a record whose 'region' is 'eu' is exported only when 'eu' is in user['regions']; this applies to admins too."
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] execute\nthought: Run register helper for stage 2 and view core.py.\ncode:\nimport sys;sys.path.insert(0,'/task/workspace')\nimport regmaint\nregmaint.update(2)\nprint(open('/task/workspace/exporter/core.py').read())"
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.8s\n--- stdout ---\nimport csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    out = []\n    for r in sorted(records, key=lambda r: r[\"id\"]):\n        if user.get(\"role\") != \"admin\" and r[\"project\"] not in user.get(\"projects\", []):\n            continue\n        if r[\"status\"] != \"active\" and not (r[\"status\"] == \"archived\" and params.get(\"include_archived\") is True):\n            continue\n        s = params.get(\"since\")\n        if s is not None and r[\"created\"] < s:\n            continue\n        out.append(r)\n    buf = io.StringIO()\n    w = csv.writer(buf, lineterminator=\"\\n\")\n    w.writerow([\"id\", \"title\", \"owner\", \"amount\"])\n    for r in out:\n        w.writerow([r[\"id\"], r[\"title\"].strip(), r[\"owner\"], r[\"amount\"]])\n    return buf.getvalue()\n\n"
+  },
+  {
+   "id": "s5.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 5: revision 6 -> 7; entries 12 -> 18; body chars 3285 -> 4489; removed []; added [reg.S2.1, reg.S2.2, reg.S2.3, reg.S2.4, reg.S2.5, reg.S2.6]; rewritten []"
+  }
+ ]
+}

@@ -1,0 +1,24 @@
+--- rev-24
++++ rev-25
+@@ -135,6 +135,21 @@
+    "id": "reg.S5.3",
+    "role": "note",
+    "body": "HISTORY [S5.3] Decision record: the move to JSON was made for the new reporting API. Visible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation."
++  },
++  {
++   "id": "s17.act",
++   "role": "assistant",
++   "body": "[step 17] execute\nthought: Run register helper for stage 5 and inspect core.py.\ncode:\nimport reghelper\nreghelper.update(5)\nprint(open('exporter/core.py').read())"
++  },
++  {
++   "id": "s17.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=3.7s\n--- stdout ---\nS5.1 reg.S1.2 0.09 0.12\nS5.1 reg.S1.3 0.09 0.16\nS5.1 reg.S1.4 0.12 0.2\nS5.1 reg.S1.5 0.21 0.97\nS5.1 reg.S2.1 0.08 0.1\nS5.1 reg.S2.2 0.1 0.16\nS5.1 reg.S2.3 0.08 0.34\nS5.1 reg.S2.4 0.08 0.13\nS5.1 reg.S2.5 0.09 0.16\nS5.1 reg.S2.6 0.11 0.86\nS5.1 reg.S3.1 0.09 0.29\nS5.1 reg.S3.2 0.1 0.13\nS5.1 reg.S3.3 0.09 0.13\nS5.1 reg.S4.1 0.11 0.16\nS5.1 reg.S4.2 0.1 0.12\nS5.1 reg.S4.3 0.1 0.12\nS5.2 reg.S1.2 0.77 0.98\nS5.2 reg.S1.3 0.2 0.86\nS5.2 reg.S1.4 0.14 0.29\nS5.2 reg.S1.5 0.11 0.32\nS5.2 reg.S2.1 0.08 0.16\nS5.2 reg.S2.2 0.13 0.29\nS5.2 reg.S2.3 0.1 0.47\nS5.2 reg.S2.4 0.1 0.15\nS5.2 reg.S2.5 0.09 0.14\nS5.2 reg.S2.6 0.12 0.39\nS5.2 reg.S3.1 0.1 0.22\nS5.2 reg.S3.2 0.25 0.73\nS5.2 reg.S3.3 0.11 0.15\nS5.2 reg.S4.1 0.13 0.28\nS5.2 reg.S4.2 0.13 0.13\nS5.2 reg.S4.3 0.11 0.13\nS5.2 reg.S5.1 0.16 0.2\nimport csv, io, json\n\ndef export_records(records, user, params):\n    params = params or {}\n    role = user.get('role')\n    if role == 'viewer':\n        raise PermissionError('viewer')\n    since = params.get('since')\n    out = []\n    for r in sorted(records, key=lambda r: r['id']):\n        if role != 'admin' and r.get('project') not in user.get('projects', []) and r.get('owner') != user.get('name'):\n            continue\n        if r.get('status') != 'active' and not (r.get('status') == 'archived' and params.get('include_archived') is True and role == 'admin'):\n            continue\n        if r.get('confidential') is True and not (role == 'admin' and params.get('purpose') == 'audit'):\n            continue\n        if since is not None and str(r.get('created',''))[:10] < since:\n            continue\n        if str(r.get('region') or '').lower() == 'eu' and 'eu' not in [str(x).lower() for x in user.get('regions', [])]:\n            continue\n        out.append(r)\n    mx = params.get('max_records')\n    if mx is not None:\n        out = out[:mx]\n    res = {'exported_by': user.get('name'), 'records': [{'id': int(r['id']), 'title': ' '.join(str(r['title']).split()), 'owner': r['owner'], 'amount': r['amount']} for r in out]}\n    return json.dumps(res)\n\n"
++  },
++  {
++   "id": "s17.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 17: revision 23 -> 24; entries 24 -> 27; body chars 7616 -> 9117; removed []; added [reg.S5.1, reg.S5.2, reg.S5.3]; rewritten [reg.S1.2, reg.S1.3, reg.S1.5, reg.S2.6, reg.S3.2]"
+   }
+  ]
+ }

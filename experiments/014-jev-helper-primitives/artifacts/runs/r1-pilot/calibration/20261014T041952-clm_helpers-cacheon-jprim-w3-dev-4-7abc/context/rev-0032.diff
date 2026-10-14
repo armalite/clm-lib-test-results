@@ -1,0 +1,71 @@
+--- rev-31
++++ rev-32
+@@ -4,7 +4,7 @@
+   {
+    "id": "n1",
+    "role": "note",
+-   "body": "Stages1-5 done: exporter/core.py implements S1-S5 (viewer owner-only, archived admin-only, max_records cap 20). Helper /task/workspace/regmaint.py: regmaint.update(N) per stage; override(eid,body,reason)."
++   "body": "Stages1-6 done: core.py implements S1-S6 (residency removed). Helper regmaint.py: regmaint.update(N) per stage; override(eid,body,reason)."
+   },
+   {
+    "id": "reg.S1.1",
+@@ -77,59 +77,9 @@
+    "body": "HISTORY [S4.3] note: Decision record: the move to JSON was made for the new reporting API."
+   },
+   {
+-   "id": "s17.act",
+-   "role": "assistant",
+-   "body": "[step 17] execute\nthought: Implement S5 changes in core.py, run tests, compact context.\ncode:\nimport sys,subprocess;sys.path.insert(0,'/task/workspace')\np='/task/workspace/exporter/core.py';s=open(p).read()\ns=s.replace('''    if role == \"viewer\":\\n        raise PermissionError(\"viewer\")\\n''','')\ns=s.replace('''        if role != \"admin\" and r.get(\"project\")''','''        if role == \"viewer\":\\n            if r.get(\"owner\") != user.get(\"name\"):\\n                continue\\n        elif role != \"admin\" and r.get(\"project\")''')\ns=s.replace('params.get(\"include_archived\") is True)','params.get(\"include_archived\") is True and role == \"admin\")')\ns=s.replace('        out = out[:m]','        out = out[:min(m, 20)]')\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nimport regmaint\nc=regmaint.load();c['entries']=[e for e in c['entries'] if not e['id'].startswith(('s13.','s14.','s15.','s16.'))]\nfor e in c['entries']:\n  if e['id']=='n1':e['body']='Stages1-5 done: exporter/core.py implements S1-S5 (viewer owner-only, archived admin-only, max_records cap 20). Helper /task/workspace/regmaint.py: regmaint.update(N) per stage; override(eid,body,reason).'\nregmaint.save(c);print('ok')"
+-  },
+-  {
+-   "id": "s17.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.001s\n\nOK\n\nok\n"
+-  },
+-  {
+-   "id": "s17.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 17: revision 25 -> 26; entries 25 -> 15; body chars 10357 -> 4095; removed [s13.act, s13.obs, s13.rcpt, s14.act, s14.obs, s15.act, s15.obs, s15.rcpt, s16.act, s16.obs]; added []; rewritten [n1]"
+-  },
+-  {
+-   "id": "s18.act",
+-   "role": "assistant",
+-   "body": "[step 18] advance\nthought: Stage 5 is implemented and the 6 visible tests pass; the register has been updated for S5, so I am releasing stage 6."
+-  },
+-  {
+-   "id": "s18.obs",
+-   "role": "observation",
+-   "body": "Stage 6 of 7 released.\n# Stage 6 of 7: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S6.1] The residency restriction is withdrawn: records of every region are exported under the ordinary rules.\n\n## Notes\n\n- [S6.2] For information: the web interface now shows 50 records per page. This does not change exports.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (26 lines)\n  stage-6/REQUIREMENTS.md (13 lines)"
+-  },
+-  {
+    "id": "reg.S6.2",
+    "role": "note",
+    "body": "HISTORY [S6.2] note: For information: the web interface now shows 50 records per page. This does not change exports."
+-  },
+-  {
+-   "id": "s19.act",
+-   "role": "assistant",
+-   "body": "[step 19] execute\nthought: Run helper for stage 6, implement S6.1 (remove residency), run tests.\ncode:\nimport sys,subprocess;sys.path.insert(0,'/task/workspace')\nimport regmaint\nregmaint.update(6)\np='/task/workspace/exporter/core.py';s=open(p).read()\nimport re\nfor i,l in enumerate(s.splitlines(),1):\n  if 'eu' in l or 'region' in l: print(i,l)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-800:])\nc=regmaint.load()\nfor e in c['entries']:\n  if e['id'] in('reg.S2.6','reg.S6.1','reg.S6.2'):print(e['id'],e['body'][:200])"
+-  },
+-  {
+-   "id": "s19.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=2.4s\n--- stdout ---\nS6.1 affects ['reg.S2.6']\n21         if r.get(\"region\") == \"eu\" and \"eu\" not in (user.get(\"regions\") or []):\n', 'owner': 'fay', 'amount': '769'}\n\nSecond list contains 3 additional elements.\nFirst extra element 1:\n{'id': 605, 'title': 'Risk log', 'owner': 'ben', 'amount': '475.1'}\n\n+ [{'amount': '769', 'id': 511, 'owner': 'fay', 'title': 'Audit \\t prep'},\n- [{'amount': '475.1', 'id': 605, 'owner': 'ben', 'title': 'Risk log'}]\n? ^                                                                   ^\n\n+  {'amount': '475.1', 'id': 605, 'owner': 'ben', 'title': 'Risk log'},\n? ^                                                                   ^\n\n+  {'amount': '858.5', 'id': 878, 'owner': 'dara', 'title': 'Q3 report'},\n+  {'amount': '475', 'id': 936, 'owner': 'dara', 'title': 'Q3  report'}]\n\n----------------------------------------------------------------------\nRan 2 tests in 0.003s\n\nFAILED (failures=2)\n\nreg.S2.6 HISTORY [S2.6] Residency: a record whose 'region' is 'eu' is exported only when 'eu' is in user['regions']; this applies to admins too. (replaced by S6.1)\nreg.S6.2 HISTORY [S6.2] note: For information: the web interface now shows 50 records per page. This does not change exports.\n"
+-  },
+-  {
+-   "id": "s19.rcpt",
+-   "role": "receipt",
+-   "body": "context.json edit accepted at step 19: revision 28 -> 29; entries 20 -> 21; body chars 6823 -> 6958; removed []; added [reg.S6.2]; rewritten [reg.S2.6]"
+-  },
+-  {
+-   "id": "s20.act",
+-   "role": "assistant",
+-   "body": "[step 20] execute\nthought: Remove residency check at line 21 and the following continue, run tests.\ncode:\nimport sys,subprocess\np='/task/workspace/exporter/core.py';L=open(p).read().split('\\n')\nfor i in range(18,25):print(i+1,L[i])\ni=20\nif 'region' in L[i] and 'continue' in L[i+1]:\n  del L[i:i+2]\nopen(p,'w').write('\\n'.join(L))\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-600:])"
+-  },
+-  {
+-   "id": "s20.obs",
+-   "role": "observation",
+-   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n19         if r.get(\"confidential\") is True and not (role == \"admin\" and params.get(\"purpose\") in (\"audit\", \"regulator\")):\n20             continue\n21         if r.get(\"region\") == \"eu\" and \"eu\" not in (user.get(\"regions\") or []):\n22             continue\n23         out.append(r)\n24     m = params.get(\"max_records\")\n25     if m is not None:\n..\n----------------------------------------------------------------------\nRan 2 tests in 0.000s\n\nOK\n\n"
+   }
+  ]
+ }

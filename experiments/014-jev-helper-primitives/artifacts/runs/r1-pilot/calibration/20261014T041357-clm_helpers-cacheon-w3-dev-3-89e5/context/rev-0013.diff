@@ -1,0 +1,24 @@
+--- rev-12
++++ rev-13
+@@ -10,6 +10,21 @@
+    "id": "progress",
+    "role": "note",
+    "body": "Stages 1-4 implemented in exporter/core.py (single function export_records; JSON output incl exported_by)."
++  },
++  {
++   "id": "s9.act",
++   "role": "assistant",
++   "body": "[step 9] execute\nthought: Apply stage 4 changes, run tests, update register and prune context.\ncode:\nimport json,subprocess,sys\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"(st == 'archived' and params.get('include_archived') is True)\",\"(st == 'archived' and role == 'admin' and params.get('include_archived') is True)\")\ns=s.replace(\"if r.get('region') == 'eu' and 'eu' not in (user.get('regions') or []):\",\"if str(r.get('region') or '').lower() == 'eu' and 'eu' not in [str(x).lower() for x in (user.get('regions') or [])]:\")\ns=s.replace(\"t.strip() if isinstance(t, str) else t\",\"' '.join(t.split()) if isinstance(t, str) else t\")\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True)\nprint(r.stderr[-1500:])\nc=json.load(open('/task/workspace/context.json'))\nreg=c['entries'][0]['body']\nreg=reg.replace(\"CURRENT [S1.4] only status active unless params include_archived is True (then archived too).\",\"CURRENT [S1.4, S4.1] only status active; archived also exported only when params include_archived is True AND role admin; non-admin never get archived.\")\nreg=reg.replace(\"CURRENT [S2.2] region 'eu' exported only if 'eu' in user['regions'] (admins too).\",\"CURRENT [S2.2, S4.2] region 'eu' exported only if 'eu' in user['regions'] (admins too); region compare case-insensitive in records and user regions.\")\nreg=reg.replace(\"CURRENT [S2.5] title stripped of leading/trailing whitespace.\",\"CURRENT [S2.5, S4.3] title stripped of leading/trailing whitespace and every internal whitespace run replaced by single space.\")\nc['entries']=[{'id':'register','role':'summary','body':reg},{'id':'progress','role':'note','body':'Stages 1-4 implemented in exporter/core.py (single function export_records; JSON output incl exported_by).'}]\njson.dump(c,open('/task/workspace/context.json','w'))\nprint(reg)"
++  },
++  {
++   "id": "s9.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.4s\n--- stdout ---\n......\n----------------------------------------------------------------------\nRan 6 tests in 0.001s\n\nOK\n\nREGISTER\nHISTORY [S1.1] Format was CSV (header id,title,owner,amount) - replaced by S3.1.\nCURRENT [S1.1, S3.1] Output: json.dumps object, key 'records' = list ascending id, each exactly keys id(int),title,owner,amount(str as given); no records -> empty list.\nCURRENT [S1.2] role viewer -> raise PermissionError.\nCURRENT [S1.3, S3.2] admin: any project; others (non-viewer) only records with project in user projects OR owner==user['name'] (others silently skipped).\nCURRENT [S1.4, S4.1] only status active; archived also exported only when params include_archived is True AND role admin; non-admin never get archived.\nCURRENT [S1.5] confidential True never exported except role admin and params purpose=='audit'; other rules still apply.\nCURRENT [API] export_records(records,user,params)->str; dont modify input; ignore unknown params; amount kept as given.\nHISTORY [S1.6] Decision: CSV chosen because finance imports into spreadsheets.\nCURRENT [S2.1] params 'since' YYYY-MM-DD: only records with created >= since.\nCURRENT [S2.2, S4.2] region 'eu' exported only if 'eu' in user['regions'] (admins too); region compare case-insensitive in records and user regions.\nCURRENT [S2.3] params max_records int>=1: first N by ascending id after all other rules.\nCURRENT [S2.4] Obligation (now triggered by S3.1, applies): if format changes from CSV, every export in new format must include top-level 'exported_by'=user['name'].\nCURRENT [S2.5, S4.3] title stripped of leading/trailing whitespace and every internal whitespace run replaced by single space.\nCURRENT [S2.6] Obligation: if confidential records ever exported for purpose other than 'audit', export must include top-level 'confidential_count' = number of confidential records in it.\nHISTORY [S3.3] Note: archived storage moves to cheaper tier; no export change.\n"
++  },
++  {
++   "id": "s9.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 9: revision 11 -> 12; entries 9 -> 2; body chars 6778 -> 1918; removed [s6.act, s6.obs, s6.rcpt, s7.act, s7.obs, s8.act, s8.obs]; added []; rewritten [register, progress]"
+   }
+  ]
+ }

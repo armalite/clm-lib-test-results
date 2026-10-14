@@ -1,0 +1,19 @@
+--- rev-18
++++ rev-19
+@@ -115,6 +115,16 @@
+    "id": "s11.rcpt",
+    "role": "receipt",
+    "body": "context.json edit accepted at step 11: revision 16 -> 17; entries 19 -> 20; body chars 5637 -> 6189; removed []; added [reg.S4.3]; rewritten [reg.S1.2, reg.S2.2, reg.S2.5]"
++  },
++  {
++   "id": "s12.act",
++   "role": "assistant",
++   "body": "[step 12] execute\nthought: Implement S4.1/S4.2 and activate S2.5 confidential_count.\ncode:\nimport sys,subprocess\np='/task/workspace/exporter/core.py';s=open(p).read()\ns=s.replace('if role != \"admin\" and r.get(\"project\") not in user.get(\"projects\", []):','if role != \"admin\" and r.get(\"project\") not in user.get(\"projects\", []) and r.get(\"owner\") != user.get(\"name\"):')\ns=s.replace('params.get(\"purpose\") == \"audit\")','params.get(\"purpose\") in (\"audit\", \"regulator\"))')\ns=s.replace('''    return json.dumps({\"records\": recs, \"exported_by\": user.get(\"name\")})''','''    res = {\"records\": recs, \"exported_by\": user.get(\"name\")}\n    if role == \"admin\" and params.get(\"purpose\") == \"regulator\":\n        res[\"confidential_count\"] = sum(1 for r in out if r.get(\"confidential\") is True)\n    return json.dumps(res)''')\nopen(p,'w').write(s)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])"
++  },
++  {
++   "id": "s12.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.3s\n--- stdout ---\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.001s\n\nOK\n\n"
+   }
+  ]
+ }
