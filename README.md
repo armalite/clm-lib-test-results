@@ -114,7 +114,7 @@ Experiments 009–013 follow the [Jev-assistance roadmap](experiments/jev-assist
 | 013 | Claude-directed screening of tool results: Claude writes the screening question and uses Jev to choose passages, against CLM with the same file tools | **Not recommended** after the [programme review](experiments/jev-programme-review.md); not implemented |
 | [014](experiments/014-jev-helper-primitives/README.md) | Model-authored context-management helpers with Jev semantic primitives: Claude's own code calls Jev during an execution and edits context with the answers | **Prompted live demonstration done** (one instructed run; marker-only). **W3 comparison pilot done** (2 × A/B + B smoke): all correct; Jev called but no register change depended on its answers; B +18.5–32% cost; evaluation not run. **R1 delegation smoke:** helper's Jev-governed branch chose the amendments (contract held); frozen counterfactual unsupported (sequential requests), post-hoc shows dependence. **R1 matched pilot** (2 × A/B): delegation used, all correct, B +61–98% cost; no larger evaluation |
 
-**Programme review:** [`experiments/jev-programme-review.md`](experiments/jev-programme-review.md) is the phase-by-phase evidence summary for 008–013 and the 013 decision.
+**Programme review:** [`experiments/jev-programme-review.md`](experiments/jev-programme-review.md) is the phase-by-phase evidence summary for 008–014, with the 013 decision and the reopening criteria. **The Jev programme is paused after 014; no further paid work is authorised.**
 
 **How these differ:**
 - **009–010:** affected-entry review on incident investigations.

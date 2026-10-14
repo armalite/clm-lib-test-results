@@ -2,6 +2,8 @@
 
 _First written on 2026-10-13 and revised on 2026-10-13 (session 5). A planning document, not a result. Each experiment has its own protocol and evidence. The dated notes at the end are kept as written._
 
+**Status (2026-10-14): PAUSED after experiment 014's R1 matched pilot. No further paid work is authorised.** The current summary, the navigation table and the reopening criteria are in the [programme review](jev-programme-review.md).
+
 ## The question
 
 **Can a fast decision model (TypeSafe Jev) improve a CLM agent, and where in the workflow is its assistance useful?**
@@ -283,6 +285,7 @@ See [010](010-jev-initiated-review/README.md).
 - **Claude fetched most omitted passages back,** so B used more calls, time and cost than A (+10%), with equal correctness.
 
 **What it means:** on this workload, Jev's screening is safe but not useful. Disclosing omissions invites the agent to check them, which cancels the input saving. These are 2 development instances, not an evaluation.
+  - _Wording note (2026-10-14):_ "safe" here means only that no required evidence was lost in the tested diagnostic cases and the 2-instance pilot, within their stated limits. See the [programme review](jev-programme-review.md).
 
 **Next (the maintainer's decision):** do not scale 012 up. A screening test would only be informative on a workload whose search results are much larger and noisier than these. Across 008–012, no Jev integration has shown a measurable benefit over ordinary CLM, so a programme-level review is recommended before further integration work. **013 remains planned.**
 

@@ -15,4 +15,4 @@
   - **Correctness:** all runs correct, and none of the 14 omitted passages was needed.
   - **Recovery:** Claude fetched 12 of them back.
   - **Cost:** B cost USD 0.131 against A's 0.119 per run (+10%), with 17.5 against 14.5 calls and 78 s against 61 s.
-- **What it means:** the screen worked mechanically and safely here, but produced **no saving**, because the agent checked the omitted passages.
+- **What it means:** the screen worked mechanically and lost no needed passage in this pilot, but produced **no saving**, because the agent checked the omitted passages.

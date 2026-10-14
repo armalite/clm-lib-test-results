@@ -170,6 +170,8 @@ So a misplaced amendment that keeps every item cited and stated passes. Earlier 
 - **It would be instruction tuning:** making it happen would mean telling Claude which questions to ask, or rewording the instruction after seeing results.
 - **Recurring costs:** B's per-notice costs exceeded A's, so a longer task would not plausibly amortise setup on this evidence.
 
+> _Qualified 2026-10-14:_ two statements above are scoped to this phase, not general rules. A disclosed, separately versioned revision followed by a fresh evaluation would be legitimate, and so would generic efficiency improvements in a configured approach. See the [programme review's methodological notes](../jev-programme-review.md#methodological-notes-corrected-2026-10-14). Neither point changes the recommendation, and neither suggests another iteration would succeed.
+
 **Recommendation: B. Further paid work on this configuration is not justified by the current evidence.**
 - Delegation works, and its semantic judgments were mostly right. But its observed costs come from how the delegated procedure manages text and steps, not from a Jev limitation that one narrow change would remove.
 - Correctness was already at the scorer's ceiling for ordinary CLM.
