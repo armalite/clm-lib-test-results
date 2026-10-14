@@ -1,0 +1,24 @@
+--- rev-18
++++ rev-19
+@@ -85,6 +85,21 @@
+    "id": "reg.S2.2.hS5.2",
+    "role": "note",
+    "body": "HISTORY [S2.2, S3.1] Compliance obligation (nothing to do while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must include a top-level field \"exported_by\" equal to user['name']. It stays in force unless a later stage withdraws or changes it. || AMENDED by S3.1 (wins on conflict; rest stays): Exports are now JSON text (json.dumps) of an object whose key \"records\" lists one object per exported record, in ascending id order, with exactly the keys \"id\" (int), \"title\", \"owner\" and \"amount\" (str, exactly as given). The hidden tests parse the JSON and compare values, not spacing or key order. (superseded in part by S5.2)"
++  },
++  {
++   "id": "s13.act",
++   "role": "assistant",
++   "body": "[step 13] execute\nthought: Implement S5.1/S5.2, run tests, trim old step entries.\ncode:\nimport json,subprocess,sys\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"params.get('purpose') == 'audit'\",\"params.get('purpose') in ('audit','regulator')\")\ns=s.replace(\"    return json.dumps({'exported_by': user.get('name'), 'records': [\",\"    obj = {'records': [\")\ns=s.replace(\"for r in out]})\",\"for r in out]}\\n    if not admin:\\n        obj['exported_by'] = user.get('name')\\n    return json.dumps(obj)\")\nopen(p,'w').write(s)\nprint(s[-400:])\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-1500:])\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if not e['id'].startswith(('s11.','s12.'))]\njson.dump(c,open('/task/workspace/context.json','w'))"
++  },
++  {
++   "id": "s13.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=1.2s\n--- stdout ---\nand params.get('include_archived') is True and user.get('role') == 'admin')):\n            continue\n        out.append(r)\n    out.sort(key=lambda r: r['id'])\n    obj = {'records': [{'id': int(r['id']), 'title': ' '.join(str(r['title']).split()), 'owner': r['owner'], 'amount': str(r['amount'])} for r in out]}\n    if not admin:\n        obj['exported_by'] = user.get('name')\n    return json.dumps(obj)\n\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n\n"
++  },
++  {
++   "id": "s13.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 13: revision 17 -> 18; entries 22 -> 17; body chars 9612 -> 6893; removed [s11.act, s11.obs, s12.act, s12.obs, s12.rcpt]; added []; rewritten []"
+   }
+  ]
+ }

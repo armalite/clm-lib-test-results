@@ -1,0 +1,24 @@
+--- rev-5
++++ rev-6
+@@ -40,6 +40,21 @@
+    "id": "reg.S1.1.hS2.3",
+    "role": "note",
+    "body": "HISTORY [S1.1] Format: return CSV text. The first row is the header id,title,owner,amount; then one row per exported record, in ascending id order, with those four fields. Produce it with Python's csv.writer (default dialect) and lineterminator='\\n'. With no exported records, return the header row alone (ending in '\\n'). (superseded in part by S2.3)"
++  },
++  {
++   "id": "s4.act",
++   "role": "assistant",
++   "body": "[step 4] execute\nthought: Implement stage 2, run helper for stage 2, trim context.\ncode:\nimport json,subprocess,sys\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"        out.append(r)\",\"        st = r.get('status')\\n        if not (st == 'active' or (st == 'archived' and params.get('include_archived') is True)):\\n            continue\\n        out.append(r)\")\ns=s.replace(\"r['title'], r['owner']\",\"str(r['title']).strip(), r['owner']\")\nopen(p,'w').write(s)\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if not e['id'].startswith(('s2.','s3.'))]\nfor e in c['entries']:\n    if e['id']=='n.state': e['body']='Stages 1-2 implemented in exporter/core.py; helper regtool.update(stage) maintains register (call once per stage).'\njson.dump(c,open('/task/workspace/context.json','w'))\nsys.path.insert(0,'/task/workspace')\nimport regtool; regtool.update(2)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-600:])"
++  },
++  {
++   "id": "s4.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.7s\n--- stdout ---\nS2.1 -> []\nS2.2 -> []\nS2.3 -> ['reg.S1.1']\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n\n"
++  },
++  {
++   "id": "s4.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 10 -> 8; body chars 5914 -> 1971; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added [reg.S2.1, reg.S2.2, reg.S1.1.hS2.3]; rewritten [n.state, reg.S1.1]"
+   }
+  ]
+ }

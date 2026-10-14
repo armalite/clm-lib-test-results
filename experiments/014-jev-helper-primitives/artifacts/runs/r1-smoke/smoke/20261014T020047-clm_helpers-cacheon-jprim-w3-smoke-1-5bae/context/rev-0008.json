@@ -1,0 +1,84 @@
+{
+ "number": 8,
+ "parent": 7,
+ "source": "runtime",
+ "step": 6,
+ "sha256": "cc706794063318889cb84845c185422103d44259e36504a78ca156a206c5e986",
+ "entries": [
+  {
+   "id": "n.state",
+   "role": "note",
+   "body": "Stages 1-2 implemented in exporter/core.py; helper regtool.update(stage) maintains register (call once per stage)."
+  },
+  {
+   "id": "reg.S1.1",
+   "role": "note",
+   "body": "CURRENT [S1.1, S2.3] Format: return CSV text. The first row is the header id,title,owner,amount; then one row per exported record, in ascending id order, with those four fields. Produce it with Python's csv.writer (default dialect) and lineterminator='\\n'. With no exported records, return the header row alone (ending in '\\n'). || AMENDED by S2.3 (wins on conflict; rest stays): Titles: export each record's title with leading and trailing whitespace removed."
+  },
+  {
+   "id": "reg.S1.2",
+   "role": "note",
+   "body": "CURRENT [S1.2] Scope: a user whose role is 'admin' may export records of any project. Any other role exports only records whose 'project' is in user['projects']; other records are left out without an error."
+  },
+  {
+   "id": "reg.S1.3",
+   "role": "note",
+   "body": "CURRENT [S1.3] Confidential records: a record whose 'confidential' is True is never exported, with one exception: it is exported when user['role'] is 'admin' and params.get('purpose') == 'audit'. Every other rule still applies to it."
+  },
+  {
+   "id": "reg.S1.4",
+   "role": "note",
+   "body": "HISTORY [S1.4] note/decision: Decision record: CSV was chosen for the first release because the finance team imports exports into spreadsheets."
+  },
+  {
+   "id": "reg.S2.1",
+   "role": "note",
+   "body": "CURRENT [S2.1] Status: only records with status 'active' are exported, unless params.get('include_archived') is True; then records with status 'archived' are exported too."
+  },
+  {
+   "id": "reg.S2.2",
+   "role": "note",
+   "body": "CURRENT [S2.2] Compliance obligation (nothing to do while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must include a top-level field \"exported_by\" equal to user['name']. It stays in force unless a later stage withdraws or changes it."
+  },
+  {
+   "id": "reg.S1.1.hS2.3",
+   "role": "note",
+   "body": "HISTORY [S1.1] Format: return CSV text. The first row is the header id,title,owner,amount; then one row per exported record, in ascending id order, with those four fields. Produce it with Python's csv.writer (default dialect) and lineterminator='\\n'. With no exported records, return the header row alone (ending in '\\n'). (superseded in part by S2.3)"
+  },
+  {
+   "id": "s4.act",
+   "role": "assistant",
+   "body": "[step 4] execute\nthought: Implement stage 2, run helper for stage 2, trim context.\ncode:\nimport json,subprocess,sys\np='/task/workspace/exporter/core.py'\ns=open(p).read()\ns=s.replace(\"        out.append(r)\",\"        st = r.get('status')\\n        if not (st == 'active' or (st == 'archived' and params.get('include_archived') is True)):\\n            continue\\n        out.append(r)\")\ns=s.replace(\"r['title'], r['owner']\",\"str(r['title']).strip(), r['owner']\")\nopen(p,'w').write(s)\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if not e['id'].startswith(('s2.','s3.'))]\nfor e in c['entries']:\n    if e['id']=='n.state': e['body']='Stages 1-2 implemented in exporter/core.py; helper regtool.update(stage) maintains register (call once per stage).'\njson.dump(c,open('/task/workspace/context.json','w'))\nsys.path.insert(0,'/task/workspace')\nimport regtool; regtool.update(2)\nr=subprocess.run([sys.executable,'-m','unittest','discover','-s','/task/fixtures/current-tests'],cwd='/task/workspace',capture_output=True,text=True);print(r.stderr[-600:])"
+  },
+  {
+   "id": "s4.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=2.7s\n--- stdout ---\nS2.1 -> []\nS2.2 -> []\nS2.3 -> ['reg.S1.1']\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.000s\n\nOK\n\n"
+  },
+  {
+   "id": "s4.rcpt",
+   "role": "receipt",
+   "body": "context.json edit accepted at step 4: revision 4 -> 5; entries 10 -> 8; body chars 5914 -> 1971; removed [s2.act, s2.obs, s2.rcpt, s3.act, s3.obs]; added [reg.S2.1, reg.S2.2, reg.S1.1.hS2.3]; rewritten [n.state, reg.S1.1]"
+  },
+  {
+   "id": "s5.act",
+   "role": "assistant",
+   "body": "[step 5] advance\nthought: "
+  },
+  {
+   "id": "s5.obs",
+   "role": "observation",
+   "body": "Stage 3 of 5 released.\n# Stage 3 of 5: change notice\n\nThis notice lists decisions taken since the previous stage. An item does not say which earlier item it affects. A change wins over anything earlier that it conflicts with; every earlier requirement, obligation and exception, and every part of one, that it does not change stays in force.\n\n## Changes\n\n- [S3.1] Exports are now JSON text (json.dumps) of an object whose key \"records\" lists one object per exported record, in ascending id order, with exactly the keys \"id\" (int), \"title\", \"owner\" and \"amount\" (str, exactly as given). The hidden tests parse the JSON and compare values, not spacing or key order.\n- [S3.2] Users whose role is neither 'admin' nor 'viewer' may now also export the records they own (record 'owner' equal to user['name']), even outside their projects.\n\n## Notes\n\n- [S3.3] For information: storage for archived projects moves to a cheaper tier next quarter. This does not change what exports contain.\n\nVisible tests for the rules introduced or changed in this stage only: /task/fixtures/current-tests/test_stage.py (replaced at each stage). Earlier rules still apply and are checked by the hidden evaluation.\n\nNew files:\n  current-tests/test_stage.py (34 lines)\n  stage-3/REQUIREMENTS.md (14 lines)"
+  },
+  {
+   "id": "s6.act",
+   "role": "assistant",
+   "body": "[step 6] execute\nthought: Inspect core.py and regtool briefly, then implement stage 3.\ncode:\nprint(open('/task/workspace/exporter/core.py').read());print(open('/task/workspace/regtool.py').read()[:3000])"
+  },
+  {
+   "id": "s6.obs",
+   "role": "observation",
+   "body": "exit_code=0 duration=1.0s\n--- stdout ---\nimport csv, io\n\ndef export_records(records, user, params):\n    params = params or {}\n    admin = user.get('role') == 'admin'\n    out = []\n    for r in records:\n        if not admin and r.get('project') not in user.get('projects', []):\n            continue\n        if r.get('confidential') is True and not (admin and params.get('purpose') == 'audit'):\n            continue\n        st = r.get('status')\n        if not (st == 'active' or (st == 'archived' and params.get('include_archived') is True)):\n            continue\n        out.append(r)\n    out.sort(key=lambda r: r['id'])\n    buf = io.StringIO()\n    w = csv.writer(buf, lineterminator='\\n')\n    w.writerow(['id', 'title', 'owner', 'amount'])\n    for r in out:\n        w.writerow([r['id'], str(r['title']).strip(), r['owner'], r['amount']])\n    return buf.getvalue()\n\nimport re, json\nimport clm_jev\nCTX='/task/workspace/context.json'\nQ=(\"Does the NEW requirement change, replace, restrict, extend or withdraw any part of the EXISTING register item \"\n   \"(i.e. they govern the same behaviour and the new one alters it)?\")\ndef parse(stage):\n    t=open(f'/task/fixtures/stage-{stage}/REQUIREMENTS.md').read()\n    items=re.findall(r'^- \\[(S\\d+\\.\\d+)\\]\\s*(.+?)(?=^- \\[|^#|^Visible|\\Z)', t, re.S|re.M)\n    notes=set(re.findall(r'\\[(S\\d+\\.\\d+)\\]\\s*(?:Decision record|Note|Information)', t))\n    sec=t.split('## Notes')[1] if '## Notes' in t else ''\n    notes|=set(re.findall(r'\\[(S\\d+\\.\\d+)\\]', sec))\n    return [(i,' '.join(x.split())) for i,x in items], notes\ndef update(stage, thr=0.6, info=None):\n    info=info or {}\n    c=json.load(open(CTX)); E=c['entries']\n    items,notes=parse(stage)\n    for iid,txt in items:\n        if iid in notes:\n            E.append({'id':'reg.'+iid,'role':'note','body':f'HISTORY [{iid}] note/decision: {txt}'}); continue\n        cur=[e for e in E if e['id'].startswith('reg.') and e['body'].startswith('CURRENT')]\n        hit=[]\n        if cur:\n            r=clm_jev.judge(Q,{e['id']:e['body'][:1500] for e in cur[:20]},background='NEW requirement: '+txt+' '+info.get(iid,''))\n            if r.get('status')!='ok': print('FALLBACK:',iid,'jev error'); r={'answers':{}}\n            hit=[e for e in cur if (r['answers'].get(e['id']) or 0)>=thr]\n        for e in hit:\n            ids=re.search(r'\\[([^\\]]*)\\]',e['body']).group(1)\n            E.append({'id':e['id']+'.h'+iid,'role':'note','body':'HISTORY '+e['body'][8:]+f' (superseded in part by {iid})'})\n            e['body']=f'CURRENT [{ids}, {iid}] '+e['body'][len(ids)+11:]+f' || AMENDED by {iid} (wins on conflict; rest stays): {txt}'\n        if not hit:\n            E.append({'id':'reg.'+iid,'role':'note','body':f'CURRENT [{iid}] {txt}'})\n        print(iid,'->',[e['id'] for e in hit])\n    json.dump(c,open(CTX,'w'))\ndef override(eid, body, reason):\n    c=json.load(open(CTX))\n    for e in c['entries']:\n        if e['id']==eid: e['body']=body\n    print('OVERRIDE:',eid,reason); json.dump(c,open(CTX,'w'))\n\n"
+  }
+ ]
+}

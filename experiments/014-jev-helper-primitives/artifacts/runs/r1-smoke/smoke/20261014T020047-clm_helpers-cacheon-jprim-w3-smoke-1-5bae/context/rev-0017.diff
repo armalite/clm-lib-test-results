@@ -1,0 +1,24 @@
+--- rev-16
++++ rev-17
+@@ -95,6 +95,21 @@
+    "id": "reg.S2.2.hS5.2",
+    "role": "note",
+    "body": "HISTORY [S2.2, S3.1] Compliance obligation (nothing to do while the format is CSV): if a later stage changes the export format from CSV, every export in the new format must include a top-level field \"exported_by\" equal to user['name']. It stays in force unless a later stage withdraws or changes it. || AMENDED by S3.1 (wins on conflict; rest stays): Exports are now JSON text (json.dumps) of an object whose key \"records\" lists one object per exported record, in ascending id order, with exactly the keys \"id\" (int), \"title\", \"owner\" and \"amount\" (str, exactly as given). The hidden tests parse the JSON and compare values, not spacing or key order. (superseded in part by S5.2)"
++  },
++  {
++   "id": "s12.act",
++   "role": "assistant",
++   "body": "[step 12] execute\nthought: Run helper for stage 5, implement S5.1/S5.2, trim old entries, run tests.\ncode:\nimport json,subprocess,sys\nc=json.load(open('/task/workspace/context.json'))\nc['entries']=[e for e in c['entries'] if not e['id'].startswith(('s8.','s9.','s10.'))]\njson.dump(c,open('/task/workspace/context.json','w'))\nsys.path.insert(0,'/task/workspace')\nimport regtool; regtool.update(5)\np='/task/workspace/exporter/core.py'\ns=open(p).read()\nfor i,l in enumerate(s.splitlines(),1): print(i,l)\n"
++  },
++  {
++   "id": "s12.obs",
++   "role": "observation",
++   "body": "exit_code=0 duration=2.0s\n--- stdout ---\nS5.1 -> ['reg.S1.3']\nS5.2 -> ['reg.S2.2']\n1 import json\n2 import csv, io, json\n3 \n4 def export_records(records, user, params):\n5     params = params or {}\n6     admin = user.get('role') == 'admin'\n7     out = []\n8     for r in records:\n9         own = user.get('role') not in ('admin','viewer') and r.get('owner') == user.get('name')\n10         if not admin and not own and r.get('project') not in user.get('projects', []):\n11             continue\n12         if r.get('confidential') is True and not (admin and params.get('purpose') == 'audit'):\n13             continue\n14         st = r.get('status')\n15         if not (st == 'active' or (st == 'archived' and params.get('include_archived') is True and user.get('role') == 'admin')):\n16             continue\n17         out.append(r)\n18     out.sort(key=lambda r: r['id'])\n19     return json.dumps({'exported_by': user.get('name'), 'records': [{'id': int(r['id']), 'title': ' '.join(str(r['title']).split()), 'owner': r['owner'], 'amount': str(r['amount'])} for r in out]})\n"
++  },
++  {
++   "id": "s12.rcpt",
++   "role": "receipt",
++   "body": "context.json edit accepted at step 12: revision 15 -> 16; entries 24 -> 19; body chars 9452 -> 7806; removed [s8.act, s8.obs, s9.act, s9.obs, s9.rcpt, s10.act, s10.obs]; added [reg.S1.3.hS5.1, reg.S2.2.hS5.2]; rewritten [reg.S1.3, reg.S2.2]"
+   }
+  ]
+ }

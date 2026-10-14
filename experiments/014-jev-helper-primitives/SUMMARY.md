@@ -8,5 +8,11 @@
 - **Comparison phase** (new W3 register workload with uncited change notices, plus a register objective in both conditions; B smoke + development pilot, 2 instances × A/B, frozen protocol):
   - **Correctness:** all runs code-correct, with no register harm.
   - **The mechanism:** Jev was called 37 times across the B runs, but an offline replay found **no register change that depended on its answers** in any of the 15 Jev-using executions. The helpers printed Jev's flags, and Claude wrote the edits itself.
-  - **Cost:** B cost 19–32% more than A.
+  - **Cost:** B cost 18.5–32% more than A.
 - **What it means:** configured this way, Claude used Jev as a printed cross-check, not as an input to its own editing logic. So **no benefit was shown, and the mechanism was not exercised.** The evaluation was not run.
+- **Development revision R1** (one configured delegation smoke, under an explicit contract):
+  - **The helper:** Claude's helper read the register, asked Jev about every entry, and its own 0.6 threshold chose which entries to amend. The callers passed only the stage.
+  - **The selections:** at the notices they matched the truth (7 of 7, no misses). There was one false hit at stage 2, and replaced rules were kept as overridden amendments.
+  - **The verdict:** the frozen counterfactual test was unsupported, because the helper's requests are sequential, so **R1 is not demonstrated under its frozen criteria.** A post-hoc last-request diagnostic shows answer-dependent selection at all three notices.
+  - **The outcome:** 42/42 code checks, register harm 0, USD 0.275.
+
