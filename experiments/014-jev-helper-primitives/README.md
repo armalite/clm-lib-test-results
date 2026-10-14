@@ -1,6 +1,6 @@
 # 014 – Model-authored context-management helpers with Jev semantic primitives
 
-**Status: prompted live capability demonstration DONE (2026-10-13), one run.** The capability (`jev-primitive/1`) works end to end with a real Claude model and real Jev. **The use was instructed (configured use), not spontaneous adoption, and nothing here measures a benefit.** **Comparison phase (W3): the development smoke and the four-run pilot are DONE.** No B run made a register change that depended on Jev's answers, so the mechanism was not exercised; B cost 18.5–32% more than A, with equal correctness (dev-1's +18.5% appeared elsewhere as +18% or +19% by rounding). The evaluation was not run (not authorised). See [the comparison-phase results](#comparison-phase-w3-development-pilot-results) and [protocol-comparison.md](protocol-comparison.md). **Development revision R1 (one configured delegation smoke): DONE.** The contract held: Claude's helper read the register, asked Jev, and its threshold on the answers chose the amendments. But the frozen counterfactual test was unsupported at the change notices, so **R1 is not demonstrated under its frozen criteria**. A post-hoc diagnostic shows answer-dependent selection at all three notices. See [R1 results](#development-revision-r1-configured-delegation-smoke-results), [protocol-r1.md](protocol-r1.md) and [revision-delegation.md](revision-delegation.md). **R1 matched development pilot (2 × A/B): DONE.** Delegation was used in both B runs, and every run was fully correct. But B cost 61–98% more than ordinary CLM. See [the pilot results](#r1-matched-development-pilot-results) and [protocol-r1-pilot.md](protocol-r1-pilot.md).
+**Status: prompted live capability demonstration DONE (2026-10-13), one run.** The capability (`jev-primitive/1`) works end to end with a real Claude model and real Jev. **The use was instructed (configured use), not spontaneous adoption, and nothing here measures a benefit.** **Comparison phase (W3): the development smoke and the four-run pilot are DONE.** No B run made a register change that depended on Jev's answers, so the mechanism was not exercised; B cost 18.5–32% more than A, with equal correctness (dev-1's +18.5% appeared elsewhere as +18% or +19% by rounding). The evaluation was not run (not authorised). See [the comparison-phase results](#comparison-phase-w3-development-pilot-results) and [protocol-comparison.md](protocol-comparison.md). **Development revision R1 (one configured delegation smoke): DONE.** The contract held: Claude's helper read the register, asked Jev, and its threshold on the answers chose the amendments. But the frozen counterfactual test was unsupported at the change notices, so **R1 is not demonstrated under its frozen criteria**. A post-hoc diagnostic shows answer-dependent selection at all three notices. See [R1 results](#development-revision-r1-configured-delegation-smoke-results), [protocol-r1.md](protocol-r1.md) and [revision-delegation.md](revision-delegation.md). **R1 matched development pilot (2 × A/B): DONE;** an exploratory review is in [r1-pilot-review.md](r1-pilot-review.md), and recommends no further paid work on this configuration. Delegation was used in both B runs, and every run was fully correct. But B cost 61–98% more than ordinary CLM. See [the pilot results](#r1-matched-development-pilot-results) and [protocol-r1-pilot.md](protocol-r1-pilot.md).
 
 ## Result: prompted live capability demonstration
 
@@ -74,7 +74,7 @@ Each call followed the order execution start → Jev request and answer → exec
 - **No substantive Jev-dependent change:** in all three B runs (the smoke and both pilot runs), Claude wrote a reusable helper that called real Jev during its executions (37 calls in total). But **no register change depended on Jev's answers.** Replaying each of the 15 Jev-using executions with the answers withheld produced exactly the same context.
 - **What happened instead:** the helpers printed Jev's flags or decisions, while Claude wrote every register edit (the text, and which items to amend or retire) into its own calling scripts.
 - **The mechanism was therefore not exercised.** B's instruction was not changed after this was seen, and the phase stops here.
-- **No preliminary benefit:** code and register correctness were equal (all correct, no register harm), and B cost more.
+- **No preliminary benefit:** code and register correctness were equal (all code-correct, and all passed the current register scorer), and B cost more.
 
 ### The workload (W3, `export-gen/2`)
 
@@ -275,14 +275,14 @@ Each call followed the order execution start → Jev request and answer → exec
 
 **Did genuine Jev-assisted delegation occur, and did it help in this pilot?**
 - **Delegation occurred.** In both B runs, Claude's own helper read the register, asked Jev about every current entry, and executed keep, amend or retire branches on the answers. Replay confirms that changing the last Jev answer of an execution changes the selected edit, at 2 notice stages in one run and 4 in the other.
-- **It did not help.** Both conditions were fully correct, and B cost 61–98% more and took 45–78 s longer, mostly because its registers were 1.7–3.5 times larger.
+- **It did not help.** Both conditions passed every hidden code check and the current register scorer (`register-checks/1`), and B cost 61–98% more and took 45–78 s longer, mostly because its registers were 1.7–3.5 times larger.
 
 ### Per-run table (descriptive; n = 2 per condition)
 
 | | dev-3 A | dev-3 B | dev-4 B | dev-4 A | **Mean A** | **Mean B** |
 | --- | --- | --- | --- | --- | --- | --- |
 | Code (hidden checks; snapshot failures) | 64/64 (0) | 64/64 (0) | 64/64 (0) | 64/64 (0) | 64/64 | 64/64 |
-| Register harm / history errors / incomplete (all stages) | 0/0/0 | 0/0/0 | 0/0/0 | 0/0/0 | 0 | 0 |
+| Register scorer (`register-checks/1`) harm / history errors / incomplete, all stages | 0/0/0 | 0/0/0 | 0/0/0 | 0/0/0 | 0 | 0 |
 | Cost, USD (TypeSafe) | 0.303 (0) | 0.599 (0.0056) | 0.457 (0.0018) | 0.283 (0) | **0.293** | **0.528** |
 | of which helper setup step | — | 0.052 | 0.060 | — | — | 0.056 |
 | Elapsed | 131 s | 209 s | 164 s | 119 s | 125 s | 186 s |
@@ -344,7 +344,8 @@ Each call followed the order execution start → Jev request and answer → exec
   The false positives are mostly shared terminology and obligation activations.
 - **Quality issues the scorer accepts by design** (hand reading):
   - **dev-3 B:** writes every amendment twice (under the base rule and as a standalone CURRENT item), labels information items CURRENT, glues stage-file footer text onto items, and doubles "(withdrawn by S7.2)".
-  - **dev-4 B:** attaches the JSON format, the `project` key and the residency withdrawal to the `exported_by` obligation entry, so the current format rule exists only inside that entry. It also gives the scope rule a false "AMENDED by S5.2".
+  - **dev-4 B:** attaches the JSON format (and later the `project` key) to the `exported_by` obligation entry, so the current format rule exists only inside that entry.
+    - _Corrected 2026-10-14:_ this item first also listed "the residency withdrawal". The S7.2 cited there is dev-4's `exported_by` change, a correct amendment, and the residency rule was correctly retired at stage 6. See [r1-pilot-review.md](r1-pilot-review.md). It also gives the scope rule a false "AMENDED by S5.2".
   - **A's registers:** compact (about 2,400 characters) and organised by topic.
 
 ### 3. Did the approach improve task performance or efficiency?
@@ -371,6 +372,14 @@ Each call followed the order execution start → Jev request and answer → exec
    - **S5.3:** for "modify…?", `reg.S2.3` (the record limit) 0.95. For "completely replace?", 0.09 → **amended**, which is correct.
 3. **The accepted context:** revision 23 (4 entries rewritten). The step-16 request used revision 24, which is revision 23 plus the runtime's step entries.
 4. **The counterfactual,** with the last response inverted (S5.3's replacement score 0.09 → 0.91; every earlier answer as recorded): the same helper **retired** the record-limit rule to HISTORY instead of amending it. That would have been an incorrect retirement. Only this decision is tested by the intervention.
+
+### Retrospective review (exploratory, offline)
+
+[r1-pilot-review.md](r1-pilot-review.md) reconstructs all 288 Jev-dependent decisions in the two B runs.
+- **The decisions:** 20 correct amendments or retirements, with no misses. Four triggers of dormant obligations were recorded as amendments, because the helpers asked broad "modify…?" questions and had no branch for "this makes the entry apply". Three viewer-change links to the scope rule are ambiguous.
+- **The extra cost:** it came mainly from verbatim registers, which were already 1.4–1.9× larger at stage 1 before any Jev call, and from more, larger steps. B's recurring cost per notice exceeded A's, so a longer task would not plausibly amortise the setup.
+- **The scorer:** "register harm 0" means *passed the current register scorer*, which does not check claimed relations, information items labelled CURRENT, or duplication.
+- **The recommendation:** no further paid work on this configuration.
 
 ### Limitations, and whether a larger evaluation is justified
 

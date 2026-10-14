@@ -338,3 +338,14 @@ See [010](010-jev-initiated-review/README.md).
 - **Cost:** B cost 61–98% more (larger registers, more calls, helper setup).
 - **The conclusion:** no practical advantage observed, so no larger evaluation is proposed.
 
+**Update (2026-10-14, R1 pilot review; exploratory, offline):** [014's r1-pilot-review.md](014-jev-helper-primitives/r1-pilot-review.md).
+- **The decisions:** 20 correct amendments or retirements and no misses. 4 activations were recorded as amendments (broad questions plus editing logic), and 3 links are ambiguous.
+- **The extra cost:** verbatim registers (larger from stage 1, before any Jev call) and more, larger steps. B's recurring per-notice cost exceeded A's.
+- **The scorer:** it does not check claimed relations; three checks are described.
+- **Decision:** no further paid work on the R1 configuration.
+
+**014 status:**
+- **Established:** the mechanism, non-delegation under a loose instruction, and delegation under a contract, with mostly correct judgments but higher cost.
+- **Untested:** workloads where ordinary CLM errs; compact, summarised delegation.
+- **Deferred, not reopened:** 008–013.
+
