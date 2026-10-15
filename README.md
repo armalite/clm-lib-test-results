@@ -116,6 +116,8 @@ Experiments 009–013 follow the [Jev-assistance roadmap](experiments/jev-assist
 
 **Programme review:** [`experiments/jev-programme-review.md`](experiments/jev-programme-review.md) is the phase-by-phase evidence summary for 008–014, with the 013 decision and the reopening criteria. **The Jev programme is paused after 014; no further paid work is authorised.**
 
+**Programme 015, in preparation:** [015 – Public CLM comparison](experiments/015-public-clm-comparison/README.md). The first milestone is a five-arm comparison on an eight-turn incident thread. The lite arms' runtime is being built first, as the separate [guarded-clm](https://github.com/armalite/guarded-clm) library. Only offline foundations exist so far; **nothing has run and there are no results.**
+
 **How these differ:**
 - **009–010:** affected-entry review on incident investigations.
 - **011's component diagnostics:** labelled context-rewrite examples.
