@@ -53,7 +53,7 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 
 ## Readiness checklist (added 2026-10-15; the draft above is kept as written)
 
-- [x] The guarded-clm library port is complete and verified offline.
+- [x] The guarded-clm library is complete and verified offline.
 - [x] The harness integration (`clm_lib.p015`) is verified offline:
   - transcripts identical to direct library runs;
   - accounting per attempt;
@@ -69,3 +69,31 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 - [ ] A frozen protocol.
 
 **There are no paid results.** The integration evidence is scripted and offline only, and is not an experiment result.
+
+## Note added 2026-10-16 (the draft above is kept as written)
+
+- **Arms:** the README's arm scope now applies. The comparison is guarded-clm, `paper_clm_shell` and the `token-tail/1` summary baseline; `paper_clm_tools` is only a labelled adaptation.
+- **Task tools:** the "search and page-read tools" above are now the four docthread tools, `read_journal`, `list_changes`, `queue_stats` and `read_playbook` ([docthread-workload.md](docthread-workload.md)).
+- **Correctness:** it comes from `docthread-score/1`, which reports recall diagnostics separately.
+
+**Readiness:**
+- [x] The incident-thread generator and scorer are verified offline, with scripted sessions only.
+- [ ] Confirmation instances.
+- The rest of the checklist above still applies.
+
+## Note added 2026-10-16, later (the draft above is kept as written)
+
+- **Arms:** `paper_clm_shell` (`paper-clm-shell/1`) and the summary baseline (`token-tail-p015/1`, the p015 adaptation of `token-tail/1`) are implemented. They are verified offline on docthread with scripted models, and the real sandbox for the shell arm. See [paper-clm-shell-fidelity.md](paper-clm-shell-fidelity.md), [arm-settings.md](arm-settings.md) and [arms-offline.md](arms-offline.md).
+- **Limits as implemented offline:** 60 task steps and 144 main-model calls per user turn in all three arms; summariser calls have their own per-turn cap (24, provisional) and do not count towards the 144. The per-session reading of the cap above is still open, not resolved.
+- **Confirmation instances:** a proposed deterministic rule is in [docthread-workload.md](docthread-workload.md). No instance has been generated.
+
+**Readiness:**
+- [x] The paper and summary arms in the harness, verified offline (scripted only).
+- [ ] The cap scope and whether summariser calls count (decisions.md).
+- [ ] The confirmation instances, drawn at freeze by the agreed rule.
+- [ ] The live SDK and model compatibility checks, in an authorised smoke: the Anthropic SDK pin (0.125.0) with Pydantic AI 2.27.1; the intended model's acceptance of each arm's request shape (sampling, `max_tokens`, thinking, tool definitions); and the reservation bound's one-token-per-byte assumption.
+- [ ] The intended model's price and settings, from official sources.
+- [ ] A spending authorisation. **None exists.**
+- [ ] A frozen protocol.
+
+**There are still no paid results.**

@@ -35,12 +35,12 @@ _Started 2026-10-15. **No full Phase 0 review has been done or approved.** This 
 ## Added 2026-10-15 (library-first sequencing)
 
 - [ ] **How `clm_lite_v2` and `clm_lite_v3_1` map onto the guarded-clm library's configuration** (clm-lib integration work, clm-lib SPEC §28; tracked here, not in the library's plan).
-  - The ported library is one capability, `clm_context()`, whose trace variant is `clm_lite_v3_3`.
+  - The library is one capability, `clm_context()`, whose trace variant is `clm_lite_v3_3`.
   - Whether the 015 lite arms are this design, configurations of it, or need separate definitions is open.
   - clm-lib's runner isn't Pydantic AI based, so how it hosts the capability is also open.
 - [ ] **The scope of the 144-call cap:** **per session or per user turn.** The draft protocol here says a per-session cap, while the guarded-clm design brief says 144 calls per turn. They conflict, and the conflict is recorded, not resolved.
 - [ ] **The free-step rule:** under the guarded-clm design, a response whose **first** tool call is `edit_context` is a free task step, even when later calls do task work. Confirm whether the lite arms use this rule and how the paper arms' free editing turns compare.
-  - **Note (port):** in the ported library, the step and call counts are per run (one user turn). The model-facing status count can drift from the enforced count (library SPEC 13.9).
+  - **Note:** in the library, the step and call counts are per run (one user turn). The model-facing status count can drift from the enforced count (library SPEC 13.9).
 
 ## Integration (2026-10-15)
 
@@ -53,6 +53,25 @@ _Started 2026-10-15. **No full Phase 0 review has been done or approved.** This 
 - [ ] **A public pin of guarded-clm for recorded runs.** Development uses the sibling checkout. Run records hold the version, git revision, dirty state and source fingerprint.
 - [ ] **Provider compatibility for live use.** Pydantic AI 2.27.1's Anthropic model needs an Anthropic SDK that still accepts sampling parameters. The p015 environment pins 0.125.0, verified offline only. It needs confirmation in an authorised smoke, or a decision on another model integration.
 - [ ] **Mapping the 015 lite arms onto `clm_context()` settings** (still open).
+
+## Workload (2026-10-16)
+
+- [x] **The incident-thread workload** is `docthread` ([docthread-workload.md](docthread-workload.md)). It is an independently written public scenario (a document-processing pipeline). It has eight questions, ten values, three recall values (questions 5, 7 and 8, from 2, 1 and 3) and one read-only collection with four tools. Generator, task and scorer are versioned. It supersedes an earlier, abandoned plan for this workload.
+- [x] **The answer contract:** a fenced `json` block, the same in every arm and stated in each user turn.
+- [x] **The development instances:** `docthread-dev-1` (seed 7301, lease mechanism) and `docthread-dev-2` (seed 7302, memory mechanism). They were fixed before any agent ran.
+- [ ] **Confirmation instances:** how many, which mechanisms, and how the seeds are drawn at freeze time. They are never used in development. A deterministic rule is proposed in [docthread-workload.md](docthread-workload.md) (2026-10-16): six instances, two per mechanism, seeds 7401 to 7406, mechanical checks only. It needs approval.
+- [ ] **Whether the scripted 10/10 transfers to real models** (unknown), and whether the task needs tuning after a development smoke. Any such tuning must be recorded and must precede freezing.
+- [ ] **The arm list** (README, 2026-10-16): guarded-clm, `paper_clm_shell`, `token-tail/1`; `paper_clm_tools` only as a labelled adaptation. To be confirmed in the frozen protocol.
+
+## Arms (2026-10-16)
+
+- [ ] **The `paper_clm_shell` fidelity mapping** is written ([paper-clm-shell-fidelity.md](paper-clm-shell-fidelity.md)), with every adaptation listed. It needs approval. It replaces the bullet list under "Fidelity" above.
+- [ ] **The batch policy:** in `paper_clm_shell` only the first `bash` call of a response runs, and any other gets an explicit not-run result; task-tool calls run in every arm. Approve or change.
+- [ ] **The free-step rule for `paper_clm_shell`:** the README's rule, applied literally (an edit-only command that changed the file is free even when its edit was rejected).
+- [ ] **The summary arm's version:** `token-tail-p015/1` keeps `token-tail/1`'s trigger, tail split, length rule, acceptance and summariser layout; the unit of history, the summary's placement and the summariser's system text changed ([arm-settings.md](arm-settings.md)). Approve or change.
+- [ ] **The summariser cap** (24 per turn, provisional), and whether summariser calls count towards the 144-call cap (they do not, offline).
+- [ ] **Sampling for `paper_clm_shell`:** the README's temperature 0.7 and top_p 0.95 conflict with the intended model, which rejects non-default sampling. This is a material conflict, recorded and not resolved: either the model's defaults (a recorded departure) or another model.
+- [ ] **How reasoning parts are treated** in the mirror (not mirrored offline) and in summaries.
 
 ## Caching
 
