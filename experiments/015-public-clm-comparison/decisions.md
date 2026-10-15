@@ -34,7 +34,7 @@ _Started 2026-10-15. **No full Phase 0 review has been done or approved.** This 
 
 ## Added 2026-10-15 (library-first sequencing)
 
-- [ ] **How `clm_lite_v2` and `clm_lite_v3_1` map onto the guarded-clm library's configuration** (now library plan step 3).
+- [ ] **How `clm_lite_v2` and `clm_lite_v3_1` map onto the guarded-clm library's configuration** (clm-lib integration work, clm-lib SPEC §28; tracked here, not in the library's plan).
   - The ported library is one capability, `clm_context()`, whose trace variant is `clm_lite_v3_3`.
   - Whether the 015 lite arms are this design, configurations of it, or need separate definitions is open.
   - clm-lib's runner isn't Pydantic AI based, so how it hosts the capability is also open.
