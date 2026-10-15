@@ -50,3 +50,22 @@ Cost and work:
 ## Note added 2026-10-15 (the draft above is kept as written)
 
 The lite arms' runtime will come from the separate guarded-clm library, so the library chunks come first. The 144-call cap is described above as per session; the library's design brief says per user turn. The conflict is open in [decisions.md](decisions.md).
+
+## Readiness checklist (added 2026-10-15; the draft above is kept as written)
+
+- [x] The guarded-clm library port is complete and verified offline.
+- [x] The harness integration (`clm_lib.p015`) is verified offline:
+  - transcripts identical to direct library runs;
+  - accounting per attempt;
+  - refusals before dispatch;
+  - export with checksums.
+- [ ] Pin guarded-clm to a public revision for recorded runs.
+- [ ] The incident-thread generator and scorer.
+- [ ] The paper arms and the summary arm in the harness.
+- [ ] The lite-arm mapping onto `clm_context()` settings.
+- [ ] The `claude-sonnet-5` price and settings, from official sources.
+- [ ] Provider compatibility, confirmed in an authorised smoke.
+- [ ] A spending authorisation. **None exists.**
+- [ ] A frozen protocol.
+
+**There are no paid results.** The integration evidence is scripted and offline only, and is not an experiment result.

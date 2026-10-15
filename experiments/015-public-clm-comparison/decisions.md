@@ -42,6 +42,18 @@ _Started 2026-10-15. **No full Phase 0 review has been done or approved.** This 
 - [ ] **The free-step rule:** under the guarded-clm design, a response whose **first** tool call is `edit_context` is a free task step, even when later calls do task work. Confirm whether the lite arms use this rule and how the paper arms' free editing turns compare.
   - **Note (port):** in the ported library, the step and call counts are per run (one user turn). The model-facing status count can drift from the enforced count (library SPEC 13.9).
 
+## Integration (2026-10-15)
+
+- [x] **The integration boundary** (clm-lib architecture G1 to G8):
+  - guarded-clm owns the capability;
+  - Pydantic AI owns the model and tool lifecycle;
+  - clm-lib owns scheduling, tools, accounting, records and export, on a dedicated `clm_lib.p015` path in a separate environment.
+
+  Implemented and verified offline.
+- [ ] **A public pin of guarded-clm for recorded runs.** Development uses the sibling checkout. Run records hold the version, git revision, dirty state and source fingerprint.
+- [ ] **Provider compatibility for live use.** Pydantic AI 2.27.1's Anthropic model needs an Anthropic SDK that still accepts sampling parameters. The p015 environment pins 0.125.0, verified offline only. It needs confirmation in an authorised smoke, or a decision on another model integration.
+- [ ] **Mapping the 015 lite arms onto `clm_context()` settings** (still open).
+
 ## Caching
 
 - [ ] **Breakpoint placement and TTL per arm.** The tool definitions and system text form the first part of the prefix. History-replaying arms and request-rebuilding arms cache differently, so this is a comparison variable that needs a stated rule.

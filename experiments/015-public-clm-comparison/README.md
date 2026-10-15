@@ -1,6 +1,6 @@
 # 015 – Public CLM comparison (programme overview)
 
-**Status (2026-10-15): in preparation. Nothing has run and there are no results.** No API calls of any kind have been made for 015, the ledger has not changed, and no experimental spending ceiling has been agreed.
+**Status (2026-10-15): in preparation. The library port is complete. The harness integration is done and verified offline with scripted models only. Nothing has run against a provider, and there are no results.** No API calls of any kind have been made for 015, the ledger has not changed, and no experimental spending ceiling has been agreed.
 
 ## What this programme is for
 
@@ -33,7 +33,7 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
 | 1 | Shared foundations in clm-lib (SPEC §27): the native-tool transport `native-tools/1`, tool interfaces, counters `session-counters/1`, the task-tool output cap `tool-output-cap/1`, and accounted native dispatch. All opt-in; not yet wired into the runner | **done offline**: scripted-provider tests and one real-sandbox test; no live calls |
 | lib-1 | [guarded-clm](https://github.com/armalite/guarded-clm) library, its chunk 1: configuration, context store, transactional edits and protected turns | done offline, then **superseded** the same day (see below) |
 | lib-port | guarded-clm as a faithful port of an existing, tested Pydantic AI capability (`ClmContext`, `clm_context()`), with offline differential verification and packaging | **done offline** (2026-10-15) |
-| lib-integration | clm-lib hosting the library at recorded provenance for the lite arm | not started |
+| lib-integration | clm-lib hosting the library at recorded provenance (opt-in `clm_lib.p015` path, separate environment) | **done offline** (2026-10-15): scripted and mocked-provider verification only |
 | 2+ | Incident-thread generator and scorer, the arms, the launcher, exports, offline proof through the real runner | not started; **now after the library chunks** (see below) |
 
 **Library-first sequencing (2026-10-15):** the lite arms' context-management runtime is being built as the separate guarded-clm library, which clm-lib will import at a pinned version. The library comes first; its roadmap is in its own `docs/implementation-plan.md`. This supersedes the earlier plan to build the incident-thread generator right after chunk 1.
