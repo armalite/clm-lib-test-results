@@ -34,9 +34,13 @@ _Started 2026-10-15. **No full Phase 0 review has been done or approved.** This 
 
 ## Added 2026-10-15 (library-first sequencing)
 
-- [ ] **How `clm_lite_v2` and `clm_lite_v3_1` map onto the guarded-clm library's configuration** (library plan chunk 5).
+- [ ] **How `clm_lite_v2` and `clm_lite_v3_1` map onto the guarded-clm library's configuration** (now library plan step 3).
+  - The ported library is one capability, `clm_context()`, whose trace variant is `clm_lite_v3_3`.
+  - Whether the 015 lite arms are this design, configurations of it, or need separate definitions is open.
+  - clm-lib's runner isn't Pydantic AI based, so how it hosts the capability is also open.
 - [ ] **The scope of the 144-call cap:** **per session or per user turn.** The draft protocol here says a per-session cap, while the guarded-clm design brief says 144 calls per turn. They conflict, and the conflict is recorded, not resolved.
 - [ ] **The free-step rule:** under the guarded-clm design, a response whose **first** tool call is `edit_context` is a free task step, even when later calls do task work. Confirm whether the lite arms use this rule and how the paper arms' free editing turns compare.
+  - **Note (port):** in the ported library, the step and call counts are per run (one user turn). The model-facing status count can drift from the enforced count (library SPEC 13.9).
 
 ## Caching
 

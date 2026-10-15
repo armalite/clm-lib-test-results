@@ -31,10 +31,14 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
 | Chunk | Content | State |
 | --- | --- | --- |
 | 1 | Shared foundations in clm-lib (SPEC §27): the native-tool transport `native-tools/1`, tool interfaces, counters `session-counters/1`, the task-tool output cap `tool-output-cap/1`, and accounted native dispatch. All opt-in; not yet wired into the runner | **done offline**: scripted-provider tests and one real-sandbox test; no live calls |
-| lib-1 | [guarded-clm](https://github.com/armalite/guarded-clm) library, its chunk 1: configuration, context store, transactional edits and protected turns (its own repository and SPEC) | **done offline** (2026-10-15) |
+| lib-1 | [guarded-clm](https://github.com/armalite/guarded-clm) library, its chunk 1: configuration, context store, transactional edits and protected turns | done offline, then **superseded** the same day (see below) |
+| lib-port | guarded-clm as a faithful port of an existing, tested Pydantic AI capability (`ClmContext`, `clm_context()`), with offline differential verification and packaging | **done offline** (2026-10-15) |
+| lib-integration | clm-lib hosting the library at recorded provenance for the lite arm | not started |
 | 2+ | Incident-thread generator and scorer, the arms, the launcher, exports, offline proof through the real runner | not started; **now after the library chunks** (see below) |
 
-**Library-first sequencing (2026-10-15):** the lite arms' context-management runtime is being built as the separate guarded-clm library, which clm-lib will import at a pinned version. The library comes first; its roadmap is in its own `docs/implementation-plan.md`. This supersedes the earlier plan to build the incident-thread generator right after chunk 1. The generator and scorer are still required. How `clm_lite_v2` and `clm_lite_v3_1` map onto the library is an open decision.
+**Library-first sequencing (2026-10-15):** the lite arms' context-management runtime is being built as the separate guarded-clm library, which clm-lib will import at a pinned version. The library comes first; its roadmap is in its own `docs/implementation-plan.md`. This supersedes the earlier plan to build the incident-thread generator right after chunk 1.
+
+**Correction (2026-10-15):** the library's own independent reconstruction was replaced by a faithful port of an existing, tested implementation. Its API is a Pydantic AI capability; see the library's README and SPEC. No experiment result comes with it, and nothing in 015 has run. The generator and scorer are still required. How `clm_lite_v2` and `clm_lite_v3_1` map onto the library is an open decision.
 
 ## Documents
 
