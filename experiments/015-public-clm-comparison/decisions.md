@@ -73,6 +73,17 @@ _Started 2026-10-15. **No full Phase 0 review has been done or approved.** This 
 - [ ] **Sampling for `paper_clm_shell`:** the README's temperature 0.7 and top_p 0.95 conflict with the intended model, which rejects non-default sampling. This is a material conflict, recorded and not resolved: either the model's defaults (a recorded departure) or another model.
 - [ ] **How reasoning parts are treated** in the mirror (not mirrored offline) and in summaries.
 
+## Settings and launcher (2026-10-16, later)
+
+- [x] **The cap scope:** 144 logical main-model calls per user turn, in every arm (the integrated guarded-clm configuration). Summariser calls are outside it, with their own allowance, and are counted in every total. This settles the per-session versus per-turn item above for the offline contract. It is confirmed at the freeze.
+- [ ] **The summariser allowance:** 24 per turn, provisional ([arm-settings.md](arm-settings.md), "The summariser allowance").
+- [ ] **Thinking:** adaptive (recommended) or disabled; the conflicts are listed in [arm-settings.md](arm-settings.md).
+- [ ] **`max_tokens`:** 8,192 (recommended), 4,096 or 16,384.
+- [ ] **The cache policy:** ordinary 5-minute automatic caching with tool and instruction breakpoints, isolated per session (recommended); or a 1-hour TTL.
+- [ ] **The paper-fidelity questions** ([paper-clm-shell-fidelity.md](paper-clm-shell-fidelity.md), "Open questions").
+- [ ] **The confirmation design:** 18 sessions ([confirmation-design.md](confirmation-design.md)).
+- [x] **The bounded retry policy** `p015-retry/1`, with SDK retries off; and the launcher's spending controls `p015-spend/1`. Both are built and verified offline. No authorisation is implied.
+
 ## Caching
 
 - [ ] **Breakpoint placement and TTL per arm.** The tool definitions and system text form the first part of the prefix. History-replaying arms and request-rebuilding arms cache differently, so this is a comparison variable that needs a stated rule.

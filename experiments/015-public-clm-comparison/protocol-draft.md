@@ -97,3 +97,46 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 - [ ] A frozen protocol.
 
 **There are still no paid results.**
+
+## Note added 2026-10-16, settings and launcher (the draft above is kept as written)
+
+**Settled offline, not frozen:** the comparison contract in [arm-settings.md](arm-settings.md).
+- **Calls:** 144 logical main-model calls per user turn in every arm, which resolves the scope question in favour of per turn, as in the integrated guarded-clm configuration. Summariser calls have their own provisional allowance of 24 per turn and are counted in every total.
+- **Retries:** one bounded policy, `p015-retry/1`, with the SDK's own retries off.
+- **The model configuration** `p015-model/1`: `claude-sonnet-5`; sampling not sent; adaptive thinking at effort `high`; `max_tokens` 8,192; ordinary 5-minute prompt caching, isolated per session.
+- **Prices:** dated, in clm-lib's `configs/prices.toml`.
+
+**Paper fidelity** was reviewed against the agreed source priority ([paper-clm-shell-fidelity.md](paper-clm-shell-fidelity.md)). The default is now the paper's settings: one editing reminder, and last-step rollback up to six times. The README's rules are kept as the alternative profile. Four questions remain open.
+
+**The launcher** (`p015-launch/1`, with spending controls `p015-spend/1`) is built and proven offline ([launcher.md](launcher.md)). **The confirmation design** is proposed as 6 instances × 3 arms = 18 sessions ([confirmation-design.md](confirmation-design.md)).
+
+**Readiness for the docthread comparison:**
+- [x] The three arms, verified offline (scripted).
+- [x] The comparison contract: counters, retries, model, cache and summariser settings, settled offline.
+- [x] The resumable launcher with spending controls, verified offline.
+- [x] Dated prices for `claude-sonnet-5`.
+- [ ] Your decisions:
+  - the paper-fidelity questions;
+  - thinking adaptive or disabled;
+  - `max_tokens`;
+  - the summariser allowance;
+  - the cache TTL;
+  - the confirmation design.
+- [ ] A public pin of guarded-clm for recorded runs.
+- [ ] A ceiling for this experiment on the active clm-lib ledger, which is currently over its stored ceiling, so every live attempt is refused.
+- [ ] **The development smoke,** separately authorised: SDK and framework compatibility on the real API; the model's acceptance of each arm's request shape (thinking replay, edited histories, caching); real token counts and cache behaviour against the estimators; the reservation bound; truncation at `max_tokens`; summariser behaviour.
+- [ ] Any task change after the smoke, recorded before the freeze.
+- [ ] The freeze: protocol, instances (drawn by the confirmation rule), prompts, settings and source state.
+- [ ] A spending authorisation for the confirmation block. **None exists.**
+
+**Remaining for the docthread comparison:** the decisions above; the smoke and its write-up; the freeze and instance generation; the authorised confirmation launch; paired per-instance analysis and the write-up, including every failed or missing run.
+
+**Remaining for the wider public programme** (not started, and not implied by docthread readiness):
+- `paper_clm_tools`, as a labelled adaptation;
+- keep-all and the other planned baselines;
+- the poisoned thread and the other scenarios;
+- the further tasks and ablations in the public plan;
+- separate live comparisons of v1 and v3, if still wanted;
+- each needs its own design, offline proof and authorisation.
+
+**There are still no paid results.**

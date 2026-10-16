@@ -59,7 +59,7 @@ The arms:
 
 Summariser calls go through their own accounting wrapper, so their tokens, cache figures, latency and cost are recorded apart (`category: summary`, ledger kind `p015:summary`). They obey the same authorisation and spending rules, and they receive only what the agent could see.
 
-## Open live items (not resolved here)
+## Open live items as first written (kept as written; resolved or restated below, 2026-10-16)
 
 1. **The scope of the 144-call cap** (per session or per user turn), and **whether summariser calls count** towards it, are open in [decisions.md](decisions.md). All arms use per user turn offline, and summariser calls do not count.
 2. **The summariser cap** (24 per turn) is provisional.
@@ -69,3 +69,155 @@ Summariser calls go through their own accounting wrapper, so their tokens, cache
 6. **Estimators against the real tokenizer:** each arm's estimate is calibrated only on provider-reported usage, which offline sessions do not have.
 7. **Provider compatibility:** the p015 environment's Anthropic SDK pin (0.125.0) and Pydantic AI 2.27.1 need confirming in an authorised smoke. The intended model's price, and the reservation bound's one-token-per-byte assumption, need checking.
 8. **A public pin of guarded-clm** for recorded runs.
+
+## The comparison contract (settled offline, 2026-10-16; not frozen)
+
+### Counting
+
+| Quantity | What it counts | Limit | Where it is recorded |
+| --- | --- | --- | --- |
+| user turns | the eight questions; one `agent.run` each | 8 per session | `turns.jsonl` |
+| logical main-model calls | each model request Pydantic AI makes for the agent | **144 per user turn**, every arm (`UsageLimits(request_limit=144)`; guarded-clm's `ClmStepLimit` enforces the same cap) | `attempts.jsonl` `logical_call`; per-turn counters |
+| provider attempts | each dispatched request, including retries of one logical call | at most 1 + 2 retries per logical call (`p015-retry/1`) | `attempts.jsonl` (`attempt`, `retry`), ledger entries |
+| task steps | each arm's own rule (below) | 60 per user turn | per-turn counters, trace |
+| free editing steps | guarded-clm: a response whose first call is `edit_context`. `paper_clm_shell`: a response whose only call is `bash`, which changed the mirror, exited 0 and printed nothing. Summary arm: none | not counted as task steps; counted as logical calls | trace, per-turn counters |
+| summariser calls | each summary request, and its attempts | **24 per user turn (provisional)**; not task steps; not in the 144 | `attempts.jsonl` `category: summary`, ledger kind `p015:summary` |
+
+**guarded-clm's own counters are unchanged:** `ClmStepLimit.steps` and `ClmStepLimit.calls` count per run (one user turn). They map onto the comparison's reporting as follows:
+- the library's `calls` is the number of logical main-model calls in the turn;
+- the library's `steps` is its task steps;
+- provider attempts and retries come from the accounting wrapper, below the library, so the library never sees a retry.
+
+**The model-visible status** may differ from the enforced count (library SPEC 13.9). Both are recorded. No behaviour was changed to make the arms look equivalent: the free-step rules are the arms' own designs.
+
+**Summariser usage counts in every total.** Its calls, attempts, retries, tokens, cache figures, latency and cost are reported in the totals and by category. Its separate allowance only keeps it from consuming the agent's 144 calls. It is not free.
+
+### Retries
+
+**`p015-retry/1`,** the same in every arm and for the summariser:
+- **What is retried:** a logical call, up to 2 times, after HTTP 429, 500, 502, 503, 504 or 529, or after a connection failure or timeout. Anything else is not retried.
+- **Delays:** 2 s, then 8 s, or the server's `retry-after` if longer, up to 60 s.
+- **Accounting:** every retry is a separately reserved, gate-checked and recorded attempt.
+- **The SDK's own retries are off** (`max_retries=0`; verified over an in-memory transport). The Anthropic SDK otherwise retries twice by default, unseen.
+- **Never retried:** a failed session. After the bounded retries, the session ends as `provider_failure`.
+
+### The model configuration (`p015-model/1`, recommended for all three arms)
+
+**Sources,** retrieved 2026-10-16:
+- the pricing page, https://platform.claude.com/docs/en/about-claude/pricing;
+- the thinking page, https://platform.claude.com/docs/en/build-with-claude/thinking;
+- the extended-thinking page, https://platform.claude.com/docs/en/build-with-claude/extended-thinking;
+- Anthropic's model reference, cached 2026-10-06.
+
+| Setting | Value | Basis |
+| --- | --- | --- |
+| model | `claude-sonnet-5` | the requested model; its exact ID in the provider's model list. Not substituted |
+| sampling | not sent | Claude Sonnet 5 rejects non-default `temperature`, `top_p` and `top_k`. **A recorded adaptation:** the paper's 0.7 / 0.95 cannot be reproduced |
+| thinking | adaptive (the model's default; `thinking` not sent) | thinking is on by default on Sonnet 5; `disabled` is the alternative (below) |
+| effort | `high` (explicit; the model's default) | |
+| `max_tokens` | 8,192, shared (thinking and response together) | the paper uses 4,096 per call for BrowseComp-Plus and 8,192 for EdgeBench-10; the README 16,384. 8,192 leaves room for adaptive thinking at `high`; the truncation rate is a smoke item |
+| output limit of the model | 128K; context window 1M | the comparison's 32,000 budget is the arms' own limit, not the model's |
+| prices (per million tokens) | input $2.00; 5-minute cache write $2.50; 1-hour write $4.00; cache read $0.20; output $10.00 | the pricing page: the $2/$10 price, announced as introductory, "is now the standard price". In `configs/prices.toml` with source and date |
+| caching | ordinary automatic prompt caching, 5-minute TTL, plus explicit breakpoints after the tool definitions and after the instructions | the same in every arm (Pydantic AI `anthropic_cache`, `anthropic_cache_tool_definitions`, `anthropic_cache_instructions`) |
+| session isolation | each session's system prompt starts with `run-ref: <32 hexadecimal characters>`, fixed in the launch contract | independent sessions never share a cached prefix; a session reuses its own. Not Suffix Cache Reuse |
+| retries | SDK off; `p015-retry/1` | above |
+
+**Framework and model compatibility, kept apart:**
+- **Pydantic AI 2.27.1 with Anthropic SDK 0.125.0** sends the configuration as specified. Verified offline over an in-memory transport: no sampling fields, no `thinking` field, `output_config.effort`, top-level `cache_control`, breakpoints on the last tool and the system text, and the `run-ref` line first. This shows the request shape only.
+- **The model's acceptance** of these requests, real usage and cache behaviour have not been checked, because no live call was made. They are smoke items.
+
+**Reasoning (thinking) and request reconstruction:**
+- **No reasoning is editable task evidence.** Thinking parts are not mirrored in `paper_clm_shell`, not summarised, and not shown in guarded-clm's working context.
+- **Signatures are preserved:**
+  - an unchanged mirror block reuses the original message, with its thinking blocks and signatures;
+  - the block holding the running command must stay unchanged, so the last assistant turn of a tool loop keeps its thinking, as the provider requires;
+  - the summary arm's kept tail is passed back unchanged;
+  - guarded-clm sends a single rebuilt user message, so no assistant turn or thinking block is replayed.
+- **The preserved-thinking history check** (the conversation binding of thinking blocks) starts with Claude Fable 5.1, per the thinking page. Claude Sonnet 5 is not in it, so editing, rolling back or summarising earlier turns does not invalidate later thinking blocks there.
+- **Conflict to settle before freezing:**
+  - **Hidden context:** Sonnet 5 keeps prior turns' thinking blocks in context and bills them as input. Where an arm replays original assistant turns (`paper_clm_shell`, the summary arm's tail), hidden thinking adds to the real context and cost. The arm's estimator and mirror cannot see it, and guarded-clm never replays it. This is a genuine arm difference under adaptive thinking.
+  - **Edited assistant blocks:** blocks rebuilt from an edit carry no thinking. That an earlier assistant turn without its thinking block is accepted is expected, but it is a smoke item.
+  - **The alternative:** `thinking: {type: "disabled"}`, which Sonnet 5 accepts. It removes both issues. Per the provider's migration guidance, the model is then less tool-eager, and Opus-class models have shown tool calls written as text.
+  - **Recommendation:** adaptive thinking, with the per-arm reported input and thinking tokens measured in the development smoke. This needs your decision.
+
+### The summariser allowance (24 per user turn, provisional)
+
+**What it is for:** a runaway guard. A broken summariser, or one whose summaries never fit, cannot spend without bound, and summariser calls do not consume the agent's 144.
+
+**Natural need, from the offline sessions:**
+- 1 to 3 summariser calls per session; at most 2 in one turn.
+- A summary brings the request to about 50% of the budget (the target). Pressure returns at 70%, so a turn needs about 6,400 new estimated tokens per summary episode, and an episode takes at most 2 calls.
+- Question 1's natural investigation reads about 100,000 characters: roughly 25,000 to 38,000 tokens at 4 to 2.6 characters per token. That is about 4 to 6 episodes, so 8 to 12 calls in the worst case.
+- **24 is about twice the natural worst turn.** It can bind only in a turn that reads far more than the natural investigation, with retries.
+
+**Worst-case exposure with the allowance:**
+- **Per turn:** 24 calls, each with at most about 33,000 input tokens and 8,192 output tokens: about $0.15 at confirmed prices, so about $3.6.
+- **Per session:** about $29.
+- **Reservations** per call are higher (the bound assumes one token per byte at the cache-write rate: about $0.37 a call). They are settled down after each call, and the block stop counts them while open.
+
+**There is no stronger basis:** the figure stays provisional until the development smoke shows real summariser behaviour.
+
+## Cost scenarios (2026-10-16; not a forecast)
+
+**Inputs:** confirmed `claude-sonnet-5` prices (above) applied to the recorded scripted sessions. Their input-token counts are **synthetic**: 2.6 characters of message content per token, declared and not measured.
+
+**Assumptions:**
+- **Output** per main or summariser call: 500 tokens (scenario A) or 1,500 tokens including thinking (B and C).
+- **Calls:** C doubles the calls, for an agent that searches instead of knowing where facts are.
+- **Caching:** ordinary 5-minute prefix caching with perfect reuse within a session. Each request's leading unchanged content is read at $0.20, and everything after it is written at $2.50 (automatic caching writes the whole new suffix). Tool definitions and instructions are left out of the shared prefix, so cache reads are slightly understated.
+- **Coverage:** the recorded sessions only, under the scripted policies. guarded-clm `keep` and `paper_clm_shell` `keep` stand for an agent that tidies only under pressure; `tidy` is the low end.
+
+**Per session, in USD** (development instances 1 and 2; with the cache model, and without caching in brackets):
+
+| arm (scripted policy) | calls | input tokens | reused prefix | A | B | C |
+| --- | --- | --- | --- | --- | --- | --- |
+| guarded-clm, tidy | 38, 39 | 147k, 150k | 6% | 0.54, 0.55 (0.48, 0.50) | 0.92, 0.94 | 1.83, 1.88 |
+| guarded-clm, keep | 36, 37 | 530k, 590k | 1% | 1.49, 1.65 (1.24, 1.36) | 1.85, 2.02 | 3.70, 4.03 |
+| `paper_clm_shell`, tidy | 75, 77 | 175k, 179k | 54% | 0.59, 0.61 (0.73, 0.74) | 1.34, 1.38 | 2.69, 2.76 |
+| `paper_clm_shell`, keep | 37, 38 | 453k, 507k | 90% | 0.39, 0.41 (1.09, 1.20) | 0.76, 0.79 | 1.52, 1.58 |
+| summary (incl. 1 to 2 summariser calls) | 39, 40 | 505k, 543k | 81% | 0.53, 0.54 (1.21, 1.28) | 0.92, 0.94 | 1.83, 1.87 |
+
+**Reading it:**
+- **Layout drives the cache effect.** guarded-clm rebuilds the whole request on every call, so automatic caching writes nearly all its input at 1.25× and reuses only the system part. With caching on, it costs 10 to 20% more than without. The arms that append history reuse 54 to 90% of their input. This is a genuine layout difference, and it is kept as one common policy, not tuned per arm.
+- **18 confirmation sessions** (6 instances × 3 arms), from the `keep` and summary rows:
+  - about **$15** in scenario A;
+  - about **$22** in B;
+  - about **$43** in C.
+- **A first development smoke** (one development instance, three arms, all eight questions): about **$2.5 to $7**.
+
+**Conservative bounds** (what the controls allow, not an expectation):
+- **Per attempt:** the reservation assumes at most one token per byte of the request, at the cache-write rate, plus `max_tokens` of output. That is up to about $0.28 for a request near the 32,000-token budget, and about $0.37 for a large summariser request. It is settled down to the confirmed cost after the call.
+- **Per session, at the caps:**
+  - main calls: 8 turns × 144 calls × about $0.14 at most each (about 31,000 input and 8,192 output tokens) gives about **$166**;
+  - summariser calls: 8 × 24 × about $0.15 gives about **$29**.
+
+  These caps are not a practical budget. **The block stop is the real bound,** checked before every attempt.
+
+**What only a separately authorised development smoke can settle:**
+- real token counts against the synthetic 2.6 characters per token;
+- output and thinking tokens per call;
+- hidden thinking replayed as input in `paper_clm_shell` and the summary arm;
+- real cache reads and writes, and TTL expiry between calls;
+- real call counts (search, mistakes, retries);
+- real summaries;
+- truncation at `max_tokens`;
+- 429 and 529 retries.
+
+**Scripted costs are not a live forecast.**
+
+## Open items (2026-10-16)
+
+1. **The fidelity questions** in [paper-clm-shell-fidelity.md](paper-clm-shell-fidelity.md): the reminder point and its repetition, the rejected-edit free-step rule, and the profile.
+2. **Thinking:** adaptive (recommended) or disabled.
+3. **`max_tokens`:** 8,192 (recommended), 4,096 (the paper's BrowseComp-Plus value) or 16,384 (README).
+4. **The summariser allowance** (24, provisional).
+5. **Cache TTL:** 5 minutes (recommended; sessions run continuously) or 1 hour.
+6. **Smoke items:**
+   - SDK and framework compatibility on the real API;
+   - the model's acceptance of each arm's request shape (thinking replay, edited histories, caching);
+   - real token counts against the arms' estimators;
+   - the reservation bound's assumption;
+   - truncation at `max_tokens`;
+   - cache reads and writes per arm.
+7. **A public pin of guarded-clm** for recorded runs.
+8. **The active clm-lib ledger:** spent $88.10 against a stored $10.00 ceiling. Any live attempt is refused there until the maintainer sets a ceiling for this experiment. Nothing here changes it.

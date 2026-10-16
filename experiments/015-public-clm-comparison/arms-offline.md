@@ -121,3 +121,29 @@ The tests are in clm-lib (`tests/p015/test_paper_shell.py`, 23; `test_summary_ar
 - **The scripted agent knows where the facts are.** A real agent has to search for them.
 - **The scripted summariser is extractive.** A model's summary may carry more or fewer facts.
 - **Every live setting is open:** see [arm-settings.md](arm-settings.md) and [decisions.md](decisions.md).
+
+## Rerun after the source-priority review (2026-10-16, later)
+
+**What changed:** the paper arm's default is now the `paper` profile: one editing reminder 2,048 tokens before the limit, and last-step rollback up to six times ([paper-clm-shell-fidelity.md](paper-clm-shell-fidelity.md)). The README rules are the `readme` profile. The matrix now has 23 sessions, two of them new.
+
+**Results:** all 23 were exported and verified without a problem. Sessions not listed below gave the same endings, points, requests and peak sizes as before.
+
+**Abbreviations:**
+- **notices:** editing reminders / size nudges / persistent nudges;
+- **rollb.:** rollback events / steps rolled back / final over-limit notices.
+
+| session | label | endings | points | req | peak chars | peak est. | notices | edits (applied/rejected/free) | rollb. |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| paper-dev1-keep-synthetic | ordinary | 8 completed | 10/10 | 37 | 70,016 | 27,963 | 0/0/0 | 1/0/1 | 1/1/0 |
+| paper-dev1-keep-fixed | ordinary | 8 completed | 10/10 | 37 | 85,145 | 28,032 | 1/0/0 | 1/0/1 | 0/0/0 |
+| paper-dev2-keep-synthetic | ordinary | 8 completed | 10/10 | 38 | 70,019 | 27,960 | 0/0/0 | 1/0/1 | 1/1/0 |
+| paper-dev2-keep-fixed | ordinary | 8 completed | 10/10 | 38 | 89,376 | 27,964 | 1/0/0 | 1/0/1 | 0/0/0 |
+| paper-dev1-never-synthetic-stress | stress | context_limit | 0/10 | 19 | 76,802 | 30,518 | 1/0/0 | 0/0/0 | 6/6/1 |
+| paper-dev1-never-3-rollbacks-stress | stress | context_limit | 0/10 | 16 | 76,802 | 30,518 | 1/0/0 | 0/0/0 | 3/3/1 |
+| paper-dev1-never-readme-stress (new) | stress | step_limit | 0/10 | 60 | 70,240 | 28,055 | 0/3/49 | 0/0/0 | 48/48/0 |
+| paper-dev1-keep-synthetic-readme (new) | alternative | 8 completed | 10/10 | 36 | 69,970 | 27,916 | 0/5/1 | 1/0/1 | 0/0/0 |
+
+**Notes:**
+- **A reminder can be skipped.** With synthetic usage, one journal page adds about 2,500 estimated tokens, more than the reminder's 2,048-token margin. The `keep` sessions therefore went from below the reminder point to over the limit in one step: they got no reminder, one step was rolled back, and the rollback notice led to the edit. With the fixed ratio, a page adds less, and the reminder came first. This follows from the paper's margin and the size of the outputs, and it bears on the open reminder questions.
+- **The never-editing agent** now ends as `context_limit`, after six one-step rollbacks and one final over-limit request. Under the README profile it reaches the 60-step limit after 48 rollbacks, as before.
+- **The launcher:** its offline proof is in clm-lib, `tests/p015/test_launcher.py`. It covers a three-arm matrix with the real sandbox, restarts, interruption with an attempt in flight, stops, spend refusals (the summariser included), competing launchers, fingerprint changes, and complete and partial exports. See [launcher.md](launcher.md).

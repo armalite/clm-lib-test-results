@@ -3,6 +3,7 @@
 **Status (2026-10-16): in preparation.**
 - The guarded-clm library is complete.
 - The harness integration and the public incident-thread workload (`docthread`) are done, verified offline with scripted models only.
+- The comparison settings are settled offline, and a resumable launcher with spending controls is built. Both are verified with scripted models only ([arm-settings.md](arm-settings.md), [launcher.md](launcher.md)).
 - The three core arms run offline on docthread: guarded-clm, `paper_clm_shell` and the summary baseline (`token-tail-p015/1`). This is verified with scripted models, and the real sandbox for the shell arm ([arms-offline.md](arms-offline.md)).
 - Nothing has run against a provider, and there are no results. No API calls of any kind have been made for 015, the ledger has not changed, and no experimental spending ceiling has been agreed.
 
@@ -49,7 +50,8 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
 | lib-integration | clm-lib hosting the library at recorded provenance (opt-in `clm_lib.p015` path, separate environment) | **done offline** (2026-10-15): scripted and mocked-provider verification only |
 | workload | The public incident-thread workload, `docthread` (generator, tools, task, scorer, scripted investigator): see [docthread-workload.md](docthread-workload.md) | **done offline** (2026-10-16): scripted verification only, no model results |
 | arms | `paper_clm_shell` (`paper-clm-shell/1`) and the summary baseline (`token-tail-p015/1`) on the p015 path, with the fidelity mapping, the settings table and the offline sessions: [paper-clm-shell-fidelity.md](paper-clm-shell-fidelity.md), [arm-settings.md](arm-settings.md), [arms-offline.md](arms-offline.md) | **done offline** (2026-10-16): scripted verification only, no model results; `paper_clm_tools` and every other arm deferred |
-| 2+ | The launcher, confirmation instances, paired analysis, then any authorised live work | not started |
+| settings + launcher | The comparison contract (counters, retries, model, cache and summariser settings), the paper-fidelity review, the proposed 18-session confirmation design, and the resumable launcher with spending controls: [arm-settings.md](arm-settings.md), [paper-clm-shell-fidelity.md](paper-clm-shell-fidelity.md), [confirmation-design.md](confirmation-design.md), [launcher.md](launcher.md) | **done offline** (2026-10-16): decisions listed for the maintainer; no live call |
+| 2+ | The development smoke, the freeze, the confirmation launch and paired analysis | not started; each needs a separate authorisation |
 
 **Library-first sequencing (2026-10-15):** the lite arms' context-management runtime is being built as the separate guarded-clm library, which clm-lib will import at a pinned version. The library comes first; its roadmap is in its own `docs/implementation-plan.md`. This supersedes the earlier plan to build the incident-thread generator right after chunk 1.
 
@@ -61,6 +63,7 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
 - [`decisions.md`](decisions.md): a checklist of the decisions still open. **No full Phase 0 review has been done or approved.**
 - [`docthread-workload.md`](docthread-workload.md): the workload, its offline sessions and the proposed confirmation-instance rule.
 - [`paper-clm-shell-fidelity.md`](paper-clm-shell-fidelity.md), [`arm-settings.md`](arm-settings.md) and [`arms-offline.md`](arms-offline.md): the paper and summary arms.
+- [`confirmation-design.md`](confirmation-design.md) and [`launcher.md`](launcher.md): the proposed confirmation design and how to run the launcher.
 
 ## Model and sources
 
