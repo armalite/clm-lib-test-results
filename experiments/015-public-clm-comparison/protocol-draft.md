@@ -140,3 +140,49 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 - each needs its own design, offline proof and authorisation.
 
 **There are still no paid results.**
+
+## Note added 2026-10-16, strict ratio learning and corrections (the draft above is kept as written)
+
+- **guarded-clm configuration:** the 015 comparison configuration sets `strict_ratio_learning=True` explicitly. It was verified offline against guarded-clm `db619a8` (0.2.0.dev0) in [strict-ratio-verification.md](strict-ratio-verification.md).
+  - **Kept apart:** the earlier offline verification used guarded-clm 0.1.0, without the option. There are still no live results.
+  - **Still pending:** the library's default (False now) and the final live revision pin.
+- **Correction to the readiness item above,** "A ceiling for this experiment on the active clm-lib ledger, which is currently over its stored ceiling, so every live attempt is refused":
+  - **The ledger:** the stored ceiling is $89.457271, with $88.099746 spent; the $10.00 figure was a default configuration applied in memory by `clm-lib budget` ([arm-settings.md](arm-settings.md), open item 8).
+  - **What refuses live attempts now:** the absence of any 015 authorisation.
+  - **No carry-over:** room left from earlier experiments does not authorise 015.
+- **Explicit live settings:** a live launch plan is now refused unless every experimental choice is stated (arm-settings.md, "Corrections and additions"). The proposed values are in clm-lib's `configs/p015/proposed-comparison.json`. They are proposals, and stating them is not a spending authorisation.
+
+**Readiness (updated):**
+- [x] guarded-clm's strict ratio learning integrated, explicitly enabled in the proposed configuration, and verified offline (scripted and provider-like usage only).
+- [x] Live plans refuse unstated experimental choices.
+- [x] The documentation corrections from the read-only review.
+- [ ] guarded-clm's library-default decision, then a final live revision pin.
+- [ ] The decisions still listed in arm-settings.md and decisions.md: thinking, effort, `max_tokens`, the cache TTL and breakpoints, the retry count, the summariser allowance, the paper profile and its three rules, the 60-step limit and the confirmation design.
+- [ ] A 015 authorisation and, if the active ledger is used, an explicit ceiling change for 015. **None exists.**
+- [ ] The separately authorised development smoke. It also checks the live SDK and model compatibility items listed in the earlier readiness notes.
+- [ ] The freeze.
+
+## Note added 2026-10-16, pause (the draft above is kept as written)
+
+**Paused (2026-10-16): programme 015 is waiting for a revised guarded-clm release.**
+- **Superseded:** the proposed configuration with `strict_ratio_learning=True` (clm-lib `configs/p015/proposed-comparison.json`). It must not be used for live runs. The library's design is being revised; the option is expected to be replaced by a narrower backstop, which is not yet available.
+- **Still valid, but only for what they recorded:** the strict-learning checks in [strict-ratio-verification.md](strict-ratio-verification.md) hold for guarded-clm `db619a8` (0.2.0.dev0) with the settings recorded there.
+- **Still in place:** the launcher's explicit-live-settings validation and the documentation corrections.
+- **Next step:** inspect the new library revision, update the integration and the proposed configuration, and verify them offline.
+- **No 015 live calls or spending are authorised.**
+
+## Note added 2026-10-16, accepted library (the draft and the pause note above are kept as written)
+
+**Status:** accepted library integrated and verified offline; live readiness decisions and spending authorisation remain outstanding.
+
+- **The pause above has ended.** guarded-clm 0.2.0.dev1 (`3f18473`, the always-on implausible-ratio backstop) is integrated without the removed option and verified offline ([backstop-verification.md](backstop-verification.md)).
+- **The strict-learning configuration** is superseded and refused by the launcher.
+- **The current proposed configuration** is clm-lib `configs/p015/proposed-comparison-0.2.0.dev1.json`.
+
+**Readiness (updated):**
+- [x] The accepted guarded-clm implementation integrated, pinned (version, revision, fingerprint) and verified offline.
+- [x] Live plans state every choice. Obsolete and superseded configurations are refused.
+- [ ] The decisions still open: thinking, effort, `max_tokens`, the cache TTL and breakpoints, the retry count, the summariser allowance, the paper profile and its three rules, the 60-step limit and the confirmation design.
+- [ ] A 015 authorisation and, if the active ledger is used, an explicit ceiling change for 015. **None exists.**
+- [ ] The separately authorised development smoke.
+- [ ] The freeze.

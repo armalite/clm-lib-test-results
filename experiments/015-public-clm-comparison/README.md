@@ -1,6 +1,14 @@
 # 015 – Public CLM comparison (programme overview)
 
 **Status (2026-10-16): in preparation.**
+
+**Accepted library integrated and verified offline; live readiness decisions and spending authorisation remain outstanding** (2026-10-16).
+- **The library:** guarded-clm 0.2.0.dev1 at `3f18473` (the always-on implausible-ratio backstop), integrated and verified offline ([backstop-verification.md](backstop-verification.md)).
+- **Current proposed configuration:** clm-lib `configs/p015/proposed-comparison-0.2.0.dev1.json`. Its other settings are still proposals.
+- **Ended:** the earlier pause, which was waiting for the revised library (recorded in [protocol-draft.md](protocol-draft.md)).
+- **Superseded and refused by the launcher:** the strict-learning configuration. Its checks ([strict-ratio-verification.md](strict-ratio-verification.md)) remain valid only for `db619a8` and the settings recorded there.
+- **No 015 live calls or spending are authorised.**
+
 - The guarded-clm library is complete.
 - The harness integration and the public incident-thread workload (`docthread`) are done, verified offline with scripted models only.
 - The comparison settings are settled offline, and a resumable launcher with spending controls is built. Both are verified with scripted models only ([arm-settings.md](arm-settings.md), [launcher.md](launcher.md)).
@@ -51,6 +59,8 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
 | workload | The public incident-thread workload, `docthread` (generator, tools, task, scorer, scripted investigator): see [docthread-workload.md](docthread-workload.md) | **done offline** (2026-10-16): scripted verification only, no model results |
 | arms | `paper_clm_shell` (`paper-clm-shell/1`) and the summary baseline (`token-tail-p015/1`) on the p015 path, with the fidelity mapping, the settings table and the offline sessions: [paper-clm-shell-fidelity.md](paper-clm-shell-fidelity.md), [arm-settings.md](arm-settings.md), [arms-offline.md](arms-offline.md) | **done offline** (2026-10-16): scripted verification only, no model results; `paper_clm_tools` and every other arm deferred |
 | settings + launcher | The comparison contract (counters, retries, model, cache and summariser settings), the paper-fidelity review, the proposed 18-session confirmation design, and the resumable launcher with spending controls: [arm-settings.md](arm-settings.md), [paper-clm-shell-fidelity.md](paper-clm-shell-fidelity.md), [confirmation-design.md](confirmation-design.md), [launcher.md](launcher.md) | **done offline** (2026-10-16): decisions listed for the maintainer; no live call |
+| strict ratio | guarded-clm's `strict_ratio_learning`, explicitly enabled in the proposed 015 configuration and verified offline against `db619a8` ([strict-ratio-verification.md](strict-ratio-verification.md)); review corrections; live plans must state every experimental choice | done offline (2026-10-16); **superseded** the same day by the accepted library row below |
+| accepted library | guarded-clm 0.2.0.dev1 (`3f18473`) integrated without the removed option; obsolete and superseded configurations refused; the library pinned in the successor configuration ([backstop-verification.md](backstop-verification.md)) | **done offline** (2026-10-16); succeeds the strict-ratio row above |
 | 2+ | The development smoke, the freeze, the confirmation launch and paired analysis | not started; each needs a separate authorisation |
 
 **Library-first sequencing (2026-10-15):** the lite arms' context-management runtime is being built as the separate guarded-clm library, which clm-lib will import at a pinned version. The library comes first; its roadmap is in its own `docs/implementation-plan.md`. This supersedes the earlier plan to build the incident-thread generator right after chunk 1.
@@ -64,6 +74,8 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
 - [`docthread-workload.md`](docthread-workload.md): the workload, its offline sessions and the proposed confirmation-instance rule.
 - [`paper-clm-shell-fidelity.md`](paper-clm-shell-fidelity.md), [`arm-settings.md`](arm-settings.md) and [`arms-offline.md`](arms-offline.md): the paper and summary arms.
 - [`confirmation-design.md`](confirmation-design.md) and [`launcher.md`](launcher.md): the proposed confirmation design and how to run the launcher.
+- [`strict-ratio-verification.md`](strict-ratio-verification.md): guarded-clm with strict ratio learning, verified offline (superseded; valid only for `db619a8`).
+- [`backstop-verification.md`](backstop-verification.md): the accepted guarded-clm 0.2.0.dev1, integrated and verified offline.
 
 ## Model and sources
 

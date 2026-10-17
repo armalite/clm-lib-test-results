@@ -119,7 +119,7 @@ Summariser calls go through their own accounting wrapper, so their tokens, cache
 | output limit of the model | 128K; context window 1M | the comparison's 32,000 budget is the arms' own limit, not the model's |
 | prices (per million tokens) | input $2.00; 5-minute cache write $2.50; 1-hour write $4.00; cache read $0.20; output $10.00 | the pricing page: the $2/$10 price, announced as introductory, "is now the standard price". In `configs/prices.toml` with source and date |
 | caching | ordinary automatic prompt caching, 5-minute TTL, plus explicit breakpoints after the tool definitions and after the instructions | the same in every arm (Pydantic AI `anthropic_cache`, `anthropic_cache_tool_definitions`, `anthropic_cache_instructions`) |
-| session isolation | each session's system prompt starts with `run-ref: <32 hexadecimal characters>`, fixed in the launch contract | independent sessions never share a cached prefix; a session reuses its own. Not Suffix Cache Reuse |
+| session isolation (corrected 2026-10-16) | each session's system prompt starts with `run-ref: <32 hexadecimal characters>`, fixed in the launch contract | the instruction and automatic breakpoints follow it, so those prefixes are session-specific, and a session reuses its own. **Not complete:** the tool definitions precede the system prompt, so the tool-definition breakpoint's prefix is not session-specific; summariser requests carry no `run-ref` line. The practical effect is not known without live evidence. Not Suffix Cache Reuse |
 | retries | SDK off; `p015-retry/1` | above |
 
 **Framework and model compatibility, kept apart:**
@@ -135,7 +135,10 @@ Summariser calls go through their own accounting wrapper, so their tokens, cache
   - guarded-clm sends a single rebuilt user message, so no assistant turn or thinking block is replayed.
 - **The preserved-thinking history check** (the conversation binding of thinking blocks) starts with Claude Fable 5.1, per the thinking page. Claude Sonnet 5 is not in it, so editing, rolling back or summarising earlier turns does not invalidate later thinking blocks there.
 - **Conflict to settle before freezing:**
-  - **Hidden context:** Sonnet 5 keeps prior turns' thinking blocks in context and bills them as input. Where an arm replays original assistant turns (`paper_clm_shell`, the summary arm's tail), hidden thinking adds to the real context and cost. The arm's estimator and mirror cannot see it, and guarded-clm never replays it. This is a genuine arm difference under adaptive thinking.
+  - **Retained thinking (corrected 2026-10-16):** Sonnet 5 keeps prior turns' thinking blocks in context and bills them as input. Where an arm replays original assistant turns (`paper_clm_shell`, the summary arm's tail), the replayed thinking adds to the real context and cost. guarded-clm never replays it. This is a genuine arm difference under adaptive thinking.
+    - **What the estimates see:** the paper and summary arms' overall request estimates **do account for it**. The request's serialised form includes each replayed block's signature, and the ratio calibrates on reported input, which includes the billed thinking. The earlier wording said that their estimators cannot see it, which was wrong.
+    - **What remains:** the model-visible mirror and the summariser transcript do not show thinking. Whether signature size tracks thinking tokens per request is a live item.
+    - **A limitation to observe later:** the summary arm's tail split sizes its units from visible text only, so a kept tail can hold more real tokens than token-tail's allowance intends. Its algorithm is unchanged.
   - **Edited assistant blocks:** blocks rebuilt from an edit carry no thinking. That an earlier assistant turn without its thinking block is accepted is expected, but it is a smoke item.
   - **The alternative:** `thinking: {type: "disabled"}`, which Sonnet 5 accepts. It removes both issues. Per the provider's migration guidance, the model is then less tool-eager, and Opus-class models have shown tool calls written as text.
   - **Recommendation:** adaptive thinking, with the per-arm reported input and thinking tokens measured in the development smoke. This needs your decision.
@@ -220,4 +223,49 @@ Summariser calls go through their own accounting wrapper, so their tokens, cache
    - truncation at `max_tokens`;
    - cache reads and writes per arm.
 7. **A public pin of guarded-clm** for recorded runs.
-8. **The active clm-lib ledger:** spent $88.10 against a stored $10.00 ceiling. Any live attempt is refused there until the maintainer sets a ceiling for this experiment. Nothing here changes it.
+8. **The active clm-lib ledger** (corrected 2026-10-16; read without modification):
+   - **The figures:** stored ceiling $89.457271 (an absolute cumulative ceiling, last set for experiment 014); spent $88.099746; $1.357525 below the ceiling.
+   - **The earlier "$10.00" was wrong.** It came from `clm-lib budget` run without `--config`. That loads `configs/default.toml` (`ceiling_usd = 10.0`) and reports the lower of the stored and configured ceilings, in memory. It is not a persisted change to the stored ceiling.
+   - **What refuses live spending now:** the absence of any 015 authorisation, not the ledger.
+   - **No carry-over:** remaining room from earlier experiments' authorisations does not authorise programme 015. A 015 launch needs its own authorisation, and an explicit ceiling change if it uses this ledger. Nothing here changes either.
+
+## Corrections and additions (2026-10-16, after the read-only review)
+
+**The review's conclusion:** no accidental biasing defect was found in the checks performed (the request construction of each arm, the cache breakpoints, the counters and the ledger). That is not proof that no bias is possible.
+
+**Three statements were corrected in place above:**
+- the cache isolation row;
+- the retained-thinking bullet;
+- open item 8 (the ledger).
+
+**Their earlier wording:**
+- "independent sessions never share a cached prefix";
+- "The arm's estimator and mirror cannot see it";
+- "spent $88.10 against a stored $10.00 ceiling".
+
+**What remains unchanged:** thinking-history handling, cache placement, the arms' estimators, the model settings and the paper-fidelity rules. The review evidence is a local, ignored clm-lib file, and the corrections are restated here.
+
+**guarded-clm `strict_ratio_learning`** (superseded 2026-10-16, later: removed in guarded-clm 0.2.0.dev1; the next paragraph is kept as the record of what was proposed, and is not a current instruction):
+- the proposed 015 configuration sets it to **True**, explicitly, whatever the library default becomes;
+- the library revision used offline is `db619a8`;
+- see [strict-ratio-verification.md](strict-ratio-verification.md).
+
+The library default is False, and clm-lib's own harness default for older specs is False.
+
+**Explicit live settings:**
+- **A live plan is refused** unless it states:
+  - thinking;
+  - effort, or null for not sent;
+  - `max_tokens`;
+  - the cache TTL and breakpoints;
+  - `max_retries` with `retry_policy: "p015-retry/1"`;
+  - and, for the arms selected: guarded-clm's library pin (version, revision, source fingerprint; replacing `strict_ratio_learning`, 2026-10-16); the paper arm's profile, `reminder_before_tokens` and the three implemented `paper_rules`; and the summariser allowance.
+- **The proposed values** are in clm-lib's `configs/p015/proposed-comparison-0.2.0.dev1.json` (the earlier `proposed-comparison.json` is superseded), whose `settings_status` separates the approved choices from the proposed ones. **A value there is not an approval and not a spending authorisation.**
+
+## The accepted library (2026-10-16, later)
+
+**guarded-clm 0.2.0.dev1** (`3f18473`) replaces the strict-learning configuration ([backstop-verification.md](backstop-verification.md)).
+- **No settings:** the guarded arm takes no strict-learning setting, and a configuration naming one is refused.
+- **Its estimates differ from 0.1.0** only where a request would have taught a ratio below 0.5 characters per token.
+- **Open item 7 above** ("A public pin of guarded-clm for recorded runs") is met offline. The successor configuration states the version, revision and fingerprint, and `plan` checks them against the loaded library.
+- **The other open items are unchanged and unapproved.**

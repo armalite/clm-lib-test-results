@@ -84,6 +84,27 @@ _Started 2026-10-15. **No full Phase 0 review has been done or approved.** This 
 - [ ] **The confirmation design:** 18 sessions ([confirmation-design.md](confirmation-design.md)).
 - [x] **The bounded retry policy** `p015-retry/1`, with SDK retries off; and the launcher's spending controls `p015-spend/1`. Both are built and verified offline. No authorisation is implied.
 
+## guarded-clm strict ratio learning (2026-10-16; superseded the same day, kept as a record; not current decisions)
+
+- [x] **The 015 configuration sets `strict_ratio_learning=True` explicitly** (the maintainer's decision, 2026-10-16). It does not depend on the library's default, which is False. Offline verification: [strict-ratio-verification.md](strict-ratio-verification.md), against guarded-clm `db619a8`, 0.2.0.dev0.
+- (superseded, no longer open) **guarded-clm's own default** for the option: the option was removed in 0.2.0.dev1.
+- (superseded, no longer open) **The final live revision pin after that decision:** replaced by the accepted-library item below.
+- [x] **clm-lib's harness default** for specs that omit the field is False: the earlier integration behaviour. It is always passed explicitly.
+
+- **Superseded (2026-10-16, later):** the strict-learning configuration above must not be used for live runs. guarded-clm is being revised, and the option is expected to be replaced by a narrower backstop. The integration and the proposed configuration will be updated, and verified offline, against the new revision. The checks against `db619a8` remain valid for that revision and its recorded settings only.
+
+## The accepted guarded-clm implementation (2026-10-16)
+
+- [x] **guarded-clm 0.2.0.dev1 at `3f184734362c4c9e24d7f5e2a2d6de5fa18153dd`** (source sha256 `51e6dbe8…d9e4`), with its always-on implausible-ratio backstop, is the library implementation for 015. Integrated and verified offline: [backstop-verification.md](backstop-verification.md).
+- [x] **The pin:** the successor configuration (clm-lib `configs/p015/proposed-comparison-0.2.0.dev1.json`) states the version, revision and source fingerprint. `plan` refuses a live plan without them, or one whose pin differs from the loaded library.
+- [x] **The removed option is refused:** any configuration naming `strict_ratio_learning` is refused with a migration error, whatever its value.
+- **What this does not do:** freeze the live protocol or authorise a smoke.
+
+## Explicit live settings (2026-10-16)
+
+- [x] **A live launch plan must state every experimental choice.** It is refused otherwise, before anything is written. Proposed values are in clm-lib's `configs/p015/proposed-comparison.json`, with `settings_status` separating approved from proposed. **A stated value is not an approval and not a spending authorisation.**
+- [ ] **The proposed values themselves:** thinking adaptive, effort `high`, `max_tokens` 8,192, a 5-minute cache with three breakpoints, 2 retries, a summariser allowance of 24, the paper profile with its three rules, and the inherited 60 steps and 32,000 budget. **None of these is approved.**
+
 ## Caching
 
 - [ ] **Breakpoint placement and TTL per arm.** The tool definitions and system text form the first part of the prefix. History-replaying arms and request-rebuilding arms cache differently, so this is a comparison variable that needs a stated rule.

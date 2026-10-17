@@ -34,6 +34,18 @@ launch directory. It is specified in clm-lib SPEC §31.
 - **Paths:** give the ledger and authorisation paths in the spec relative to the clm-lib checkout. `export` reports a problem, and exits 1, if the contract or the event log holds a home-directory path.
 - **`export`** exports every run: complete runs in full, incomplete ones as partial exports that declare what is missing. Each export is checked, and a launch manifest ties them together.
 
+## Live plans must state every choice (2026-10-16)
+
+`plan` refuses a live spec that leaves any experimental choice to a code default, and it writes nothing when it refuses. The refusal lists each missing item:
+- **model:** `thinking`, `effort` (or null), `max_tokens`, `cache_ttl`, `cache_breakpoints` and `max_retries`;
+- **retries:** `retry_policy: "p015-retry/1"`;
+- **for the arms selected:**
+  - for guarded-clm: `library.guarded_clm.version`, `revision` and `source_sha256`, which must match the loaded library (2026-10-16; this replaces the removed `strict_ratio_learning`, which is now refused with a migration error);
+  - `arm_settings.paper_clm_shell.profile` and `reminder_before_tokens`, and `paper_rules` (`reminder_point`, `reminder_repeat`, `rejected_edit_free_step`), each equal to the rule the arm implements;
+  - `arm_settings.token_tail_p015.summary_call_cap`.
+
+The proposed values are in clm-lib's `configs/p015/proposed-comparison-0.2.0.dev1.json`. The earlier strict-learning file is superseded and refused. They are proposals, not approvals. The authorisation file and the live gate still apply separately.
+
 ## Session states and outcomes
 
 | state | meaning | next |
