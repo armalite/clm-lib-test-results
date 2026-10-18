@@ -186,3 +186,17 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 - [ ] A 015 authorisation and, if the active ledger is used, an explicit ceiling change for 015. **None exists.**
 - [ ] The separately authorised development smoke.
 - [ ] The freeze.
+
+## Note added 2026-10-18, smoke plan (the draft and the notes above are kept as written)
+
+**The first live development smoke is planned for review and NOT AUTHORISED:**
+- one development instance (`docthread-dev-1`), one session per arm, the eight-turn task;
+- no confirmation instances and no performance claim;
+- the plan: [smoke-plan.md](smoke-plan.md); the configuration: clm-lib `configs/p015/smoke-dev1.json`.
+
+**Readiness for the smoke:**
+- [x] A complete live spec, pinned to guarded-clm 0.2.0.dev1, with explicit settings re-checked against the official documentation on 2026-10-18. It plans offline and is refused without an authorisation.
+- [x] An estimated spend of about $2.5 to $8.5 for the three sessions, a recommended $15 hard allowance, and the exact ledger and authorisation steps.
+- [ ] Your confirmation of the paper arm's three rules (or a change, made and verified first).
+- [ ] The ceiling change and the authorisation file. **Neither exists.**
+- [ ] The go-ahead to launch.

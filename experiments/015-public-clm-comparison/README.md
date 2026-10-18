@@ -7,6 +7,7 @@
 - **Current proposed configuration:** clm-lib `configs/p015/proposed-comparison-0.2.0.dev1.json`. Its other settings are still proposals.
 - **Ended:** the earlier pause, which was waiting for the revised library (recorded in [protocol-draft.md](protocol-draft.md)).
 - **Superseded and refused by the launcher:** the strict-learning configuration. Its checks ([strict-ratio-verification.md](strict-ratio-verification.md)) remain valid only for `db619a8` and the settings recorded there.
+- **The first live development smoke is planned for review, NOT AUTHORISED** (2026-10-18). It runs one development instance with one session per arm. The plan: [smoke-plan.md](smoke-plan.md); the configuration: clm-lib `configs/p015/smoke-dev1.json`.
 - **No 015 live calls or spending are authorised.**
 
 - The guarded-clm library is complete.
@@ -76,6 +77,7 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
 - [`confirmation-design.md`](confirmation-design.md) and [`launcher.md`](launcher.md): the proposed confirmation design and how to run the launcher.
 - [`strict-ratio-verification.md`](strict-ratio-verification.md): guarded-clm with strict ratio learning, verified offline (superseded; valid only for `db619a8`).
 - [`backstop-verification.md`](backstop-verification.md): the accepted guarded-clm 0.2.0.dev1, integrated and verified offline.
+- [`smoke-plan.md`](smoke-plan.md): the proposed first live development smoke, NOT AUTHORISED.
 
 ## Model and sources
 

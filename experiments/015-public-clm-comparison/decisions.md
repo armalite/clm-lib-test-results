@@ -100,6 +100,21 @@ _Started 2026-10-15. **No full Phase 0 review has been done or approved.** This 
 - [x] **The removed option is refused:** any configuration naming `strict_ratio_learning` is refused with a migration error, whatever its value.
 - **What this does not do:** freeze the live protocol or authorise a smoke.
 
+## The first live development smoke (2026-10-18; proposed, not authorised)
+
+- [x] **The smoke settings, chosen by the maintainer for this smoke:**
+  - `claude-sonnet-5`, adaptive thinking, effort `high`, `max_tokens` 8,192;
+  - 5-minute caching with the existing breakpoints;
+  - at most 2 retries per logical call;
+  - 144 calls, 24 summariser calls and 60 steps per turn;
+  - a 32,000-token budget with the 2,048-token reserve (the summary arm keeps its own).
+
+  Verified against the official documentation on 2026-10-18; see [smoke-plan.md](smoke-plan.md). These choices are for the smoke and do not freeze the protocol.
+- [x] **The instance and order, fixed before any result:** `docthread-dev-1`; guarded-clm, `paper_clm_shell`, `token_tail_p015`.
+- [ ] **The paper arm's three rules** (the reminder point, its repetition, the rejected-edit free step): confirm them as provisional for the smoke (recommended), or change them first.
+- [ ] **The $15 allowance:** the ledger ceiling change and the authorisation file in smoke-plan.md. **Neither exists.**
+- [ ] **The go-ahead to launch.**
+
 ## Explicit live settings (2026-10-16)
 
 - [x] **A live launch plan must state every experimental choice.** It is refused otherwise, before anything is written. Proposed values are in clm-lib's `configs/p015/proposed-comparison.json`, with `settings_status` separating approved from proposed. **A stated value is not an approval and not a spending authorisation.**

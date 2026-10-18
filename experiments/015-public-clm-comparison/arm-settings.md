@@ -269,3 +269,14 @@ The library default is False, and clm-lib's own harness default for older specs 
 - **Its estimates differ from 0.1.0** only where a request would have taught a ratio below 0.5 characters per token.
 - **Open item 7 above** ("A public pin of guarded-clm for recorded runs") is met offline. The successor configuration states the version, revision and fingerprint, and `plan` checks them against the loaded library.
 - **The other open items are unchanged and unapproved.**
+
+## The first live development smoke (2026-10-18)
+
+**For the proposed smoke only,** the maintainer chose:
+- thinking adaptive, effort `high` and `max_tokens` 8,192;
+- the 5-minute cache with the existing three breakpoints;
+- 2 retries;
+- a summariser allowance of 24;
+- the inherited 60 steps and the 32,000 budget.
+
+These are recorded in clm-lib `configs/p015/smoke-dev1.json` and explained in [smoke-plan.md](smoke-plan.md). They apply to that smoke, not to a frozen comparison protocol. **The paper arm's three rules remain a pending confirmation.**
