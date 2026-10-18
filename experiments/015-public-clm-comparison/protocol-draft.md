@@ -200,3 +200,38 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 - [ ] Your confirmation of the paper arm's three rules (or a change, made and verified first).
 - [ ] The ceiling change and the authorisation file. **Neither exists.**
 - [ ] The go-ahead to launch.
+
+## Note added 2026-10-18, smoke run (the draft and the notes above are kept as written)
+
+**The development smoke ran, and is partial:**
+- guarded-clm completed 8 turns (6/10; a compatibility result, not a comparison);
+- `paper_clm_shell` was stopped after 3 calls;
+- `token_tail_p015` was not run.
+
+**The harness defect:** the session client is reused across each turn's new event loop, so the first attempt of each turn after the first fails and is retried. Each failed attempt is charged at its reservation.
+
+**Spend:** $1.865448 charged ($0.494056 confirmed, $1.371392 at reservation), none pending.
+
+**Details:** [smoke-dev1-record.md](smoke-dev1-record.md).
+
+**Readiness:**
+- [ ] The harness fix, verified offline against a real (local) connection pool.
+- [ ] The maintainer's decision on s02, and on running the remaining sessions within the block.
+- [ ] Then the rest of the smoke. The freeze and the confirmation design stay pending.
+
+## Note added 2026-10-19, harness fix (the notes above are kept as written)
+
+**The fix:** one event loop per session (`p015-session-loop/1`), verified offline against a local keep-alive server. No live call was made.
+
+**smoke-dev1 is closed, not resumed:**
+- guarded-clm completed, but under the defect;
+- `paper_clm_shell` is incomplete;
+- `token_tail_p015` never ran.
+
+**The guarded session's exposure** (33,482 characters read, against 106,581 scripted) mostly reflects efficient navigation, plus one missed evidence page. The offline sizing assumes sequential reading. This is to recheck, not to act on yet; see [smoke-dev1-record.md](smoke-dev1-record.md).
+
+**Readiness:**
+- [x] The harness fix, verified offline against a real (local) connection pool.
+- [ ] The maintainer's review and commit of the fix.
+- [ ] The decision on s02.
+- [ ] Approval of a fresh three-arm smoke within the block's remaining $13.13.

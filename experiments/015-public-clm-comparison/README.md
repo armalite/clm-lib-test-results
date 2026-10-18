@@ -7,8 +7,12 @@
 - **Current proposed configuration:** clm-lib `configs/p015/proposed-comparison-0.2.0.dev1.json`. Its other settings are still proposals.
 - **Ended:** the earlier pause, which was waiting for the revised library (recorded in [protocol-draft.md](protocol-draft.md)).
 - **Superseded and refused by the launcher:** the strict-learning configuration. Its checks ([strict-ratio-verification.md](strict-ratio-verification.md)) remain valid only for `db619a8` and the settings recorded there.
-- **The first live development smoke is planned for review, NOT AUTHORISED** (2026-10-18). It runs one development instance with one session per arm. The plan: [smoke-plan.md](smoke-plan.md); the configuration: clm-lib `configs/p015/smoke-dev1.json`.
-- **No 015 live calls or spending are authorised.**
+- **The first live development smoke ran on 2026-10-18 and is PARTIAL, stopped for a harness defect** ([smoke-dev1-record.md](smoke-dev1-record.md)).
+  - **Progress:** guarded-clm completed 8 turns; `paper_clm_shell` was stopped after 3 calls; `token_tail_p015` was not run.
+  - **The defect:** the first attempt of each turn fails when the client is reused across turns' event loops. **Fixed and verified offline on 2026-10-19** (clm-lib SPEC §34, `p015-session-loop/1`).
+  - **Status:** the launch is closed and is not resumed against the changed source. guarded-clm completed but under the defect; `paper_clm_shell` is incomplete; `token_tail_p015` never ran.
+  - **Spend:** $1.865 charged ($0.494 confirmed, $1.371 at reservation) of the $15 block.
+- **Recommended next:** a fresh, separately identified three-arm smoke under the corrected harness, within the block's remaining $13.13. **It is NOT AUTHORISED and not launched;** see the record's next checkpoint.
 
 - The guarded-clm library is complete.
 - The harness integration and the public incident-thread workload (`docthread`) are done, verified offline with scripted models only.
@@ -77,7 +81,8 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
 - [`confirmation-design.md`](confirmation-design.md) and [`launcher.md`](launcher.md): the proposed confirmation design and how to run the launcher.
 - [`strict-ratio-verification.md`](strict-ratio-verification.md): guarded-clm with strict ratio learning, verified offline (superseded; valid only for `db619a8`).
 - [`backstop-verification.md`](backstop-verification.md): the accepted guarded-clm 0.2.0.dev1, integrated and verified offline.
-- [`smoke-plan.md`](smoke-plan.md): the proposed first live development smoke, NOT AUTHORISED.
+- [`smoke-plan.md`](smoke-plan.md): the plan for the first live development smoke.
+- [`smoke-dev1-record.md`](smoke-dev1-record.md), [`smoke-dev1-export/`](smoke-dev1-export/) and [`smoke-dev1-freeze-record.json`](smoke-dev1-freeze-record.json): its partial record and evidence.
 
 ## Model and sources
 

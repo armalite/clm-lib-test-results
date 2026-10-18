@@ -111,9 +111,13 @@ _Started 2026-10-15. **No full Phase 0 review has been done or approved.** This 
 
   Verified against the official documentation on 2026-10-18; see [smoke-plan.md](smoke-plan.md). These choices are for the smoke and do not freeze the protocol.
 - [x] **The instance and order, fixed before any result:** `docthread-dev-1`; guarded-clm, `paper_clm_shell`, `token_tail_p015`.
-- [ ] **The paper arm's three rules** (the reminder point, its repetition, the rejected-edit free step): confirm them as provisional for the smoke (recommended), or change them first.
-- [ ] **The $15 allowance:** the ledger ceiling change and the authorisation file in smoke-plan.md. **Neither exists.**
-- [ ] **The go-ahead to launch.**
+- [x] **The paper arm's three rules,** confirmed by the maintainer as provisional for this smoke (2026-10-18).
+- [x] **The $15 allowance:** the ceiling was set to 103.099746, and the authorisation file was written (2026-10-18).
+- [x] **The launch** (2026-10-18). It is **partial and stopped for a harness defect** ([smoke-dev1-record.md](smoke-dev1-record.md)).
+- [x] **The harness fix** (2026-10-19): one event loop per session (`p015-session-loop/1`), verified offline against a local keep-alive server. It awaits the maintainer's review and commit.
+- [x] **`smoke-dev1` is not resumed:** the fix changed the source fingerprint, and the launcher refuses its contract. s01 stands as completed under the defect; nothing is reconciled downward without provider billing.
+- [ ] **s02:** resolve it as abandoned (recommended).
+- [ ] **A fresh three-arm smoke** under the corrected harness (for example `smoke-dev1b`), within the block's remaining $13.13: **a new approval is needed**, since replacements were outside the original scope.
 
 ## Explicit live settings (2026-10-16)
 
