@@ -273,5 +273,6 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 
 **Readiness:**
 - [x] The successor smoke.
-- [ ] A review of the paper arm's rollback behaviour near the limit (see the record).
+- [x] A review of the paper arm's rollback behaviour near the limit: [paper-arm-smoke-dev2-review.md](paper-arm-smoke-dev2-review.md) (2026-10-19). No harness defect, and nothing inconsistent with the sources. One unspecified interaction matters: rollback removes a rejected edit's receipt, defeating the README's stated property that the model is told why.
+- [ ] Decide the proposed narrow correction (carry a rolled-back step's edit receipt into the rollback notice; `paper-clm-shell/2`), with the fidelity document's open questions, before the confirmation design is frozen. If approved, verify it offline; no further development smoke is needed for compatibility.
 - [ ] Any further step (confirmation design, instances, allowance): the maintainer's decision. Nothing is authorised.

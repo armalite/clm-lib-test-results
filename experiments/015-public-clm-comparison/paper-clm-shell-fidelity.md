@@ -91,3 +91,7 @@ None of guarded-clm's features is added to this arm: there is no structured work
 ## Verification
 
 See [arms-offline.md](arms-offline.md). The scripted sessions use the real Docker sandbox.
+
+## Note added 2026-10-19 (the text above is kept as written)
+
+smoke-dev2 exercised the invalid-edit and rollback rules live. A rolled-back step can remove a rejected edit's receipt, and neither source addresses that interaction. See [paper-arm-smoke-dev2-review.md](paper-arm-smoke-dev2-review.md) for the classification and the proposed narrow correction.

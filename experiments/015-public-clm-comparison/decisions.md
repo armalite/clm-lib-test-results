@@ -125,7 +125,8 @@ _Started 2026-10-15. **No full Phase 0 review has been done or approved.** This 
 
   The successor smoke `smoke-dev2` was approved and ran on 2026-10-19 ([smoke-dev2-record.md](smoke-dev2-record.md)). It supersedes the `smoke-dev1b` suggestion.
 - [x] **The ending policy for smoke-dev2:** `p015-turn-endings/1` for all three arms, with `docthread-task/2` and `p015-truncation/1` (approved 2026-10-19).
-- [ ] **The paper arm's turn-4 behaviour in smoke-dev2:** near the limit, last-step rollback removed an edit's rejection reason and every inspection output. This is to review as a fidelity question before any confirmation design is frozen.
+- [x] **The paper arm's turn-4 behaviour in smoke-dev2:** reviewed in [paper-arm-smoke-dev2-review.md](paper-arm-smoke-dev2-review.md) (2026-10-19).
+- [ ] **The proposed receipt-preserving rollback notice** (`paper-clm-shell/2`; README basis: the model is told why an edit was rejected): approve or decline before the confirmation design is frozen.
 
 ## Explicit live settings (2026-10-16)
 

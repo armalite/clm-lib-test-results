@@ -58,7 +58,7 @@ is in [protocol-draft.md](protocol-draft.md) (the successor-smoke note)._
 
 ## The cross-turn connection failure did not recur
 
-smoke-dev1 failed the first attempt of every turn after the first. This time, all 73 attempts succeeded on their first try: no connection error and no retry, across 24 user turns and three sessions, each on one event loop (`p015-session-loop/1`).
+smoke-dev1 failed the first attempt of every turn after the first. This time, all 73 attempts succeeded on their first try: no connection error and no retry, across the 20 user turns attempted (19 completed, of 24 planned) in three sessions (corrected 2026-10-19; see the clarifications below), each on one event loop (`p015-session-loop/1`).
 
 ## Answers (descriptive)
 
@@ -97,8 +97,8 @@ smoke-dev1 failed the first attempt of every turn after the first. This time, al
 2. In turn 4, the conversation history reached about 28,000 tokens.
 3. The model's first edit command (a Python script carrying its own summaries of the earlier tool results) rewrote those results as plain text, without the mirror's result-section format. The arm's validator rejected it: "a tool block must hold only result sections".
 4. That step itself took the request over the 29,952-token limit, so the last-step rollback removed it, including the result that explained the rejection. The model saw only "your last 1 step(s) were rolled back".
-5. Its next five commands only inspected the mirror. Each output again pushed the request over the limit and was rolled back.
-6. After the six rollbacks the rule allows, one over-limit request was allowed, and the next request ended the turn.
+5. Its next commands only inspected the mirror. Four outputs pushed the request over the limit and were rolled back; the fifth came after the six rollbacks were used, so it became the one permitted over-limit request; a sixth inspection then ended the turn (corrected 2026-10-19; see the clarifications below).
+6. The six rollbacks were: the turn's two-page read, the rejected edit's step, and four inspections.
 
 All of this is the arm's implemented and approved provisional behaviour. It is a fidelity finding to review before any comparison: near the limit, last-step rollback can remove both an edit's rejection reason and any inspection output, leaving the model nothing to act on. No edit was ever applied in this session.
 
@@ -126,6 +126,21 @@ All of this is the arm's implemented and approved provisional behaviour. It is a
 [smoke-dev2-export/](smoke-dev2-export/), made with the launcher's export.
 - **Verification:** all three runs verify (`verify_export`), and the top-level `SHA256SUMS` checks.
 - **The scans** found no credential or local path.
+
+## Clarifications (dated 2026-10-19, after the paper-arm fidelity review)
+
+**The scores are unchanged.** The review is [paper-arm-smoke-dev2-review.md](paper-arm-smoke-dev2-review.md).
+
+**Turn counts:** 24 turns were planned, 20 attempted (8, 4 and 8) and 19 completed (8, 3 and 8). The 73 attempts were made in the 20 attempted turns; the earlier text here said "across 24 user turns".
+
+**The paper arm's turn 4, after the rejected edit:** the model ran six inspection commands, not five rolled back.
+- **Four were rolled back** (rollbacks 3 to 6).
+- **The fifth** came after the allowance was used, and became the one permitted over-limit request.
+- **The sixth** ran on that request; the next request (32,272 tokens) ended the turn.
+
+**What the model saw:** the rejected edit's receipt (`edit rejected, nothing changed: a tool block must hold only result sections`) was in the command's result, which rollback 2 removed, so the model was never shown the reason.
+
+**Exact form, separately from correctness:** guarded-clm 10 of 10 values correct and 10 in the exact form; the summary arm 10 correct and 9 in the exact form (the quote's spacing); the paper arm 4 answered, 4 correct, 4 exact, and 6 unanswered.
 
 ## Limitations
 
