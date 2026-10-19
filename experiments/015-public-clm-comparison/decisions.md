@@ -116,15 +116,16 @@ _Started 2026-10-15. **No full Phase 0 review has been done or approved.** This 
 - [x] **The launch** (2026-10-18). It is **partial and stopped for a harness defect** ([smoke-dev1-record.md](smoke-dev1-record.md)).
 - [x] **The harness fix** (2026-10-19): one event loop per session (`p015-session-loop/1`), verified offline against a local keep-alive server. It awaits the maintainer's review and commit.
 - [x] **`smoke-dev1` is not resumed:** the fix changed the source fingerprint, and the launcher refuses its contract. s01 stands as completed under the defect; nothing is reconciled downward without provider billing.
-- [ ] **s02:** resolve it as abandoned (recommended).
+- [x] **s02:** resolved as abandoned (2026-10-19, the maintainer's approval). Its evidence and charges are kept.
 - [ ] **A fresh three-arm smoke** under the corrected harness (for example `smoke-dev1b`), within the block's remaining $13.13: **a new approval is needed**, since replacements were outside the original scope.
 - [x] **The development revision** (2026-10-19, offline; clm-lib SPEC §35):
   - the clarified task `docthread-task/2`;
   - the turn-ending policies `p015-turn-endings/1` and `/2` (continuation supported by guarded-clm only);
   - output-limit truncation as its own ending.
 
-  The successor smoke `smoke-dev2` is prepared, NOT AUTHORISED. It supersedes the `smoke-dev1b` suggestion.
-- [ ] **The ending policy for smoke-dev2:** `p015-turn-endings/1` as prepared, or a reviewed arm change first so that all three arms can continue.
+  The successor smoke `smoke-dev2` was approved and ran on 2026-10-19 ([smoke-dev2-record.md](smoke-dev2-record.md)). It supersedes the `smoke-dev1b` suggestion.
+- [x] **The ending policy for smoke-dev2:** `p015-turn-endings/1` for all three arms, with `docthread-task/2` and `p015-truncation/1` (approved 2026-10-19).
+- [ ] **The paper arm's turn-4 behaviour in smoke-dev2:** near the limit, last-step rollback removed an edit's rejection reason and every inspection output. This is to review as a fidelity question before any confirmation design is frozen.
 
 ## Explicit live settings (2026-10-16)
 

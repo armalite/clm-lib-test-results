@@ -228,7 +228,7 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 - `paper_clm_shell` is incomplete;
 - `token_tail_p015` never ran.
 
-**The guarded session's exposure** (33,482 characters read, against 106,581 scripted) mostly reflects efficient navigation, plus one missed evidence page. The offline sizing assumes sequential reading. This is to recheck, not to act on yet; see [smoke-dev1-record.md](smoke-dev1-record.md).
+**The guarded session's exposure** (33,482 characters read, against 106,581 scripted) mostly reflects efficient navigation, plus the unread pages that held the only cause-signature line. Correction, 2026-10-19: the submitted quote was a real, retrieved line that failed the unstated cause-signature requirement; see the record. The offline sizing assumes sequential reading. This is to recheck, not to act on yet; see [smoke-dev1-record.md](smoke-dev1-record.md).
 
 **Readiness:**
 - [x] The harness fix, verified offline against a real (local) connection pool.
@@ -260,3 +260,18 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 - [ ] The authorisation. The block's remaining $13.134552 is not permission.
 - [ ] The decision on smoke-dev1 s02 (resolve as abandoned, recommended).
 
+## Note added 2026-10-19, successor smoke run (the notes above are kept as written)
+
+**smoke-dev2 ran once per arm** ([smoke-dev2-record.md](smoke-dev2-record.md)):
+- guarded-clm completed 8 turns, 10/10;
+- `paper_clm_shell` ended at its context limit in turn 4, 4/10;
+- `token_tail_p015` completed 8 turns, 9/10 (the quote copied with collapsed column spacing).
+
+**No connection failure, retry, step or call limit, or truncation occurred.** All 73 attempts were confirmed, totalling $1.691882. The programme stands at $3.557330 of $15.
+
+**A compatibility smoke, not a comparison.**
+
+**Readiness:**
+- [x] The successor smoke.
+- [ ] A review of the paper arm's rollback behaviour near the limit (see the record).
+- [ ] Any further step (confirmation design, instances, allowance): the maintainer's decision. Nothing is authorised.

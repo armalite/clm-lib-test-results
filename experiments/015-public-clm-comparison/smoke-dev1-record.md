@@ -8,13 +8,15 @@ One session completed, one was stopped by the operator after 3 calls, and one wa
 | Session | Status |
 | --- | --- |
 | s01 guarded-clm | **Completed, but affected by the harness defect.** 7 of its 23 attempts failed and were retried. Its requests and answers are valid compatibility evidence; its attempt counts, latency and cost are not representative of a clean session. It is not relabelled as clean. |
-| s02 `paper_clm_shell` | **Stopped by the operator; incomplete.** It is kept as recorded. Resolving it as `abandoned` is recommended, but needs the maintainer's decision. |
+| s02 `paper_clm_shell` | **Stopped by the operator; incomplete.** It is kept as recorded. Resolved `abandoned` on 2026-10-19, on the maintainer's approval (status file only; its evidence and charges are unchanged). |
 | s03 `token_tail_p015` | **Never ran.** |
 
 **The launch is closed:**
 - **The fix changed the clm-lib source,** so the launcher refuses this contract ("fingerprint clm_lib_source_sha256 differs from the launch contract"). The matrix must not resume against changed source.
 - **The protections are kept:** the STOP file (`now`) stays in place, and the contract, fingerprints, attempts, exports and ledger entries are unchanged.
 - **Charges are not reconciled downward.** The 7 failed attempts stay charged at their reservation ($1.371392) unless authoritative provider billing shows otherwise.
+
+**Replaced by** the successor smoke [`smoke-dev2`](smoke-dev2-record.md) (2026-10-19), a separate launch with its own contract and authorisation.
 
 **The fix:** `p015-session-loop/1` (clm-lib SPEC §34), verified offline only. See [The fix](#the-fix-2026-10-19-offline) below.
 
@@ -87,7 +89,7 @@ In the offline reproduction, the local server **received** that request before t
 **s01's values, descriptively:**
 - correct: the rejecting component and first rejection time, the rejected count, the symptom code, the first rejected job and the peak wait;
 - the faulty change and the adjacent change: scored `other_evidence`. The answers held the right ids (CHG-24924, CHG-61023), but as the whole change-log entry rather than the id (corrected 2026-10-19; see below);
-- the quote: a real journal line, but not the cause line (`wrong_line`);
+- the quote: a real journal line, retrieved by the session, which failed the scorer's cause-signature requirement (`wrong_line`). The question did not state that requirement (corrected 2026-10-19);
 - the procedure step: `P-3.3 (restore)` against `P-3.3`, scored `not_in_evidence`.
 
 **This says nothing about how the arms compare.**
@@ -107,17 +109,17 @@ In the offline reproduction, the local server **received** that request before t
 | 1 | 4 intake pages and moss-ocr pages 1–9: 82,332 | 6 queue statistics, then moss-ocr pages 1, 7, 8, 9: 29,951 | **Efficient retrieval.** It found the rejecting queue from the statistics and jumped to the first rejection (page 9). Both values were correct. |
 | 2 | 7 change logs: 1,942 | the same 7: 1,942 | the same evidence |
 | 3 | queue statistics: 756 | no read (answered from turn 1) | **Efficient reuse;** correct |
-| 4 | moss-ocr pages 10–12, up to the cause line: 19,962 | no read | **Missed evidence:** it quoted a retry line from page 8. The only line with the cause (`worker.lease_seconds=45`, seq 255185 at 11:44:55) is on page 12, which was never read. |
+| 4 | moss-ocr pages 10–12, up to the cause line: 19,962 | no read | **Cause-signature miss** (corrected 2026-10-19): it quoted a real retry line it had retrieved from page 8. The scorer requires the line that states the changed setting at its new value, which is only on page 12 (`worker.lease_seconds=45`, seq 255185 at 11:44:55), never read. The original question did not state that requirement. |
 | 6 | 3 playbook sections: 1,589 | the same 3: 1,589 | the same evidence |
 | 5, 7, 8 | memory questions, no reads | no reads | |
 
 - **About 52,000 of the difference is efficient retrieval:** the model navigates the journal instead of paging through it.
-- **About 20,000 is missed evidence,** in turn 4.
+- **About 20,000 is the unread pages 10–12** in turn 4, where the only cause-signature line is (see the correction below).
 - **The offline sizing is not representative of a searching model.** The scripted investigator reads sequentially. So the planned pressure on a 32,000-token budget was not reached: the peak input was 22,544 tokens, and the PRESSURE notice first appeared in turn 8. This is one session on one development instance, so it does not justify resizing the task. It is a fact to recheck in the corrected smoke.
 
 **Where the wrong answers lie relative to the edit:** the single accepted edit came in turn 8 (logical call 14, the request carrying the PRESSURE notice; the next request fell from 45,006 to 14,227 characters). All four wrong values came earlier, in turns 2, 4, 5 and 6. So context management did not cause them.
 - **Three are answer-form misses:** the right id was given with surrounding text (turns 2 and 5), or with an annotation (turn 6). The scorer's exact-value rule marks them wrong as designed. This is recorded, not changed.
-- **One is missed evidence** (turn 4, above).
+- **One is a cause-signature miss** (turn 4, above): a real, retrieved line that does not state the cause.
 - **Recall:** 2/3. The turn-5 recall value is the turn-5 answer-form miss; the other two recall values were correct.
 
 ## Clarification of the answers (dated 2026-10-19; the recorded score is unchanged)
@@ -130,7 +132,7 @@ In the offline reproduction, the local server **received** that request before t
 
 The facts were found. The scorer's exact-value rule marks these as designed, but the task's reply format ("Values must be verbatim from the tool output") did not say that an id field takes the id alone.
 
-**Factual error (one value):** the quote (turn 4) was a real journal line, but not the line that shows the cause. The only line that does (it states the changed setting at its new value) is on page 12, which was never read.
+**Cause-signature miss (one value; corrected 2026-10-19):** the submitted quote (turn 4) was a real journal line that the session had retrieved (page 8). It failed the scorer's cause-signature requirement: the only line that states the changed setting at its new value is on page 12, which was not read. The original question did not state that requirement explicitly. The earlier wording here ("factual error") overstated it.
 
 **The quote question was ambiguous.** It asked for a line "that shows what is actually going wrong", while the scorer requires the line that states the causing setting and its value. A retry line arguably shows what is going wrong.
 

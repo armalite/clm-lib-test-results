@@ -12,7 +12,12 @@
   - **The defect:** the first attempt of each turn fails when the client is reused across turns' event loops. **Fixed and verified offline on 2026-10-19** (clm-lib SPEC §34, `p015-session-loop/1`).
   - **Status:** the launch is closed and is not resumed against the changed source. guarded-clm completed but under the defect; `paper_clm_shell` is incomplete; `token_tail_p015` never ran.
   - **Spend:** $1.865 charged ($0.494 confirmed, $1.371 at reservation) of the $15 block.
-- **Recommended next:** the successor smoke `smoke-dev2`, with the corrected harness, the clarified task (`docthread-task/2`) and an explicit turn-ending policy, within the block's remaining $13.13. **It is NOT AUTHORISED and not launched;** see [protocol-draft.md](protocol-draft.md).
+- **The successor smoke `smoke-dev2` ran on 2026-10-19 and is COMPLETE** ([smoke-dev2-record.md](smoke-dev2-record.md)). Each session ran once:
+  - guarded-clm 10/10;
+  - `paper_clm_shell` ended at its context limit in turn 4 (4/10);
+  - `token_tail_p015` 9/10.
+
+  73 attempts, none failed or retried. $1.691882 was charged, all confirmed; the programme stands at $3.557330 of $15. This is a compatibility result, not a comparison. No further live work is authorised.
 
 - The guarded-clm library is complete.
 - The harness integration and the public incident-thread workload (`docthread`) are done, verified offline with scripted models only.
@@ -83,6 +88,7 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
 - [`backstop-verification.md`](backstop-verification.md): the accepted guarded-clm 0.2.0.dev1, integrated and verified offline.
 - [`smoke-plan.md`](smoke-plan.md): the plan for the first live development smoke.
 - [`smoke-dev1-record.md`](smoke-dev1-record.md), [`smoke-dev1-export/`](smoke-dev1-export/) and [`smoke-dev1-freeze-record.json`](smoke-dev1-freeze-record.json): its partial record and evidence.
+- [`smoke-dev2-record.md`](smoke-dev2-record.md), [`smoke-dev2-export/`](smoke-dev2-export/) and [`smoke-dev2-freeze-record.json`](smoke-dev2-freeze-record.json): the successor smoke's record and evidence.
 
 ## Model and sources
 
