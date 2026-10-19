@@ -235,3 +235,28 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 - [ ] The maintainer's review and commit of the fix.
 - [ ] The decision on s02.
 - [ ] Approval of a fresh three-arm smoke within the block's remaining $13.13.
+
+## Note added 2026-10-19, development revision (the notes above are kept as written)
+
+**Changes, all offline** (clm-lib SPEC §35):
+- **The task wording** (`docthread-task/2`): the reply format states each field's form, and question 4 asks for the line that states the causing setting with its value. The scorer, evidence, tools and budgets are unchanged, and version 1 is kept.
+- **Turn endings:**
+  - `p015-turn-endings/1`: the first incomplete turn ends the session;
+  - `p015-turn-endings/2`: a turn ending at a main-model step or call limit ends only that turn, and the next turn runs. This is supported by guarded-clm only. The paper and summary arms cannot follow it safely through their existing bookkeeping, so launches with them are refused.
+- **Truncation:** a response stopped at `max_tokens` ends the session as `output_truncated` (`p015-truncation/1`). Its cost is recorded, nothing is retried, earlier turns keep their scores, and the rest are unanswered. This is a public protocol decision for development runs.
+
+**The successor smoke** (`smoke-dev2`, clm-lib `configs/p015/smoke-dev2.json`):
+- the same instance (`docthread-dev-1`), arm order and settings as smoke-dev1;
+- `docthread-task/2` and `p015-turn-endings/1`;
+- guarded-clm 0.2.0.dev1, with the same library source as `3f18473`, pinned to the current checkout `cce58c1` (`3f18473` plus a README link);
+- a new launch id and authorisation path;
+- not authorised.
+
+**Readiness for the successor smoke:**
+- [x] The harness fix, the clarified task, the explicit ending policy and truncation handling, verified offline.
+- [ ] The maintainer's review and commit of these changes, so that the freeze records clean trees.
+- [ ] A decision: keep `p015-turn-endings/1` for this smoke, or first approve a reviewed change that lets the paper and summary arms continue after a limit-ended turn.
+- [ ] At the freeze, recheck the guarded-clm checkout revision and source fingerprint against the pin.
+- [ ] The authorisation. The block's remaining $13.134552 is not permission.
+- [ ] The decision on smoke-dev1 s02 (resolve as abandoned, recommended).
+

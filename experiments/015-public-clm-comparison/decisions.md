@@ -118,6 +118,13 @@ _Started 2026-10-15. **No full Phase 0 review has been done or approved.** This 
 - [x] **`smoke-dev1` is not resumed:** the fix changed the source fingerprint, and the launcher refuses its contract. s01 stands as completed under the defect; nothing is reconciled downward without provider billing.
 - [ ] **s02:** resolve it as abandoned (recommended).
 - [ ] **A fresh three-arm smoke** under the corrected harness (for example `smoke-dev1b`), within the block's remaining $13.13: **a new approval is needed**, since replacements were outside the original scope.
+- [x] **The development revision** (2026-10-19, offline; clm-lib SPEC §35):
+  - the clarified task `docthread-task/2`;
+  - the turn-ending policies `p015-turn-endings/1` and `/2` (continuation supported by guarded-clm only);
+  - output-limit truncation as its own ending.
+
+  The successor smoke `smoke-dev2` is prepared, NOT AUTHORISED. It supersedes the `smoke-dev1b` suggestion.
+- [ ] **The ending policy for smoke-dev2:** `p015-turn-endings/1` as prepared, or a reviewed arm change first so that all three arms can continue.
 
 ## Explicit live settings (2026-10-16)
 

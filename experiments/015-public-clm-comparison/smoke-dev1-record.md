@@ -120,6 +120,22 @@ In the offline reproduction, the local server **received** that request before t
 - **One is missed evidence** (turn 4, above).
 - **Recall:** 2/3. The turn-5 recall value is the turn-5 answer-form miss; the other two recall values were correct.
 
+## Clarification of the answers (dated 2026-10-19; the recorded score is unchanged)
+
+**The recorded score stands:** 6/10, recall 2/3, as exported. Nothing in the export or in the scoring was changed.
+
+**Exact-format misses (three values):**
+- `faulty_change` (turn 2) and `adjacent_change` (turn 5) held the right change ids, CHG-24924 and CHG-61023, but as the whole change-log entry;
+- `procedure_step` (turn 6) was `P-3.3 (restore)` against `P-3.3`.
+
+The facts were found. The scorer's exact-value rule marks these as designed, but the task's reply format ("Values must be verbatim from the tool output") did not say that an id field takes the id alone.
+
+**Factual error (one value):** the quote (turn 4) was a real journal line, but not the line that shows the cause. The only line that does (it states the changed setting at its new value) is on page 12, which was never read.
+
+**The quote question was ambiguous.** It asked for a line "that shows what is actually going wrong", while the scorer requires the line that states the causing setting and its value. A retry line arguably shows what is going wrong.
+
+**What changes from here:** the successor task wording (`docthread-task/2`, clm-lib SPEC §35) states each field's form and asks for the line that states the causing setting with its value. smoke-dev1 used `docthread-task/1`, which is kept unchanged for reproduction. The two versions' results are not pooled.
+
 ## The fix (2026-10-19, offline)
 
 **Root cause:** the p015 runners ran each user turn with `asyncio.run`, which creates and closes an event loop per turn. The session's single `AsyncAnthropic` client, shared with the summary arm's summariser, kept its pooled connection bound to the previous turn's closed loop.
@@ -143,6 +159,8 @@ In the offline reproduction, the local server **received** that request before t
 **Live spend for the fix:** $0.00. The ledger is unchanged.
 
 ## Next checkpoint (recommended; not launched, not authorised)
+
+_Superseded on 2026-10-19 by the successor smoke `smoke-dev2` (clarified task; see [protocol-draft.md](protocol-draft.md)). The text below is kept as written._
 
 **A fresh three-arm smoke under the corrected harness,** separately identified (for example launch id `smoke-dev1b`):
 - the same settings as `configs/p015/smoke-dev1.json`, with only the launch id changed, as a new configuration file;

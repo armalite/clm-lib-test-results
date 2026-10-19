@@ -12,7 +12,7 @@
   - **The defect:** the first attempt of each turn fails when the client is reused across turns' event loops. **Fixed and verified offline on 2026-10-19** (clm-lib SPEC §34, `p015-session-loop/1`).
   - **Status:** the launch is closed and is not resumed against the changed source. guarded-clm completed but under the defect; `paper_clm_shell` is incomplete; `token_tail_p015` never ran.
   - **Spend:** $1.865 charged ($0.494 confirmed, $1.371 at reservation) of the $15 block.
-- **Recommended next:** a fresh, separately identified three-arm smoke under the corrected harness, within the block's remaining $13.13. **It is NOT AUTHORISED and not launched;** see the record's next checkpoint.
+- **Recommended next:** the successor smoke `smoke-dev2`, with the corrected harness, the clarified task (`docthread-task/2`) and an explicit turn-ending policy, within the block's remaining $13.13. **It is NOT AUTHORISED and not launched;** see [protocol-draft.md](protocol-draft.md).
 
 - The guarded-clm library is complete.
 - The harness integration and the public incident-thread workload (`docthread`) are done, verified offline with scripted models only.
