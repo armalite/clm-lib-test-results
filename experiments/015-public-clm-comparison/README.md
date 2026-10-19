@@ -89,7 +89,7 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
 - [`smoke-plan.md`](smoke-plan.md): the plan for the first live development smoke.
 - [`smoke-dev1-record.md`](smoke-dev1-record.md), [`smoke-dev1-export/`](smoke-dev1-export/) and [`smoke-dev1-freeze-record.json`](smoke-dev1-freeze-record.json): its partial record and evidence.
 - [`smoke-dev2-record.md`](smoke-dev2-record.md), [`smoke-dev2-export/`](smoke-dev2-export/) and [`smoke-dev2-freeze-record.json`](smoke-dev2-freeze-record.json): the successor smoke's record and evidence.
-- [`paper-arm-smoke-dev2-review.md`](paper-arm-smoke-dev2-review.md): the fidelity review of the paper arm's turn-4 failure in smoke-dev2.
+- [`paper-arm-smoke-dev2-review.md`](paper-arm-smoke-dev2-review.md): the fidelity review of the paper arm's turn-4 failure in smoke-dev2. Its correction, `paper-clm-shell/2`, is verified offline; the revised confirmation proposal is in [`confirmation-design.md`](confirmation-design.md).
 
 ## Model and sources
 

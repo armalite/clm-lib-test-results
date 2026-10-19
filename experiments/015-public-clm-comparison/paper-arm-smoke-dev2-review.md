@@ -109,3 +109,8 @@ The paper arm's remaining six values are unanswered: turn 4 failed, and turns 5โ
 - **Then decide its version** together with the fidelity document's open questions.
 
 Once the receipt change is decided and verified offline, no further development smoke is needed for compatibility.
+
+## Note added 2026-10-19 (the review above is kept as written)
+
+**The recommended correction is implemented offline as `paper-clm-shell/2`** (clm-lib SPEC ยง36), and proposed for the confirmation. The smoke-dev2 paper result remains a result of `paper-clm-shell/1`.
+

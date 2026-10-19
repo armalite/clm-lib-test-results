@@ -95,3 +95,23 @@ See [arms-offline.md](arms-offline.md). The scripted sessions use the real Docke
 ## Note added 2026-10-19 (the text above is kept as written)
 
 smoke-dev2 exercised the invalid-edit and rollback rules live. A rolled-back step can remove a rejected edit's receipt, and neither source addresses that interaction. See [paper-arm-smoke-dev2-review.md](paper-arm-smoke-dev2-review.md) for the classification and the proposed narrow correction.
+
+## `paper-clm-shell/2` (added 2026-10-19; version 1 is unchanged and kept)
+
+| Element | What the sources say | `paper-clm-shell/2` | Classification |
+| --- | --- | --- | --- |
+| **Rejection feedback through rollback** | README: "A rejected edit is not applied, and the model is told why." Neither source says how rollback treats a receipt. | When a rolled-back step held a rejected edit, its reason is repeated once, beside the rollback notice, in the receipt's wording. Nothing else of the step returns. The feedback counts towards the limit. | **A documented adaptation** that preserves the README's stated property. It is not a reproduction of unspecified reference behaviour. |
+
+**Exactly what version 2 does, and does not do:**
+- **It counts towards context:** the rejection feedback is part of the request the rollback measures, and of the request sent.
+- **Fitting it uses the existing allowance:** a further rollback needed to fit the feedback is counted against the same six per turn.
+- **No extra retries or headroom:** none are granted.
+- **Its real-model effect is unmeasured:** it is an adaptation.
+
+**Every other element above is unchanged in version 2:** the mirror, validation, rollback unit, allowance and margin, reminder, free steps and terminal rule.
+
+**Status:** verified offline (clm-lib SPEC §36, `tests/p015/test_paper_feedback.py`). Its effect on a real model's recovery is unmeasured. It does not remove the arm's context-limit risk.
+
+**The three provisional rules and the open questions above** still need the maintainer's decision for confirmation.
+
+**The open questions above, as concrete proposed choices (2026-10-19):** see [confirmation-design.md](confirmation-design.md), "Paper-arm choices for confirmation". Each is now stated with its value, its source status and its effect if changed. They await approval; none is left unspecified.

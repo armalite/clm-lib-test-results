@@ -276,3 +276,27 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 - [x] A review of the paper arm's rollback behaviour near the limit: [paper-arm-smoke-dev2-review.md](paper-arm-smoke-dev2-review.md) (2026-10-19). No harness defect, and nothing inconsistent with the sources. One unspecified interaction matters: rollback removes a rejected edit's receipt, defeating the README's stated property that the model is told why.
 - [ ] Decide the proposed narrow correction (carry a rolled-back step's edit receipt into the rollback notice; `paper-clm-shell/2`), with the fidelity document's open questions, before the confirmation design is frozen. If approved, verify it offline; no further development smoke is needed for compatibility.
 - [ ] Any further step (confirmation design, instances, allowance): the maintainer's decision. Nothing is authorised.
+
+## Note added 2026-10-19, paper arm version 2 and the confirmation proposal (the notes above are kept as written)
+
+**`paper-clm-shell/2`** (clm-lib SPEC §36) keeps a rejected edit's reason through the rollback of its step. That is a documented adaptation, preserving the README's "the model is told why".
+- **Unchanged:** every other paper rule.
+- **The smokes:** both ran version 1, and their results stay version 1 results.
+- **Not measured:** the change is verified offline only. Its effect on a real model is unmeasured, and the arm's context-limit risk remains.
+
+**The confirmation proposal** is in [confirmation-design.md](confirmation-design.md) ("Revised proposal"; clm-lib `configs/p015/proposed-confirmation.json`):
+- guarded-clm 0.2.0.dev1, `paper-clm-shell/2` and the summary baseline;
+- `docthread-task/2`, `p015-turn-endings/1` and `p015-truncation/1`;
+- the smoke-dev2 shared settings;
+- six fresh instances: 18 sessions;
+- an estimated $10 to $25, with a recommended $40 hard allowance.
+
+**Readiness for confirmation:**
+- [x] The paper-arm feedback correction, verified offline.
+- [ ] The maintainer's approval of `paper-clm-shell/2`, the paper arm's open questions, the design and the analysis plan (including whether to report the optional substantive diagnostic).
+- [x] The instance checker (`p015-instance-check/1`) and the exposure report (`p015-exposure/1`), built and verified offline (2026-10-19). The report's totals match both smokes' records, and no confirmation instance has been generated.
+- [ ] The evidence-size reading for the instance rule (`plan` recommended; see [confirmation-design.md](confirmation-design.md)).
+- [ ] The freeze: clean trees, the pin recheck, instance generation and checks, the plan and the freeze record.
+- [ ] The allowance and a ledger ceiling change (the maintainer).
+- [ ] Then a detached launch. No further development smoke is needed: no open item concerns provider compatibility.
+
