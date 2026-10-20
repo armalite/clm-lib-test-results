@@ -115,3 +115,8 @@ smoke-dev2 exercised the invalid-edit and rollback rules live. A rolled-back ste
 **The three provisional rules and the open questions above** still need the maintainer's decision for confirmation.
 
 **The open questions above, as concrete proposed choices (2026-10-19):** see [confirmation-design.md](confirmation-design.md), "Paper-arm choices for confirmation". Each is now stated with its value, its source status and its effect if changed. They await approval; none is left unspecified.
+
+## `paper-clm-shell/3` (added 2026-10-20)
+
+Version 3 gives the arm a part-level context file, in which a tool result can be replaced by the model's own summary and stays paired with its call. Its mapping, the rollback rules split into source-supported and ours, and its offline verification are in [paper-clm-shell-v3.md](paper-clm-shell-v3.md). It has not been evaluated live. Versions 1 and 2 are unchanged.
+

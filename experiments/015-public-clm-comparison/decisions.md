@@ -159,3 +159,8 @@ _Started 2026-10-15. **No full Phase 0 review has been done or approved.** This 
 ## Out of scope for the first milestone
 
 The poisoned thread and the other scenarios, the wider programme's workloads and baselines, and separate live runs of v1 and v3. None of these is to be invented during the first milestone.
+
+## Confirmation (2026-10-19)
+
+- [x] **The confirmation block `confirm1`:** decided, frozen and run to completion ([confirm1-prerun-decisions.md](confirm1-prerun-decisions.md), [confirm1-record.md](confirm1-record.md)). Nothing further is authorised.
+

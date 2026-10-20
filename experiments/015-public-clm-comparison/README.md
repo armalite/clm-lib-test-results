@@ -12,6 +12,10 @@
   - **The defect:** the first attempt of each turn fails when the client is reused across turns' event loops. **Fixed and verified offline on 2026-10-19** (clm-lib SPEC §34, `p015-session-loop/1`).
   - **Status:** the launch is closed and is not resumed against the changed source. guarded-clm completed but under the defect; `paper_clm_shell` is incomplete; `token_tail_p015` never ran.
   - **Spend:** $1.865 charged ($0.494 confirmed, $1.371 at reservation) of the $15 block.
+- **The confirmation block `confirm1` ran on 2026-10-19 and is COMPLETE** ([confirm1-record.md](confirm1-record.md)): six fresh instances × three arms, each session once.
+  - **Exact-format points (totals over the six instances):** guarded-clm 58/60, `token_tail_p015` 59/60, `paper_clm_shell` 20/60. Every paper session stopped at its context limit, and no mirror edit was accepted.
+  - **Spend:** $10.873678 confirmed of the $40 block; no retries and no failed attempts.
+  - **Interpretation:** one model and one task family; instances are the units. The paper result is a result of this implementation. The editing contract that rejected every paper edit is mostly our representation, so the comparison is not reference-aligned there ([confirm1-findings.md](confirm1-findings.md), 2026-10-20).
 - **The successor smoke `smoke-dev2` ran on 2026-10-19 and is COMPLETE** ([smoke-dev2-record.md](smoke-dev2-record.md)). Each session ran once:
   - guarded-clm 10/10;
   - `paper_clm_shell` ended at its context limit in turn 4 (4/10);
@@ -89,6 +93,9 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
 - [`smoke-plan.md`](smoke-plan.md): the plan for the first live development smoke.
 - [`smoke-dev1-record.md`](smoke-dev1-record.md), [`smoke-dev1-export/`](smoke-dev1-export/) and [`smoke-dev1-freeze-record.json`](smoke-dev1-freeze-record.json): its partial record and evidence.
 - [`smoke-dev2-record.md`](smoke-dev2-record.md), [`smoke-dev2-export/`](smoke-dev2-export/) and [`smoke-dev2-freeze-record.json`](smoke-dev2-freeze-record.json): the successor smoke's record and evidence.
+- [`paper-clm-shell-v3.md`](paper-clm-shell-v3.md): the paper arm's version 3 (a part-level context file), its fidelity mapping and offline verification; not evaluated live.
+- [`confirm1-findings.md`](confirm1-findings.md): the findings and interpretation review of the confirmation (cost components, the paper editing contract, the blog evidence outline).
+- [`confirm1-record.md`](confirm1-record.md), [`confirm1-export/`](confirm1-export/), [`confirm1-freeze-record.json`](confirm1-freeze-record.json), [`confirm1-instance-manifest.json`](confirm1-instance-manifest.json), [`confirm1-prerun-decisions.md`](confirm1-prerun-decisions.md) and the exposure report [`confirm1-exposure.md`](confirm1-exposure.md): the confirmation block (18 sessions, complete).
 - [`paper-arm-smoke-dev2-review.md`](paper-arm-smoke-dev2-review.md): the fidelity review of the paper arm's turn-4 failure in smoke-dev2. Its correction, `paper-clm-shell/2`, is verified offline; the revised confirmation proposal is in [`confirmation-design.md`](confirmation-design.md).
 
 ## Model and sources

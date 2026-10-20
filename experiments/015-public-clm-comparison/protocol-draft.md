@@ -300,3 +300,26 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 - [ ] The allowance and a ledger ceiling change (the maintainer).
 - [ ] Then a detached launch. No further development smoke is needed: no open item concerns provider compatibility.
 
+## Note added 2026-10-19, confirmation run (the notes above are kept as written)
+
+**`confirm1` ran to completion:** 18 sessions, each once ([confirm1-record.md](confirm1-record.md)).
+
+**Exact-format points out of 10, totals over six instances:**
+- guarded-clm 58/60 (every session completed);
+- `token_tail_p015` 59/60 (every session completed);
+- `paper_clm_shell` 20/60: every session ended at its context limit (turn 4 on five instances, turn 1 on one), and no mirror edit was ever accepted.
+
+**Spend:** $10.873678, all confirmed, of the $40 block. Nothing is pending, and nothing further is authorised.
+
+**Readiness:** the programme 015 confirmation block is complete. Any further block, replacement or change to an arm needs a new decision and authorisation.
+
+## Note added 2026-10-20, paper arm version 3 (the notes above are kept as written)
+
+**The change:** `paper-clm-shell/3` (clm-lib SPEC §38; [paper-clm-shell-v3.md](paper-clm-shell-v3.md)) replaces the paper arm's message-level mirror with a part-level one. Prose summaries of completed tool exchanges can now be accepted, and valid provider messages are rebuilt.
+
+**Status:** verified offline only, and not evaluated. confirm1 is unchanged and remains a version 2 result.
+
+**Readiness:**
+- [x] Version 3, verified offline through the real runner, the Docker sandbox and the provider request bodies.
+- [ ] A decision on whether to run a small live development check of version 3 (not authorised).
+

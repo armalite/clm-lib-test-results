@@ -89,3 +89,10 @@ It is a documented adaptation, not a reproduction of unspecified behaviour of th
 These are mechanical consequences of the predeclared checks and the chosen reading. No answer, location or outcome was inspected.
 
 **Why the block is paused:** the committed launch configuration (`configs/p015/proposed-confirmation.json` at `0bc84b1`) states the predeclared seeds 7401 and 7406. By the rule, instances 1 and 6 take 7407 and 7496. That is a configuration change that must be reviewed and committed before planning. Following the maintainer's instruction, no plan, ceiling change, authorisation or provider call was made. The change is prepared in the clm-lib working tree for review.
+
+## Correction (dated 2026-10-19, after the run; the text above is kept as written)
+
+**The count of seeds above the upper bound was wrong.** The addendum above says that "six of the skipped seeds for instance 6 were above the `plan` upper bound". It was **five**: 7406, 7418, 7430, 7454 and 7472, measuring 125,191 to 125,828 characters. Two were below the lower bound (7478 and 7484).
+
+**The rest stands:** the table, the manifest and the chosen seeds are unchanged and correct.
+
