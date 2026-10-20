@@ -52,7 +52,7 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
   - guarded-clm (the lite arm, hosted by clm-lib);
   - the reference-aligned `paper_clm_shell`;
   - the commonly available baseline from the accepted plan, the `token-tail/1` summary baseline.
-- **`paper_clm_tools`,** if run, is a separately labelled adaptation, not the reference implementation.
+- **`paper_clm_tools`,** if run, is a separately labelled adaptation, not the reference implementation. **Implemented and verified offline on 2026-10-20** (`paper-clm-tools/1`, [paper-clm-tools.md](paper-clm-tools.md)); it has not run live.
 - **No other strategies:** none are ported or approximated. The names `clm_lite_v2` and `clm_lite_v3_1` are superseded by the single guarded-clm arm.
 - **Later work:** additional tasks, baselines or ablations follow the public plan and need later authorisation.
 
@@ -93,7 +93,9 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
 - [`smoke-plan.md`](smoke-plan.md): the plan for the first live development smoke.
 - [`smoke-dev1-record.md`](smoke-dev1-record.md), [`smoke-dev1-export/`](smoke-dev1-export/) and [`smoke-dev1-freeze-record.json`](smoke-dev1-freeze-record.json): its partial record and evidence.
 - [`smoke-dev2-record.md`](smoke-dev2-record.md), [`smoke-dev2-export/`](smoke-dev2-export/) and [`smoke-dev2-freeze-record.json`](smoke-dev2-freeze-record.json): the successor smoke's record and evidence.
+- [`dev-v3a-record.md`](dev-v3a-record.md), [`dev-v3a-export/`](dev-v3a-export/): the one live validation of `paper-clm-shell/3` (not demonstrated: its only edit was rejected for renumbered block headers).
 - [`paper-clm-shell-v3.md`](paper-clm-shell-v3.md): the paper arm's version 3 (a part-level context file), its fidelity mapping and offline verification; not evaluated live.
+- [`paper-clm-tools.md`](paper-clm-tools.md): the structured-tools arm `paper_clm_tools` (`paper-clm-tools/1`). It covers the specification, its differences from the structured-tools reference and from the shell arm, the fidelity limitations, the offline verification and a proposed (unauthorised) live validation. Not evaluated live.
 - [`confirm1-findings.md`](confirm1-findings.md): the findings and interpretation review of the confirmation (cost components, the paper editing contract, the blog evidence outline).
 - [`confirm1-record.md`](confirm1-record.md), [`confirm1-export/`](confirm1-export/), [`confirm1-freeze-record.json`](confirm1-freeze-record.json), [`confirm1-instance-manifest.json`](confirm1-instance-manifest.json), [`confirm1-prerun-decisions.md`](confirm1-prerun-decisions.md) and the exposure report [`confirm1-exposure.md`](confirm1-exposure.md): the confirmation block (18 sessions, complete).
 - [`paper-arm-smoke-dev2-review.md`](paper-arm-smoke-dev2-review.md): the fidelity review of the paper arm's turn-4 failure in smoke-dev2. Its correction, `paper-clm-shell/2`, is verified offline; the revised confirmation proposal is in [`confirmation-design.md`](confirmation-design.md).

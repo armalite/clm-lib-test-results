@@ -323,3 +323,13 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 - [x] Version 3, verified offline through the real runner, the Docker sandbox and the provider request bodies.
 - [ ] A decision on whether to run a small live development check of version 3 (not authorised).
 
+## Note added 2026-10-20, dev-v3a (the notes above are kept as written)
+
+**The result:** one live session of `paper-clm-shell/3` on `docthread-dev-1` ([dev-v3a-record.md](dev-v3a-record.md)). Its only edit, a 91.6% reduction written on the final over-limit request, was rejected because the model renumbered the headers of the blocks it kept. The turn ended at its context limit in turn 4 (4/10).
+
+**The validation's criteria:** **not demonstrated.**
+
+**Spend:** $0.247759, confirmed.
+
+**Readiness:** the comparison waits for a decision on that blocker. Nothing further is authorised.
+
