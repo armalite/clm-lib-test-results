@@ -333,3 +333,31 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 
 **Readiness:** the comparison waits for a decision on that blocker. Nothing further is authorised.
 
+## Note added 2026-10-21, dev-tools1 (the notes above are kept as written)
+
+**The result:** one live session of `paper-clm-tools/1` on `docthread-dev-1` ([dev-tools1-record.md](dev-tools1-record.md)).
+- **The edits:** in turn 4 the model made two substantive deletions of tool exchanges. Both were accepted, and the first reached the provider and was accepted.
+- **The failure:** the provider rejected the request carrying the second (HTTP 400) because thinking blocks in a reply the arm had rebuilt (two replies merged) were altered. The session ended there: turns 1–3 correct, 4/10, recall 0/3.
+
+**Not an interface-only ablation:** the tools arm differs from the shell arm in rollback, notices and the free-step rule as well as interface.
+
+**Spend:** $0.270354, confirmed.
+
+**Readiness:** blocked. The arm's rebuild must keep signed thinking blocks unchanged, which needs a reviewed revision. Nothing further is authorised.
+
+## Note added 2026-10-21, `paper-clm-tools/2` (the notes above are kept as written)
+
+**The correction:** the dev-tools1 failure is corrected offline in `paper-clm-tools/2` ([paper-clm-tools-v2.md](paper-clm-tools-v2.md)). Merged or altered replies from earlier turns are sent without their thinking blocks; nothing else changes.
+
+**Not established:** acceptance by the provider. Edits that merge or alter replies inside the turn in progress are not covered.
+
+**Readiness:** a live check of version 2 would need a new authorisation. None is given.
+
+## Note added 2026-10-22, the current-turn restriction (the notes above are kept as written)
+
+**The resolution:** the open in-turn gap is closed offline. Version 2 now refuses, before dispatch, any edit that would change a reply of the turn in progress carrying thinking ([paper-clm-tools-v2.md](paper-clm-tools-v2.md)). That turn's tool results can still be rewritten.
+
+**For any comparison:** the tools arm cannot delete the current turn's tool exchanges while its replies carry thinking. This is a compatibility restriction of the adaptation.
+
+**Readiness:** unchanged. A live check needs a new authorisation.
+

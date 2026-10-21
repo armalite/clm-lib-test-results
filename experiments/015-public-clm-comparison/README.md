@@ -52,7 +52,7 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
   - guarded-clm (the lite arm, hosted by clm-lib);
   - the reference-aligned `paper_clm_shell`;
   - the commonly available baseline from the accepted plan, the `token-tail/1` summary baseline.
-- **`paper_clm_tools`,** if run, is a separately labelled adaptation, not the reference implementation. **Implemented and verified offline on 2026-10-20** (`paper-clm-tools/1`, [paper-clm-tools.md](paper-clm-tools.md)); it has not run live.
+- **`paper_clm_tools`,** if run, is a separately labelled adaptation, not the reference implementation. **Implemented and verified offline on 2026-10-20** (`paper-clm-tools/1`, [paper-clm-tools.md](paper-clm-tools.md)). One live development session on 2026-10-21 ([dev-tools1-record.md](dev-tools1-record.md)) ended at a provider rejection of a rebuilt reply's thinking blocks, a blocker for any comparison.
 - **No other strategies:** none are ported or approximated. The names `clm_lite_v2` and `clm_lite_v3_1` are superseded by the single guarded-clm arm.
 - **Later work:** additional tasks, baselines or ablations follow the public plan and need later authorisation.
 
@@ -95,6 +95,8 @@ Some v1 and v3 behaviour will be implemented internally where it is needed to de
 - [`smoke-dev2-record.md`](smoke-dev2-record.md), [`smoke-dev2-export/`](smoke-dev2-export/) and [`smoke-dev2-freeze-record.json`](smoke-dev2-freeze-record.json): the successor smoke's record and evidence.
 - [`dev-v3a-record.md`](dev-v3a-record.md), [`dev-v3a-export/`](dev-v3a-export/): the one live validation of `paper-clm-shell/3` (not demonstrated: its only edit was rejected for renumbered block headers).
 - [`paper-clm-shell-v3.md`](paper-clm-shell-v3.md): the paper arm's version 3 (a part-level context file), its fidelity mapping and offline verification; not evaluated live.
+- [`dev-tools1-record.md`](dev-tools1-record.md), [`dev-tools1-export/`](dev-tools1-export/): the one live validation of `paper-clm-tools/1` (2026-10-21). Two deletions were accepted and the first reached the provider, but the request carrying the second was rejected (HTTP 400) for altered thinking blocks in a rebuilt reply; turn 4, 4/10, US$0.270354.
+- [`paper-clm-tools-v2.md`](paper-clm-tools-v2.md): the dev-tools1 failure established (a rebuilt reply combining several responses' thinking blocks) and its correction, `paper-clm-tools/2`, verified offline only.
 - [`paper-clm-tools.md`](paper-clm-tools.md): the structured-tools arm `paper_clm_tools` (`paper-clm-tools/1`). It covers the specification, its differences from the structured-tools reference and from the shell arm, the fidelity limitations, the offline verification and a proposed (unauthorised) live validation. Not evaluated live.
 - [`confirm1-findings.md`](confirm1-findings.md): the findings and interpretation review of the confirmation (cost components, the paper editing contract, the blog evidence outline).
 - [`confirm1-record.md`](confirm1-record.md), [`confirm1-export/`](confirm1-export/), [`confirm1-freeze-record.json`](confirm1-freeze-record.json), [`confirm1-instance-manifest.json`](confirm1-instance-manifest.json), [`confirm1-prerun-decisions.md`](confirm1-prerun-decisions.md) and the exposure report [`confirm1-exposure.md`](confirm1-exposure.md): the confirmation block (18 sessions, complete).
