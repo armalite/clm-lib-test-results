@@ -361,3 +361,13 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 
 **Readiness:** unchanged. A live check needs a new authorisation.
 
+## Note added 2026-10-22, dev-tools2 (the notes above are kept as written)
+
+**The result:** one live session of `paper-clm-tools/2` on docthread-dev-1 ([dev-tools2-record.md](dev-tools2-record.md)).
+- **Compatibility:** all 44 requests were accepted, including every request after the 7 committed earlier-turn edits (four with thinking omitted). Two current-turn edits were refused before dispatch.
+- **The ending:** turns 1–6 completed; the session ended at an ordinary context limit in turn 7. 7/10, recall 1/3.
+
+**Spend:** $0.947527, confirmed.
+
+**Readiness:** technically usable as a separately labelled adaptation, with the stated limits (the in-turn restriction, per-session retries, refusals lost on rollback, untested paths). No comparison is authorised.
+
