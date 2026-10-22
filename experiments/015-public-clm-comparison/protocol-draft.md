@@ -371,3 +371,13 @@ The lite arms' runtime will come from the separate guarded-clm library, so the l
 
 **Readiness:** technically usable as a separately labelled adaptation, with the stated limits (the in-turn restriction, per-session retries, refusals lost on rollback, untested paths). No comparison is authorised.
 
+## Note added 2026-10-22, supp-tools1 (the notes above are kept as written)
+
+**The block:** a supplemental, pre-registered evaluation of `paper-clm-tools/2` on confirm1's six frozen instances ([supp-tools1-protocol.md](supp-tools1-protocol.md), [supp-tools1-record.md](supp-tools1-record.md)). The other arms are compared through their frozen confirm1 results.
+
+**The result:** 36/60, with 2 of 6 sessions complete. Three sessions ended at a context limit after the six per-session rollback retries, and one at the output limit. All 193 requests were accepted.
+
+**Spend:** $3.821252, confirmed.
+
+**Not a confirm1 result:** the arm was developed after confirm1, and this is not an interface-only ablation.
+
